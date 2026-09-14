@@ -1,62 +1,107 @@
-# 🤖 AGENTS.md — Guía de Operación para Agentes de IA & Estándar de Codificación (VetConnect)
+# 🤖 AGENTS.md — Sistema Operativo para Agentes de IA Autónomos & Estándar de Ingeniería (VetConnect)
 
-> **Propósito:** Este documento es la fuente primaria de instrucciones para cualquier agente de IA (Jules, Claude Code, Cursor, Copilot, etc.) que trabaje en el repositorio **VetConnect**. Define reglas para prevenir la alucinación por exceso de contexto, el estándar de codificación obligatorio, los antipatrones ("ejemplos de NO uso") y el plan de ejecución por fases para la codificación.
+> **Propósito:** Este documento es el protocolo operativo supremo para cualquier agente de IA autónomo o semi-autónomo (**Google Jules**, Antigravity, Claude Code, Cursor, Copilot Workspace) que trabaje en el repositorio **VetConnect**. Establece cómo los agentes deben planificar y trazar sus propios flujos de trabajo de forma proactiva, garantizando calidad de nivel FAANG desde el primer commit.
 
 ---
 
-## 🛑 1. Reglas Anti-Alucinación y Gestión de Contexto
+## 🧭 1. Principios de Autonomía & Flujo Proactivo (The Agent Workflow)
 
-Para evitar que el agente alucine, asuma archivos inexistentes o tome decisiones fuera de estándar:
+Los agentes en VetConnect no esperan micro-instrucciones ni confirmaciones triviales. Operan mediante el siguiente ciclo continuo de ingeniería:
 
-1. **Fuente Única de Verdad (Single Source of Truth):**
-   - No asumir rutas ni nombres de archivos. Usar `list_files` y `read_file` antes de editar.
-   - Toda norma técnica y de gestión debe alinearse con `docs/PLAN_DE_PROYECTO_Y_GESTION.md`, `docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md`, `docs/PROPUESTA_MEJORAS_LIVEKIT.md` y `docs/TECH_REFERENCE.md`.
-2. **Límite de Modificaciones:**
-   - Realizar cambios pequeños, específicos y verificables.
-   - Confirmar el resultado de cada edición mediante herramientas de lectura antes de avanzar.
-3. **Manejo de Secretos y Variables de Entorno (`.env` Guardrail):**
+```mermaid
+graph LR
+    A["1. Context Discovery\n(Docs & Contratos)"] --> B["2. TDD Design\n(Test primero)"]
+    B --> C["3. Implementation\n(Código Limpio)"]
+    C --> D["4. Self-Verification\n(tsc, tests, lint)"]
+    D --> E["5. Delivery / PR\n(Conventional Commits)"]
+```
+
+### 1.1 Ciclo de Ejecución Paso a Paso:
+1. **Descubrimiento y Anclaje a Contratos:**
+   - Antes de escribir una sola línea de código, el agente consulta `docs/TECH_REFERENCE.md` (modelos Prisma, endpoints, eventos Socket), `docs/DECISIONS.md` (21 ADRs) y `docs/SPEC.md`.
+   - **Prohibido asumir rutas o campos:** Si se requiere un endpoint, debe coincidir exactamente con el contrato en `docs/TECH_REFERENCE.md`.
+2. **Diseño Dirigido por Pruebas (TDD):**
+   - El agente escribe o prepara el archivo de prueba unitaria/integración en Jest o Vitest antes de la lógica de negocio.
+   - El test debe fallar inicialmente si la funcionalidad no existe (rojo), confirmando que prueba algo real.
+3. **Implementación Estricta:**
+   - Código modular en TypeScript estricto, sin `any`, con validaciones Zod y manejo de errores RFC 7807.
+4. **Auto-Verificación Obligatoria:**
+   - El agente ejecuta las herramientas de validación localmente (`npx prisma validate`, `npm run typecheck`, `npm test`) y corrige iterativamente cualquier error antes de finalizar.
+5. **Entrega Limpia:**
+   - Commits estructurados bajo Conventional Commits (`feat:`, `fix:`, `test:`, `refactor:`, `docs:`, `chore:`).
+
+---
+
+## 🛡️ 2. Guardarraíles Absolutos de Seguridad
+
+1. **Gestión de Secretos (`.env` Guardrail):**
    - **NUNCA** leer, editar, commitear ni imprimir claves secretas o archivos `.env`.
-   - Modificar únicamente archivos `.env.example`.
-4. **Validación de Dependencias:**
-   - No agregar paquetes `npm` sin verificar si la funcionalidad ya está cubierta por la plataforma (`zod`, `prisma`, `jsonwebtoken`, `socket.io`, `livekit-server-sdk`).
+   - Modificar únicamente `.env.example` cuando se agreguen variables nuevas al sistema.
+2. **Preservación del Historial Git:**
+   - **NUNCA** ejecutar comandos destructivos (`git filter-repo`, `git push --force`, purge de ramas) de forma autónoma.
+3. **Eliminaciones Lógicas Exclusivas (Soft-Deletes):**
+   - **NUNCA** ejecutar `prisma.<model>.delete()` físico sobre datos clínicos o de usuarios. Usar siempre `deletedAt = new Date()`.
+4. **Protección de Datos Personales (PII):**
+   - **NUNCA** inyectar emails o teléfonos de usuarios en tokens de LiveKit, logs de auditoría o respuestas públicas de API. Usar identificadores opacos (`user.id`) y nombre público (`user.firstName`).
 
 ---
 
-## 🏗️ 2. Arquitectura & Estructura del Monorepo
+## 🏗️ 3. Arquitectura del Monorepo
 
 ```
 vetconnect/
-├── backend/                        # API REST Node.js + Express 5 + TypeScript + Prisma 6
-│   ├── prisma/schema.prisma        # Modelo PostgreSQL con mappings snake_case
+├── .github/workflows/ci.yml        # Pipeline CI automatizado (Typecheck, Lint, Tests, Security)
+├── .jules/instructions.md          # Instrucciones nativas para Google Jules
+├── docker-compose.yml              # Servicios locales de desarrollo (PostgreSQL 16 + Redis 7)
+├── package.json                    # Root workspaces (backend, web, mobile)
+├── backend/                        # API REST Express 5 + TypeScript + Prisma 6 + Socket.io
+│   ├── prisma/schema.prisma        # Modelo relacional PostgreSQL con snake_case mappings
 │   └── src/modules/                # Módulos DDD: auth, users, pets, consultations, calls, media, notifications
-├── web/                            # Frontend Web React 19 + Vite + Tailwind CSS + LiveKit Components
-├── mobile/                         # Mobile React Native + Expo SDK 54 + Expo Router + NativeWind
-└── docs/                           # Documentación maestra y guías técnicas
+├── web/                            # SPA React 19 + Vite + Tailwind CSS + TanStack Query + LiveKit
+├── mobile/                         # App React Native + Expo SDK 54 + Expo Router + NativeWind
+└── docs/                           # Documentación técnica, contratos y decisiones de arquitectura
 ```
 
----
-
-## 📏 3. Estándar de Codificación Obligatorio
-
-### 3.1 Base de Datos & Prisma ORM
-- **Mapeo Explicito SQL:** Todas las columnas multi-palabra deben usar `@map("nombre_columna")` en `schema.prisma`.
-- **Soft-Deletes:** Usar `deletedAt DateTime? @map("deleted_at")`. NUNCA ejecutar borrado físico (`delete`).
-- **Indexación:** Mantener índices compuestos para búsquedas frecuentes: `@@index([role, isOnline, deletedAt])`.
-
-### 3.2 Backend API REST & Sockets
-- **Validación Estricta:** Todo payload HTTP de entrada debe validarse con esquemas **Zod**.
-- **Manejo de Errores Uniforme:** Errores HTTP estructurados con patrón RFC 7807 (`{ success: false, error: { code, message, timestamp } }`).
-- **Autenticación JWT:** Validar firmas indicando explícitamente `algorithms: ['HS256']`. Controlar validez mediante `tokenVersion`.
-- **Idempotencia en Chat:** Reintentos con `clientMsgId` existente deben retornar HTTP 200 con el registro preexistente, nunca HTTP 500.
-
-### 3.3 Frontend Web & Mobile App
-- **Tipado TypeScript:** Prohibido el uso de `any` explícito o implícito. Utilizar interfaces estrictas.
-- **Acceso PII Cauteloso:** Redactar datos personales (email, teléfono) excepto cuando exista relación médica activa.
-- **Manejo de UI Asíncrono:** Manejar estados de carga, error y reconexión en la interfaz.
+### 3.1 Política de Workspaces y Descarte de `packages/shared` (ADR-008)
+- El monorepo consta exclusivamente de 3 workspaces independientes: `backend`, `web` y `mobile`.
+- **Decisión Arquitectónica (ADR-008):** Se descarta formalmente el uso de un workspace `packages/shared`. La fuente de verdad para validaciones y contratos radica en los esquemas Zod y DTOs del backend (`backend/src/contracts/`), los cuales se sincronizan como interfaces TypeScript nativas en web y mobile. Esto previene la sobrecarga de tooling de monorepos complejos (Nx/Turborepo), scripts de transpilación intermedia y fallos en builds desacoplados.
 
 ---
 
-## 🚫 4. Antipatrones Explícitos (Ejemplos de NO Uso)
+## 📏 4. Estándar de Codificación Obligatorio por Capa
+
+### 4.1 Base de Datos & Prisma ORM 6
+- **Mapeo SQL Explícito:** Toda columna multi-palabra debe tener `@map("snake_case")` (ej. `isEmailVerified` → `@map("is_email_verified")`, `tokenVersion` → `@map("token_version")`).
+- **Tablas Pluralizadas:** Cada modelo mapea a tabla snake_case plural con `@@map("users")`, `@@map("consultations")`.
+- **Índices Compuestos:** Mantener índices de alto rendimiento para búsquedas frecuentes:
+  - `@@index([role, isOnline, vetStatus, deletedAt])`
+  - `@@index([clientId, status, deletedAt])`
+  - `@@index([vetId, status, deletedAt])`
+
+### 4.2 Backend API REST & Sockets (Express 5 + Socket.io)
+- **Validación Estricta:** Todo payload entrante (`req.body`, `req.query`, `req.params`) debe validarse mediante esquemas **Zod**.
+- **Manejo de Errores RFC 7807:** Respuestas uniformes de fallo:
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "Datos de entrada inválidos",
+      "timestamp": "2026-09-14T20:00:00.000Z"
+    }
+  }
+  ```
+- **Seguridad JWT:** Firmas con algoritmo fijo `algorithms: ['HS256']`, verificación de `tokenVersion` contra base de datos para revocación instantánea de sesiones.
+- **Idempotencia en Chat:** Reintentos con `clientMsgId` existente deben retornar HTTP 200 con el mensaje preexistente, nunca HTTP 500 ni mensajes duplicados.
+
+### 4.3 Frontend Web & Mobile App (React 19 & Expo SDK 54)
+- **Cero `any`:** Prohibido el uso de `any` explícito o implícito. Utilizar interfaces TypeScript estrictas.
+- **Minimización de PII:** En listas de veterinarios y directorios públicos, redactar `email` y `phone`. Solo exponerlos al veterinario asignado durante una consulta activa.
+- **Resiliencia de UI:** Todo componente asíncrono debe manejar estados de: `cargando`, `error`, `vacío (empty state)` y `reconectando`.
+
+---
+
+## 🚫 5. Antipatrones Explícitos (Ejemplos de NO Uso)
 
 ### ❌ NO USO 1: Devolver Refresh Tokens en el JSON de respuesta
 ```typescript
@@ -106,58 +151,40 @@ if (error.code === 'P2002') {
 
 ---
 
-## 🚀 5. Plan de Ejecución para Empezar la Codificación (Fases 0 a 6)
+## 🤖 6. Matriz de Especialización para Subagentes Autónomos
 
-El agente o desarrollador debe seguir estas fases ordenadas para implementar los cambios en el código:
+Cuando un agente Tech Lead o el desarrollador delega trabajo en subagentes o sesiones independientes de Jules, cada agente asume un rol especializado:
 
-```
-+---------------------------------------------------------------------------------------------------+
-|                                  PLAN DE EJECUCIÓN DE CODIFICACIÓN (F0 -> F6)                     |
-+---------------+---------------------------------------------------+-------------------------------+
-| Fase          | Objetivo Principal                                | Entregables Clave             |
-+---------------+---------------------------------------------------+-------------------------------+
-| FASE 0        | Guardarraíles & Verificación de Entorno          | Setup local, tests base ok    |
-| FASE 1        | Correcciones P0 (Mapeos Prisma & JWT)             | Schema fix @map, algorithms   |
-| FASE 2        | Corrección de PII, Paginación & Idempotencia      | PII Scrubbing, clientMsgId    |
-| FASE 3        | LiveKit Refactoring (Server & Client)             | deleteRoom(), CallRoom fix    |
-| FASE 4        | Bridge Mobile-Web Handshake                       | Handshake page:ready          |
-| FASE 5        | Verificación Binaria Magic Bytes & S3 Storage     | Buffer magic bytes check      |
-| FASE 6        | Pruebas Automatizadas & CI Validation             | Backend tests 100% passing    |
-+---------------+---------------------------------------------------+-------------------------------+
-```
-
-### Detalle de Tareas por Fase:
-
-#### 🔹 FASE 0: Guardarraíles y Verificación Inicial
-1. Confirmar entorno local corriendo `cd backend && npm install`.
-2. Verificar la suite de pruebas existente con `npm test`.
-
-#### 🔹 FASE 1: Mapeos de Prisma y Seguridad Base (P0)
-1. Corregir cualquier columna camelCase en `prisma/schema.prisma` agregando `@map("snake_case")`.
-2. Fijar `algorithms: ['HS256']` en la verificación de tokens JWT en `auth.middleware.ts`.
-3. Retornar respuestas genéricas en `auth.controller.ts` para prevenir la enumeración de usuarios.
-
-#### 🔹 FASE 2: Protección de PII, Paginación e Idempotencia
-1. Redactar email/teléfono del tutor en `pets.controller.ts` cuando el veterinario no posea consulta activa con la mascota.
-2. Implementar captura de colisión `P2002` en `consultations.controller.ts` para devolver HTTP 200 con el mensaje existente ante duplicados de `clientMsgId`.
-
-#### 🔹 FASE 3: Refactorización de Videollamadas LiveKit (Backend & Web)
-1. Actualizar `calls.controller.ts` y `calls.service.ts` para pasar `identity: user.id` y `name: user.firstName` (eliminando emails de los claims).
-2. Agregar `RoomServiceClient.deleteRoom()` en `consultations.service.ts` dentro de `completeConsultation`.
-3. Remover `<RoomAudioRenderer />` duplicado en `web/src/components/call/CallRoom.tsx`.
-4. Transmitir `LocalUserChoices` de `PreJoin` a `<LiveKitRoom>` y configurar calidad a 720p.
-
-#### 🔹 FASE 4: Handshake Bidireccional Mobile-Web
-1. Modificar `CallPage.tsx` para emitir `page:ready` al montarse.
-2. Actualizar el contenedor `WebView` en `mobile/app/(app)/call/[consultationId].tsx` para aguardar `page:ready` antes de inyectar el token.
-
-#### 🔹 FASE 5: Inspección de Archivos & Seguridad Media
-1. Implementar la verificación binaria de Magic Bytes en `media.middleware.ts` (JPEG `FF D8 FF`, PNG `89 50 4E 47`, PDF `25 50 44 46`).
-2. Sanitizar nombres de archivos para neutralizar Path Traversal.
-
-#### 🔹 FASE 6: Pruebas Automatizadas & Validación Final
-1. Ejecutar la suite completa de pruebas unitarias e integración en `backend`: `npm test`.
-2. Validar que el typecheck de TypeScript pase en todo el monorepo sin errores: `npx tsc --noEmit`.
+| Rol de Agente | Dominio Principal | Entregables Clave | Comandos de Verificación |
+|---|---|---|---|
+| **Scaffolding Agent** | Monorepo root & Tooling | `package.json`, `docker-compose.yml`, scripts | `npm run docker:up && npm install` |
+| **Database Agent** | Prisma ORM & PostgreSQL | `schema.prisma`, migraciones, seeds | `npx prisma validate && npx prisma db push` |
+| **Backend REST Agent** | API Express 5 & Auth | Rutas, controladores, middleware JWT, Zod | `npm test -w backend` |
+| **Realtime Agent** | WebSockets & Socket.io | Gateways, rooms, presencia, Redis adapter | `npm test -w backend -- -t "realtime"` |
+| **Media & Video Agent** | LiveKit SFU & Uploads | Tokens LiveKit, Magic Bytes, S3/Local | `npm test -w backend -- -t "media"` |
+| **Web Frontend Agent** | React 19 & Vite SPA | Pantallas, TanStack Query, LiveKit UI | `npm run build -w web && npm test -w web` |
+| **Mobile App Agent** | React Native & Expo SDK 54 | Navegación Expo Router, NativeWind | `npm run typecheck -w mobile` |
+| **QA & Verification Agent** | Testing E2E & Seguridad | Jest 120+ tests, Playwright, CI audit | `npm test --workspaces && npm run typecheck` |
 
 ---
-*Documento de Operación de Agentes VetConnect — Grupo Pinnacle 2026.*
+
+## ⚡ 7. Comandos de Verificación para Agentes
+
+Todo agente debe ejecutar y verificar su trabajo con estos comandos antes de reportar una tarea como completada:
+
+```bash
+# 1. Base de datos
+cd backend && npx prisma validate
+
+# 2. Typecheck estricto en todas las capas del monorepo
+npm run typecheck
+
+# 3. Suite completa de pruebas automatizadas (meta: 120+ tests)
+npm test
+
+# 4. Compilación de producción
+npm run build
+```
+
+---
+*VetConnect Agent Operating System — Ecosistema de Ingeniería Greenfield 2026.*

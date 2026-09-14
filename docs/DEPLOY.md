@@ -1,6 +1,6 @@
 # 🚀 Guía de Despliegue en Producción — VetConnect
 
-Esta guía detalla la infraestructura de producción seleccionada para VetConnect: **Coolify (Self-hosted)** para el Backend, **Vercel / Hostinger** para el Frontend Web, y las **estrategias de distribución para Android**.
+Esta guía detalla la infraestructura de producción seleccionada para VetConnect: **Coolify (Self-hosted)** para el Backend, **Vercel** como plataforma oficial definitiva para el Frontend Web (con **Hostinger** como contingencia manual), y las **estrategias de distribución para Android**.
 
 ---
 
@@ -13,7 +13,7 @@ flowchart TD
     end
 
     subgraph WebHosting["Capa Frontend Web"]
-        Vercel["⚡ Vercel (Recomendado) / Hostinger\n• Dominio: app.vetconnect.com\n• SPA React 19 + Vite\n• CDN Global & SSL Automático"]
+        Vercel["⚡ Vercel (Oficial Definitivo - ADR-022)\n• Dominio: app.vetconnect.com\n• SPA React 19 + Vite\n• CDN Global & SSL Automático\n(Hostinger: Contingencia Manual)"]
     end
 
     subgraph CoolifyVPS["Capa Backend (Coolify en VPS Propio)"]
@@ -79,9 +79,9 @@ flowchart TD
 
 ## 3. Despliegue del Frontend Web
 
-Tienes dos opciones principales para hostear la Web (`web/`):
+### 3.1 Plataforma Oficial Definitiva: Vercel (ADR-022)
+**Vercel** es la plataforma oficial y estandarizada para el Frontend Web (`web/`). Se encuentra plenamente integrada con el pipeline de GitHub Actions (`.github/workflows/ci.yml`).
 
-### Opción A: Vercel (Recomendado - Mayor velocidad y CI/CD)
 1. Conecta tu repositorio de GitHub a [Vercel](https://vercel.com).
 2. **Root Directory:** Selecciona `web`.
 3. **Framework Preset:** `Vite`.
@@ -91,16 +91,18 @@ Tienes dos opciones principales para hostear la Web (`web/`):
    VITE_SOCKET_URL="https://api.vetconnect.com"
    VITE_LIVEKIT_HOST="https://vetconnect.livekit.cloud"
    ```
-5. Cada `git push` a `main` generará un despliegue instantáneo con CDN global y SSL automático.
+5. **Automatización:** Cada push a `main` dispara un despliegue de producción con CDN global Edge, compresión Brotli y SSL automático. Cada Pull Request genera una URL de previsualización (Preview Deployment) para QA.
 
-### Opción B: Hostinger (Hosting Compartido o VPS)
-1. Compila el proyecto localmente o vía CI:
+### 3.2 Alternativa de Contingencia Manual: Hostinger (Sin CI/CD)
+> ⚠️ **Nota de Contingencia:** Hostinger **no** forma parte del pipeline de integración continua y se documenta exclusivamente como plan de contingencia manual ante contingencias de red, caídas de Vercel o restricciones administrativas de cuenta.
+
+1. Compila el proyecto manualmente en local:
    ```bash
    cd web
    npm install
    npm run build
    ```
-2. Sube el contenido de la carpeta `web/dist/` al directorio `public_html/` de tu hosting en Hostinger.
+2. Sube manualmente vía SFTP el contenido de `web/dist/` al directorio `public_html/` de Hostinger.
 3. Asegura el archivo `.htaccess` para soportar el enrutamiento de React Router (SPA):
    ```apache
    <IfModule mod_rewrite.c>

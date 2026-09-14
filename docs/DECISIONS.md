@@ -29,6 +29,8 @@ Este registro documenta todas las decisiones arquitectónicas clave tomadas dura
 | **ADR-019** | Denormalización Atómica de Calificaciones e Índices Compuestos | Aprobado | Base de Datos / Performance |
 | **ADR-020** | Streaming de Archivos Seguros y Mitigación de DoS de Heap | Aprobado | Seguridad / Storage |
 | **ADR-021** | Hardening de Contenedores y Pipeline de Integración Continua FAANG | Aprobado | DevOps / Seguridad |
+| **ADR-022** | Plataforma Definitiva de Despliegue Web (Vercel Edge vs Hostinger Contingencia) | Aprobado | Infraestructura / Web |
+| **ADR-023** | Escala Unificada de Calificación Profesional (1 a 5 Estrellas) | Aprobado | UX / Base de Datos |
 
 ---
 
@@ -48,6 +50,11 @@ Este registro documenta todas las decisiones arquitectónicas clave tomadas dura
 - **Contexto:** La normativa sanitaria veterinaria y la Ley de Protección de Datos Personales prohíben la destrucción de registros médicos de pacientes, pero exigen el derecho al olvido para los usuarios.
 - **Decisión:** Cuando un usuario solicita la baja, se ejecuta una anonimización de sus datos de contacto (email, teléfono, nombre), marcando `deletedAt = now()`. El historial clínico y las consultas de sus mascotas persisten inalterables vinculadas al ID anonimizado.
 - **Consecuencias:** Cumplimiento legal pleno ante inspecciones judiciales y del SENASA.
+
+### ADR-008: Estrategia de Tipos TypeScript Monorepo & Exclusión de packages/shared
+- **Contexto:** En la planificación de la arquitectura monorepo se evaluó la conveniencia de crear un paquete compartido (`packages/shared`) para tipos, DTOs y validadores Zod, o mantener los workspaces completamente desacoplados.
+- **Decisión:** Mantener una estructura limpia de tres workspaces principales (`backend`, `web`, `mobile`) descartando formalmente la creación de `packages/shared`. Los contratos y validaciones se definen como la única fuente de verdad en esquemas Zod y TypeScript dentro del Backend (`backend/src/contracts/` y DTOs modulares), y se consumen/duplican limpiamente en Web y Mobile mediante interfaces sincronizadas sin requerir pipelines de compilación intermedia complejos (Turborepo/Nx no requeridos), ni scripts de transpilación previa.
+- **Consecuencias:** Máxima velocidad de compilación e inicialización en desarrollo local, cero fricción de tooling en CI/CD, e independencia absoluta para compilar, probar y desplegar `backend`, `web` y `mobile` de forma aislada.
 
 ### ADR-009: Mensajería Tiempo Real con Socket.io & Redis Adapter
 - **Contexto:** Necesidad de chat en vivo y notificaciones globales con capacidad de escalar a múltiples nodos backend.
@@ -69,7 +76,7 @@ Este registro documenta todas las decisiones arquitectónicas clave tomadas dura
 - **Decisión:** Crear tabla `AuditLog` no modificable donde se almacenan todas las mutaciones administrativas con IP y UserAgent.
 - **Consecuencias:** Capacidad de auditoría forense en tiempo real.
 
-### ADR-017: Despliegue Backend Autohosteado en Coolify (VPS) & Web en Vercel/Hostinger
+### ADR-017: Despliegue Backend Autohosteado en Coolify (VPS)
 - **Contexto:** Minimizar costos recurrentes en dólares sin perder las comodidades de una plataforma moderna (CI/CD, certificados SSL automáticos, gestión de variables de entorno y servicios auxiliares).
 - **Decisión:** Desplegar el Backend Node.js y la instancia de Redis sobre un servidor VPS propio utilizando **Coolify**, y el Frontend Web SPA sobre **Vercel** (o Hosting Web estático de **Hostinger**).
 - **Consecuencias:** Costo predecible y bajo (servidor VPS fijo de ~$4-8 USD/mes), control total sobre la infraestructura de WebSockets persistentes (Traefik) y CDN global para la Web.
@@ -88,6 +95,16 @@ Este registro documenta todas las decisiones arquitectónicas clave tomadas dura
 - **Contexto:** Los contenedores Docker ejecutaban Node.js como superusuario `root`, y no existía un pipeline de integración continua que garantizara que los tres paquetes del monorepo (`backend`, `web`, `mobile`) compilen y pasen pruebas antes del despliegue.
 - **Decisión:** Modificar el `Dockerfile` de producción para operar bajo el usuario sin privilegios `USER node` en el puerto estándar 3001, e incorporar GitHub Actions (`.github/workflows/ci.yml`) ejecutando typechecking estricto, suites unitarias e integración en cada push/PR.
 - **Consecuencias:** Reducción drástica de superficie de ataque en el servidor y garantía empírica de 0 regresiones en despliegues.
+
+### ADR-022: Plataforma Definitiva de Despliegue Web (Vercel Edge vs Hostinger Contingencia)
+- **Contexto:** Se requería definir sin ambigüedades la plataforma de hosting para el Frontend Web SPA (React 19 + Vite) y la integración continua en CI/CD.
+- **Decisión:** Adoptar **Vercel** como la plataforma oficial, definitiva y automatizada para producción conectada a GitHub Actions. Se descarta cualquier flujo de despliegue automatizado hacia Hostinger; este último queda documentado exclusivamente como **alternativa de contingencia manual** (subida de artefactos estáticos `web/dist/` a `public_html/` ante indisponibilidad severa de Vercel).
+- **Consecuencias:** Despliegues atómicos automáticos con preview URLs en cada PR, CDN global Edge de latencia ultra-baja y SSL automático, manteniendo una contingencia manual documentada para emergencias operativas.
+
+### ADR-023: Escala Unificada de Calificación Profesional (1 a 5 Estrellas)
+- **Contexto:** Existía necesidad de armonizar la escala de valoración médica del servicio entre la aplicación móvil de tutores, el panel de veterinarios y el recálculo analítico en base de datos.
+- **Decisión:** Estandarizar de forma estricta y universal la escala de **1 a 5 estrellas** (enteros del 1 al 5) en base de datos (`Review.rating`), endpoints REST (`POST /api/consultations/:id/review`), esquemas Zod, UI Kit web, app móvil React Native y recálculo atómico denormalizado (`rating_avg` y `rating_count` en la tabla `users`, conforme a ADR-019). Queda formalmente descartada cualquier escala alternativa (ej. 1 a 10).
+- **Consecuencias:** Coherencia de UX/UI alineada con los estándares de la industria y la intuición de usuarios, simplificación de validaciones en frontend y backend, y alineación directa con los KPIs de satisfacción del proyecto (CSAT).
 
 ---
 

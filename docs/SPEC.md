@@ -176,6 +176,16 @@ erDiagram
         json details
         datetime createdAt
     }
+
+    Review {
+        string id PK
+        string consultationId FK
+        string clientId FK
+        string vetId FK
+        int rating "1 a 5 estrellas (ADR-023)"
+        string comment
+        datetime createdAt
+    }
 ```
 
 ### 3.2 Estrategia de Indexación Compuesta
@@ -237,6 +247,7 @@ Todos los payloads de entrada y salida se validan estrictamente mediante esquema
 | `PATCH`| `/api/consultations/:id/complete` | Cierre clínico con evolución y diagnóstico | VET asignado | 200 OK |
 | `POST` | `/api/consultations/:id/prescriptions` | Emisión de receta oficial con firma/QR | VET asignado | 201 Created |
 | `POST` | `/api/consultations/:id/messages` | Envío de mensaje en chat con clientMsgId | Participantes | 201 Created |
+| `POST` | `/api/consultations/:id/review` | Calificación de atención (1 a 5 estrellas, ADR-023) | CLIENT asignado | 201 Created |
 | `POST` | `/api/calls/token` | Generación de token efímero LiveKit SFU | Participantes | 200 OK |
 | `POST` | `/api/media` | Subida de archivos con chequeo de Magic Bytes| Autenticado | 201 Created |
 | `PATCH`| `/api/admin/vets/:id/approve` | Aprobación de matrícula SENASA | ADMIN | 200 OK |

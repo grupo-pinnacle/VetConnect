@@ -1,197 +1,606 @@
-# Auditoría y Análisis Exhaustivo de la Conexión LiveKit — VetConnect
+# 🎥 Guía Maestra & Checklist Preventivo de Implementación LiveKit SFU (WebRTC) — VetConnect
 
-> **Fecha:** 10 de Septiembre de 2026  
+> **Fecha:** Septiembre 2026  
 > **Alcance:** Integración de videollamadas WebRTC (Backend, Web Frontend y Mobile App)  
 > **Referencia Oficial:** [LiveKit Documentation](https://docs.livekit.io/) · [LiveKit Docs MCP](https://docs.livekit.io/reference/developer-tools/docs-mcp/)  
-> **Nota de Contexto & Estado:** Al encontrarse el repositorio en fase de especificación y diseño de arquitectura pre-desarrollo, este documento constituye una **auditoría técnica preventiva de diseño** basada en el análisis de prototipo previo y especificaciones oficiales de LiveKit. Su propósito es prescribir buenas prácticas, evitar antipatrones y servir de guía para la futura implementación de videollamadas (Fase 3 del plan de codificación en [`AGENTS.md`](../AGENTS.md)).
+> **Estado & Naturaleza:** **Checklist Técnico Preventivo y Normativa de Diseño Greenfield**. Al encontrarse el repositorio en fase de especificación y arquitectura pre-desarrollo (100% Greenfield desde cero), este documento unifica la auditoría preventiva, la resolución de puntos ciegos y los estándares obligatorios que los agentes de IA y desarrolladores deben seguir durante la implementación de la **Fase 4 (Telemedicina WebRTC)** en [`PLAN_ACCION_VETCONNECT.md`](../PLAN_ACCION_VETCONNECT.md) y los **Sprints 7 y 8** de [`PLAN_DE_PROYECTO_Y_GESTION.md`](PLAN_DE_PROYECTO_Y_GESTION.md).
 
 ---
 
-## 1. Resumen Ejecutivo y Arquitectura
+## 📑 Índice General
 
-Este documento consolida la evaluación técnica y auditoría preventiva de diseño sobre la arquitectura de videollamadas con LiveKit para la plataforma **VetConnect**, evaluando los contratos y la implementación planificada en tres capas:
-
-1. **Backend API & Gateway Realtime**:
-   - `backend/src/modules/calls/calls.service.ts`: Generación de tokens JWT con `livekit-server-sdk`.
-   - `backend/src/modules/calls/calls.controller.ts`: Endpoint `POST /api/calls/:id/token`.
-   - `backend/src/modules/calls/calls.routes.ts`: Enrutamiento y autenticación.
-   - `backend/src/modules/consultations/chat.gateway.ts`: Señalización de llamadas (`call:initiate`, `call:reject`).
-   - `backend/src/modules/consultations/consultations.service.ts`: Ciclo de vida y cierre de consultas.
-2. **Web Client (React / Vite)**:
-   - `web/src/components/call/CallRoom.tsx`: Conexión WebRTC vía `@livekit/components-react` (`LiveKitRoom`, `VideoConference`, `PreJoin`).
-   - `web/src/components/call/CallButton.tsx`: Disparador de llamada y emisión de señalización.
-   - `web/src/components/call/GlobalCallListener.tsx`: Receptor global de llamada entrante con ringtone sintético.
-   - `web/src/pages/CallPage.tsx`: Vista pública e interfaz de puente para el WebView móvil.
-3. **Mobile Client (React Native / Expo)**:
-   - `mobile/app/(app)/call/[consultationId].tsx`: Contenedor `WebView` para la llamada y pasarela de permisos de hardware.
-   - `mobile/src/hooks/useIncomingCall.ts`: Listener de señalización socket y alerta modal con haptics.
+1. [Arquitectura de Videollamadas WebRTC & Flujo de Señalización](#1-arquitectura-de-videollamadas-webrtc--flujo-de-señalización)
+2. [Delimitación de Alcance (Scope MVP v2.0 vs. Post-MVP v2.2+)](#2-delimitación-de-alcance-scope-mvp-v20-vs-post-mvp-v22)
+3. [Checklist Preventivo de 13 Directivas y Antipatrones](#3-checklist-preventivo-de-13-directivas-y-antipatrones)
+4. [Patrones de Código de Referencia Aprobados (Golden Code)](#4-patrones-de-código-de-referencia-aprobados-golden-code)
+5. [Matriz de Verificación y Criterios de Aceptación Pre-PR](#5-matriz-de-verificación-y-criterios-de-aceptación-pre-pr)
 
 ---
 
-## 2. Hallazgos Críticos frente a la Documentación Oficial de LiveKit
+## 1. Arquitectura de Videollamadas WebRTC & Flujo de Señalización
 
-- **Privacidad y PII (*Personally Identifiable Information*)**:
-  La documentación oficial (*Tokens & grants: PII Redaction*) establece:
-  > *"🔥 Don't put PII in identity or room name. Participant identity and room name are recorded in logs and traces throughout LiveKit and its infrastructure, and aren't removed by PII redaction. Don't put personally identifiable information (such as real names, phone numbers, or email addresses) in these fields."*  
-  En el backend se estaba pasando `req.user.email` al campo `name` del token, exponiendo correos electrónicos privados en logs de LiveKit Cloud y a otros participantes WebRTC.
-- **Duplicación de Renderizadores de Audio**:
-  El componente prefab `<VideoConference />` de `@livekit/components-react` ya incorpora internamente un `<RoomAudioRenderer />`. Al incluir un segundo `<RoomAudioRenderer />` como hijo directo de `<LiveKitRoom>`, se creaban dos instancias de reproducción de audio sobre los mismos tracks remotos, provocando eco y duplicación de volumen.
-- **Violación de Elecciones de Usuario en `PreJoin`**:
-  `PreJoin` recopila las elecciones del usuario (`LocalUserChoices`: estado de micrófono, cámara y hardware seleccionado). El código descartaba este objeto y forzaba `video={true}` y `audio={true}`, violentando la privacidad del usuario.
-- **Condición de Carrera en el Puente WebView Mobile \(\rightarrow\) Web**:
-  El evento `onLoad` de la WebView enviaba el token antes de que la página diferida (`lazy(() => import("./pages/CallPage"))`) terminara de descargarse e hidratarse, perdiéndose el token y dejando la llamada en carga infinita.
-- **Falta de Gestión de Ciclo de Vida de Salas en Backend**:
-  Al completar una consulta (`PATCH /api/consultations/:id/complete`), no se invocaba `RoomServiceClient.deleteRoom()`, permitiendo que la sala WebRTC continuara abierta consumiendo recursos y transmitiendo datos.
-- **Inversión de Identidades en Señalización**:
-  El emisor web pasaba `peerName` (nombre del destinatario) como argumento a `call:initiate`, haciendo que el receptor viera su propio nombre como llamante.
+VetConnect integra telemedicina sincrónica mediante **LiveKit SFU (Selective Forwarding Unit)**. La arquitectura desacopla la señalización de control (orquestada por Socket.io en el Backend) del transporte multimedia WebRTC (gestionado por LiveKit Cloud / Servidor SFU dedicado).
 
----
+### 1.1 Diagrama de Señalización y Conexión WebRTC
 
-## 3. Reportes de Bugs (Formato Estandarizado Gherkin / BDD)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor V as 👩‍⚕️ Veterinaria (Web)
+    participant GW as ⚡ Backend Socket.io Gateway
+    participant API as 🛡️ Backend REST (/api/calls)
+    actor C as 📱 Tutor/Cliente (Mobile WebView)
+    participant LK as ☁️ LiveKit SFU Server
 
-### Escenario:
-**Nombre y sección (BUG-01: Inversión del nombre del emisor en la señalización de llamada entrante, seccion: Web / CallButton & Gateway Socket).**  
-**Pasos para reproducir:**  
-**Dado que** la veterinaria "Dra. María Gómez" tiene una consulta activa con el cliente "Carlos Pérez".  
-**Cuando** la veterinaria hace clic en el botón "Videollamada" en `VetMessagesSection.tsx` para llamar a Carlos.  
-**Entonces** el socket emite `socket.emit("call:initiate", consultationId, peerName)` enviando el nombre del cliente ("Carlos Pérez") al servidor, y el destinatario recibe una alerta emergente que dice "Videollamada entrante de Carlos Pérez" (resultado real obtenido), mostrando su propio nombre en lugar del nombre real de la veterinaria que lo está llamando (resultado esperado).
+    Note over V,GW: 1. Fase de Validación y Señalización
+    V->>API: POST /api/calls/:id/token (Solicita token WebRTC)
+    API-->>V: 200 OK { token, serverUrl }
+    V->>GW: socket.emit("call:initiate", { consultationId, callerName: "Dra. Gómez" })
+    GW->>C: socket.emit("call:incoming", { consultationId, callerName: "Dra. Gómez" })
 
----
+    Note over C,API: 2. Aceptación y Handshake Móvil
+    C->>API: POST /api/calls/:id/token (Solicita token WebRTC)
+    API-->>C: 200 OK { token, serverUrl }
+    C->>GW: socket.emit("call:accept", { consultationId })
+    GW->>V: socket.emit("call:accepted", { consultationId })
 
-### Escenario:
-**Nombre y sección (BUG-02: Emisión prematura de llamada entrante antes de validar y obtener el token de LiveKit, seccion: Web / CallButton).**  
-**Pasos para reproducir:**  
-**Dado que** el backend no tiene configuradas las credenciales de LiveKit en `.env` (o existe una falla temporal en el endpoint de llamadas).  
-**Cuando** el usuario presiona el botón "Videollamada" en `CallButton.tsx`.  
-**Entonces** el componente emite inmediatamente `call:initiate` por socket haciendo timbrar la pantalla o el móvil del receptor antes de invocar `getCallToken`, tras lo cual la obtención del token falla con HTTP 503 en el emisor, dejando al receptor con una llamada fantasma que arroja error al ser aceptada (resultado real obtenido) frente a validar y obtener exitosamente el token de conexión antes de alertar al otro participante (resultado esperado).
+    Note over V,LK: 3. Conexión Multimedia WebRTC
+    V->>LK: Connect LiveKitRoom(token, 720p, LocalUserChoices)
+    C->>LK: Connect WebView LiveKitRoom(token, 720p, LocalUserChoices)
+    LK-->>V: Media Stream (Tutor Video/Audio)
+    LK-->>C: Media Stream (Veterinaria Video/Audio)
 
----
+    Note over V,API: 4. Finalización y Destrucción Segura
+    V->>API: PATCH /api/consultations/:id/complete
+    API->>LK: RoomServiceClient.deleteRoom("consultation-:id")
+    LK-->>V: Room Closed (Kick all participants)
+    LK-->>C: Room Closed (Kick all participants)
+```
 
-### Escenario:
-**Nombre y sección (BUG-03: Inconsistencia entre el estado de consulta admitido por el Gateway y el Servicio de Tokens de LiveKit, seccion: Backend / chat.gateway vs calls.service).**  
-**Pasos para reproducir:**  
-**Dado que** una consulta se encuentra en estado "PENDING" (pendiente de confirmación por el veterinario).  
-**Cuando** un usuario ejecuta la acción de llamada o dispara el evento `call:initiate` por WebSocket.  
-**Entonces** `chat.gateway.ts` aprueba la solicitud porque valida `status: { in: ['ACTIVE', 'PENDING'] }` y emite `call:incoming` al destinatario, pero cuando cualquiera de los dos solicita el token de conexión en `calls.service.ts`, el backend rechaza la petición con HTTP 409 Conflict ("Solo podés llamar cuando la consulta está en curso") imposibilitando la videollamada (resultado real obtenido) frente a rechazar la señalización desde el gateway si la consulta no se encuentra en estado estrictamente "ACTIVE" (resultado esperado).
+### 1.2 Responsabilidades por Capa de Software
 
----
-
-### Escenario:
-**Nombre y sección (BUG-04: Exposición de Información de Identificación Personal (PII) en el token de LiveKit, seccion: Backend / calls.controller & calls.service).**  
-**Pasos para reproducir:**  
-**Dado que** un usuario autenticado con correo electrónico privado (ej. `juan.propietario@gmail.com`) participa de una consulta médica.  
-**Cuando** el sistema solicita un token de videollamada a través de `POST /api/calls/:id/token`.  
-**Entonces** `calls.controller.ts` asigna `name: req.user.email`, incrustando el correo electrónico directamente en el JWT de LiveKit en `calls.service.ts`, el cual es visible para todos los pares WebRTC y queda registrado sin anonimizar en los registros y telemetría de LiveKit Cloud (resultado real obtenido) frente a utilizar el nombre de pila público o un identificador opaco sin datos de contacto personales de acuerdo con las directivas oficiales de seguridad de LiveKit (resultado esperado).
-
----
-
-### Escenario:
-**Nombre y sección (BUG-05: Duplicación de renderizadores de audio en CallRoom provocando eco y distorsión, seccion: Web / CallRoom).**  
-**Pasos para reproducir:**  
-**Dado que** dos usuarios ingresan a una sala de consulta activa en `CallRoom.tsx`.  
-**Cuando** el interlocutor remoto activa su micrófono y comienza a hablar.  
-**Entonces** el componente monta simultáneamente `<VideoConference />` (que ya incluye internamente `<RoomAudioRenderer />`) y un `<RoomAudioRenderer />` secundario explícito como hijo directo de `<LiveKitRoom>`, provocando una doble suscripción de audio que genera eco local, volumen duplicado y potencial clipping (resultado real obtenido) frente a utilizar únicamente la reproducción provista de fábrica por el prefab `<VideoConference />` (resultado esperado).
+1. **Backend (`backend/src/modules/calls/` & `chat.gateway.ts`):**
+   - **Autorización Estricta:** Validar que la consulta se encuentre en estado `ACTIVE` antes de expedir tokens o transmitir señalización.
+   - **Minimización de PII:** Emisión criptográfica de JWTs efímeros con `livekit-server-sdk`, asignando identificadores opacos (`identity: user.id`) y nombres públicos (`name: user.firstName`), excluyendo estrictamente correos o teléfonos.
+   - **Limpieza de Recursos:** Invocación de `RoomServiceClient.deleteRoom()` al finalizar la consulta para revocar accesos y cerrar la sala en el SFU.
+2. **Web Client (`web/src/components/call/` & `CallPage.tsx`):**
+   - **Experiencia Previa al Ingreso:** Captura fiel de `LocalUserChoices` en `PreJoinModal` para respetar micrófono/cámara apagados por voluntad del usuario.
+   - **Renderizado Eficiente:** Montaje exclusivo de `<VideoConference />` sin duplicación de `<RoomAudioRenderer />`.
+   - **Resiliencia de Red:** Handlers `onError` y `onMediaDeviceFailure` con UI de diagnóstico y reconexión.
+3. **Mobile Client (`mobile/app/(app)/call/[consultationId].tsx`):**
+   - **Handshake Robusto:** Protocolo reactivo de postMessage (`page:ready` (ightarrow` `call:init`) para evitar condiciones de carrera en WebViews.
+   - **Permisos de Hardware:** Solicitud transparente de micrófono y cámara en Android/iOS.
 
 ---
 
-### Escenario:
-**Nombre y sección (BUG-06: Descarte total de las preferencias del usuario en PreJoin forzando cámara y micrófono encendidos, seccion: Web / CallRoom).**  
-**Pasos para reproducir:**  
-**Dado que** el usuario se encuentra en la pantalla de verificación previa (`PreJoin`) de la sala de consulta.  
-**Cuando** el usuario desmarca la cámara y silencia su micrófono en los controles de `PreJoin` y presiona el botón "Unirse a la llamada".  
-**Entonces** el handler `onSubmit` en `CallRoom.tsx` ejecuta `setPreJoined(true)` sin almacenar el parámetro `LocalUserChoices` y renderiza `<LiveKitRoom video={true} audio={true}>`, forzando el encendido inmediato de la cámara y el micrófono sin el consentimiento del usuario (resultado real obtenido) frente a inicializar `LiveKitRoom` con las preferencias de audio, video y dispositivos de entrada seleccionados por el usuario (resultado esperado).
+## 2. Delimitación de Alcance (Scope MVP v2.0 vs. Post-MVP v2.2+)
+
+Para evitar distorsiones de alcance y garantizar la entrega oportuna en los Sprints 7 y 8, se establece la siguiente matriz de scope:
+
+```
++-----------------------------------------------------------------------------------------------+
+|                                  MATRIZ DE DELIMITACIÓN DE SCOPE                              |
++---------------------------------------------------+-------------------------------------------+
+| DENTRO DEL SCOPE (MVP v2.0 - Sprints 7-8)         | FUERA DEL SCOPE (Post-MVP v2.2+)          |
++---------------------------------------------------+-------------------------------------------+
+| • Generación server-side de JWT efímeros.        | • SDK Nativo React Native (@livekit/rn).  |
+| • Privacidad estricta: PII scrubbing en claims.   | • LiveKit Egress (Grabación de video/S3). |
+| • Puente Web-Mobile con handshake (page:ready).   | • LiveKit SIP (Integración telefonía fija)|
+| • Cierre automático de salas con deleteRoom().    | • LiveKit Agents (Asistente de IA en vivo)|
+| • Resolución 720p adaptativa con simulcast.       | • Transcripción automática de la llamada. |
+| • Eventos completos: initiate, answer, cancel.    | • Fondos virtuales y filtros de video.    |
++---------------------------------------------------+-------------------------------------------+
+```
 
 ---
 
-### Escenario:
-**Nombre y sección (BUG-07: Condición de carrera en WebView móvil por carga diferida perdiendo el token de LiveKit, seccion: Mobile / [consultationId] & Web / CallPage).**  
-**Pasos para reproducir:**  
-**Dado que** un usuario en la aplicación móvil presiona "Iniciar videollamada" o atiende una videollamada entrante.  
-**Cuando** `[consultationId].tsx` carga el `WebView` hacia `/call` y dispara `sendCallInit` en el evento `onLoad`.  
-**Entonces** la función envía el payload con el token por `postMessage` e `injectJavaScript` en el instante en que el HTML base termina de descargar, pero como la ruta en la web utiliza `lazy(() => import("./pages/CallPage"))`, el componente `CallPage` aún no se ha descargado ni montado, perdiendo el mensaje y dejando el WebView atrapado indefinidamente en la pantalla de carga con el spinner "Conectando a la videollamada..." (resultado real obtenido) frente a implementar un protocolo de handshake bidireccional donde la página web comunique su montaje efectivo antes de que el cliente móvil transmita las credenciales (resultado esperado).
+## 3. Checklist Preventivo de 13 Directivas y Antipatrones
+
+Este checklist consolida los 13 mandatos de ingeniería preventiva que deben implementarse rigurosamente en el código de videollamadas.
 
 ---
 
-### Escenario:
-**Nombre y sección (BUG-08: Enlace de abandono con deep-link nativo móvil inaccesible en navegadores de escritorio, seccion: Web / CallPage).**  
-**Pasos para reproducir:**  
-**Dado que** un veterinario o cliente está participando de una videollamada desde el navegador web de una computadora de escritorio en `/call`.  
-**Cuando** la llamada finaliza o el usuario hace clic en abandonar la llamada en `CallPage.tsx`.  
-**Entonces** la aplicación ejecuta `window.location.href = "vetconnect://call-ended"` intentando abrir un protocolo URI exclusivo de la aplicación móvil, provocando que el navegador muestre un cuadro de error de protocolo desconocido ("No se pudo abrir la dirección") y dejando la ventana trabada sin redirigir al usuario al dashboard (resultado real obtenido) frente a detectar el entorno de ejecución y redirigir vía `navigate('/dashboard')` o `/vet-dashboard` cuando no se ejecuta dentro de un WebView móvil (resultado esperado).
+### 🛡️ DIRECTIVA-01: Corrección de Identidades en Señalización Socket
+* **Principio:** El emisor de una llamada debe transmitir su propia identidad (`callerName`), no el nombre del destinatario.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Envía el nombre del destinatario al gateway
+  socket.emit("call:initiate", consultationId, peerName);
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Envía el nombre de pila propio del usuario autenticado
+  socket.emit("call:initiate", { consultationId, callerName: user.firstName });
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** la Dra. María Gómez inicia una llamada hacia el cliente Carlos Pérez,  
+  > **Cuando** se despacha el evento `call:initiate`,  
+  > **Entonces** el destinatario debe recibir `call:incoming` con `callerName: "Dra. María"`, visualizando correctamente la identidad de quien llama.
 
 ---
 
-### Escenario:
-**Nombre y sección (BUG-09: Ausencia de controladores para errores de conexión WebRTC y fallos de hardware en LiveKitRoom, seccion: Web / CallRoom).**  
-**Pasos para reproducir:**  
-**Dado que** un usuario ingresa a una videollamada cuyo token ya expiró (más de 10 minutos de inactividad en la pantalla previa) o cuya red corporativa bloquea el tráfico WebRTC/UDP hacia el servidor LiveKit.  
-**Cuando** `<LiveKitRoom>` intenta establecer la conexión WebRTC y el servidor rechaza la conexión o se produce un error de ICE/dispositivo.  
-**Entonces** al no estar definidos los callbacks `onError` ni `onMediaDeviceFailure` en `CallRoom.tsx`, el error queda silenciado en la consola, la pantalla permanece congelada en negro y el usuario queda atrapado sin mensaje de diagnóstico ni posibilidad de reintento (resultado real obtenido) frente a capturar el error y renderizar un panel amigable de fallo de conexión con opción de reintentar o regresar al chat (resultado esperado).
+### 🛡️ DIRECTIVA-02: Secuencia Estricta de Validación y Token Previo al Timbrado
+* **Principio:** El cliente nunca debe hacer sonar el dispositivo del receptor antes de confirmar que el backend autorizó la llamada y emitió el token WebRTC.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Timbra primero, pide el token después
+  socket.emit("call:initiate", ...);
+  const { token } = await getCallToken(consultationId);
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Valida y asegura el token antes de emitir señalización
+  const { token, serverUrl } = await callsService.getCallToken(consultationId);
+  socket.emit("call:initiate", { consultationId, callerName: user.firstName });
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** el servicio de tokens falla con HTTP 503 o credenciales no configuradas,  
+  > **Cuando** el usuario presiona "Iniciar videollamada",  
+  > **Entonces** no se emite ningún evento `call:initiate` por socket y se muestra una notificación de error local, evitando llamadas fantasma.
 
 ---
 
-### Escenario:
-**Nombre y sección (BUG-10: Degradación severa de resolución y tasa de bits para examen clínico veterinario (360p @ 400kbps), seccion: Web / CallRoom).**  
-**Pasos para reproducir:**  
-**Dado que** un profesional veterinario realiza una teleconsulta en vivo donde necesita inspeccionar visualmente una lesión en la piel, una herida o la marcha de un animal.  
-**Cuando** la videollamada se inicializa en `CallRoom.tsx`.  
-**Entonces** la configuración pasa la instancia `VideoPresets.h360` a `resolution` (en lugar de `VideoResolution`) y fuerza `maxBitrate: 400_000` con `frameRate: 20`, provocando una transmisión fuertemente comprimida a 360p con artefactos de compresión y desenfoque de movimiento que impiden la apreciación clínica (resultado real obtenido) frente a utilizar una captura estándar de alta fidelidad (720p a 1.5–2 Mbps) con simulcast adaptativo según el ancho de banda disponible (resultado esperado).
+### 🛡️ DIRECTIVA-03: Consistencia Estricta de Estados (`status === 'ACTIVE'`)
+* **Principio:** Solo se admiten videollamadas en consultas en estado `ACTIVE`. El gateway de sockets y el servicio REST deben aplicar idéntica validación.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Gateway admite 'PENDING', pero el servicio de llamadas exige 'ACTIVE'
+  if (!['ACTIVE', 'PENDING'].includes(consultation.status)) throw new Error();
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Validación estricta unificada
+  if (consultation.status !== ConsultationStatus.ACTIVE) {
+    throw new AppError('CALL_NOT_ALLOWED', 'Solo es posible iniciar videollamadas en consultas activas', 409);
+  }
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** una consulta se encuentra en estado `WAITING` o `PENDING`,  
+  > **Cuando** se intenta emitir `call:initiate` o solicitar `POST /api/calls/:id/token`,  
+  > **Entonces** ambos canales rechazan la operación con código de error unificado.
 
 ---
 
-### Escenario:
-**Nombre y sección (BUG-11: Falta de señalización para cancelación de llamada antes de responder, seccion: Backend / chat.gateway & Web / GlobalCallListener).**  
-**Pasos para reproducir:**  
-**Dado que** el veterinario presiona "Videollamada" para comunicarse con un cliente, activando la alerta de llamada entrante en el dispositivo del cliente.  
-**Cuando** el veterinario decide cancelar la llamada inmediatamente presionando "Volver al chat" o cerrando la pestaña antes de que el cliente responda.  
-**Entonces** al no existir un evento socket `call:cancel` en `chat.gateway.ts`, el diálogo modal y el sonido de llamada entrante en `GlobalCallListener.tsx` y en el móvil continúan activos indefinidamente hasta que el usuario receptor pulsa "Rechazar" manualmente o intenta contestar una sala ya abandonada (resultado real obtenido) frente a emitir una señal de cancelación que cierre de inmediato la notificación en todos los dispositivos del receptor (resultado esperado).
+### 🛡️ DIRECTIVA-04: Protección de PII en Tokens Criptográficos de LiveKit
+* **Principio (Norma Oficial LiveKit):** *Participant identity and room name are recorded in logs and traces throughout LiveKit infrastructure. Never put PII in these fields.*
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Expone email privado en los logs inmutables del SFU
+  const token = new AccessToken(apiKey, apiSecret, {
+    identity: user.email,
+    name: user.email,
+  });
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Usa ID opaco UUID y nombre de pila público sin información de contacto
+  const token = new AccessToken(apiKey, apiSecret, {
+    identity: user.id,
+    name: user.firstName,
+    ttl: '1h',
+  });
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** un usuario con correo `carlos.tutor@dominio.com` solicita un token,  
+  > **Cuando** se decodifica el payload JWT generado,  
+  > **Entonces** ninguna claim (`sub`, `name`, `metadata`) contiene correos electrónicos ni teléfonos personales.
 
 ---
 
-### Escenario:
-**Nombre y sección (BUG-12: Omisión del cierre remoto y revocación de la sala de LiveKit al finalizar la consulta médica, seccion: Backend / consultations.service).**  
-**Pasos para reproducir:**  
-**Dado que** dos usuarios se encuentran comunicándose activamente dentro de la sala de videollamada `consultation-[id]`.  
-**Cuando** el veterinario hace clic en "Finalizar consulta" ejecutando `PATCH /api/consultations/:id/complete`.  
-**Entonces** `consultations.service.ts` actualiza el registro en la base de datos a `COMPLETED` pero nunca interactúa con la API de LiveKit (`RoomServiceClient.deleteRoom`), permitiendo que ambos participantes permanezcan dentro de la sala transmitiendo audio y video sin límite hasta que sus tokens caduquen (resultado real obtenido) frente a cerrar la sala en el servidor LiveKit expulsando a los participantes y revocando las credenciales asociadas de forma inmediata (resultado esperado).
+### 🛡️ DIRECTIVA-05: Cero Duplicación de Renderizadores de Audio (`RoomAudioRenderer`)
+* **Principio:** El componente prefab `<VideoConference />` de `@livekit/components-react` ya contiene internamente `<RoomAudioRenderer />`. No debe agregarse otro en el árbol.
+* **❌ Antipatrón a Evitar:**
+  ```tsx
+  // BAD: Provoca acople de audio, eco y doble consumo de volumen
+  <LiveKitRoom token={token} serverUrl={serverUrl}>
+    <VideoConference />
+    <RoomAudioRenderer />
+  </LiveKitRoom>
+  ```
+* **✅ Patrón Correcto:**
+  ```tsx
+  // GOOD: VideoConference gestiona internamente la suscripción y reproducción de audio
+  <LiveKitRoom token={token} serverUrl={serverUrl}>
+    <VideoConference />
+  </LiveKitRoom>
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** dos usuarios ingresan a la llamada y activan audio,  
+  > **Cuando** se inspecciona el DOM de la aplicación Web,  
+  > **Entonces** existe exactamente un elemento de renderizado de audio por track remoto, eliminando eco local y clipping.
 
 ---
 
-### Escenario:
-**Nombre y sección (BUG-13: Dependencia cliente WebRTC para navegadores (`livekit-client`) incluida erróneamente en el backend, seccion: Backend / package.json).**  
-**Pasos para reproducir:**  
-**Dado que** el entorno del servidor backend se ejecuta sobre Node.js sin objetos globales del navegador como `window`, `RTCPeerConnection` o `navigator.mediaDevices`.  
-**Cuando** se auditan las dependencias en `backend/package.json`.  
-**Entonces** figura instalada la librería cliente de navegador `"livekit-client": "^2.21.0"` junto con `"livekit-server-sdk": "^2.17.0"`, introduciendo código cliente innecesario y riesgo de importaciones cruzadas en el servidor (resultado real obtenido) cuando en el backend únicamente debe existir `livekit-server-sdk` (resultado esperado).
+### 🛡️ DIRECTIVA-06: Respeto Irrestricto a Preferencias en PreJoin (`LocalUserChoices`)
+* **Principio:** Si el usuario elige apagar su cámara o micrófono en la pantalla previa de prueba, dicha selección debe propagarse fielmente a la sala.
+* **❌ Antipatrón a Evitar:**
+  ```tsx
+  // BAD: Ignora las elecciones del usuario y fuerza encendido
+  <PreJoin onSubmit={(choices) => {
+    setPreJoined(true);
+  }} />
+  <LiveKitRoom video={true} audio={true} ... />
+  ```
+* **✅ Patrón Correcto:**
+  ```tsx
+  // GOOD: Almacena y transfiere LocalUserChoices a LiveKitRoom
+  const [userChoices, setUserChoices] = useState<LocalUserChoices | null>(null);
+
+  <PreJoin onSubmit={(choices) => setUserChoices(choices)} />
+  {userChoices && (
+    <LiveKitRoom
+      video={userChoices.videoEnabled}
+      audio={userChoices.audioEnabled}
+      ...
+    />
+  )}
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** un usuario desmarca la cámara en `PreJoin` antes de unirse,  
+  > **Cuando** la sala WebRTC se conecta,  
+  > **Entonces** el track de video local se inicializa en estado silenciado (`muted / disabled`).
 
 ---
 
-## 4. Matriz Diagnóstica de Cumplimiento
+### 🛡️ DIRECTIVA-07: Protocolo de Handshake Bidireccional Web (leftrightarrow` Mobile WebView
+* **Principio:** La app móvil en React Native jamás debe inyectar credenciales hasta que la página Web receptora confirme que está completamente montada e hidratada.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Inyecta JavaScript ciegamente en el evento onLoad (Race Condition)
+  <WebView onLoad={() => webViewRef.current?.injectJavaScript(`init("${token}")`)} />
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Handshake reactivo bidireccional
+  // 1. Web emite 'page:ready' en useEffect:
+  window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'page:ready' }));
 
-| Aspecto Evaluado | Implementación Original | Directiva Oficial LiveKit | Estado Inicial |
-| :--- | :--- | :--- | :---: |
-| **Generación de Tokens** | `AccessToken` en `calls.service.ts` | Server-side JWT con API Key & Secret | **Aprobado con observaciones** |
-| **Privacidad (PII)** | `name: req.user.email` | Prohibido incluir emails/teléfonos en identidades o nombres | ❌ **No cumple (BUG-04)** |
-| **Renderizado de Audio** | `<VideoConference>` + `<RoomAudioRenderer>` | `<VideoConference>` ya incluye el audio renderer | ❌ **No cumple (BUG-05)** |
-| **Flujo PreJoin** | Descarta `values` en `onSubmit` | Debe propagar `LocalUserChoices` a `LiveKitRoom` | ❌ **No cumple (BUG-06)** |
-| **Manejo de Errores WebRTC** | Sin `onError` ni `onMediaDeviceFailure` | Obligatorio capturar fallos de ICE/token/hardware | ❌ **No cumple (BUG-09)** |
-| **Calidad de Medios** | Forzado 360p @ 400kbps | 720p con simulcast y control de bitrate adaptativo | ❌ **No cumple (BUG-10)** |
-| **Integración Mobile** | `WebView` con race condition en `onLoad` | Protocolo de sincronización seguro o SDK nativo | ❌ **No cumple (BUG-07)** |
-| **Gestión de Salas Backend** | Sin `RoomServiceClient` | `deleteRoom()` y webhooks de ciclo de vida de sala | ❌ **No cumple (BUG-12)** |
-| **Dependencias Backend** | Incluye `livekit-client` | Solo `livekit-server-sdk` en Node.js | ❌ **No cumple (BUG-13)** |
+  // 2. Mobile espera 'page:ready' para despachar el token:
+  const onMessage = (event: WebViewMessageEvent) => {
+    const data = JSON.parse(event.nativeEvent.data);
+    if (data.type === 'page:ready') {
+      webViewRef.current?.postMessage(JSON.stringify({ type: 'call:credentials', token, serverUrl }));
+    }
+  };
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** la página Web utiliza carga diferida (`React.lazy`),  
+  > **Cuando** se abre el WebView en el dispositivo móvil,  
+  > **Entonces** el token se transmite únicamente tras confirmarse el montaje del componente, garantizando conexión sin pantallas congeladas.
 
 ---
 
-## 5. Hoja de Ruta de Remediación Técnica
+### 🛡️ DIRECTIVA-08: Redirección Adaptativa al Abandonar la Llamada
+* **Principio:** No utilizar deep-links nativos (`vetconnect://`) en navegadores de escritorio. Detectar el entorno de ejecución antes de redirigir.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Rompe la experiencia en navegadores web de escritorio
+  const handleLeave = () => {
+    window.location.href = "vetconnect://call-ended";
+  };
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Detección inteligente de WebView vs Navegador Desktop
+  const handleLeave = () => {
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'call:ended' }));
+    } else {
+      navigate('/dashboard/consultations');
+    }
+  };
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** un veterinario finaliza la llamada desde Chrome Desktop,  
+  > **Cuando** presiona "Abandonar llamada",  
+  > **Entonces** la aplicación navega hacia el panel de consultas sin disparar errores de protocolo no reconocido.
 
-1. **Señalización e Identidades (P0)**:
-   - En `CallButton.tsx`: obtener primero el token mediante `getCallToken(consultationId)`; emitir `call:initiate` solo tras verificar éxito, enviando el nombre del **emisor** (`user.firstName`).
-   - En `chat.gateway.ts`: restringir `call:initiate` a `status === 'ACTIVE'` e incorporar `call:cancel` \(\rightarrow\) `call:cancelled`.
-2. **Alineación con LiveKit en Web (P0)**:
-   - En `CallRoom.tsx`: remover `<RoomAudioRenderer />` duplicado, propagar `LocalUserChoices` a `LiveKitRoom`, actualizar presets a 720p y agregar handlers `onError` y `onMediaDeviceFailure`.
-3. **Handshake Bidireccional Mobile-Web (P1)**:
-   - En `CallPage.tsx`: emitir `page:ready` al montarse. En `onLeave`, detectar entorno y redirigir vía router en escritorio.
-   - En `[consultationId].tsx`: esperar `page:ready` antes de inyectar el token.
-4. **Ciclo de Vida y Limpieza Backend (P1)**:
-   - En `calls.service.ts`: implementar `closeCallRoom` con `RoomServiceClient.deleteRoom()`, invocándolo en `completeConsultation`.
-   - Eliminar `livekit-client` de `backend/package.json` y sanear el claim `name`.
+---
+
+### 🛡️ DIRECTIVA-09: Manejo Obligatorio de Fallos WebRTC, Tokens y Hardware
+* **Principio:** Todo contenedor `<LiveKitRoom>` debe capturar errores de conexión, expiración de tokens y denegación de periféricos.
+* **❌ Antipatrón a Evitar:**
+  ```tsx
+  // BAD: Errores no capturados dejan una pantalla negra sin explicación
+  <LiveKitRoom serverUrl={serverUrl} token={token}>
+    <VideoConference />
+  </LiveKitRoom>
+  ```
+* **✅ Patrón Correcto:**
+  ```tsx
+  // GOOD: Callbacks de captura de fallos con UI de recuperación
+  <LiveKitRoom
+    serverUrl={serverUrl}
+    token={token}
+    onError={(error) => setCallError(`Error de conexión WebRTC: ${error.message}`)}
+    onMediaDeviceFailure={(err) => setCallError('No se pudo acceder a la cámara o micrófono. Verifique los permisos.')}
+    onDisconnected={() => handleCallDisconnected()}
+  >
+    <VideoConference />
+  </LiveKitRoom>
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** un token expiró o la red bloquea tráfico UDP,  
+  > **Cuando** LiveKitRoom detecta la falla,  
+  > **Entonces** se presenta un banner con diagnóstico claro y botón para reintentar o volver al chat.
+
+---
+
+### 🛡️ DIRECTIVA-10: Preset de Video de Alta Fidelidad Clínica (720p Adaptativo)
+* **Principio:** Para inspección veterinaria visual (piel, ojos, movilidad), la resolución mínima adecuada es 720p (1280x720) con simulcast adaptativo gestionado por el SFU.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Video degradado a 360p y 400kbps ilegible clínicamente
+  options={{ videoCaptureDefaults: { resolution: VideoPresets.h360, maxBitrate: 400_000 } }}
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: 720p adaptativo con simulcast multi-capa
+  options={{
+    videoCaptureDefaults: {
+      resolution: VideoPresets.h720.resolution,
+    },
+    publishDefaults: {
+      simulcast: true,
+      videoSimulcastLayers: [
+        VideoPresets.h180,
+        VideoPresets.h360,
+        VideoPresets.h720,
+      ],
+    },
+  }}
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** la conexión de red es estable,  
+  > **Cuando** el video del paciente se transmite,  
+  > **Entonces** el SFU entrega resolución 720p; ante degradación de red, desciende gradualmente sin congelar la transmisión.
+
+---
+
+### 🛡️ DIRECTIVA-11: Simetría de Señalización con Cancelación de Llamada (`call:cancel`)
+* **Principio:** Si el emisor cancela la llamada antes de que el receptor atienda, el diálogo de llamada entrante debe cerrarse de inmediato en todos los dispositivos.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Emisor cuelga pero no avisa, receptor sigue con ringtone sonando
+  const cancelCall = () => { setShowCallingModal(false); };
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Emisión y propagación de call:cancel
+  const cancelCall = () => {
+    socket.emit("call:cancel", { consultationId });
+    setShowCallingModal(false);
+  };
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** la llamada está sonando en el móvil del cliente,  
+  > **Cuando** el veterinario presiona "Cancelar llamada",  
+  > **Entonces** el evento `call:cancelled` silencia el ringtone y cierra el modal entrante en el móvil en menos de 500 ms.
+
+---
+
+### 🛡️ DIRECTIVA-12: Destrucción Server-Side de Salas (`deleteRoom`) al Finalizar Consulta
+* **Principio:** Al marcar una consulta médica como completada en base de datos, el backend debe expulsar activamente a los participantes y destruir la sala en LiveKit.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Actualiza la base de datos pero deja la sala WebRTC abierta
+  await prisma.consultation.update({ where: { id }, data: { status: 'COMPLETED' } });
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Invalida la sala en el SFU liberando puertos y ancho de banda
+  await prisma.consultation.update({ where: { id }, data: { status: 'COMPLETED' } });
+  const roomService = new RoomServiceClient(livekitHost, apiKey, apiSecret);
+  await roomService.deleteRoom(`consultation-${id}`).catch((err) => {
+    logger.warn(`Room consultation-${id} was already inactive: ${err.message}`);
+  });
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** una consulta pasa a estado `COMPLETED`,  
+  > **Cuando** se ejecuta la mutación de cierre,  
+  > **Entonces** la sala en LiveKit se destruye y ningún participante puede seguir transmitiendo medios.
+
+---
+
+### 🛡️ DIRECTIVA-13: Sanitización de Dependencias por Entorno (Node.js vs. Browser)
+* **Principio:** `livekit-client` requiere APIs de navegador (`window`, `RTCPeerConnection`). En el Backend solo debe instalarse `livekit-server-sdk`.
+* **❌ Antipatrón a Evitar:**
+  ```json
+  // BAD (backend/package.json):
+  "dependencies": {
+    "livekit-client": "^2.21.0",
+    "livekit-server-sdk": "^2.17.0"
+  }
+  ```
+* **✅ Patrón Correcto:**
+  ```json
+  // GOOD (backend/package.json):
+  "dependencies": {
+    "livekit-server-sdk": "^2.17.0"
+  }
+
+  // GOOD (web/package.json):
+  "dependencies": {
+    "livekit-client": "^2.21.0",
+    "@livekit/components-react": "^2.6.0"
+  }
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** se compila el backend con TypeScript,  
+  > **Cuando** se analiza el grafo de dependencias de producción,  
+  > **Entonces** cero librerías con dependencias DOM/WebRTC cliente están vinculadas al servidor Node.js.
+
+---
+
+## 4. Patrones de Código de Referencia Aprobados (Golden Code)
+
+### 4.1 Backend: Emisión de Tokens Seguros (`backend/src/modules/calls/calls.service.ts`)
+
+```typescript
+import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
+import { prisma } from '../../shared/prisma';
+import { AppError } from '../../shared/errors';
+
+export class CallsService {
+  private roomService: RoomServiceClient;
+
+  constructor() {
+    this.roomService = new RoomServiceClient(
+      process.env.LIVEKIT_URL!,
+      process.env.LIVEKIT_API_KEY!,
+      process.env.LIVEKIT_API_SECRET!
+    );
+  }
+
+  async generateCallToken(consultationId: string, userId: string): Promise<{ token: string; serverUrl: string }> {
+    const consultation = await prisma.consultation.findUnique({
+      where: { id: consultationId },
+      include: { client: true, vet: true },
+    });
+
+    if (!consultation || consultation.deletedAt) {
+      throw new AppError('CONSULTATION_NOT_FOUND', 'Consulta no encontrada', 404);
+    }
+
+    if (consultation.status !== 'ACTIVE') {
+      throw new AppError('CALL_NOT_ALLOWED', 'Solo es posible llamar en consultas activas', 409);
+    }
+
+    const isParticipant = consultation.clientId === userId || consultation.vetId === userId;
+    if (!isParticipant) {
+      throw new AppError('FORBIDDEN_CALL', 'No es participante de esta consulta', 403);
+    }
+
+    const currentUser = consultation.clientId === userId ? consultation.client : consultation.vet;
+    const roomName = `consultation-${consultationId}`;
+
+    // Directiva-04: Identificador opaco y nombre de pila SIN email ni teléfono
+    const at = new AccessToken(
+      process.env.LIVEKIT_API_KEY!,
+      process.env.LIVEKIT_API_SECRET!,
+      {
+        identity: currentUser.id,
+        name: currentUser.firstName,
+        ttl: '1h',
+      }
+    );
+
+    at.addGrant({
+      roomJoin: true,
+      room: roomName,
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true,
+      roomAdmin: currentUser.role === 'VET',
+    });
+
+    return {
+      token: await at.toJwt(),
+      serverUrl: process.env.LIVEKIT_URL!,
+    };
+  }
+
+  async closeCallRoom(consultationId: string): Promise<void> {
+    const roomName = `consultation-${consultationId}`;
+    try {
+      await this.roomService.deleteRoom(roomName);
+    } catch (error: unknown) {
+      // Si la sala ya expiró o no fue creada, se registra sin interrumpir el flujo
+      console.warn(`[CallsService] Sala ${roomName} no requirió eliminación forzada`);
+    }
+  }
+}
+```
+
+---
+
+### 4.2 Frontend Web: Sala de Videollamada (`web/src/components/call/CallRoom.tsx`)
+
+```tsx
+import React, { useState } from 'react';
+import {
+  LiveKitRoom,
+  VideoConference,
+  PreJoin,
+  LocalUserChoices,
+} from '@livekit/components-react';
+import { VideoPresets } from 'livekit-client';
+import '@livekit/components-styles';
+
+interface CallRoomProps {
+  token: string;
+  serverUrl: string;
+  onLeave: () => void;
+}
+
+export const CallRoom: React.FC<CallRoomProps> = ({ token, serverUrl, onLeave }) => {
+  const [userChoices, setUserChoices] = useState<LocalUserChoices | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  if (!userChoices) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[500px] p-6">
+        <h2 className="text-xl font-bold text-slate-800 mb-4">Configuración de Cámara y Micrófono</h2>
+        <PreJoin
+          onSubmit={(choices) => setUserChoices(choices)}
+          onError={(err) => setErrorMessage('Error al acceder a periféricos: ' + err.message)}
+        />
+        {errorMessage && (
+          <p className="mt-4 text-sm text-red-600 font-medium">{errorMessage}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full h-full min-h-[600px] bg-slate-950 rounded-2xl overflow-hidden shadow-2xl">
+      <LiveKitRoom
+        token={token}
+        serverUrl={serverUrl}
+        connect={true}
+        video={userChoices.videoEnabled}
+        audio={userChoices.audioEnabled}
+        options={{
+          videoCaptureDefaults: {
+            resolution: VideoPresets.h720.resolution,
+          },
+          publishDefaults: {
+            simulcast: true,
+          },
+        }}
+        onError={(err) => setErrorMessage('Fallo en la conexión de llamada: ' + err.message)}
+        onMediaDeviceFailure={() => setErrorMessage('Periférico de medios desconectado o inaccesible')}
+        onDisconnected={onLeave}
+        data-lk-theme="default"
+      >
+        {/* Directiva-05: Solo VideoConference, CERO RoomAudioRenderer duplicado */}
+        <VideoConference />
+      </LiveKitRoom>
+
+      {errorMessage && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600/90 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg">
+          {errorMessage}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+---
+
+## 5. Matriz de Verificación y Criterios de Aceptación Pre-PR
+
+Antes de fusionar código de videollamadas, los agentes deben validar este checklist:
+
+| ID | Verificación de Calidad | Comando / Mecanismo | Estado Esperado |
+|:---|:---|:---|:---:|
+| **CHK-01** | Sin PII en claims de token | `npm test -w backend -- -t "calls.token"` | ✅ PII Scrubbing verificado |
+| **CHK-02** | Cierre con `deleteRoom` al completar | `npm test -w backend -- -t "consultations.complete"` | ✅ Invocación probada |
+| **CHK-03** | Presencia única de `livekit-server-sdk` | `npm ls livekit-client -w backend` | ✅ Cero dependencias client |
+| **CHK-04** | Cero `<RoomAudioRenderer>` extra | `grep -rn "RoomAudioRenderer" web/src/` | ✅ 0 ocurrencias redundantes |
+| **CHK-05** | Handshake bidireccional WebView | `npm test -w mobile -- -t "call.handshake"` | ✅ Handshake `page:ready` |
+| **CHK-06** | Typecheck estricto sin `any` | `npm run typecheck` | ✅ 0 errores de tipado |
+
+---
+*VetConnect Engineering Standard — Documento Maestro de Implementación LiveKit SFU 2026.*

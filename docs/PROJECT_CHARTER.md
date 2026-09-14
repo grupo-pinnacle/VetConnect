@@ -116,11 +116,11 @@ gantt
     Despliegue Productivo y Go-Live           :m4, 2026-11-07, 2026-11-18
 ```
 
-> **Nota de Estado:** Al encontrarse el repositorio en fase de especificación y arquitectura previa a la construcción del código, todos los hitos se estructuran como fases de ejecución planificadas.
+> **Nota de Contexto & Cronograma:** Septiembre de 2026 constituye la fase de planificación, especificación exhaustiva y diseño de arquitectura pre-desarrollo (100% Greenfield). El inicio formal de desarrollo e implementación de código (Sprints 1 al 10 / M0 a M4) está calendarizado para el **01 de Octubre de 2026**, desarrollándose a lo largo de 20 semanas (10 sprints de 2 semanas) hasta mediados de Febrero de 2027.
 
 | Hito | Nombre | Entregables Principales | Estado |
 |---|---|---|---|
-| **M0** | **Cimientos & Hardening de Seguridad** | Purgado de secretos en Git, rotación de claves, paridad `@map` Prisma, types unificados. | `PLANNED` |
+| **M0** | **Cimientos & Hardening de Seguridad** | Guardarraíles de seguridad, plantillas .env.example sin secretos, Docker Compose (Postgres 16 + Redis 7), contratos Zod y esquema relacional Prisma con mapeo `@map` snake_case. | `PLANNED` |
 | **M1** | **Core Telemédico & Video LiveKit** | Redis Adapter activo, LiveKit Web/Mobile funcional, subida de archivos segura a S3/local. | `PLANNED` |
 | **M2** | **Cumplimiento Legal & Recetas** | Flujo Sala de Espera SENASA, Soft-Deletes probados, recetas con QR y AuditLog. | `PLANNED` |
 | **M3** | **Quality Engineering & Concurrencia** | Tests de WebSockets, cobertura backend $> 80\%$, smoke tests E2E con Playwright. | `PLANNED` |

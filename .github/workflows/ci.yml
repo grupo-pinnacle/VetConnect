@@ -1,0 +1,124 @@
+name: CI / Quality & Security Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck-and-lint:
+    name: 🔍 Typecheck & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci --ignore-scripts || npm install
+
+      - name: Validate Prisma Schema
+        run: |
+          if [ -d "backend/prisma" ]; then
+            cd backend && npx prisma validate
+          fi
+
+      - name: Typecheck Backend, Web & Mobile
+        run: npm run typecheck --if-present
+
+      - name: Lint Monorepo
+        run: npm run lint --if-present
+
+  backend-tests:
+    name: 🧪 Backend Test Suite (Jest + DB)
+    runs-on: ubuntu-latest
+    needs: [typecheck-and-lint]
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: vetconnect_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts || npm install
+
+      - name: Run Backend Tests
+        env:
+          NODE_ENV: test
+          DATABASE_URL: "postgresql://postgres:testpassword@localhost:5432/vetconnect_test?schema=public"
+          DIRECT_URL: "postgresql://postgres:testpassword@localhost:5432/vetconnect_test?schema=public"
+          REDIS_URL: "redis://localhost:6379"
+          JWT_SECRET: "ci-testing-jwt-secret-minimum-32-chars-long"
+          JWT_EXPIRES_IN: "15m"
+          REFRESH_TOKEN_SECRET: "ci-testing-refresh-secret-minimum-32-chars-long"
+          REFRESH_TOKEN_EXPIRES_IN: "7d"
+          STORAGE_PROVIDER: "local"
+          UPLOAD_DIR: "./uploads_test"
+          LIVEKIT_API_KEY: "devkey"
+          LIVEKIT_API_SECRET: "secret"
+          LIVEKIT_URL: "wss://vetconnect-dev.livekit.cloud"
+          EXPO_PUSH_DISABLED: "true"
+        run: |
+          if [ -d "backend" ]; then
+            cd backend
+            if [ -f "prisma/schema.prisma" ]; then
+              npx prisma db push --skip-generate || true
+              npx prisma generate
+            fi
+            npm test --if-present
+          fi
+
+  security-scan:
+    name: 🛡️ Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high || true

@@ -67,9 +67,12 @@ vetconnect/
     ├── BRIEF.md                    # Brief de producto y modelo de negocio
     ├── SPEC.md                     # Especificación técnica, modelos de dominio y protocolos
     ├── MINUTA_STAKEHOLDER_2026-09.md # Requerimientos acordados con stakeholders y backlog v2.1+
-    ├── LIVEKIT_AUDIT.md            # Auditoría técnica preventiva de videollamadas WebRTC
-    └── PROPUESTA_MEJORAS_LIVEKIT.md # Propuesta técnica de optimización LiveKit
+    ├── LIVEKIT_AUDIT.md            # Guía Maestra & Checklist Preventivo de Implementación LiveKit SFU
+    └── PROPUESTA_MEJORAS_LIVEKIT.md # Hoja de Ruta Consolidada LiveKit
 ```
+
+> ℹ️ **Nota de Diseño sobre `packages/shared` (ADR-008):**  
+> Para maximizar la velocidad de desarrollo y evitar la sobrecarga de tooling complejo de monorepos (Nx, Turborepo o transpiladores cruzados), la arquitectura descarta formalmente un workspace `packages/shared`. Los contratos y esquemas Zod se definen con rigor en el Backend (`backend/src/contracts/` y DTOs por módulo) y se sincronizan como interfaces TypeScript nativas en los clientes `web` y `mobile`.
 
 ---
 
@@ -103,6 +106,7 @@ vetconnect/
 | `PATCH`| `/api/consultations/:id/complete` | Cerrar consulta registrando evolución (`diagnosisNotes`) | VET asignado |
 | `POST` | `/api/consultations/:id/prescriptions` | Emitir receta digital oficial con QR y firma | VET asignado |
 | `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico | Participantes |
+| `POST` | `/api/consultations/:id/review` | Calificar atención médica (1 a 5 estrellas, ADR-023) | CLIENT asignado |
 
 ### 2.4 Videollamadas (`/api/calls`)
 | Método | Endpoint | Descripción | Acceso |
