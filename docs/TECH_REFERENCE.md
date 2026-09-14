@@ -58,6 +58,7 @@ conectavet/
 │
 └── docs/                           # Documentación técnica consolidada
     ├── PROJECT_CHARTER.md          # Carta fundacional y visión del proyecto
+    ├── PLAN_DE_PROYECTO_Y_GESTION.md # Plan de Proyecto, RACI, Stakeholders, DCU & KPIs
     ├── ARCHITECTURE.md             # Arquitectura de alto nivel y normativas
     ├── DECISIONS.md                # Registro de decisiones de arquitectura (ADRs)
     ├── TECH_REFERENCE.md           # Este documento

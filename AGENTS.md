@@ -10,7 +10,7 @@ Para evitar que el agente alucine, asuma archivos inexistentes o tome decisiones
 
 1. **Fuente Única de Verdad (Single Source of Truth):**
    - No asumir rutas ni nombres de archivos. Usar `list_files` y `read_file` antes de editar.
-   - Toda norma técnica debe alinearse con `docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md`, `docs/PROPUESTA_MEJORAS_LIVEKIT.md` y `docs/TECH_REFERENCE.md`.
+   - Toda norma técnica y de gestión debe alinearse con `docs/PLAN_DE_PROYECTO_Y_GESTION.md`, `docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md`, `docs/PROPUESTA_MEJORAS_LIVEKIT.md` y `docs/TECH_REFERENCE.md`.
 2. **Límite de Modificaciones:**
    - Realizar cambios pequeños, específicos y verificables.
    - Confirmar el resultado de cada edición mediante herramientas de lectura antes de avanzar.

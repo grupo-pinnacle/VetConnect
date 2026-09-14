@@ -25,6 +25,7 @@ Toda la documentación técnica, legal y operativa del ecosistema ConectaVet se 
 | Documento | Descripción y Contenido | Enlace |
 |---|---|---|
 | 📜 **Project Charter** | Carta fundamental del proyecto: visión, misión, justificación, OKRs, matriz funcional y roadmap FAANG. | [Ver Project Charter](docs/PROJECT_CHARTER.md) |
+| 📋 **Plan de Proyecto y Gestión** | RACI, Mapa de Stakeholders, Gestión del Cambio, DCU (ISO 9241-210), UX/UI, Sprints y KPIs. | [Ver Plan de Proyecto](docs/PLAN_DE_PROYECTO_Y_GESTION.md) |
 | 🏛️ **Arquitectura del Sistema** | Topología distribuida, Domain-Driven Design, Sockets en clúster y marco legal (SENASA / Ley 25.326). | [Ver Arquitectura](docs/ARCHITECTURE.md) |
 | ⚖️ **Registro de Decisiones (ADRs)** | 18 Architecture Decision Records detallando el porqué técnico de cada tecnología adoptada. | [Ver Decisiones](docs/DECISIONS.md) |
 | 📚 **Referencia Técnica & APIs** | Mapa completo de endpoints REST, matriz de eventos Socket.io y modelos de datos. | [Ver Referencia Técnica](docs/TECH_REFERENCE.md) |
