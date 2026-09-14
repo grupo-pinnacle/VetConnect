@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🐾 ConectaVet (VetConnect) v2.0
+# 🐾 VetConnect v2.0
 ### *Plataforma Integral de Telemedicina Veterinaria & Gestión Clínica de Alta Disponibilidad*
 **Construida bajo Estándares de Ingeniería de Software FAANG (Google / Meta / Stripe / Vercel level)**
 
@@ -12,7 +12,7 @@
 [![Prisma ORM](https://img.shields.io/badge/Prisma-6.x-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
 [![Redis](https://img.shields.io/badge/Redis-Socket.io_Adapter-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
 [![LiveKit](https://img.shields.io/badge/LiveKit-WebRTC_SFU-00D1B2?style=for-the-badge&logo=webrtc&logoColor=white)](https://livekit.io)
-[![Jest Suite](https://img.shields.io/badge/Tests-119%2B_Passing-C21325?style=for-the-badge&logo=jest&logoColor=white)](https://jestjs.io)
+[![Jest Suite](https://img.shields.io/badge/Tests-Meta:_120+_Tests-blue?style=for-the-badge&logo=jest&logoColor=white)](https://jestjs.io)
 
 </div>
 
@@ -20,26 +20,26 @@
 
 ## 📖 Índice General de Documentación
 
-Toda la documentación técnica, legal y operativa del ecosistema ConectaVet se encuentra organizada en los siguientes documentos maestros:
+Toda la documentación técnica, legal y operativa del ecosistema VetConnect se encuentra organizada en los siguientes documentos maestros:
 
 | Documento | Descripción y Contenido | Enlace |
 |---|---|---|
 | 📜 **Project Charter** | Carta fundamental del proyecto: visión, misión, justificación, OKRs, matriz funcional y roadmap FAANG. | [Ver Project Charter](docs/PROJECT_CHARTER.md) |
 | 📋 **Plan de Proyecto y Gestión** | RACI, Mapa de Stakeholders, Gestión del Cambio, DCU (ISO 9241-210), UX/UI, Sprints y KPIs. | [Ver Plan de Proyecto](docs/PLAN_DE_PROYECTO_Y_GESTION.md) |
 | 🏛️ **Arquitectura del Sistema** | Topología distribuida, Domain-Driven Design, Sockets en clúster y marco legal (SENASA / Ley 25.326). | [Ver Arquitectura](docs/ARCHITECTURE.md) |
-| ⚖️ **Registro de Decisiones (ADRs)** | 18 Architecture Decision Records detallando el porqué técnico de cada tecnología adoptada. | [Ver Decisiones](docs/DECISIONS.md) |
+| ⚖️ **Registro de Decisiones (ADRs)** | 21 Architecture Decision Records detallando el porqué técnico de cada tecnología adoptada. | [Ver Decisiones](docs/DECISIONS.md) |
 | 📚 **Referencia Técnica & APIs** | Mapa completo de endpoints REST, matriz de eventos Socket.io y modelos de datos. | [Ver Referencia Técnica](docs/TECH_REFERENCE.md) |
 | 📘 **Guía Oficial de Buenas Prácticas & Sistema** | Puntos ciegos, antipatrones (ejemplos de NO uso), LiveKit y estándares de código por módulo. | [Ver Guía de Buenas Prácticas](docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md) |
 | 🚀 **Guía de Despliegue (Deploy)** | Guía de producción: Coolify (VPS) para Backend, Vercel / Hostinger para Web y 3 vías para Android (EAS / APK web / Local). | [Ver Guía de Deploy](docs/DEPLOY.md) |
-| 📱 **Guía de Ejecución Local** | Tutorial paso a paso para encender todo el sistema y conectar un celular por cable USB con ADB. | [Ver Guía de Ejecución](GUIA_EJECUCION_CONECTAVET.md) |
-| 📋 **Runbooks Operativos** | Procedimientos de recuperación ante desastres, rotación de secretos y mantenimiento de BD. | [Ver Runbooks](RUNBOOKS.md) |
+| 📱 **Guía de Ejecución Local** | Tutorial paso a paso para encender todo el sistema y conectar un celular por cable USB con ADB. | [Ver Guía de Ejecución](GUIA_EJECUCION_VETCONNECT.md) |
+| 🚀 **Guía de Despliegue & Ops** | Guía de producción: Coolify (VPS) para Backend, Vercel / Hostinger para Web y 3 vías para Android (EAS / APK web / Local). | [Ver Guía de Deploy & Ops](docs/DEPLOY.md) |
 | 📑 **Minuta de Stakeholder & Backlog v2.1** | Requerimientos de producto acordados con stakeholder interno (vacunas, VetDrive, microchip, ciclo de vida, calendario). | [Ver Minuta de Stakeholder](docs/MINUTA_STAKEHOLDER_2026-09.md) |
 
 ---
 
 ## 🌟 Propuesta de Valor & Características Principales
 
-**ConectaVet** es una solución telemédica integral que digitaliza la interacción clínica entre tutores de mascotas y médicos veterinarios:
+**VetConnect** es una solución telemédica integral que digitaliza la interacción clínica entre tutores de mascotas y médicos veterinarios:
 
 - **🚨 Triage Inteligente & Cola de Atención:** Solicitud de atención inmediata o programada con balanceo automático hacia veterinarios disponibles.
 - **💬 Chat en Vivo con Optimistic Updates:** Mensajería en tiempo real (<100ms) vía WebSockets, envío de imágenes clínicas en alta resolución con zoom y confirmación de lectura.
@@ -135,10 +135,10 @@ npm start
 
 ## 🧪 Pruebas Automatizadas & Calidad de Código
 
-El backend cuenta con una suite de más de **119 pruebas unitarias y de integración** cubriendo autenticación, consultas, mascotas, autorización y manejo de errores:
+El backend tiene definida una meta de más de **120 pruebas unitarias y de integración proyectadas** (cobertura >80%) cubriendo autenticación, consultas, mascotas, autorización y manejo de errores:
 
 ```bash
-# Ejecutar todas las pruebas con Jest
+# Ejecutar todas las pruebas con Jest (al implementar el backend)
 cd backend
 npm test
 
@@ -158,4 +158,4 @@ cd ../mobile && npx tsc --noEmit
 - **Ezequiel Charca** — *QA Automation Engineer & Product Designer*
 - **Lara Bouso** — *Project Manager & Compliance Specialist*
 
-*ConectaVet — Grupo Pinnacle 2026. Todos los derechos reservados.*
+*VetConnect — Grupo Pinnacle 2026. Todos los derechos reservados.*

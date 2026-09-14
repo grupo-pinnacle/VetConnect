@@ -1,8 +1,8 @@
 # 📄 PRODUCT & PROJECT BRIEF
-## Proyecto: ConectaVet (VetConnect) — Ecosistema Digital de Telemedicina Veterinaria
-**Document ID:** `BRIEF-CONECTAVET-2026-V2`  
+## Proyecto: VetConnect — Ecosistema Digital de Telemedicina Veterinaria
+**Document ID:** `BRIEF-VETCONNECT-2026-V2`  
 **Autor:** Senior / Staff Systems Architect (FAANG Tier Standards)  
-**Organización:** Grupo Pinnacle / ConectaVet Team  
+**Organización:** Grupo Pinnacle / VetConnect Team  
 **Fecha de Emisión:** Septiembre 2026  
 **Audiencia:** Comité Ejecutivo, Stakeholders, Engineering Leads & Product Directorate  
 **Estado:** `APPROVED (EXECUTIVE BASELINE)`  
@@ -11,7 +11,7 @@
 
 ## 1. Resumen Ejecutivo (Executive Summary)
 
-**ConectaVet** es una plataforma tecnológica integral de telemedicina veterinaria de alta disponibilidad diseñada para conectar de forma instantánea, segura y auditable a tutores de mascotas con médicos veterinarios matriculados y certificados en América Latina.
+**VetConnect** es una plataforma tecnológica integral de telemedicina veterinaria de alta disponibilidad diseñada para conectar de forma instantánea, segura y auditable a tutores de mascotas con médicos veterinarios matriculados y certificados en América Latina.
 
 La plataforma resuelve el vacío existente entre la consulta física programada y la emergencia veterinaria crítica, sustituyendo canales de comunicación informales y de alto riesgo (mensajería por WhatsApp, llamadas no reguladas) por un ecosistema digital clínico que combina:
 1. **Atención Inmediata por Triaje:** Cola inteligente de espera con auto-asignación y balanceo en tiempo real.
@@ -86,7 +86,7 @@ flowchart TD
     end
 
     subgraph CoreBackend["Cerebro Tecnológico Central"]
-        API["⚙️ ConectaVet API (Node.js 20 / Express 5)<br/>• Monolito Modular Domain-Driven<br/>• Autenticación JWT con tokenVersion<br/>• Validación con esquemas Zod"]
+        API["⚙️ VetConnect API (Node.js 20 / Express 5)<br/>• Monolito Modular Domain-Driven<br/>• Autenticación JWT con tokenVersion<br/>• Validación con esquemas Zod"]
         Realtime["⚡ Clustered Socket.io Engine<br/>• Redis Adapter Distribuido<br/>• Deduplicación por clientMsgId"]
     end
 

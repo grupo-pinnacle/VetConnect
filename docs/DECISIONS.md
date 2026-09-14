@@ -1,6 +1,6 @@
-# 🏛️ Decisiones de Arquitectura (ADRs) — ConectaVet
+# 🏛️ Decisiones de Arquitectura (ADRs) — VetConnect
 
-Este registro documenta todas las decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema ConectaVet (v2.0 - FAANG Architecture).
+Este registro documenta todas las decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (v2.0 - FAANG Architecture).
 
 ---
 
@@ -26,6 +26,9 @@ Este registro documenta todas las decisiones arquitectónicas clave tomadas dura
 | **ADR-016** | Conexión Mobile USB Directa con ADB Reverse para Redes Corporativas | Aprobado | DevOps / DX |
 | **ADR-017** | Despliegue Backend Autohosteado en Coolify (VPS) & Web en Vercel/Hostinger | Aprobado | Infraestructura / Cloud |
 | **ADR-018** | Estrategia Tripartita de Distribución Android (EAS Play Store, APK Web y Local Build) | Aprobado | Mobile / Release |
+| **ADR-019** | Denormalización Atómica de Calificaciones e Índices Compuestos | Aprobado | Base de Datos / Performance |
+| **ADR-020** | Streaming de Archivos Seguros y Mitigación de DoS de Heap | Aprobado | Seguridad / Storage |
+| **ADR-021** | Hardening de Contenedores y Pipeline de Integración Continua FAANG | Aprobado | DevOps / Seguridad |
 
 ---
 

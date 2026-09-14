@@ -1,4 +1,4 @@
-# 📘 Guía Oficial de Buenas Prácticas de Desarrollo, Antipatrones (Ejemplos de NO uso), Puntos Ciegos y Propuesta LiveKit — ConectaVet
+# 📘 Guía Oficial de Buenas Prácticas de Desarrollo, Antipatrones (Ejemplos de NO uso), Puntos Ciegos y Propuesta LiveKit — VetConnect
 
 > **Documento Oficial de Estándares de Ingeniería & Arquitectura (FAANG Tier)**
 > **Aplica a:** Backend API, Web Client, Mobile App y Servicios de Infraestructura
@@ -25,7 +25,7 @@
 
 ## 1. Visión General & Propósito
 
-Esta guía establece el marco normativo de ingeniería de software para todo el ecosistema **ConectaVet (VetConnect)**. Define de manera explícita las **buenas prácticas obligatorias**, los **antipatrones o ejemplos de NO uso** que deben evitarse o corregirse en el código, los **puntos ciegos y contradicciones identificadas**, y la propuesta completa de integración de videollamadas con **LiveKit**.
+Esta guía establece el marco normativo de ingeniería de software para todo el ecosistema **VetConnect**. Define de manera explícita las **buenas prácticas obligatorias**, los **antipatrones o ejemplos de NO uso** que deben evitarse o corregirse en el código, los **puntos ciegos y contradicciones identificadas**, y la propuesta completa de integración de videollamadas con **LiveKit**.
 
 ---
 
@@ -64,7 +64,7 @@ if (!user) {
 ### 🟢 Buenas Prácticas Obligatorias
 - **Acceso Basado en Relación Clínica (Least Privilege PII Redaction):** Un veterinario solo puede acceder a la PII completa del tutor (teléfono, email, dirección) si tiene o tuvo una consulta activa con la mascota.
 - **Soft-Delete Inmutable:** Utilizar banderas `deletedAt` y mapeo `@map("deleted_at")` para cumplir con el período legal de conservación de historias clínicas sin borrar datos.
-- **Saneamiento de PII:** Cuando un usuario solicita la eliminación de su cuenta (Ley N° 25.326), anonimizar los datos personales (`email = anon_${uuid}@deleted.conectavet.internal`) conservando la ficha clínica inalterada.
+- **Saneamiento de PII:** Cuando un usuario solicita la eliminación de su cuenta (Ley N° 25.326), anonimizar los datos personales (`email = anon_${uuid}@deleted.vetconnect.internal`) conservando la ficha clínica inalterada.
 
 ### ❌ Ejemplos de NO Uso (Antipatrones a Evitar)
 
@@ -288,4 +288,4 @@ Para evitar race conditions, la página web emite `page:ready` al estar montada,
 ```
 
 ---
-*Documentación oficial de ingeniería ConectaVet — Grupo Pinnacle 2026.*
+*Documentación oficial de ingeniería VetConnect — Grupo Pinnacle 2026.*

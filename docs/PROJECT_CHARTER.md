@@ -1,8 +1,8 @@
-# 📜 PROJECT CHARTER: CONECTAVET (VetConnect)
+# 📜 PROJECT CHARTER: VETCONNECT
 ## Plataforma Integral de Telemedicina Veterinaria & Gestión Clínica de Alta Disponibilidad
-**Document ID:** `CHARTER-CONECTAVET-2026-V2`  
+**Document ID:** `CHARTER-VETCONNECT-2026-V2`  
 **Autor:** Senior / Staff Technical Program Manager & Solutions Architect (FAANG Tier)  
-**Organización:** Grupo Pinnacle / ConectaVet Team  
+**Organización:** Grupo Pinnacle / VetConnect Team  
 **Fecha de Emisión:** Septiembre 2026  
 **Estado:** `APPROVED (ACTIVE GOVERNANCE CHARTER)`  
 **Nivel de Estándar:** FAANG Engineering Governance (Google / Meta / Stripe / Vercel level)  
@@ -12,10 +12,10 @@
 ## 1. Resumen Ejecutivo & Mandato de Autorización
 
 ### 1.1 Mandato del Proyecto
-El presente **Project Charter** otorga formalmente la autoridad al equipo de ingeniería de ConectaVet para planificar, ejecutar, asegurar y desplegar la plataforma **ConectaVet (VetConnect) v2.0**. Este documento establece los objetivos estratégicos, los límites del alcance, la estructura de gobernanza, el presupuesto operativo de infraestructura y el criterio riguroso de *Definition of Done (DoD)* bajo estándares de ingeniería de primer nivel.
+El presente **Project Charter** otorga formalmente la autoridad al equipo de ingeniería de VetConnect para planificar, ejecutar, asegurar y desplegar la plataforma **VetConnect v2.0**. Este documento establece los objetivos estratégicos, los límites del alcance, la estructura de gobernanza, el presupuesto operativo de infraestructura y el criterio riguroso de *Definition of Done (DoD)* bajo estándares de ingeniería de primer nivel.
 
 ### 1.2 Declaración de Propósito
-ConectaVet nace para proveer una solución tecnológica escalable, resiliente y legalmente blindada para la telemedicina veterinaria en América Latina, facilitando la atención clínica primaria de animales de compañía, garantizando la validación de matrículas profesionales y asegurando la integridad de las historias clínicas conforme a la legislación vigente.
+VetConnect nace para proveer una solución tecnológica escalable, resiliente y legalmente blindada para la telemedicina veterinaria en América Latina, facilitando la atención clínica primaria de animales de compañía, garantizando la validación de matrículas profesionales y asegurando la integridad de las historias clínicas conforme a la legislación vigente.
 
 ---
 
@@ -39,7 +39,7 @@ El mercado veterinario en América Latina carece de plataformas telemáticas reg
 
 ```mermaid
 flowchart LR
-    subgraph Core["🐾 ConectaVet v2.0 Scope Architecture"]
+    subgraph Core["🐾 VetConnect v2.0 Scope Architecture"]
         direction TB
         ScopeIn["✅ En Alcance (In-Scope v2.0)"]
         ScopeOut["❌ Fuera de Alcance (Non-Goals)"]
@@ -64,7 +64,7 @@ flowchart LR
 ### 3.2 Desglose del Trabajo WBS (Work Breakdown Structure)
 
 ```
-1.0 ConectaVet Ecosistema Core
+1.0 VetConnect Ecosistema Core
   ├── 1.1 Seguridad, IAM & Base de Datos
   │     ├── 1.1.1 Esquema PostgreSQL relacional con Prisma ORM 6
   │     ├── 1.1.2 Sincronización estricta de nombres de columnas (@map)
@@ -100,34 +100,36 @@ flowchart LR
 
 ```mermaid
 gantt
-    title Cronograma Estrategico de Hitos ConectaVet
+    title Cronograma Estrategico de Hitos VetConnect
     dateFormat  YYYY-MM-DD
     axisFormat  %b %d
 
     section Hito 0 (M0)
-    Cimientos y Hardening de Seguridad         :crit, done, m0, 2026-08-15, 2026-08-22
+    Cimientos y Hardening de Seguridad         :crit, m0, 2026-10-01, 2026-10-08
     section Hito 1 (M1)
-    Core Telemedico y Video LiveKit           :done, m1, 2026-08-23, 2026-09-02
+    Core Telemedico y Video LiveKit           :m1, 2026-10-09, 2026-10-18
     section Hito 2 (M2)
-    Cumplimiento Legal y Validacion SENASA    :done, m2, 2026-09-03, 2026-09-11
+    Cumplimiento Legal y Validacion SENASA    :m2, 2026-10-19, 2026-10-27
     section Hito 3 (M3)
-    Quality Engineering y Testing Integral    :active, m3, 2026-09-12, 2026-09-22
+    Quality Engineering y Testing Integral    :m3, 2026-10-28, 2026-11-06
     section Hito 4 (M4)
-    Despliegue Productivo y Go-Live           :m4, 2026-09-23, 2026-10-05
+    Despliegue Productivo y Go-Live           :m4, 2026-11-07, 2026-11-18
 ```
+
+> **Nota de Estado:** Al encontrarse el repositorio en fase de especificación y arquitectura previa a la construcción del código, todos los hitos se estructuran como fases de ejecución planificadas.
 
 | Hito | Nombre | Entregables Principales | Estado |
 |---|---|---|---|
-| **M0** | **Cimientos & Hardening de Seguridad** | Purgado de secretos en Git, rotación de claves, paridad `@map` Prisma, types unificados. | `COMPLETED` |
-| **M1** | **Core Telemédico & Video LiveKit** | Redis Adapter activo, LiveKit Web/Mobile funcional, subida de archivos segura a S3/local. | `COMPLETED` |
-| **M2** | **Cumplimiento Legal & Recetas** | Flujo Sala de Espera SENASA, Soft-Deletes probados, recetas con QR y AuditLog. | `COMPLETED` |
-| **M3** | **Quality Engineering & Concurrencia** | Tests de WebSockets, cobertura backend $> 80\%$, smoke tests E2E con Playwright. | `IN PROGRESS` |
+| **M0** | **Cimientos & Hardening de Seguridad** | Purgado de secretos en Git, rotación de claves, paridad `@map` Prisma, types unificados. | `PLANNED` |
+| **M1** | **Core Telemédico & Video LiveKit** | Redis Adapter activo, LiveKit Web/Mobile funcional, subida de archivos segura a S3/local. | `PLANNED` |
+| **M2** | **Cumplimiento Legal & Recetas** | Flujo Sala de Espera SENASA, Soft-Deletes probados, recetas con QR y AuditLog. | `PLANNED` |
+| **M3** | **Quality Engineering & Concurrencia** | Tests de WebSockets, cobertura backend $> 80\%$, smoke tests E2E con Playwright. | `PLANNED` |
 | **M4** | **Despliegue Productivo & Go-Live** | Backend en VPS Coolify con SSL Traefik, Web en Vercel, EAS Android AAB/APK y APM. | `PLANNED` |
 
 ### 4.2 Hitos Futuros — Roadmap v2.1+ (Requerimientos de Stakeholders)
 Alineado con los acuerdos tomados en la reunión con el stakeholder interno ([`MINUTA_STAKEHOLDER_2026-09.md`](MINUTA_STAKEHOLDER_2026-09.md)):
 - **Hito 5 (M5) — Ficha Clínica Expandida & Bóveda "VetDrive":** Bóveda documental estructurada para estudios clínicos y recetas, carnet de vacunación digital con alarmas preventivas.
-- **Hito 6 (M6) — Identidad Animal & Ciclo de Vida Empático:** Validación mandatoria de microchip, raza "Otros" para analítica de datos, cumpleaños de mascotas, ocultamiento empático de mascotas (silenciado de alertas con leyenda explicativa), fecha de fallecimiento, emails de condolencias y visualización diferenciada en Panel Admin.
+- **Hito 6 (M6) — Identidad Animal & Ciclo de Vida Empático:** Validación de microchip (15 dígitos estándar ISO, opcional en alta), raza "Otros" para analítica de datos, cumpleaños de mascotas, ocultamiento empático de mascotas (silenciado de alertas con leyenda explicativa), fecha de fallecimiento, emails de condolencias y visualización diferenciada en Panel Admin.
 - **Hito 7 (M7) — Tratamientos, Calendario & Fidelización:** Alarmas personalizadas de medicación, exportación/sincronización con Google Calendar e iCal, veterinarios favoritos y badges de verificación profesional con matrícula visible.
 - **Hito 8 (M8) — Spikes Regulatorios e Interoperabilidad:** Gestión de padrones oficiales (SENASA / RENAPER / Colegios) e investigación de recetas digitales veterinarias en el circuito farmacéutico.
 
@@ -162,7 +164,7 @@ El sistema prioriza una arquitectura de **bajo costo recurrente y alto rendimien
 
 | Capa | Proveedor / Tecnología | Propósito | Costo Estimado |
 |---|---|---|---|
-| **Cómputo Backend** | VPS Ubuntu 24.04 (Hostinger / Hetzner) | Host de Coolify, ConectaVet API (Docker) y Redis Server | \$8 - \$15 USD / mes |
+| **Cómputo Backend** | VPS Ubuntu 24.04 (Hostinger / Hetzner) | Host de Coolify, VetConnect API (Docker) y Redis Server | \$8 - \$15 USD / mes |
 | **Base de Datos** | Supabase Managed PostgreSQL | Base de datos relacional con backups diarios y réplicas | \$0 - \$25 USD / mes |
 | **Frontend Web** | Vercel Edge Network | Despliegue SPA global con CDN, HTTPS automático y compresión | \$0 (Hobby / Pro) |
 | **Media WebRTC** | LiveKit Cloud / LiveKit Self-hosted | Servidor SFU para videollamadas de baja latencia | Free tier / \$10 USD |
@@ -185,10 +187,10 @@ El sistema prioriza una arquitectura de **bajo costo recurrente y alto rendimien
 
 ## 8. Criterio de "Listo para Producción" (Definition of Done - DoD)
 
-Para que cualquier componente o versión de ConectaVet sea promovido a Producción bajo estándar FAANG, debe cumplir:
+Para que cualquier componente o versión de VetConnect sea promovido a Producción bajo estándar FAANG, debe cumplir:
 1. **Compilación Limpia:** `npx tsc --noEmit` ejecuta con **0 errores** en `backend`, `web` y `mobile`.
 2. **Linting Estricto:** Cero advertencias (`warnings`) sin justificar en pipelines de análisis estático.
-3. **Tests Automatizados:** $100\%$ de la suite de Jest en backend ejecutada en verde ($> 150\text{ pruebas}$).
+3. **Tests Automatizados:** $100\%$ de la suite de Jest en backend ejecutada en verde (meta proyectada: $> 120\text{ pruebas}$).
 4. **Zero-Secrets:** Ningún archivo `.env` o credencial privada presente en el repositorio.
 5. **Auditoría de Accesibilidad:** Cumplimiento de WCAG 2.1 AA en todas las vistas críticas de tutores y veterinarios.
 6. **Resiliencia de Red:** Reconexión automática de WebSockets validada ante cortes abruptos de conexión.

@@ -2,7 +2,7 @@
 
 > **De:** IA Tech Lead (planificación)
 > **Para:** IA Ejecutora (implementación) — asumo nivel de razonamiento equivalente, así que estas órdenes son directivas, no tutoriales. Ejecutá, no preguntes salvo bloqueo real.
-> **Basado en:** `AUDITORIA_INTEGRAL_2026-08-18.md` (score global 66/100) + `AI_TECHLEAD_BRIEF.md` (guardarraíles y skills disponibles).
+> **Basado en:** Diagnóstico técnico integral documentado en `docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md`, `docs/TECH_REFERENCE.md` y `AI_TECHLEAD_BRIEF.md`.
 > **Objetivo:** Cada categoría de la próxima auditoría ≥90/100. Terminar todo lo humanamente posible **hoy**.
 > **Regla de oro heredada del brief:** nunca leer/editar/commitear `.env`; nunca purgar git ni forzar push sin confirmación explícita y por escrito del humano; nunca commitear sin que el humano lo pida explícitamente por fase.
 
@@ -42,7 +42,7 @@ El auditor dejó 3 preguntas de producto abiertas que cambian la solución técn
 **Decisión por defecto:** Un VET solo puede leer una mascota/PII completa del dueño si tiene o tuvo una `Consultation` con esa mascota (`WHERE vetId = current AND petId = target`), o si la mascota está en su lista de "gestionadas" (`getManagedPets`). Fuera de esa relación, los endpoints de listado (`listVets`, directorio) devuelven mascota **sin** `email`/`phone` del dueño. Esto resuelve P1-07/P2-20 con el criterio menos sorprendente para un producto de salud (mínima divulgación).
 
 ### ADR-011 — Redis para WebSocket: obligatorio en producción, opcional en dev/test
-**Decisión por defecto:** `REDIS_URL` pasa a ser **requerido** cuando `NODE_ENV=production` (fail-fast al boot si falta), y sigue opcional en dev/test para no romper el flujo local del brief (`docs/RUN_GUIDE.md`). Resuelve P2-05 sin imponer una dependencia nueva en desarrollo local.
+**Decisión por defecto:** `REDIS_URL` pasa a ser **requerido** cuando `NODE_ENV=production` (fail-fast al boot si falta), y sigue opcional en dev/test para no romper el flujo local de la guía de ejecución (`GUIA_EJECUCION_VETCONNECT.md`). Resuelve P2-05 sin imponer una dependencia nueva en desarrollo local.
 
 Estos 3 ADRs se agregan a `docs/DECISIONS.md` en F1-1 antes de tocar código, para que quede trazable **por qué** se decidió así y no aparezca como una sorpresa en la próxima auditoría.
 
@@ -185,7 +185,7 @@ Categorías que sube: **Performance (60→↑), Escalabilidad (58→↑), Seguri
 
 ### F3-8 — Cookie cross-origin + connection pool + shutdown (P2-15, P2-12)
 - **Qué:** `auth-cookies.ts:8-13`; `shared/prisma.ts:7-9`, `server.ts`.
-- **Cómo:** confirmar si prod es same-site o cross-origin (dudas §11.4); si cross-origin, `sameSite:'none';secure`, si no, documentar como same-origin explícitamente. `connection_limit=10&pool_timeout=20` en `DATABASE_URL` (reconciliar con P2-55: hoy hay 1 vs 10 contradictorio entre `PRODUCTION_DEPLOYMENT.md:40` y `.env.example:10` — unificar en 10); `$connect`/`$disconnect` explícitos en boot/shutdown.
+- **Cómo:** confirmar si prod es same-site o cross-origin (dudas §11.4); si cross-origin, `sameSite:'none';secure`, si no, documentar como same-origin explícitamente. `connection_limit=10&pool_timeout=20` en `DATABASE_URL` (reconciliar con P2-55: hoy hay 1 vs 10 unificar en 10); `$connect`/`$disconnect` explícitos en boot/shutdown.
 - **Aceptación:** login funciona correctamente en la topología real de prod (cross-origin o same-origin, según se confirme); shutdown limpio sin conexiones colgadas.
 
 ### F3-9 — Checkpoint `grill-with-docs` + `systematic-debugging`
@@ -212,7 +212,7 @@ Categorías que sube: **DevOps (63→↑)**.
 ### F4-3 — Deploy (Coolify + Vercel) + staging + rollback (P2-44, P2-47)
 - **Decisión de infra ya tomada (ADR-015, grupo 2026-08-24):** backend en **Coolify sobre VPS autohospedada** (gratis si es self-host), web en **Vercel**. Mobile queda TBD.
 - **Qué:** `ci.yml` (deploy web fuera de CI, sin `vercel.json`); `ci.yml:95-108` (deploy directo a `main`→prod sin staging). `railway.json` del roadmap original queda **superseded** por Coolify (no se crea `railway.json`).
-- **Cómo:** `vercel.json` con rewrites → `index.html` (fix SPA deep-links 404) para la web; en backend, `Dockerfile` + `healthcheck` para que Coolify builda/depliegue desde Git con rollback; entorno de staging + aprobación manual antes de prod; migraciones retrocompatibles; plan de rollback documentado y **probado** en `docs/PRODUCTION_DEPLOYMENT.md` / `docs/HOTFIX_PROTOCOL.md`.
+- **Cómo:** `vercel.json` con rewrites → `index.html` (fix SPA deep-links 404) para la web; en backend, `Dockerfile` + `healthcheck` para que Coolify builda/depliegue desde Git con rollback; entorno de staging + aprobación manual antes de prod; migraciones retrocompatibles; plan de rollback documentado y **probado** en `docs/DEPLOY.md`.
 - **Aceptación:** deep-link directo a una ruta de la SPA en prod no da 404; deploy de backend vía Coolify expone `/health` tras proxy HTTPS; un deploy simulado a staging requiere aprobación antes de promoverse; rollback ejecutado una vez en staging como prueba.
 
 ### F4-4 — Observabilidad mínima (P2-48)

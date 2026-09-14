@@ -1,6 +1,6 @@
-# 🤖 AGENTS.md — Guía de Operación para Agentes de IA & Estándar de Codificación (ConectaVet)
+# 🤖 AGENTS.md — Guía de Operación para Agentes de IA & Estándar de Codificación (VetConnect)
 
-> **Propósito:** Este documento es la fuente primaria de instrucciones para cualquier agente de IA (Jules, Claude Code, Cursor, Copilot, etc.) que trabaje en el repositorio **ConectaVet (VetConnect)**. Define reglas para prevenir la alucinación por exceso de contexto, el estándar de codificación obligatorio, los antipatrones ("ejemplos de NO uso") y el plan de ejecución por fases para la codificación.
+> **Propósito:** Este documento es la fuente primaria de instrucciones para cualquier agente de IA (Jules, Claude Code, Cursor, Copilot, etc.) que trabaje en el repositorio **VetConnect**. Define reglas para prevenir la alucinación por exceso de contexto, el estándar de codificación obligatorio, los antipatrones ("ejemplos de NO uso") y el plan de ejecución por fases para la codificación.
 
 ---
 
@@ -25,7 +25,7 @@ Para evitar que el agente alucine, asuma archivos inexistentes o tome decisiones
 ## 🏗️ 2. Arquitectura & Estructura del Monorepo
 
 ```
-conectavet/
+vetconnect/
 ├── backend/                        # API REST Node.js + Express 5 + TypeScript + Prisma 6
 │   ├── prisma/schema.prisma        # Modelo PostgreSQL con mappings snake_case
 │   └── src/modules/                # Módulos DDD: auth, users, pets, consultations, calls, media, notifications
@@ -160,4 +160,4 @@ El agente o desarrollador debe seguir estas fases ordenadas para implementar los
 2. Validar que el typecheck de TypeScript pase en todo el monorepo sin errores: `npx tsc --noEmit`.
 
 ---
-*Documento de Operación de Agentes ConectaVet — Grupo Pinnacle 2026.*
+*Documento de Operación de Agentes VetConnect — Grupo Pinnacle 2026.*

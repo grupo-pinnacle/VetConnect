@@ -30,7 +30,7 @@ Plataforma de **telemedicina veterinaria** que conecta dueños de mascotas con v
 | Backend API | Node + Express + Prisma + PostgreSQL (Supabase) + Socket.io + JWT | `backend/src/server.ts` (PORT `process.env.PORT || 3000`, típicamente 3001 en dev) |
 | Web | React + Vite + Tailwind + Socket.io client | `web/` (build estático → Vercel) |
 | Mobile | Expo / React Native + Socket.io + expo-image | `mobile/` (EAS Build → APK/IPA) |
-| Compartido | npm workspaces `@conectavet/shared` en `packages/shared` | ⚠️ **NO adoptado** (0 imports reales) |
+| Compartido | npm workspaces `@vetconnect/shared` en `packages/shared` | ⚠️ **NO adoptado** (0 imports reales) |
 | Realtime | Socket.io gateway en backend (`/socket.io`) | deep-links `vetconnect://` en mobile |
 | Media | Uploads a disco local `/uploads` (efímero en PaaS) | `POST /api/media` (cuota diaria) |
 | Video | LiveKit server-side (`POST /api/calls/:id/token` minta token); cliente mobile usa **WebView**, no el SDK | pendiente de cablear end-to-end |
@@ -40,7 +40,7 @@ Plataforma de **telemedicina veterinaria** que conecta dueños de mascotas con v
 Registro/login (solo `CLIENT` por `/register`; `VET`/`ADMIN` manual), gestión de mascotas (CRUD + soft delete), cola de espera con auto-asignación a vet online, consulta (WAITING→ACTIVE→COMPLETED), chat texto en consulta activa, recetas, calificación (Review 1–10), favoritos de vet, notificaciones push + bandeja, presencia (`lastSeen`, `isOnline`), historial clínico.
 
 ### 2.4 Tests
-- **Backend:** 159 tests en 10 archivos (`backend/src/__tests__`: `app, auth, cache, calls, consultations, media, notifications, pets, users, utils`) con Jest + supertest.
+- **Backend:** Meta proyectada de ~120-150 tests en 10 archivos (`backend/src/__tests__`: `app, auth, cache, calls, consultations, media, notifications, pets, users, utils`) con Jest + supertest.
 - **NO hay** tests de WebSocket, authz negativa, ni concurrencia. **NO hay** tests de web ni mobile.
 
 ---
@@ -49,18 +49,18 @@ Registro/login (solo `CLIENT` por `/register`; `VET`/`ADMIN` manual), gestión d
 
 | Doc | Para qué sirve |
 |-----|---------------|
-| `README.md` | Visión general, stack, quickstart, **estado y limitaciones conocidas** (leer primero). |
-| `docs/TECH_REFERENCE.md` | **La fuente técnica**: arquitectura, modelos Prisma, endpoints `/api/*`, flujos. (v6, 14-ago) |
-| `docs/CODE_AUDIT.md` | Auditoría de las 3 capas (hallazgos P0→P3). Estado 14-ago: P0–P3 resueltos (commit `36d76f0`). |
-| `docs/FAANG_AUDIT.md` | Scorecards por categoría (v1→v6). Avg ~6.7/10. Útil para ver dónde falta nivel producción. |
-| `docs/DECISIONS.md` | ADRs (incl. ADR-008 `packages/shared` **no adoptado**). |
-| `docs/DEPLOY.md` | Deploy backend (Railway CI/CD activo / Koyeb recomendado), web (Vercel), mobile (EAS). |
-| `docs/PRODUCTION_DEPLOYMENT.md` | **Checklist pre-lanzamiento**, dominio/HTTPS, backups/rollback, seguridad. Ítems 3–5 son bloqueantes. |
-| `docs/MVP_SCOPE.md` | Alcance MVP vs post-MVP (LiveKit parcial, cola, etc.). |
-| `docs/SPRINT_PLAN.md` | Plan de sprints + nota de conteo real de tests. |
-| `docs/RUN_GUIDE.md` | Cómo correr en local. |
-| `docs/FALTA_HACER.md` | Pendientes explícitos del equipo. |
-| `docs/HOTFIX_PROTOCOL.md`, `STANDUP_GUIDE.md`, `CHANNEL_DECISION.md`, `CONEXION_SIN_RED_CORPORATIVA.md`, `REPORTE_SEMANA_2026-08-03.md` | Protocolos/contexto operativo. |
+| `README.md` | Visión general, stack, quickstart, estado y arquitectura pre-desarrollo (leer primero). |
+| `docs/TECH_REFERENCE.md` | **La fuente técnica**: modelos Prisma, endpoints `/api/*`, matriz Socket.io y contratos. |
+| `docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md` | Buenas prácticas, antipatrones (ejemplos de NO uso), puntos ciegos y directivas FAANG. |
+| `docs/DECISIONS.md` | Registro oficial de 21 Decisiones de Arquitectura (ADR-001 a ADR-021). |
+| `docs/DEPLOY.md` | Despliegue en producción: Coolify (VPS) para Backend, Vercel para Web y distribución Android. |
+| `docs/PROJECT_CHARTER.md` | Carta fundamental: alcance MVP, hitos planificados M0–M4, RACI y criterios de aceptación. |
+| `docs/PLAN_DE_PROYECTO_Y_GESTION.md` | Plan de gestión: Scrumban, Sprints 1–6, UX/UI (ISO 9241), mapa de stakeholders y KPIs. |
+| `GUIA_EJECUCION_VETCONNECT.md` | Guía práctica paso a paso para encendido local y conexión ADB USB sin red corporativa. |
+| `PLAN_ACCION_VETCONNECT.md` | Plan de acción secuencial por fases (F0→F7) con directivas exactas y criterios de aceptación. |
+| `AGENTS.md` | Guía de operación para agentes de IA: reglas anti-alucinación y fases de codificación. |
+| `docs/MINUTA_STAKEHOLDER_2026-09.md` | Minuta de acuerdos con stakeholders y backlog de producto v2.1+. |
+| `docs/LIVEKIT_AUDIT.md` / `PROPUESTA_MEJORAS_LIVEKIT.md` | Auditoría y optimización de videollamadas WebRTC LiveKit. |
 
 ---
 
@@ -110,14 +110,14 @@ _instaladas en `.agents/skills/`; copy-compatible con OpenCode y otros agentes. 
 
 ## 6. Cómo debe operar el Tech Lead (modo de uso)
 
-1. **Arranca leyendo** `README.md` → `docs/TECH_REFERENCE.md` → `docs/CODE_AUDIT.md` → `docs/PRODUCTION_DEPLOYMENT.md`.
+1. **Arranca leyendo** `README.md` → `docs/TECH_REFERENCE.md` → `docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md` → `docs/DEPLOY.md`.
 2. **Valida supuestos** con `grill-with-docs` antes de cada fase.
 3. **Plan en fases** (sugerencia):
    - **Fase 0 — Seguridad de borde (bloqueante):** rotar secretos, purgar git, `eas.json` HTTPS + `projectId`. _Ordenar al humano; no ejecutar purga sin confirmación._
    - **Fase 1 — Robustez backend:** CORS WS restrictivo, adoptar `packages/shared`, media persistente (S3/Cloudinary), concurrencia/cache revisados.
    - **Fase 2 — Tests:** WS, authz negativa, concurrencia, y smoke E2E (Playwright, con precaución).
    - **Fase 3 — Features pendientes:** video LiveKit end-to-end (o decidir post-MVP), observabilidad (health+metrics), pulido UI/a11y.
-   - **Fase 4 — Deploy y QA:** Koyeb/Railway, Vercel, EAS, smoke test E2E, rollback plan.
+   - **Fase 4 — Deploy y QA:** Coolify (VPS autohospedado, reemplaza Railway/Koyeb — superseded por ADR-017), Vercel, EAS / APK directo, smoke test E2E, rollback plan.
 4. **Cada orden** debe tener: objetivo, archivos a tocar (ruta:línea), comandos, y criterio de aceptación (ej. "tests verdes", "lint/tsc sin errores").
 5. **Estándares FAANG:** cambios pequeños y revisables, sin comentarios innecesarios, manejo de errores explícito, secretos fuera del repo, tests para regresiones, documentación actualizada en el mismo PR.
 
@@ -142,7 +142,7 @@ cp .env.example .env            # NUNCA commitear .env
 npx prisma db push              # sincronizar BD con schema (dev) — si falla P2022
 npx prisma generate
 npm run dev                     # tsx watch src/server.ts
-npm test                        # jest --forceExit --detectOpenHandles (159 tests)
+npm test                        # jest --forceExit --detectOpenHandles (meta: 120+ tests proyectados)
 npx tsc --noEmit                # typecheck
 
 # Web
@@ -165,7 +165,7 @@ eas build --platform android --profile preview
 - [ ] Suite de tests cubre WS, authz negativa y concurrencia; smoke E2E verde.
 - [ ] Observabilidad mínima (health + logs estructurados + alerta de caída).
 - [ ] Deploy en PaaS con dominio/HTTPS, rollback probado, backup de BD.
-- [ ] Docs (`README`, `TECH_REFERENCE`, `PRODUCTION_DEPLOYMENT`) reflejan el estado final.
+- [ ] Docs (`README.md`, `docs/TECH_REFERENCE.md`, `docs/DEPLOY.md`) reflejan el estado final.
 
 ---
 

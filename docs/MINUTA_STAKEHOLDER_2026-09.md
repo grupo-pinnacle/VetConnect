@@ -1,5 +1,5 @@
 # 📋 MINUTA DE REUNIÓN & BACKLOG DE REQUERIMIENTOS — STAKEHOLDER INTERNO
-## Proyecto: ConectaVet (VetConnect) v2.0+
+## Proyecto: VetConnect v2.0+
 **Document ID:** `MEETING-STAKEHOLDER-2026-09`  
 **Fecha de Emisión:** 14 de Septiembre de 2026  
 **Participantes:** Stakeholder Interno de Producto/Negocio, Staff Architect & Tech Lead  
@@ -10,7 +10,7 @@
 
 ## 1. Resumen de la Reunión & Contexto
 
-En la presente sesión con el stakeholder interno se identificaron y recopilaron necesidades prioritarias de evolución para la plataforma **ConectaVet**. Los requerimientos apuntan a robustecer la experiencia clínica y de fidelización del tutor, optimizar el cumplimiento regulatorio veterinario en Argentina, ofrecer herramientas avanzadas de gestión clínica (documentos y calendario) y habilitar una estrategia empática y ética en la gestión del ciclo de vida y duelo de las mascotas.
+En la presente sesión con el stakeholder interno se identificaron y recopilaron necesidades prioritarias de evolución para la plataforma **VetConnect**. Los requerimientos apuntan a robustecer la experiencia clínica y de fidelización del tutor, optimizar el cumplimiento regulatorio veterinario en Argentina, ofrecer herramientas avanzadas de gestión clínica (documentos y calendario) y habilitar una estrategia empática y ética en la gestión del ciclo de vida y duelo de las mascotas.
 
 ---
 
@@ -42,7 +42,7 @@ A continuación, los 15 puntos se clasifican y estructuran en 6 Épicas de produ
 
 ```mermaid
 mindmap
-  root((ConectaVet v2.1+<br/>Stakeholder Scope))
+  root((VetConnect v2.1+<br/>Stakeholder Scope))
     Ficha Clinica y Documentos
       Subida de Estudios y Archivos
       Boveda Clinica VetDrive
@@ -52,7 +52,7 @@ mindmap
       Integracion Google Calendar e iCal
       Alertas de Refuerzos de Vacunas
     Ciclo de Vida e Identidad
-      Microchip Obligatorio en Alta
+      Microchip Opcional con Validación ISO
       Raza Otros para Analitica
       Cumpleanos de Mascotas
       Ocultar Mascota con Leyenda
@@ -90,7 +90,7 @@ mindmap
 ### Épica 3: Identidad Animal, Analítica de Razas & Gestión del Ciclo de Vida
 * **Items cubiertos:** (3), (4), (11), (12), (13).
 * **Descripción:**
-  - **Validación Estricta de Microchip:** En el formulario de alta (`createPetSchema`), el número de microchip (15 dígitos estándar ISO 11784/11785) pasa a ser un requisito obligatorio para evitar duplicación y garantizar identificación inequívoca.
+  - **Validación Estricta de Microchip (Opcional en Alta):** En el formulario de alta (`createPetSchema`), si el tutor provee el número de microchip, se valida estrictamente el formato estándar ISO 11784/11785 (15 dígitos numéricos) y unicidad en base de datos. Si el animal no posee microchip, el campo es opcional y se almacena como `null`, permitiendo completar el registro sin bloqueos.
   - **Raza "Otros / Mestizo":** Incorporación de la opción estándar `"Otros"` con un subcampo libre o selector descriptivo, estructurado para capturar métricas de población animal y posterior análisis de datos biométricos.
   - **Cumpleaños de Perros / Mascotas:** Cálculo de fecha de aniversario a partir de `birthDate`, activando push notifications conmemorativas y correos de saludo institucional.
   - **Mascota Oculta (No Eliminada) con Leyenda Explicativa:** 
@@ -145,7 +145,7 @@ mindmap
 | **Historial de Vacunación & Alarmas** | `pets`, `notifications` | Modelo `VaccinationRecord` vinculado a `Pet` | Pestaña "Vacunas" en Ficha Clínica | Visualización de carnet y recordatorios push | Scheduler de notificaciones previas (cron / BullMQ) |
 | **Calendario & Alarmas Medicación** | `pets`, `notifications` | Modelo `MedicationSchedule` vinculado a `Pet` | Calendario interactivo en Dashboard | Alarma local con sonido y push notification | Motor de eventos temporales |
 | **Sincronización Google Calendar** | `pets`, `consultations` | Token o endpoint iCal (`/api/pets/:id/calendar.ics`) | Botón "Añadir a Google Calendar" | Deep-link a app de calendario del SO | Google Calendar URL generator / iCalendar RFC 5545 |
-| **Microchip Obligatorio** | `pets` | `microchip String @unique` (no nullable en alta) | Validación en formulario de registro de mascota | Validación en formulario con escáner de código de barras opcional | - |
+| **Microchip Opcional (ISO 15)** | `pets` | `microchip String? @unique` (nullable en base de datos, 15 dígitos numéricos si se provee) | Validación de 15 dígitos en formulario de alta si se ingresa | Validación en formulario con escáner de código de barras opcional | - |
 | **Raza "Otros"** | `pets` | Enum o string con flag `isOtherBreed Boolean` | Dropdown con opción "Otros" y campo de texto | Dropdown con opción "Otros" | Pipeline de Analytics / BI |
 | **Veterinario Favorito** | `users` | Modelo `FavoriteVet` (ya existente en Prisma) | Toggle de estrella en card de veterinario | Botón de favorito y filtro "Mis Favoritos" | - |
 | **Estudios & VetDrive** | `media`, `pets` | Modelo `PetDocument` con categoría y URL S3 | Gestor de archivos estilo Drive con carpetas y preview | Visor de documentos y subida desde cámara | AWS S3 / Local Storage con Magic Bytes |
@@ -165,7 +165,7 @@ mindmap
 +------------------------------------+--------------------------------------------------------------+
 | Categoría                          | Requerimientos Asignados                                     |
 +------------------------------------+--------------------------------------------------------------+
-| 🟢 MUST HAVE (Obligatorio v2.1)    | - Microchip obligatorio en registro de mascota.              |
+| 🟢 MUST HAVE (Obligatorio v2.1)    | - Validación estándar de microchip de 15 dígitos (opcional en registro de mascota).              |
 |                                    | - Raza "Otros" en formularios para recolección de datos.     |
 |                                    | - Ocultar mascota (soft-hide) con cese de notificaciones.    |
 |                                    | - Registro de fecha de fallecimiento y mail de condolencias. |
@@ -191,16 +191,21 @@ mindmap
 
 ## 6. Historias de Usuario Principales (User Stories & Criterios de Aceptación)
 
-### US-01: Microchip Obligatorio en el Alta
+### US-01: Microchip con Validación Estándar en el Alta (Opcional)
 * **Como:** Tutor de mascota.  
-* **Quiero:** Que el sistema me exija el número de microchip para dar de alta a mi mascota.  
-* **Para:** Garantizar la identidad inequívoca de mi animal y vincularlo formalmente a mi expediente clínico.  
+* **Quiero:** Poder registrar a mi mascota indicando su microchip si lo tiene, o completar el registro si aún no cuenta con uno.  
+* **Para:** Garantizar la identificación de mi mascota cuando disponga de microchip, sin que la falta de este me impida acceder a la atención veterinaria.  
 * **Criterio de Aceptación (Gherkin):**
   ```gherkin
-  Escenario: Intento de registro sin microchip
+  Escenario: Registro exitoso sin microchip
     Dado que el usuario completa el formulario de registro de mascota
-    Cuando deja el campo "microchip" vacío o con un formato distinto a 15 dígitos numéricos
-    Entonces el backend rechaza la petición con código 400 y mensaje "El microchip de 15 dígitos es obligatorio"
+    Cuando deja el campo "microchip" vacío o nulo
+    Entonces el backend crea la mascota exitosamente con `microchip = null`.
+
+  Escenario: Intento de registro con formato de microchip inválido
+    Dado que el usuario completa el formulario de registro de mascota
+    Cuando ingresa un microchip con formato distinto a 15 dígitos numéricos
+    Entonces el backend rechaza la petición con código 400 y mensaje "El microchip debe contener exactamente 15 dígitos numéricos estándar ISO".
   ```
 
 ### US-02: Ocultamiento Empático de Mascota
@@ -236,5 +241,5 @@ mindmap
 ## 7. Próximos Pasos Operativos
 
 1. **Equipo Legal & PM (Lara Bouso):** Iniciar consultas con asesores legales sobre el marco de Receta Digital Veterinaria en Argentina y canales formales con SENASA / Colegios Veterinarios.
-2. **Arquitectura & Backend (Tobias Vera):** Diseñar las migraciones Prisma para `VaccinationRecord`, `PetDocument` y actualización de validadores en `createPetSchema` (`microchip` requerido).
+2. **Arquitectura & Backend (Tobias Vera):** Diseñar las migraciones Prisma para `VaccinationRecord`, `PetDocument` y actualización de validadores en `createPetSchema` (`microchip` opcional con formato 15 dígitos).
 3. **Diseño de Producto & Frontend (Damian Orellana, Ezequiel Charca, Juan Mendoza):** Diseñar los mockups y flujos para la vista "VetDrive", la leyenda de "Ocultar mascota" y el badge de "Veterinario Verificado".

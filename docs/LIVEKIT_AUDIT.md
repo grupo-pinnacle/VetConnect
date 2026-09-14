@@ -1,4 +1,4 @@
-# Auditoría y Análisis Exhaustivo de la Conexión LiveKit — ConectaVet
+# Auditoría y Análisis Exhaustivo de la Conexión LiveKit — VetConnect
 
 > **Fecha:** 10 de Septiembre de 2026  
 > **Alcance:** Integración de videollamadas WebRTC (Backend, Web Frontend y Mobile App)  
@@ -8,7 +8,7 @@
 
 ## 1. Resumen Ejecutivo y Arquitectura
 
-Se realizó una auditoría técnica profunda sobre la implementación de videollamadas con LiveKit en la plataforma **ConectaVet**, evaluando la arquitectura en tres capas:
+Se realizó una auditoría técnica profunda sobre la implementación de videollamadas con LiveKit en la plataforma **VetConnect**, evaluando la arquitectura en tres capas:
 
 1. **Backend API & Gateway Realtime**:
    - `backend/src/modules/calls/calls.service.ts`: Generación de tokens JWT con `livekit-server-sdk`.

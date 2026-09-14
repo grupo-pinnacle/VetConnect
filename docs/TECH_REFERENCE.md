@@ -1,4 +1,4 @@
-# 📚 Referencia Técnica Integral del Sistema — ConectaVet
+# 📚 Referencia Técnica Integral del Sistema — VetConnect
 
 Esta guía contiene la documentación de bajo nivel, contratos de endpoints, eventos de WebSocket y estructura completa de directorios para desarrolladores.
 
@@ -7,7 +7,7 @@ Esta guía contiene la documentación de bajo nivel, contratos de endpoints, eve
 ## 1. Estructura de Directorios del Monorepo
 
 ```
-conectavet/
+vetconnect/
 ├── backend/                        # API REST, WebSockets & Capa de Persistencia
 │   ├── prisma/
 │   │   ├── schema.prisma           # Modelado de datos PostgreSQL
@@ -112,7 +112,7 @@ conectavet/
 | Evento | Payload | Emisor | Receptor | Descripción |
 |---|---|---|---|---|
 | `join:consultation` | `consultationId: string` | Cliente / Vet | Servidor | Une el socket a la sala de chat de la consulta |
-| `message:send` | `{ consultationId, content, attachmentUrl }` | Cliente / Vet | Servidor | Envía un nuevo mensaje de chat |
+| `message:send` | `{ consultationId, content, clientMsgId, attachmentUrl }` | Cliente / Vet | Servidor | Envía un nuevo mensaje de chat con deduplicación idempotente por clientMsgId |
 | `message:new` | `Message` object | Servidor | Sala de Consulta | Broadcast del mensaje a ambos participantes |
 | `call:incoming` | `{ consultationId, callerName, roomName }` | Servidor | Usuario llamado | Dispara la alerta de llamada entrante en Web y Mobile |
 | `call:answered` | `{ consultationId }` | Usuario llamado | Servidor | Notifica que la videollamada fue atendida |
@@ -124,7 +124,7 @@ conectavet/
 ## 4. Guía de Ejecución de Pruebas Automatizadas
 
 ```bash
-# Ejecutar toda la suite de pruebas del backend (119+ tests)
+# Ejecutar toda la suite de pruebas del backend (meta: 120+ tests)
 cd backend
 npm test
 

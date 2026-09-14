@@ -1,8 +1,8 @@
 # 📐 SYSTEM & TECHNICAL SPECIFICATION (SPEC)
-## Proyecto: ConectaVet (VetConnect) — Especificación Técnica y Arquitectónica Integral
-**Document ID:** `SPEC-CONECTAVET-2026-V2`  
+## Proyecto: VetConnect — Especificación Técnica y Arquitectónica Integral
+**Document ID:** `SPEC-VETCONNECT-2026-V2`  
 **Autor:** Senior / Staff Systems Architect & Tech Lead (FAANG Tier Standards)  
-**Organización:** Grupo Pinnacle / ConectaVet Team  
+**Organización:** Grupo Pinnacle / VetConnect Team  
 **Fecha de Emisión:** Septiembre 2026  
 **Estado:** `APPROVED (ACTIVE SYSTEM SPEC)`  
 **Clasificación:** Tier-1 Engineering RFC & Implementation Specification  
@@ -11,7 +11,7 @@
 
 ## 1. Visión General & Objetivos del Sistema
 
-Esta especificación técnica define de manera exhaustiva la arquitectura, contratos de datos, protocolos de tiempo real, seguridad y modelos de falla para la plataforma **ConectaVet (VetConnect) v2.0**. 
+Esta especificación técnica define de manera exhaustiva la arquitectura, contratos de datos, protocolos de tiempo real, seguridad y modelos de falla para la plataforma **VetConnect v2.0**. 
 
 ### 1.1 Objetivos de Ingeniería
 - **Latencia Ultra Baja:** Entrega de mensajería en tiempo real con latencia P95 $< 80\text{ ms}$ e inicio de videollamadas WebRTC P95 $< 1500\text{ ms}$.
@@ -287,7 +287,7 @@ Si la firma binaria no concuerda con el MIME type declarado en la cabecera HTTP,
 
 ### 5.3 Soft-Delete y Anonimización Legal (Ley 25.326)
 Cuando se solicita la baja de una cuenta:
-- Se reemplaza `email` por `anon_${uuid}@deleted.conectavet.internal`.
+- Se reemplaza `email` por `anon_${uuid}@deleted.vetconnect.internal`.
 - Se reemplaza `firstName` y `lastName` por `"Usuario Eliminado"`.
 - Se limpian `phone`, `bio` y `photoUrl`.
 - Se establece `deletedAt = now()`.

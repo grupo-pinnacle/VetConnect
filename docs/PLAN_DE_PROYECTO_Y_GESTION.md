@@ -1,8 +1,8 @@
-# 📋 Plan de Proyecto, Gestión, Organización y Cronograma — ConectaVet (VetConnect)
+# 📋 Plan de Proyecto, Gestión, Organización y Cronograma — VetConnect
 
 > **Documento Maestro de Gestión de Proyecto, Planificación Ágil & Diseño DCU/UX**
 > **Alineado con:** Estándares PMI (Project Management Institute), ISO 9241-210 (DCU), ISO 9241-11 (Usabilidad), WCAG 2.1 y Scrum/Scrumban Framework.
-> **Proyecto:** ConectaVet (VetConnect) v2.0 — Plataforma Integral de Telemedicina Veterinaria
+> **Proyecto:** VetConnect v2.0 — Plataforma Integral de Telemedicina Veterinaria
 > **Fecha de Emisión:** Septiembre 2026
 > **Estado:** `APPROVED (ACTIVE PROJECT MANAGEMENT PLAN)`
 
@@ -89,7 +89,7 @@ Para evitar duplicación de tareas, omisiones o sobrecargas, se define la asigna
 
 ```
 +-----------------------------------------------------------------------------------------------+
-|                                  MATRIZ RACI DE CONECTAVET                                    |
+|                                  MATRIZ RACI DE VETCONNECT                                    |
 +------------------------------------+-----------+------------+----------+----------+-----------+
 | Entregables / Actividades          | Tech Lead | Backend Dev| Mobile Dev| Web Dev | QA / Test |
 +------------------------------------+-----------+------------+----------+----------+-----------+
@@ -100,7 +100,7 @@ Para evitar duplicación de tareas, omisiones o sobrecargas, se define la asigna
 | Integración LiveKit WebRTC Token   |     A     |     R      |    C     |    C     |     I     |
 | Frontend Web Pro Portal (React 19) |     A     |     I      |    I     |    R     |     C     |
 | Mobile App Native (Expo SDK 54)    |     A     |     I      |    R     |    I     |     C     |
-| Pruebas Automatizadas (119+ tests) |     A     |     C      |    C     |    C     |     R     |
+| Pruebas Automatizadas (meta: 120+ tests) |     A     |     C      |    C     |    C     |     R     |
 | Despliegue en Producción (Coolify) |   A / R   |     R      |    I     |    I     |     I     |
 +------------------------------------+-----------+------------+----------+----------+-----------+
 ```
@@ -110,7 +110,7 @@ Para evitar duplicación de tareas, omisiones o sobrecargas, se define la asigna
 ## 4. Gestión del Cambio (Change Management) & Generación de Valor Agregado
 
 ### 4.1 Gestión del Cambio (Change Management - PMI Framework)
-Los cambios en proyectos tecnológicos son inevitables. ConectaVet aplica un protocolo de control de cambios:
+Los cambios en proyectos tecnológicos son inevitables. VetConnect aplica un protocolo de control de cambios:
 1. **Evaluación de Impacto:** Todo requerimiento nuevo (ej. extensiones v2.1 de vacunas/calendario) se analiza en términos de costo, tiempo, arquitectura y riesgo.
 2. **Aprobación de Cambio (CCB - Change Control Board):** El Tech Lead y el Product Owner aprueban o rechazan el cambio.
 3. **Acompañamiento y Adopción:** Capacitación en interfaz para veterinarios y tutores mediante herramientas intuitivas de onboarding.
@@ -131,7 +131,7 @@ El desarrollo se fundamenta en la norma **ISO 9241-210** (Diseño Centrado en el
 +-----------------------------------------------------------------------------------------------+
 |                                CICLO ITERATIVO DESIGN THINKING                                |
 +------------------+----------------------------------------------------------------------------+
-| Fase             | Descripción y Aplicación en ConectaVet                                     |
+| Fase             | Descripción y Aplicación en VetConnect                                     |
 +------------------+----------------------------------------------------------------------------+
 | 1. Empatizar     | Entrevistas con veterinarios y tutores. Mapeo de frustraciones y contexto. |
 | 2. Definir       | Delimitación del problema de espera en emergencias y gestión de historias.|

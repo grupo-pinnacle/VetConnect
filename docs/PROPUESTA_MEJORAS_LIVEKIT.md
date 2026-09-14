@@ -1,4 +1,4 @@
-# 🎥 Propuesta de Mejoras, Puntos Ciegos y Contradicciones: Integración de LiveKit en ConectaVet
+# 🎥 Propuesta de Mejoras, Puntos Ciegos y Contradicciones: Integración de LiveKit en VetConnect
 
 > **Referencia Oficial de Documentación:** [LiveKit Official Docs & MCP Reference](https://docs.livekit.io/mcp)
 > **Estado:** Propuesta Técnica de Ingeniería para Actualización de Documentación
@@ -19,7 +19,7 @@
 
 ## 1. Resumen Ejecutivo y Alineación con Estándares Oficiales
 
-Tras evaluar la arquitectura actual de **ConectaVet** frente a las especificaciones oficiales de **LiveKit** ([https://docs.livekit.io/mcp](https://docs.livekit.io/mcp)), se han identificado áreas críticas de mejora en la integración de videollamadas WebRTC.
+Tras evaluar la arquitectura actual de **VetConnect** frente a las especificaciones oficiales de **LiveKit** ([https://docs.livekit.io/mcp](https://docs.livekit.io/mcp)), se han identificado áreas críticas de mejora en la integración de videollamadas WebRTC.
 
 El sistema utiliza una arquitectura distribuida con un servidor backend en Node.js, un cliente web en React (`@livekit/components-react`) y un cliente móvil React Native en Expo (a través de `WebView`).
 

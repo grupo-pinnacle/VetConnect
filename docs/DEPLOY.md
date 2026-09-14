@@ -1,6 +1,6 @@
-# 🚀 Guía de Despliegue en Producción — ConectaVet
+# 🚀 Guía de Despliegue en Producción — VetConnect
 
-Esta guía detalla la infraestructura de producción seleccionada para ConectaVet: **Coolify (Self-hosted)** para el Backend, **Vercel / Hostinger** para el Frontend Web, y las **estrategias de distribución para Android**.
+Esta guía detalla la infraestructura de producción seleccionada para VetConnect: **Coolify (Self-hosted)** para el Backend, **Vercel / Hostinger** para el Frontend Web, y las **estrategias de distribución para Android**.
 
 ---
 
@@ -13,12 +13,12 @@ flowchart TD
     end
 
     subgraph WebHosting["Capa Frontend Web"]
-        Vercel["⚡ Vercel (Recomendado) / Hostinger\n• Dominio: app.conectavet.com\n• SPA React 19 + Vite\n• CDN Global & SSL Automático"]
+        Vercel["⚡ Vercel (Recomendado) / Hostinger\n• Dominio: app.vetconnect.com\n• SPA React 19 + Vite\n• CDN Global & SSL Automático"]
     end
 
     subgraph CoolifyVPS["Capa Backend (Coolify en VPS Propio)"]
         Traefik["🛡️ Traefik Reverse Proxy\n• SSL Let's Encrypt Automático\n• WebSocket Gateway (WSS)"]
-        NodeApp["⚙️ ConectaVet API (Node.js 20 / Docker)\n• Express 5 + Socket.io + Prisma\n• Puerto interno: 3001"]
+        NodeApp["⚙️ VetConnect API (Node.js 20 / Docker)\n• Express 5 + Socket.io + Prisma\n• Puerto interno: 3001"]
         RedisServ["🔴 Redis Server (Coolify One-Click Service)\n• Socket.io Adapter & Rate Limiter"]
     end
 
@@ -52,10 +52,10 @@ flowchart TD
   ```
 
 ### 2.2 Configuración del Proyecto en Coolify
-1. **Crear Nuevo Recurso:** En el panel de Coolify, añade una nueva aplicación seleccionando tu repositorio de GitHub (`grupo-pinnacle/conectavet`).
+1. **Crear Nuevo Recurso:** En el panel de Coolify, añade una nueva aplicación seleccionando tu repositorio de GitHub (`grupo-pinnacle/VetConnect`).
 2. **Directorio Base:** Configura el *Base Directory* en `/backend`.
 3. **Build Pack:** Selecciona `Dockerfile` (o `Nixpacks / Node.js`).
-4. **Dominio Público:** Asigna tu subdominio (ej: `https://api.conectavet.com`). Coolify y Traefik generarán automáticamente el certificado SSL (HTTPS/WSS).
+4. **Dominio Público:** Asigna tu subdominio (ej: `https://api.vetconnect.com`). Coolify y Traefik generarán automáticamente el certificado SSL (HTTPS/WSS).
 5. **Variables de Entorno en Coolify:**
    ```env
    PORT=3001
@@ -65,10 +65,10 @@ flowchart TD
    JWT_SECRET="genera_un_secreto_seguro_de_64_caracteres_con_openssl"
    JWT_REFRESH_SECRET="genera_otro_secreto_seguro_para_refresh"
    REDIS_URL="redis://default:password@coolify-redis-service:6379"
-   FRONTEND_URL="https://app.conectavet.com"
+   FRONTEND_URL="https://app.vetconnect.com"
    LIVEKIT_API_KEY="APxxxxxxxxxxxx"
    LIVEKIT_API_SECRET="secretxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   LIVEKIT_HOST="https://conectavet.livekit.cloud"
+   LIVEKIT_HOST="https://vetconnect.livekit.cloud"
    ```
 6. **Comando de Inicio (Start Command):**
    ```bash
@@ -87,9 +87,9 @@ Tienes dos opciones principales para hostear la Web (`web/`):
 3. **Framework Preset:** `Vite`.
 4. **Variables de Entorno en Vercel:**
    ```env
-   VITE_API_URL="https://api.conectavet.com"
-   VITE_SOCKET_URL="https://api.conectavet.com"
-   VITE_LIVEKIT_HOST="https://conectavet.livekit.cloud"
+   VITE_API_URL="https://api.vetconnect.com"
+   VITE_SOCKET_URL="https://api.vetconnect.com"
+   VITE_LIVEKIT_HOST="https://vetconnect.livekit.cloud"
    ```
 5. Cada `git push` a `main` generará un despliegue instantáneo con CDN global y SSL automático.
 
@@ -138,7 +138,7 @@ Para la aplicación móvil de Android, existen **3 caminos posibles** según el 
   # En mobile/eas.json configura "buildType": "apk" en el perfil preview
   eas build --platform android --profile preview
   ```
-- **Distribución:** Se sube el archivo `.apk` a tu propio servidor o landing page en Hostinger (`https://conectavet.com/descargar-app.apk`). Los tutores lo descargan e instalan directamente en su celular Android activando "Permitir orígenes desconocidos".
+- **Distribución:** Se sube el archivo `.apk` a tu propio servidor o landing page en Hostinger (`https://vetconnect.com/descargar-app.apk`). Los tutores lo descargan e instalan directamente en su celular Android activando "Permitir orígenes desconocidos".
 - **Ventaja:** Cero costo de Play Store, despliegue inmediato sin tiempos de revisión de Google (ideal para validar el MVP y hacer pruebas piloto con clínicas reales).
 
 ### 🛣️ Camino 3: Compilación Local de APK con Android SDK (Sin usar EAS Cloud)
