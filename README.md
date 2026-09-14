@@ -20,6 +20,8 @@
 
 ## 📖 Índice General de Documentación
 
+> **Estado del Repositorio:** Este repositorio aloja el diseño de arquitectura integral, modelos de datos, protocolos de tiempo real y especificaciones técnicas completas (Fase de Planificación y Especificación de Ingeniería Pre-Desarrollo). La implementación de código fuente se ejecuta de acuerdo al plan en [`PLAN_ACCION_VETCONNECT.md`](PLAN_ACCION_VETCONNECT.md) y [`AGENTS.md`](AGENTS.md).
+
 Toda la documentación técnica, legal y operativa del ecosistema VetConnect se encuentra organizada en los siguientes documentos maestros:
 
 | Documento | Descripción y Contenido | Enlace |
@@ -30,7 +32,6 @@ Toda la documentación técnica, legal y operativa del ecosistema VetConnect se 
 | ⚖️ **Registro de Decisiones (ADRs)** | 21 Architecture Decision Records detallando el porqué técnico de cada tecnología adoptada. | [Ver Decisiones](docs/DECISIONS.md) |
 | 📚 **Referencia Técnica & APIs** | Mapa completo de endpoints REST, matriz de eventos Socket.io y modelos de datos. | [Ver Referencia Técnica](docs/TECH_REFERENCE.md) |
 | 📘 **Guía Oficial de Buenas Prácticas & Sistema** | Puntos ciegos, antipatrones (ejemplos de NO uso), LiveKit y estándares de código por módulo. | [Ver Guía de Buenas Prácticas](docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md) |
-| 🚀 **Guía de Despliegue (Deploy)** | Guía de producción: Coolify (VPS) para Backend, Vercel / Hostinger para Web y 3 vías para Android (EAS / APK web / Local). | [Ver Guía de Deploy](docs/DEPLOY.md) |
 | 📱 **Guía de Ejecución Local** | Tutorial paso a paso para encender todo el sistema y conectar un celular por cable USB con ADB. | [Ver Guía de Ejecución](GUIA_EJECUCION_VETCONNECT.md) |
 | 🚀 **Guía de Despliegue & Ops** | Guía de producción: Coolify (VPS) para Backend, Vercel / Hostinger para Web y 3 vías para Android (EAS / APK web / Local). | [Ver Guía de Deploy & Ops](docs/DEPLOY.md) |
 | 📑 **Minuta de Stakeholder & Backlog v2.1** | Requerimientos de producto acordados con stakeholder interno (vacunas, VetDrive, microchip, ciclo de vida, calendario). | [Ver Minuta de Stakeholder](docs/MINUTA_STAKEHOLDER_2026-09.md) |
@@ -92,7 +93,9 @@ flowchart TB
 
 ## ⚡ Guía de Inicio Rápido (Local Setup)
 
-### Opción A: Inicio Automatizado (Recomendado)
+### Opción A: Inicio Automatizado (Recomendado en Fase de Desarrollo)
+
+> **Nota DX:** Los scripts de conveniencia (`.\run.bat` y `.\start.ps1`) están planificados para crearse en la Fase 0 de setup una vez estructuradas las carpetas de código fuente.
 
 1. **Backend y Web (Terminal 1):**
    ```powershell

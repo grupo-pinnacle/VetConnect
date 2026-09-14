@@ -2,13 +2,14 @@
 
 > **Fecha:** 10 de Septiembre de 2026  
 > **Alcance:** Integración de videollamadas WebRTC (Backend, Web Frontend y Mobile App)  
-> **Referencia Oficial:** [LiveKit Documentation](https://docs.livekit.io/) · [LiveKit Docs MCP](https://docs.livekit.io/reference/developer-tools/docs-mcp/)
+> **Referencia Oficial:** [LiveKit Documentation](https://docs.livekit.io/) · [LiveKit Docs MCP](https://docs.livekit.io/reference/developer-tools/docs-mcp/)  
+> **Nota de Contexto & Estado:** Al encontrarse el repositorio en fase de especificación y diseño de arquitectura pre-desarrollo, este documento constituye una **auditoría técnica preventiva de diseño** basada en el análisis de prototipo previo y especificaciones oficiales de LiveKit. Su propósito es prescribir buenas prácticas, evitar antipatrones y servir de guía para la futura implementación de videollamadas (Fase 3 del plan de codificación en [`AGENTS.md`](../AGENTS.md)).
 
 ---
 
 ## 1. Resumen Ejecutivo y Arquitectura
 
-Se realizó una auditoría técnica profunda sobre la implementación de videollamadas con LiveKit en la plataforma **VetConnect**, evaluando la arquitectura en tres capas:
+Este documento consolida la evaluación técnica y auditoría preventiva de diseño sobre la arquitectura de videollamadas con LiveKit para la plataforma **VetConnect**, evaluando los contratos y la implementación planificada en tres capas:
 
 1. **Backend API & Gateway Realtime**:
    - `backend/src/modules/calls/calls.service.ts`: Generación de tokens JWT con `livekit-server-sdk`.

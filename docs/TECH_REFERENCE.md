@@ -57,13 +57,18 @@ vetconnect/
 │   └── app.json                    # Configuración de Expo, permisos y bundle IDs
 │
 └── docs/                           # Documentación técnica consolidada
-    ├── PROJECT_CHARTER.md          # Carta fundacional y visión del proyecto
+    ├── PROJECT_CHARTER.md          # Carta fundacional, gobernanza y visión del proyecto
     ├── PLAN_DE_PROYECTO_Y_GESTION.md # Plan de Proyecto, RACI, Stakeholders, DCU & KPIs
     ├── ARCHITECTURE.md             # Arquitectura de alto nivel y normativas
-    ├── DECISIONS.md                # Registro de decisiones de arquitectura (ADRs)
-    ├── TECH_REFERENCE.md           # Este documento
-    ├── GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md # Guía de Buenas Prácticas, Antipatrones y LiveKit
-    └── DEPLOY.md                   # Manual de despliegue en producción
+    ├── DECISIONS.md                # Registro oficial de decisiones de arquitectura (ADR-001 a ADR-021)
+    ├── TECH_REFERENCE.md           # Este documento (referencia técnica y contratos)
+    ├── GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md # Guía de Buenas Prácticas, Antipatrones y Seguridad
+    ├── DEPLOY.md                   # Manual de despliegue en producción (Coolify / Vercel / EAS)
+    ├── BRIEF.md                    # Brief de producto y modelo de negocio
+    ├── SPEC.md                     # Especificación técnica, modelos de dominio y protocolos
+    ├── MINUTA_STAKEHOLDER_2026-09.md # Requerimientos acordados con stakeholders y backlog v2.1+
+    ├── LIVEKIT_AUDIT.md            # Auditoría técnica preventiva de videollamadas WebRTC
+    └── PROPUESTA_MEJORAS_LIVEKIT.md # Propuesta técnica de optimización LiveKit
 ```
 
 ---
