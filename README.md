@@ -28,6 +28,7 @@ Toda la documentación técnica, legal y operativa del ecosistema ConectaVet se 
 | 🏛️ **Arquitectura del Sistema** | Topología distribuida, Domain-Driven Design, Sockets en clúster y marco legal (SENASA / Ley 25.326). | [Ver Arquitectura](docs/ARCHITECTURE.md) |
 | ⚖️ **Registro de Decisiones (ADRs)** | 18 Architecture Decision Records detallando el porqué técnico de cada tecnología adoptada. | [Ver Decisiones](docs/DECISIONS.md) |
 | 📚 **Referencia Técnica & APIs** | Mapa completo de endpoints REST, matriz de eventos Socket.io y modelos de datos. | [Ver Referencia Técnica](docs/TECH_REFERENCE.md) |
+| 📘 **Guía Oficial de Buenas Prácticas & Sistema** | Puntos ciegos, antipatrones (ejemplos de NO uso), LiveKit y estándares de código por módulo. | [Ver Guía de Buenas Prácticas](docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md) |
 | 🚀 **Guía de Despliegue (Deploy)** | Guía de producción: Coolify (VPS) para Backend, Vercel / Hostinger para Web y 3 vías para Android (EAS / APK web / Local). | [Ver Guía de Deploy](docs/DEPLOY.md) |
 | 📱 **Guía de Ejecución Local** | Tutorial paso a paso para encender todo el sistema y conectar un celular por cable USB con ADB. | [Ver Guía de Ejecución](GUIA_EJECUCION_CONECTAVET.md) |
 | 📋 **Runbooks Operativos** | Procedimientos de recuperación ante desastres, rotación de secretos y mantenimiento de BD. | [Ver Runbooks](RUNBOOKS.md) |

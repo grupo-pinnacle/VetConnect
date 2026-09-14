@@ -61,6 +61,7 @@ conectavet/
     ├── ARCHITECTURE.md             # Arquitectura de alto nivel y normativas
     ├── DECISIONS.md                # Registro de decisiones de arquitectura (ADRs)
     ├── TECH_REFERENCE.md           # Este documento
+    ├── GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md # Guía de Buenas Prácticas, Antipatrones y LiveKit
     └── DEPLOY.md                   # Manual de despliegue en producción
 ```
 
