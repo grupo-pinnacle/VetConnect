@@ -18,7 +18,7 @@ graph LR
 
 ### 1.1 Ciclo de Ejecución Paso a Paso:
 1. **Descubrimiento y Anclaje a Contratos:**
-   - Antes de escribir una sola línea de código, el agente consulta `docs/TECH_REFERENCE.md` (modelos Prisma, endpoints, eventos Socket), `docs/DECISIONS.md` (21 ADRs) y `docs/SPEC.md`.
+   - Antes de escribir una sola línea de código, el agente consulta `docs/TECH_REFERENCE.md` (modelos Prisma, endpoints, eventos Socket), `docs/DECISIONS.md` (23 ADRs) y `docs/SPEC.md`.
    - **Prohibido asumir rutas o campos:** Si se requiere un endpoint, debe coincidir exactamente con el contrato en `docs/TECH_REFERENCE.md`.
 2. **Diseño Dirigido por Pruebas (TDD):**
    - El agente escribe o prepara el archivo de prueba unitaria/integración en Jest o Vitest antes de la lógica de negocio.

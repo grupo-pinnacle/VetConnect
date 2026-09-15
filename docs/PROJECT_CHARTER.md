@@ -135,7 +135,7 @@ Alineado con los acuerdos tomados en la reunión con el stakeholder interno ([`M
 - **Hito 5 (M5) — Ficha Clínica Expandida & Bóveda "VetDrive":** Bóveda documental estructurada para estudios clínicos y recetas, carnet de vacunación digital con alarmas preventivas.
 - **Hito 6 (M6) — Identidad Animal & Ciclo de Vida Empático:** Validación de microchip (15 dígitos estándar ISO, opcional en alta), raza "Otros" para analítica de datos, cumpleaños de mascotas, ocultamiento empático de mascotas (silenciado de alertas con leyenda explicativa), fecha de fallecimiento, emails de condolencias y visualización diferenciada en Panel Admin.
 - **Hito 7 (M7) — Tratamientos, Calendario & Fidelización:** Alarmas personalizadas de medicación, exportación/sincronización con Google Calendar e iCal, veterinarios favoritos y badges de verificación profesional con matrícula visible.
-- **Hito 8 (M8) — Spikes Regulatorios e Interoperabilidad:** Gestión de padrones oficiales (SENASA / RENAPER / Colegios) e investigación de recetas digitales veterinarias en el circuito farmacéutico.
+- **Hito 8 (M8) — Spikes Regulatorios e Interoperabilidad:** Gestión de padrones oficiales (SENASA / RENAPER / Colegios) e investigación de recetas digitales veterinarias en el circuito farmacéutico. *(Nota de Gobernanza: Lara Bouso tiene como fecha límite el cierre de M2 — **23 de Diciembre de 2026** — para emitir el dictamen legal sobre la factibilidad de conexión directa vía API con los colegios veterinarios para la v2.1)*.
 
 ---
 
@@ -174,6 +174,13 @@ El sistema prioriza una arquitectura de **bajo costo recurrente y alto rendimien
 | **Media WebRTC** | LiveKit Cloud / LiveKit Self-hosted | Servidor SFU para videollamadas de baja latencia | Free tier / \$10 USD |
 | **Almacenamiento** | Amazon S3 / Cloudinary (con fallback local) | Almacenamiento seguro de adjuntos médicos y avatares | \$1 - \$5 USD / mes |
 | **Distribución Mobile** | Expo Application Services (EAS) | Compilación en la nube de binarios Android (AAB/APK) | Free tier |
+
+> 🛡️ **Plan de Contingencia ante Agotamiento de Free Tiers:**  
+> Para evitar interrupciones o sobrecostos si el volumen de teleconsultas supera las cuotas gratuitas:  
+> - **PostgreSQL:** Si Supabase excede 500 MB, el VPS Coolify aloja PostgreSQL 16 local en Docker (costo $0 incremental).  
+> - **LiveKit SFU:** Si LiveKit Cloud agota los 50 GB mensuales, se despliega `livekit/livekit-server` autohospedado en Coolify (VPS) en 1 clic.  
+> - **Almacenamiento:** Fallback local automático a `/app/uploads/` con Traefik (ADR-010) sin costo cloud.  
+> - **Presupuesto de Contingencia en Reserva:** Se asigna un fondo fijo de reserva de **$20 USD / mes** para absorber picos imprevistos de ancho de banda o base de datos.
 
 ---
 

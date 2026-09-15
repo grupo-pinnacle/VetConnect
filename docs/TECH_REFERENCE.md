@@ -60,7 +60,7 @@ vetconnect/
     ├── PROJECT_CHARTER.md          # Carta fundacional, gobernanza y visión del proyecto
     ├── PLAN_DE_PROYECTO_Y_GESTION.md # Plan de Proyecto, RACI, Stakeholders, DCU & KPIs
     ├── ARCHITECTURE.md             # Arquitectura de alto nivel y normativas
-    ├── DECISIONS.md                # Registro oficial de decisiones de arquitectura (ADR-001 a ADR-021)
+    ├── DECISIONS.md                # Registro oficial de decisiones de arquitectura (ADR-001 a ADR-023)
     ├── TECH_REFERENCE.md           # Este documento (referencia técnica y contratos)
     ├── GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md # Guía de Buenas Prácticas, Antipatrones y Seguridad
     ├── DEPLOY.md                   # Manual de despliegue en producción (Coolify / Vercel / EAS)

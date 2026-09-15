@@ -1,10 +1,10 @@
 # 🏛️ Decisiones de Arquitectura (ADRs) — VetConnect
 
-Este registro documenta todas las decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (v2.0 - FAANG Architecture).
+Este registro documenta las 23 decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (ADR-001 al ADR-023 — FAANG Architecture).
 
 ---
 
-## Índice de Decisiones (ADRs)
+## Índice de Decisiones (ADRs — ADR-001 al ADR-023)
 
 | ID | Título | Estado | Impacto |
 |---|---|---|---|
