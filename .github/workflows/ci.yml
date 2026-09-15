@@ -28,6 +28,9 @@ jobs:
         run: npm ci --ignore-scripts || npm install
 
       - name: Validate Prisma Schema
+        env:
+          DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/vetconnect_dev?schema=public"
+          DIRECT_URL: "postgresql://postgres:postgrespassword@localhost:5432/vetconnect_dev?schema=public"
         run: |
           if [ -d "backend/prisma" ]; then
             cd backend && npx prisma validate
