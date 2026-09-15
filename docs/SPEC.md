@@ -218,18 +218,15 @@ Optimizada para consultas de alta concurrencia:
 
 ### 3.3 Máquinas de Estado Finitas (FSM)
 
-#### A. Ciclo de Vida de la Consulta Telemática
+#### A. Ciclo de Vida de la Consulta Telemática (FSM Determinista de 4 Estados — ADR-024)
 ```mermaid
 stateDiagram-v2
-    [*] --> WAITING: Tutor solicita consulta
-    WAITING --> PENDING: Asignada a Veterinario
-    WAITING --> CANCELLED: Tutor cancela espera
+    [*] --> WAITING: Tutor solicita triage telemático
+    WAITING --> ACTIVE: Auto-asignación FIFO directa a Veterinario Online (o toma manual)
+    WAITING --> CANCELLED: Tutor cancela solicitud en cola
 
-    PENDING --> ACTIVE: Veterinario acepta
-    PENDING --> WAITING: Veterinario declina o Timeout
-
-    ACTIVE --> COMPLETED: Veterinario emite diagnostico
-    ACTIVE --> CANCELLED: Terminacion extraordinaria
+    ACTIVE --> COMPLETED: Veterinario emite evolución médica / receta digital
+    ACTIVE --> CANCELLED: Terminación extraordinaria o cancelación justificada
 
     COMPLETED --> [*]
     CANCELLED --> [*]

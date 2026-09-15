@@ -60,7 +60,7 @@ vetconnect/
     ├── PROJECT_CHARTER.md          # Carta fundacional, gobernanza y visión del proyecto
     ├── PLAN_DE_PROYECTO_Y_GESTION.md # Plan de Proyecto, RACI, Stakeholders, DCU & KPIs
     ├── ARCHITECTURE.md             # Arquitectura de alto nivel y normativas
-    ├── DECISIONS.md                # Registro oficial de decisiones de arquitectura (ADR-001 a ADR-023)
+    ├── DECISIONS.md                # Registro oficial de decisiones de arquitectura (ADR-001 a ADR-024)
     ├── TECH_REFERENCE.md           # Este documento (referencia técnica y contratos)
     ├── GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md # Guía de Buenas Prácticas, Antipatrones y Seguridad
     ├── DEPLOY.md                   # Manual de despliegue en producción (Coolify / Vercel / EAS)
@@ -117,8 +117,8 @@ El esquema inicial del MVP v2.0 comprende **exactamente 9 modelos principales** 
 | `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage | CLIENT |
 | `GET` | `/api/consultations/mine`| Listar consultas activas/pendientes del usuario | Autenticado |
 | `GET` | `/api/consultations/:id`| Obtener detalle completo de consulta e historial | Participantes / ADMIN |
-| `PATCH`| `/api/consultations/:id/assign` | Veterinario toma consulta de la cola o acepta oferta | VET (Approved) |
-| `PATCH`| `/api/consultations/:id/decline`| Veterinario rechaza oferta de consulta directa | VET asignado |
+| `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o reasignación administrativa | VET (Approved) / ADMIN |
+| `PATCH`| `/api/consultations/:id/cancel` | Cancelar consulta telemática (transición a CANCELLED) | Participantes / ADMIN |
 | `PATCH`| `/api/consultations/:id/complete` | Cerrar consulta registrando evolución (`diagnosisNotes`) | VET asignado |
 | `POST` | `/api/consultations/:id/prescriptions` | Emitir receta digital oficial con QR y firma | VET asignado |
 | `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico | Participantes |

@@ -33,6 +33,9 @@ jobs:
             cd backend && npx prisma validate
           fi
 
+      - name: Validate Dual Governance & Semantic Consistency
+        run: npm run check:governance
+
       - name: Typecheck Backend, Web & Mobile
         run: npm run typecheck --if-present
 

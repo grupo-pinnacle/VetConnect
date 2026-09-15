@@ -159,7 +159,7 @@ Para la aplicación móvil de Android, existen **3 caminos posibles** según el 
 
 | Servicio | Plataforma | Costo Estimado |
 |---|---|---|
-| **Backend & Redis** | Coolify en VPS Hostinger / Hetzner | ~$4 a $8 USD / mes (servidor fijo) |
+| **Backend & Redis** | Coolify en VPS Hostinger / Hetzner | $8 – $12 USD / mes (servidor fijo) |
 | **Frontend Web** | Vercel (Plan Hobby) / Hostinger | Gratis / Incluido en hosting |
 | **Base de Datos** | Supabase (Tier Free / Pro) o Postgres en Coolify | $0 a $25 USD / mes |
 | **Videollamadas** | LiveKit Cloud (10.000 min/mes gratis) | $0 USD (hasta escalar) |

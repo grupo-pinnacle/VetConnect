@@ -18,7 +18,7 @@ graph LR
 
 ### 1.1 Ciclo de Ejecución Paso a Paso:
 1. **Descubrimiento y Anclaje a Contratos:**
-   - Antes de escribir una sola línea de código, el agente consulta `docs/TECH_REFERENCE.md` (modelos Prisma, endpoints, eventos Socket), `docs/DECISIONS.md` (23 ADRs) y `docs/SPEC.md`.
+   - Antes de escribir una sola línea de código, el agente consulta `docs/TECH_REFERENCE.md` (modelos Prisma, endpoints, eventos Socket), `docs/DECISIONS.md` (24 ADRs) y `docs/SPEC.md`.
    - **Prohibido asumir rutas o campos:** Si se requiere un endpoint, debe coincidir exactamente con el contrato en `docs/TECH_REFERENCE.md`.
 2. **Diseño Dirigido por Pruebas (TDD):**
    - El agente escribe o prepara el archivo de prueba unitaria/integración en Jest o Vitest antes de la lógica de negocio.
@@ -35,7 +35,7 @@ graph LR
 ### 1.2 Criterio de Entrada: Definition of Ready (DoR) para Tareas Agénticas
 Ningún subagente debe iniciar una tarea sin validar que:
 1. **Contrato Congelado:** Los contratos requeridos están presentes en `docs/TECH_REFERENCE.md` sin campos de v2.1+.
-2. **ADR Vinculante:** La tarea referencia su ADR de los 23 aprobados en `docs/DECISIONS.md`.
+2. **ADR Vinculante:** La tarea referencia su ADR de los 24 aprobados en `docs/DECISIONS.md`.
 3. **Pipeline Previo Verde:** Las pruebas de la fase previa compilan y pasan exitosamente.
 4. **Cero PII en diseño:** No se requiere ni permite el transporte de correos o teléfonos en tokens WebRTC ni logs.
 5. **Comando de Verificación:** El prompt o task packet define el comando exacto para verificar el resultado.

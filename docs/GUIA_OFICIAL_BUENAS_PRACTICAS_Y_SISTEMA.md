@@ -88,7 +88,7 @@ await prisma.pet.delete({ where: { id: petId } }); // BAD: Destruye el historial
 ## 4. Módulo 3: Consultas Telemáticas, Triage & Máquinas de Estado (FSM)
 
 ### 🟢 Buenas Prácticas Obligatorias
-- **Transiciones Estrictas de Estado:** La consulta debe seguir una secuencia lineal inmutable: `WAITING` $\to$ `PENDING` $\to$ `ACTIVE` $\to$ `COMPLETED` (o `CANCELLED`).
+- **Transiciones Estrictas de Estado (ADR-024):** La consulta debe seguir la máquina de estados finita determinista de 4 estados: `WAITING` $\to$ `ACTIVE` $\to$ `COMPLETED` (o `CANCELLED`). La auto-asignación desde `WAITING` a veterinarios online aprobados transiciona atómicamente a `ACTIVE` sin estados intermedios ambiguos de oferta.
 - **Verificación de Matrícula SENASA:** Un veterinario solo puede tomar una consulta de la cola si su estado profesional es `vetStatus === 'APPROVED'`.
 - **Transacciones Atómicas:** Ejecutar las asignaciones y cierres dentro de un bloque `prisma.$transaction`.
 

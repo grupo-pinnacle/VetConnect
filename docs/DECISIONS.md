@@ -1,10 +1,10 @@
 # 🏛️ Decisiones de Arquitectura (ADRs) — VetConnect
 
-Este registro documenta las 23 decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (ADR-001 al ADR-023 — FAANG Architecture).
+Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (ADR-001 al ADR-024 — FAANG Architecture).
 
 ---
 
-## Índice de Decisiones (ADRs — ADR-001 al ADR-023)
+## Índice de Decisiones (ADRs — ADR-001 al ADR-024)
 
 | ID | Título | Estado | Impacto |
 |---|---|---|---|
@@ -84,7 +84,7 @@ Este registro documenta las 23 decisiones arquitectónicas clave tomadas durante
 ### ADR-017: Despliegue Backend Autohosteado en Coolify (VPS)
 - **Contexto:** Minimizar costos recurrentes en dólares sin perder las comodidades de una plataforma moderna (CI/CD, certificados SSL automáticos, gestión de variables de entorno y servicios auxiliares).
 - **Decisión:** Desplegar el Backend Node.js y la instancia de Redis sobre un servidor VPS propio utilizando **Coolify**, y el Frontend Web SPA sobre **Vercel** (o Hosting Web estático de **Hostinger**).
-- **Consecuencias:** Costo predecible y bajo (servidor VPS fijo de ~$4-8 USD/mes), control total sobre la infraestructura de WebSockets persistentes (Traefik) y CDN global para la Web.
+- **Consecuencias:** Costo predecible y bajo (servidor VPS fijo de $8 – $12 USD/mes), control total sobre la infraestructura de WebSockets persistentes (Traefik) y CDN global para la Web.
 
 ### ADR-019: Denormalización Atómica de Calificaciones e Índices Compuestos
 - **Contexto:** El listado de veterinarios realizaba agregaciones N+1 y filtros de calificación en memoria después del `take`/`skip`, causando discrepancias en la paginación e impidiendo consultas eficientes bajo alta concurrencia.
@@ -112,4 +112,10 @@ Este registro documenta las 23 decisiones arquitectónicas clave tomadas durante
 - **Consecuencias:** Coherencia de UX/UI alineada con los estándares de la industria y la intuición de usuarios, simplificación de validaciones en frontend y backend, y alineación directa con los KPIs de satisfacción del proyecto (CSAT).
 
 ---
+
+
+### ADR-024: Máquina de Estados Finita de Consultas (FSM de 4 Estados y Auto-Asignación Directa)
+- **Contexto:** En el análisis preliminar se evaluó un flujo de 5 estados con oferta intermedia (`WAITING -> PENDING -> ACTIVE`). Dicho flujo exigía temporizadores distribuidos en Redis para expiración de ofertas, gestión de reintentos ante rechazos de profesionales y sincronización compleja de eventos Socket.io propensa a condiciones de carrera.
+- **Decisión:** Adoptar formalmente una máquina de estados finita determinista de **4 estados** en PostgreSQL (`ConsultationStatus`: `WAITING`, `ACTIVE`, `COMPLETED`, `CANCELLED`). El algoritmo de triage en `WAITING` realiza auto-asignación directa FIFO hacia el primer veterinario en guardia disponible (`role = VET`, `vetStatus = APPROVED`, `isOnline = true`), transicionando la consulta atómicamente a `ACTIVE`. Las cancelaciones voluntarias antes o durante la atención transicionan a `CANCELLED`.
+- **Consecuencias:** Eliminación total de condiciones de carrera por oferta simultánea en WebSockets, simplificación absoluta de las mutaciones relacionales en PostgreSQL (sin estados intermedios ni jobs huérfanos de timeout en Redis), y auditoría inequívoca de tiempos de espera de triage ($P_{50} < 3\text{ min}$, $P_{95} < 5\text{ min}$).
 

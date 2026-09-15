@@ -29,7 +29,7 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 | Documento | Descripción & Rol en Desarrollo | Enlace |
 |---|---|---|
 | 📚 **Referencia Técnica & Contratos** | Contratos de API REST (Zod), Socket.io y Prisma Schema v2.0 definitivo. | [Ver TECH_REFERENCE.md](docs/TECH_REFERENCE.md) |
-| ⚖️ **Registro de Decisiones (ADRs)** | Las 23 decisiones arquitectónicas oficiales vinculantes (ADR-001 al ADR-023). | [Ver DECISIONS.md](docs/DECISIONS.md) |
+| ⚖️ **Registro de Decisiones (ADRs)** | Las 24 decisiones arquitectónicas oficiales vinculantes (ADR-001 al ADR-024). | [Ver DECISIONS.md](docs/DECISIONS.md) |
 | 📋 **Backlog Operativo de Agentes** | Backlog técnico por fases F0..F7 (TASK-0.1 a TASK-7.2) con DoR y DoD para Jules. | [Ver PLAN_ACCION_VETCONNECT.md](PLAN_ACCION_VETCONNECT.md) |
 | 📊 **Plan de Proyecto y Gestión** | Product Backlog PB-01..40, Sprints 1..10, RACI balanceado y métricas KPIs. | [Ver PLAN_DE_PROYECTO_Y_GESTION.md](docs/PLAN_DE_PROYECTO_Y_GESTION.md) |
 | 🤖 **Agent Operating System (AOS)** | Protocolo operativo supremo, ciclo TDD, guardarraíles y antipatrones con código. | [Ver AGENTS.md](AGENTS.md) |
@@ -45,6 +45,7 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 | 📜 **Reconciliación Arquitectónica** | Informe de auditoría pre-kickoff y resolución de discrepancias *(Congelado)*. | [Ver Reconciliación](docs/RECONCILIACION_ARQUITECTURA_Y_DISCREPANCIAS.md) |
 | 🖥️ **Presentación Ejecutiva** | Deck visual de 11 diapositivas para síntesis de stakeholders *(Congelado)*. | [Ver Presentación](docs/PRESENTACION_EJECUTIVA.md) |
 | 📑 **Minuta de Stakeholder (v2.1+)** | Requerimientos de producto para fase futura Hitos M5..M8 *(Congelado)*. | [Ver Minuta de Stakeholder](docs/MINUTA_STAKEHOLDER_2026-09.md) |
+| 📘 **Guía Oficial de Buenas Prácticas** | Estándares FAANG, antipatrones con código (NO uso) y seguridad por módulo. | [Ver Guía de Buenas Prácticas](docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md) |
 | 🎥 **Auditoría & Checklist LiveKit** | Guía normativa maestra y checklist preventivo de WebRTC. | [Ver LiveKit Audit](docs/LIVEKIT_AUDIT.md) |
 | 🎨 **Sistema de Diseño (Design System)** | Guía visual y UI Kit para prototipado (Actividad 26). | [Ver Sistema de Diseño](docs/SISTEMA_DE_DISENO.md) |
 | 🚀 **Guía de Despliegue & Ops** | Manual de infraestructura: Coolify (VPS) y Vercel (Edge). | [Ver Guía de Deploy & Ops](docs/DEPLOY.md) |
@@ -119,6 +120,17 @@ npm install
 # 3. Configurar variables de entorno iniciales
 cp .env.example backend/.env
 ```
+
+
+> 🌐 **Desarrollo Multiplataforma (macOS, Linux y Windows):**  
+> Si desarrollas en macOS o Linux, puedes iniciar todo el entorno con los comandos universales de npm:  
+> ```bash
+> # Terminal 1: Iniciar Backend (3001) y Web (5173) concurrentemente
+> npm run dev
+> 
+> # Terminal 2: Conectar dispositivo Android por USB e iniciar Mobile
+> adb reverse tcp:3001 tcp:3001 && npm run dev:mobile
+> ```
 
 ### 2. Ejecutar la Plataforma en Modo Desarrollo
 

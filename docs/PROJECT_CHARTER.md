@@ -174,7 +174,7 @@ El sistema prioriza una arquitectura de **bajo costo recurrente y alto rendimien
 
 | Capa | Proveedor / Tecnología | Propósito | Costo Estimado |
 |---|---|---|---|
-| **Cómputo Backend** | VPS Ubuntu 24.04 (Hostinger / Hetzner) | Host de Coolify, VetConnect API (Docker) y Redis Server | \$8 - \$15 USD / mes |
+| **Cómputo Backend** | VPS Ubuntu 24.04 (Hostinger / Hetzner) | Host de Coolify, VetConnect API (Docker) y Redis Server | \$8 - \$12 USD / mes |
 | **Base de Datos** | Supabase Managed PostgreSQL | Base de datos relacional con backups diarios y réplicas | \$0 - \$25 USD / mes |
 | **Frontend Web** | Vercel Edge Network | Despliegue SPA global con CDN, HTTPS automático y compresión | \$0 (Hobby / Pro) |
 | **Media WebRTC** | LiveKit Cloud / LiveKit Self-hosted | Servidor SFU para videollamadas de baja latencia | Free tier / \$10 USD |

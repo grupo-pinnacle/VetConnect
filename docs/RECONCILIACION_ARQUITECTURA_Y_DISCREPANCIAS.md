@@ -40,7 +40,7 @@ A continuación se detalla la resolución definitiva de las 4 inconsistencias de
 | 1. Choque de Numeración de ADRs   | Proponía crear ADR-009 a 011      | Preservados ADR-009 a 011  |
 |                                   | colisionando con decisiones ya    | oficiales. Nuevas adiciones|
 |                                   | existentes en DECISIONS.md.       | numeradas como ADR-022 y   |
-|                                   |                                   | ADR-023 (23 ADRs en total).|
+|                                   |                                   | ADR-024 (24 ADRs en total).|
 +-----------------------------------+-----------------------------------+----------------------------+
 | 2. Registro de Veterinarios       | Conflicto: ADR-013 (bloqueante)   | Ratificado ADR-013: Flujo  |
 |    (Sala de Espera SENASA)        | vs propuesta de auto-registro no  | estrictamente bloqueante   |
@@ -108,7 +108,7 @@ Todos los documentos del repositorio han sido verificados y se encuentran 100% a
 | [`GUIA_EJECUCION_VETCONNECT.md`](../GUIA_EJECUCION_VETCONNECT.md) | Manual de ejecución local DX y ADB reverse | ✅ 100% Alineado |
 | [`docs/PROJECT_CHARTER.md`](PROJECT_CHARTER.md) | Gobernanza, WBS y cronograma (Kick-off 01-Oct-2026) | ✅ 100% Alineado |
 | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) | Arquitectura de Sistemas, Monolito Modular y C4 | ✅ 100% Alineado |
-| [`docs/DECISIONS.md`](DECISIONS.md) | Registro oficial de 23 ADRs (ADR-001 al ADR-023) | ✅ 100% Alineado |
+| [`docs/DECISIONS.md`](DECISIONS.md) | Registro oficial de 24 ADRs (ADR-001 al ADR-024) | ✅ 100% Alineado |
 | [`docs/SPEC.md`](SPEC.md) | ERD, FSM, contratos REST y eventos Socket.io | ✅ 100% Alineado |
 | [`docs/TECH_REFERENCE.md`](TECH_REFERENCE.md) | Referencia técnica de endpoints, Prisma y Zod | ✅ 100% Alineado |
 | [`docs/LIVEKIT_AUDIT.md`](LIVEKIT_AUDIT.md) | Guía Maestra & Checklist Preventivo LiveKit SFU | ✅ 100% Alineado |
