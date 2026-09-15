@@ -68,7 +68,8 @@ sequenceDiagram
    - **Renderizado Eficiente:** Montaje exclusivo de `<VideoConference />` sin duplicación de `<RoomAudioRenderer />`.
    - **Resiliencia de Red:** Handlers `onError` y `onMediaDeviceFailure` con UI de diagnóstico y reconexión.
 3. **Mobile Client (`mobile/app/(app)/call/[consultationId].tsx`):**
-   - **Handshake Robusto:** Protocolo reactivo de postMessage (`page:ready` (ightarrow` `call:init`) para evitar condiciones de carrera en WebViews.
+   - **Handshake Robusto:** Protocolo reactivo de postMessage (`page:ready` (
+ightarrow` `call:init`) para evitar condiciones de carrera en WebViews.
    - **Permisos de Hardware:** Solicitud transparente de micrófono y cámara en Android/iOS.
 
 ---
