@@ -99,10 +99,16 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 - **Decisión:** Implementar el servicio oficial de Expo Push API en el backend (`modules/notifications/`), persistiendo los tokens de dispositivo (`ExponentPushToken[...]`) en la base de datos, complementado con una bandeja de notificaciones persistidas in-app.
 - **Consecuencias:** Notificaciones en tiempo real en Android/iOS a costo $0, con historial recuperable en la bandeja de la app ante pérdidas de conectividad.
 
-### ADR-012: Teleconsulta con WebRTC / LiveKit SFU
-- **Contexto:** Se requería soporte de videollamadas de alta fidelidad entre el panel Web de veterinarios y la aplicación móvil de tutores.
-- **Decisión:** Utilizar LiveKit SFU (Selective Forwarding Unit) con tokens de acceso criptográficos generados por el backend y componentes WebRTC nativos/WebView.
-- **Consecuencias:** Transmisión de video fluida con adaptación automática de bitrate ante conexiones móviles inestables.
+### ADR-012: Teleconsulta con WebRTC / LiveKit SFU (Perfil Liviano 720p Adaptativo & Multicanal Sincrónico)
+- **Contexto:** Se requería soporte de videollamadas de alta fidelidad entre el panel Web de veterinarios y la aplicación móvil de tutores. En dispositivos móviles de gama baja y redes 4G/5G con fluctuaciones de señal, una implementación WebRTC P2P tradicional sufre de congelamientos, desincronización de audio y sobrecalentamiento por falta de adaptación dinámica de bitrate. Adicionalmente, el examen clínico veterinario exige que ambos participantes puedan comunicarse por voz y video mientras simultáneamente intercambian mensajes de chat y macro-fotografías en alta resolución (para lesiones dermatológicas, mucosas gingivales o vómitos) sin pausar ni degradar la llamada.
+- **Decisión:**
+  1. **LiveKit Cloud / SFU con Perfil Adaptativo Liviano:** Adoptar LiveKit SFU configurado en resolución balanceada **720p a 24-30 fps** (bitrate máximo 1.2 Mbps, códec acelerado por hardware H.264/VP8), con adaptación automática de bitrate (Simulcast dinámico) que prioriza la continuidad del audio ante caídas de señal 4G.
+  2. **Conmutación Obligatoria de Cámara (Frontal / Trasera):** La interfaz móvil debe incluir control directo de conmutación a la cámara trasera (`facingMode: 'environment'`) con autoenfoque activo para que el tutor examine a la mascota cómodamente sin posturas forzadas.
+  3. **Multicanal Sincrónico (Video + Chat + Captura de Imágenes en Paralelo):**
+     - **Web (Veterinario):** Layout de pantalla dividida con área de video central y panel lateral acoplado de chat/archivos con visor lightbox para zoom 100%.
+     - **Mobile (Tutor):** Modo Picture-in-Picture / Bottom Sheet deslizante que permite chatear o capturar y adjuntar fotografías mediante `POST /api/media` sin suspender la transmisión de video ni el audio de la llamada.
+  4. **Cero PII en Tokens:** Tokens generados exclusivamente con `identity: user.id` y `name: user.firstName`.
+- **Consecuencias:** Rendimiento fluido garantizado en celulares de gama baja (Android Go / 2-3 GB RAM) sin sobrecalentamiento de CPU; examen clínico visual de alta precisión gracias al soporte de fotos macro de alta resolución; y eliminación de caídas de llamada por degradación de red móvil.
 
 ### ADR-013: Sala de Espera Profesional para Veterinarios
 - **Contexto:** Prevenir el ejercicio ilegal de la profesión veterinaria en la plataforma.

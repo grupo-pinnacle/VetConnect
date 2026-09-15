@@ -18,10 +18,44 @@ Jules trabaja con **9 agentes especializados** que operan en coordinación. Cada
 | **Backend REST Agent** | TASK-2.1 – TASK-2.5 | `feat/backend-api` | `npm test -w backend` |
 | **Realtime Agent** | TASK-3.1, TASK-3.2 | `feat/realtime` | `npm test -w backend -- -t "realtime"` |
 | **Media & Video Agent** | TASK-4.1, TASK-4.2 | `feat/media-video` | `npm test -w backend -- -t "media"` |
-| **Web Frontend Agent** | TASK-5.1, TASK-5.2 | `feat/web-frontend` | `npm run build -w web && npm test -w web` |
+| **Web Frontend Agent** *(Híbrido)* | TASK-5.1 (Scaffold/API), TASK-5.2 | `feat/web-frontend` | Handoff Figma + `npm run build -w web` |
 | **Mobile Agent** | TASK-6.1 – TASK-6.3 | `feat/mobile` | `npm run typecheck -w mobile` |
 | **QA & CI Agent** | TASK-7.1, TASK-7.2 | `feat/qa-ci` | `npm test --workspaces && npm run typecheck` |
 | **Debugger Agent** | Cualquier fallo | `fix/<area>-<issue>` | `npm test -- --verbose` |
+
+### 1.1 Protocolo de Convivencia Híbrida: Jules Autónomo 24/7 + Técnico Multimedial en Figma + Equipo Humano
+
+Para garantizar máxima calidad visual sin retrasar la construcción del motor de software:
+
+```mermaid
+graph TD
+    subgraph Track_Jules["Track Autónomo 24/7 (Google Jules)"]
+        J0["F0: Scaffolding & Docker"] --> J1["F1: Prisma ORM & PostgreSQL"]
+        J1 --> J2["F2: Backend REST API & Auth"]
+        J2 --> J3["F3: Sockets Realtime & Chat"]
+        J3 --> J4["F4: LiveKit SFU & Media Segura"]
+        J4 --> J6["F6: Mobile App Base & WebView"]
+        J6 --> J7["F7: QA 120+ Tests & CI/CD"]
+    end
+
+    subgraph Track_Web["Track Visual & Web (Técnico Multimedial + Equipo)"]
+        F1_Des["Diseño UI/UX en Figma\n(Damian Orellana - Técnico Multimedial)"] --> F2_App["Aprobación de Prototipos\n& Design Tokens"]
+        F2_App --> F3_Code["Codificación Frontend Web React 19\n(Equipo Humano + Damian)"]
+    end
+
+    J0 -.->|"Provee Scaffolding Técnico Web (TASK-5.1)"| F3_Code
+    J2 -.->|"Contratos DTOs y Endpoints REST"| F3_Code
+    J4 -.->|"Servicios de Token y Señalización"| F3_Code
+```
+
+1. **Diseño Visual & UI/UX en Figma (Técnico Multimedial — Damian Orellana):**
+   - Diseña en **Figma** toda la arquitectura de interfaces, wireframes, componentes interactivos y layouts finales de alta fidelidad del Portal Web Pro, respetando el sistema de diseño (`docs/SISTEMA_DE_DISENO.md`).
+2. **Implementación de Código Web ("Luego nosotros haremos el código"):**
+   - El equipo de desarrollo humano codifica el Frontend Web (`web/` en React 19 + Tailwind CSS) tomando los diseños de Figma aprobados como fuente visual de verdad.
+3. **Avance Continuo de Jules ("Mientras tanto que trabaje Jules"):**
+   - Jules **NUNCA** se detiene ni se bloquea esperando pantallas de Figma.
+   - Jules avanza a máxima velocidad en **Fase 0, Fase 1, Fase 2, Fase 3, Fase 4, Fase 6 y Fase 7**.
+   - En la **Fase 5 (Web)**, Jules solo ejecuta la plomería técnica inicial (Vite, React 19 setup, cliente Axios, TanStack Query y sincronización de contratos DTOs en TASK-5.1). Jules **NO inventa diseños de pantalla arbitrarios**; la UI final la ensambla el equipo a partir de Figma.
 
 ---
 
@@ -73,28 +107,34 @@ PR con: Título `feat(task-X.Y): descripción`, criterio de aceptación cumplido
 ## 📋 3. Secuencia de Ejecución (Orden de Dependencias)
 
 ```
-F0: Scaffolding Agent
+F0: Scaffolding Agent (Jules)
   TASK-0.1 → TASK-0.2
       │
-F1: Database Agent (requiere F0 verde)
+F1: Database Agent (Jules - requiere F0 verde)
   TASK-1.1 → TASK-1.2
       │
-F2: Backend REST Agent (requiere F1 verde)
+F2: Backend REST Agent (Jules - requiere F1 verde)
   TASK-2.1 → TASK-2.2 → TASK-2.3 → TASK-2.4 → TASK-2.5
       │
-F3: Realtime Agent (requiere F2 verde)
+F3: Realtime Agent (Jules - requiere F2 verde)
   TASK-3.1 → TASK-3.2
       │
-F4: Media & Video Agent (requiere F3 verde)
+F4: Media & Video Agent (Jules - requiere F3 verde)
   TASK-4.1 → TASK-4.2
       │
-F5 & F6 (paralelo permitido tras F4 verde):
-  Web Frontend Agent:    TASK-5.1 → TASK-5.2
-  Mobile Agent:          TASK-6.1 → TASK-6.2 → TASK-6.3
-      │
-F7: QA & CI Agent (requiere F5 + F6 verde)
+      ├────────────────────────────────────────────────────────┐
+      ▼ (Track Autónomo Jules 24/7 sin bloqueos)               ▼ (Track Web Híbrido Figma + Equipo)
+F6: Mobile Agent (Jules)                                 F5: Web Frontend (Técnico Multimedial + Equipo)
+  TASK-6.1 → TASK-6.2 → TASK-6.3                           - Scaffolding técnico/API: TASK-5.1 (Jules)
+      │                                                    - Diseño en Figma (Damian Orellana)
+      │                                                    - Codificación UI/LiveKit: TASK-5.2 (Equipo)
+      ├────────────────────────────────────────────────────────┘
+      ▼
+F7: QA & CI Agent (Jules - suite completa)
   TASK-7.1 → TASK-7.2
 ```
+
+> 💡 **Regla de No-Bloqueo para Jules:** La elaboración de los mockups en Figma por el Técnico Multimedial corre en paralelo y jamás detiene a Jules. Jules salta directamente a F6 (Mobile base) y F7 (QA backend/sockets) mientras el equipo ensambla la web sobre los contratos ya construidos.
 
 ---
 
@@ -226,10 +266,12 @@ Se activa cuando un agente reporta tests rojos insolubles, CI falla, o hay regre
     Criterio: .exe rechazado 400; >10MB 413; >50MB 429; dueño 200; tercero 403
 
 #14 [TASK-5.1] Web: Scaffolding React 19 + Vite + TanStack Query + routing
-    Agente: Web Frontend | Rama: feat/task-5.1-web-scaffold
+    Agente: Web Frontend (Jules / Scaffolding Técnico) | Rama: feat/task-5.1-web-scaffold
+    Criterio: Build Vite exitoso y Axios client tipado con contratos de backend
 
-#15 [TASK-5.2] Web: CallRoom + PreJoin + VideoConference (sin RoomAudioRenderer duplicado)
-    Agente: Web Frontend | Rama: feat/task-5.2-web-video-call
+#15 [TASK-5.2] Web: CallRoom + PreJoin + VideoConference (Handoff Figma)
+    Agente: Web Frontend (Equipo Humano + Damian Orellana) | Rama: feat/task-5.2-web-video-call
+    Criterio: Fidelidad con diseño Figma + Room sin RoomAudioRenderer duplicado
 
 #16 [TASK-6.1] Mobile: Expo SDK 54 + expo-secure-store RT + offline sync
     Agente: Mobile | Rama: feat/task-6.1-mobile-scaffold
@@ -267,8 +309,8 @@ Se activa cuando un agente reporta tests rojos insolubles, CI falla, o hay regre
 | TASK-3.2 | Realtime | ⬜ Pendiente | — |
 | TASK-4.1 | Media & Video | ⬜ Pendiente | — |
 | TASK-4.2 | Media & Video | ⬜ Pendiente | — |
-| TASK-5.1 | Web Frontend | ⬜ Pendiente | — |
-| TASK-5.2 | Web Frontend | ⬜ Pendiente | — |
+| TASK-5.1 | Web (Jules Scaffold) | ⬜ Pendiente | — |
+| TASK-5.2 | Web (Figma + Equipo) | ⬜ Pendiente | — |
 | TASK-6.1 | Mobile | ⬜ Pendiente | — |
 | TASK-6.2 | Mobile | ⬜ Pendiente | — |
 | TASK-6.3 | Mobile | ⬜ Pendiente | — |

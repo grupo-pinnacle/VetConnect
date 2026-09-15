@@ -54,6 +54,10 @@ Plataforma de **telemedicina veterinaria de alta fidelidad** que conecta tutores
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | **Registro Oficial de Decisiones:** ADR-001 al ADR-024. Fundamento de cada elección arquitectónica. |
 
 | [`docs/SPEC.md`](docs/SPEC.md) | **Especificación Funcional:** Casos de uso, reglas de negocio, roles y transiciones de estado. |
+| [`docs/SISTEMA_DE_DISENO.md`](docs/SISTEMA_DE_DISENO.md) | **Sistema de Diseño Visual:** Paleta de colores, tipografía, componentes y tokens para Figma y Tailwind CSS. |
+| [`docs/PLAN_DE_PROYECTO_Y_GESTION.md`](docs/PLAN_DE_PROYECTO_Y_GESTION.md) | **Plan de Proyecto & Gestión:** Planificación de sprints, matriz RACI formal, KPIs y nómina del equipo. |
+| [`docs/LIVEKIT_AUDIT.md`](docs/LIVEKIT_AUDIT.md) | **Guía Maestra LiveKit SFU:** Checklist preventivo de 16 directivas WebRTC, golden patterns y mitigación de fallas. |
+| [`JULES_ORCHESTRATION.md`](JULES_ORCHESTRATION.md) | **Protocolo de Orquestación Multi-Agente:** Gestión de Google Jules, Quirófano de Código y backlog de issues. |
 | [`docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md`](docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md) | Directivas de ingeniería FAANG, manejo de errores RFC 7807 y puntos ciegos a evitar. |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | Guía de operaciones: Despliegue en Coolify (VPS), Vercel y generación de APKs Android. |
 | [`AGENTS.md`](AGENTS.md) | Protocolo operativo para agentes de IA, antipatrones explícitos y comandos de verificación. |
@@ -75,8 +79,18 @@ Los agentes autónomos deben invocar las herramientas indicadas según la natura
 
 ---
 
-## 5. Hoja de Ruta Greenfield (Fases F0 a F7)
+## 5. Hoja de Ruta Greenfield & Modelo Operativo Híbrido
 
+### 5.1 Protocolo de Trabajo: Técnico Multimedial en Figma + Equipo Humano + Jules 24/7
+Para maximizar la fidelidad estética y acelerar la entrega técnica sin cuellos de botella:
+1. **Diseño Visual & UI/UX en Figma (Técnico Multimedial — Damian Orellana):**
+   El Técnico Multimedial diseña integralmente en **Figma** los flujos de navegación, wireframes, componentes interactivos y pantallas de alta fidelidad del Portal Web Pro (tutores, veterinarios y administradores), anclándose a [`docs/SISTEMA_DE_DISENO.md`](docs/SISTEMA_DE_DISENO.md).
+2. **Implementación de Código Web (Equipo Humano + Damian Orellana):**
+   El equipo de desarrollo codifica el Frontend Web (`web/` en React 19 + Tailwind CSS) tomando los prototipos de Figma aprobados como especificación visual vinculante.
+3. **Avance Continuo de Jules en Backend & Core (Sin Bloqueos):**
+   Mientras el diseño en Figma y la maquetación web se orquestan, **Google Jules y los subagentes de IA avanzan de forma continua y 100% autónoma** en la construcción de los cimientos, base de datos, APIs REST, mensajería en tiempo real, LiveKit backend, aplicación mobile y suite de tests. Jules solo interviene en la capa web para preparar el scaffolding técnico de base (Vite, TypeScript, cliente Axios y TanStack Query) sin inventar interfaces visuales arbitrarias.
+
+### 5.2 Fases de Ejecución (F0 a F7)
 El Tech Lead supervisa la ejecución secuencial de las 8 fases detalladas en [`PLAN_ACCION_VETCONNECT.md`](PLAN_ACCION_VETCONNECT.md):
 
 - **Fase 0 — Cimientos & Scaffolding:** Workspaces npm, Docker Compose, variables de entorno, scripts de conveniencia.
@@ -84,7 +98,7 @@ El Tech Lead supervisa la ejecución secuencial de las 8 fases detalladas en [`P
 - **Fase 2 — Core Backend REST API:** Express 5, autenticación JWT con `tokenVersion`, validadores Zod, CRUDs base.
 - **Fase 3 — Motor en Tiempo Real & Chat:** Socket.io, Redis Adapter, presencia, idempotencia con `clientMsgId`.
 - **Fase 4 — Telemedicina LiveKit & Media Segura:** Tokens SFU, validación binaria de Magic Bytes, subida local/S3.
-- **Fase 5 — Frontend Web SPA:** React 19, Vite, Tailwind, TanStack Query, LiveKit video, chat y dashboard.
+- **Fase 5 — Frontend Web SPA:** Handoff de Figma del Técnico Multimedial + Scaffolding base de React 19, Vite, TanStack Query y codificación por el equipo humano.
 - **Fase 6 — Aplicación Mobile:** Expo SDK 54, Expo Router, NativeWind, push notifications, bridge WebView.
 - **Fase 7 — QA Automatizado & CI/CD:** Suite de 120+ tests en Jest/Vitest, pipeline GitHub Actions y Dockerfile.
 

@@ -1,4 +1,4 @@
-﻿# 🤖 Instructions for Google Jules & Autonomous Coding Agents (VetConnect)
+# 🤖 Instructions for Google Jules & Autonomous Coding Agents (VetConnect)
 
 > **Repository:** VetConnect — Veterinary Telemedicine Monorepo (Node.js 20, Express 5, Prisma 6, React 19, React Native Expo SDK 54).  
 > **Objective:** Act as an autonomous, FAANG-standard software engineer capable of taking backlog task packets, planning, implementing, writing tests, verifying, and opening clean PRs.
@@ -101,6 +101,7 @@ PR format:
 5. **NEVER serve `/uploads` as static public.** Use authenticated `GET /api/media/:id` endpoint only.
 6. **NEVER emit `message:received`.** Use `message:new` exclusively.
 7. **NEVER add `<RoomAudioRenderer />` alongside `<VideoConference />`** — causes audio echo.
+8. **NEVER block waiting for Web Figma designs, and NEVER invent arbitrary Web UI.** Web visual design is authored in Figma by the Multimedia Technician (Damian Orellana) and coded by the human team. Jules works continuously 24/7 on Backend (F0–F4), Mobile (F6), and QA/CI (F7), providing only technical scaffolding and typed contracts for Web (TASK-5.1).
 
 ---
 

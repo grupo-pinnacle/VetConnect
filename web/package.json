@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@livekit/components-react": "^2.8.1",
+    "@livekit/components-styles": "^1.2.0",
     "@tanstack/react-query": "^5.66.5",
     "axios": "^1.7.9",
     "livekit-client": "^2.9.3",
