@@ -51,10 +51,14 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 - **Decisión:** Utilizar **Supabase Managed PostgreSQL** como proveedor de persistencia relacional principal, aprovechando su capa gratuita generosa (500 MB), backups automáticos diarios, pooling de conexiones integrado (PgBouncer) y métricas de rendimiento en tiempo real.
 - **Consecuencias:** Ahorro total de costos fijos de base de datos en fase MVP ($0 USD), delegación de la seguridad y copias de seguridad a una infraestructura cloud resiliente, con plan de contingencia de fallback a PostgreSQL local en Docker dentro del VPS Coolify (ADR-017).
 
-### ADR-004: Autenticación JWT con Rotación & `tokenVersion`
-- **Contexto:** Si un token JWT es emitido y luego el usuario cambia su contraseña o es dado de baja, los tokens tradicionales permanecen válidos hasta su expiración.
-- **Decisión:** Implementar un campo `tokenVersion` en el modelo `User`. Cada cambio de credenciales, logout global o baneo incrementa este contador. El middleware valida el payload JWT contra la versión activa en base de datos.
-- **Consecuencias:** Revocación instantánea de sesiones sin necesidad de consultar tablas pesadas de listas negras de tokens.
+### ADR-004: Autenticación JWT con Rotación & `tokenVersion` (Estrategia Dual Web/Mobile)
+- **Contexto:** Si un token JWT es emitido y luego el usuario cambia su contraseña o es dado de baja, los tokens tradicionales permanecen válidos hasta su expiración. Adicionalmente, Web SPA y Mobile App tienen mecanismos de almacenamiento de credenciales radicalmente distintos: los navegadores soportan cookies `HttpOnly` como protección nativa contra XSS, mientras que React Native no gestiona cookies automáticamente sin una biblioteca de cookie-jar compleja.
+- **Decisión:** Implementar dos sub-estrategias complementarias bajo un único contrato de autenticación:
+  1. **Web SPA:** El Refresh Token se transmite exclusivamente en una cookie `HttpOnly; Secure; SameSite=Strict`. El Access Token (TTL 15 min) se retorna en el JSON body. El backend detecta la plataforma cliente mediante la ausencia del header `X-Client-Platform`.
+  2. **Mobile App (React Native / Expo):** Cuando la petición incluye el header `X-Client-Platform: mobile`, el backend retorna el Refresh Token (TTL 7 días) **también** en el JSON body (`{ accessToken, refreshToken, user }`). La app lo almacena cifrado en el hardware secure enclave del dispositivo mediante `expo-secure-store`. El endpoint `/api/auth/refresh` en mobile lee el `refreshToken` desde el payload `{ refreshToken }` en lugar de la cookie.
+  3. **Campo `tokenVersion`:** Implementado en el modelo `User`. Cada cambio de credenciales, logout global o baneo incrementa este contador. El middleware valida el payload JWT contra la versión activa en base de datos, garantizando revocación instantánea en ambas plataformas.
+- **Consecuencias:** Revocación instantánea de sesiones sin listas negras de tokens; compatibilidad nativa con el modelo de almacenamiento seguro de iOS/Android; protección XSS preservada en la Web SPA sin requerir configuración adicional de cookie-jar en React Native.
+
 
 ### ADR-005: Soft-Deletes & Anonimización Legal (Ley 25.326)
 - **Contexto:** La normativa sanitaria veterinaria y la Ley de Protección de Datos Personales prohíben la destrucción de registros médicos de pacientes, pero exigen el derecho al olvido para los usuarios.
@@ -81,10 +85,14 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 - **Decisión:** Integrar Socket.io acoplado con `@socket.io/redis-adapter` en clúster Redis.
 - **Consecuencias:** Comunicación bidireccional instantánea con broadcast sincronizado entre todas las instancias del servidor.
 
-### ADR-010: Almacenamiento Resiliente Multi-Cloud (S3 + Fallback Local)
-- **Contexto:** Los archivos clínicos (estudios de laboratorio, recetas, imágenes de chat y avatares) deben guardarse de forma duradera y accesible mediante URLs autenticadas con tiempo de vida (TTL), pero sin depender rígidamente de un único proveedor de almacenamiento cloud en caso de fallas o costos imprevistos.
-- **Decisión:** Implementar un adaptador desacoplado de almacenamiento con **Amazon S3 / Cloudinary** como almacenamiento primario en la nube y un **Fallback Local Automático** hacia el directorio `/app/uploads/` montado en volumen persistente de Docker en el VPS Coolify, expuesto mediante Traefik.
-- **Consecuencias:** Resiliencia operativa del 100%: si las credenciales de S3 o la cuota cloud fallan, el sistema conmuta transparentemente a almacenamiento en disco local sin interrupción del servicio clínico ni pérdida de archivos adjuntos.
+### ADR-010: Almacenamiento Resiliente Multi-Cloud (S3 + Fallback Local) & Acceso Autenticado a Archivos Clínicos
+- **Contexto:** Los archivos clínicos (estudios de laboratorio, recetas, imágenes de chat y avatares) deben guardarse de forma duradera, pero no pueden exponerse públicamente como archivos estáticos sin autenticación. Un atacante que conozca o adivine una URL podría acceder a documentación médica sensible de pacientes (Ley 25.326, Art. 9).
+- **Decisión:**
+  1. **Almacenamiento:** Implementar un adaptador desacoplado con **Amazon S3** como almacenamiento primario y **Fallback Local Automático** hacia `/app/uploads/` en Docker (Coolify VPS).
+  2. **Prohibición de Serving Estático Público:** El directorio `/uploads` NO debe ser expuesto como carpeta estática de Express ni accesible directamente por URL. Todo acceso a archivos médicos debe realizarse a través del endpoint protegido `GET /api/media/:id`.
+  3. **Endpoint de Descarga Autenticado (`GET /api/media/:id`):** El backend verifica que el solicitante sea el dueño de la mascota, el veterinario asignado a la consulta vinculada o un ADMIN. Si no cumple, responde `403 Forbidden`. En producción S3, emite una Presigned URL con TTL de 5 minutos para streaming directo sin pasar por el backend.
+- **Consecuencias:** Cumplimiento de Ley 25.326 de protección de datos médicos; resiliencia operativa 100% ante fallas de S3; superficie de ataque reducida al cero archivos accesibles públicamente.
+
 
 ### ADR-011: Notificaciones Push con Expo Push API & Bandeja In-App
 - **Contexto:** Los tutores y veterinarios requieren enterarse de llamadas entrantes, mensajes de chat y recetas sin mantener la aplicación permanentemente en primer plano, sin incurrir en costos de servicios de terceros como OneSignal.
@@ -157,8 +165,14 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 ---
 
 
-### ADR-024: Máquina de Estados Finita de Consultas (FSM de 4 Estados y Auto-Asignación Directa)
-- **Contexto:** En el análisis preliminar se evaluó un flujo de 5 estados con oferta intermedia (`WAITING -> PENDING -> ACTIVE`). Dicho flujo exigía temporizadores distribuidos en Redis para expiración de ofertas, gestión de reintentos ante rechazos de profesionales y sincronización compleja de eventos Socket.io propensa a condiciones de carrera.
-- **Decisión:** Adoptar formalmente una máquina de estados finita determinista de **4 estados** en PostgreSQL (`ConsultationStatus`: `WAITING`, `ACTIVE`, `COMPLETED`, `CANCELLED`). El algoritmo de triage en `WAITING` realiza auto-asignación directa FIFO hacia el primer veterinario en guardia disponible (`role = VET`, `vetStatus = APPROVED`, `isOnline = true`), transicionando la consulta atómicamente a `ACTIVE`. Las cancelaciones voluntarias antes o durante la atención transicionan a `CANCELLED`.
-- **Consecuencias:** Eliminación total de condiciones de carrera por oferta simultánea en WebSockets, simplificación absoluta de las mutaciones relacionales en PostgreSQL (sin estados intermedios ni jobs huérfanos de timeout en Redis), y auditoría inequívoca de tiempos de espera de triage ($P_{50} < 3\text{ min}$, $P_{95} < 5\text{ min}$).
+### ADR-024: Máquina de Estados Finita de Consultas (FSM de 4 Estados, Auto-Asignación FIFO y Gestión Determinista de Timeouts)
+- **Contexto:** En el análisis preliminar se evaluó un flujo de 5 estados con oferta intermedia (`WAITING -> PENDING -> ACTIVE`). Dicho flujo exigía temporizadores distribuidos en Redis para expiración de ofertas, gestión de reintentos ante rechazos de profesionales y sincronización compleja de eventos Socket.io propensa a condiciones de carrera. Adicionalmente, el diseño original no documentaba el comportamiento ante dos casos borde críticos: (a) ausencia total de veterinarios online en el momento del triage y (b) desconexión abrupta del veterinario durante una consulta activa.
+- **Decisión:**
+  1. **FSM de 4 estados** en PostgreSQL (`ConsultationStatus`: `WAITING`, `ACTIVE`, `COMPLETED`, `CANCELLED`).
+  2. **Auto-asignación FIFO directa:** El algoritmo de triage en `WAITING` busca el primer veterinario disponible (`role = VET`, `vetStatus = APPROVED`, `isOnline = true`) y transiciona atómicamente a `ACTIVE`.
+  3. **Timeout de Triage (WAITING → CANCELLED):** Si al momento de ingresar a triage no hay veterinarios online, la consulta permanece en `WAITING`. Transcurridos **15 minutos** sin asignación, el servicio de triage transiciona automáticamente la consulta a `CANCELLED` con código de auditoría `TIMEOUT_NO_VET_AVAILABLE`, notificando al tutor vía Socket.io y Push Notification con sugerencia de reintento o contacto urgente.
+  4. **Ventana de Gracia por Desconexión (ACTIVE → CANCELLED o WAITING):** Si el veterinario pierde la conexión socket durante una consulta `ACTIVE`, se abre una ventana de gracia de **3 minutos** controlada por heartbeat y presencia Redis. Si reconecta dentro del intervalo, la sesión continúa sin interrupción. Si la ventana expira, la consulta transiciona a `CANCELLED` (`VET_DISCONNECTED_TIMEOUT`) con opción de reencolado prioritario en `WAITING` para el tutor.
+  5. **Cancelaciones voluntarias:** Antes o durante la atención, cualquier participante puede cancelar hacia `CANCELLED` (código `VOLUNTARY_CANCELLATION`).
+- **Consecuencias:** Eliminación total de condiciones de carrera por oferta simultánea en WebSockets; comportamiento predecible y auditado ante los 5 escenarios posibles de la FSM; auditoría inequívoca de tiempos de espera ($P_{50} < 3\text{ min}$, $P_{95} < 5\text{ min}$); y experiencia de usuario resiliente ante cortes de red transitorios sin pérdida de la consulta.
+
 

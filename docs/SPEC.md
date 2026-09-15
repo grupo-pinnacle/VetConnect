@@ -223,14 +223,18 @@ Optimizada para consultas de alta concurrencia:
 stateDiagram-v2
     [*] --> WAITING: Tutor solicita triage telemático
     WAITING --> ACTIVE: Auto-asignación FIFO directa a Veterinario Online (o toma manual)
-    WAITING --> CANCELLED: Tutor cancela solicitud en cola
+    WAITING --> CANCELLED: Tutor cancela en cola / Timeout TTL 15m sin guardia online (TIMEOUT_NO_VET_AVAILABLE)
 
     ACTIVE --> COMPLETED: Veterinario emite evolución médica / receta digital
-    ACTIVE --> CANCELLED: Terminación extraordinaria o cancelación justificada
+    ACTIVE --> CANCELLED: Terminación extraordinaria / Desconexión sin reconexión tras gracia de 3m (VET_DISCONNECTED_TIMEOUT)
 
     COMPLETED --> [*]
     CANCELLED --> [*]
 ```
+
+**Reglas Deterministas de Transición y Resiliencia Temporal:**
+1. **Ausencia de Guardia Online en Triage:** Si un tutor solicita triage y no hay veterinarios online (`isOnline = true`, `vetStatus = APPROVED`), el sistema informa el estado en la UI e inicia un temporizador de espera máxima con TTL de **15 minutos**. Si ningún profesional se conecta o toma la consulta al cumplirse el TTL, la consulta transiciona automáticamente a `CANCELLED` con código de auditoría `TIMEOUT_NO_VET_AVAILABLE`, notificando al tutor vía Push y WebSocket.
+2. **Ventana de Gracia por Desconexión en Consulta `ACTIVE`:** Si el veterinario pierde la conexión durante una consulta activa, el sistema abre una **ventana de gracia de 3 minutos** (basada en el socket heartbeat y presencia Redis). Si el profesional se reconecta dentro de este intervalo, la sesión continúa sin interrupción. Si se agota el tiempo de gracia, la consulta transiciona a `CANCELLED` (`VET_DISCONNECTED_TIMEOUT`) o se ofrece al tutor la opción de reencolado prioritario en `WAITING`.
 
 #### B. Onboarding & Validación Profesional (SENASA)
 ```mermaid
@@ -251,21 +255,24 @@ Todos los payloads de entrada y salida se validan estrictamente mediante esquema
 
 | Método | Ruta | Descripción | Acceso | Código Éxito |
 |---|---|---|---|---|
-| `POST` | `/api/auth/register` | Registro de usuarios (CLIENT o VET) | Público | 201 Created |
-| `POST` | `/api/auth/login` | Login, emisión de JWT y cookies HttpOnly | Público | 200 OK |
-| `POST` | `/api/auth/refresh` | Renovación de access token | Público | 200 OK |
-| `POST` | `/api/auth/logout` | Revocación de sesión e invalidación de cookie | Autenticado | 200 OK |
+| `POST` | `/api/auth/register` | Registro de usuarios (CLIENT o VET PENDING) | Público | 201 Created |
+| `POST` | `/api/auth/login` | Login y JWT. Web: Cookie `HttpOnly`. Mobile (`X-Client-Platform: mobile`): Body JSON con `refreshToken` | Público | 200 OK |
+| `POST` | `/api/auth/refresh` | Renovación de access token (Web: Cookie / Mobile: Payload `{ refreshToken }`) | Público | 200 OK |
+| `POST` | `/api/auth/logout` | Revocación de sesión e invalidación de credenciales | Autenticado | 200 OK |
 | `GET` | `/api/pets` | Listado de mascotas del tutor | CLIENT / ADMIN | 200 OK |
-| `POST` | `/api/pets` | Registro de nueva ficha de mascota | CLIENT / ADMIN | 201 Created |
-| `GET` | `/api/pets/:id` | Detalle clínico e historial | Dueño / Vet asignado | 200 OK |
-| `POST` | `/api/consultations` | Ingreso a cola de triage | CLIENT | 201 Created |
-| `PATCH`| `/api/consultations/:id/assign` | Veterinario toma consulta de cola | VET (APPROVED) | 200 OK |
+| `POST` | `/api/pets` | Registro de nueva ficha de mascota (microchip ISO opcional) | CLIENT / ADMIN | 201 Created |
+| `GET` | `/api/pets/:id` | Detalle clínico e historial de la mascota | Dueño / Vet asignado / ADMIN | 200 OK |
+| `POST` | `/api/consultations` | Ingreso a cola de triage (`WAITING`, TTL 15 min) | CLIENT | 201 Created |
+| `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o auto-asignación FIFO | VET (APPROVED) / ADMIN | 200 OK |
+| `PATCH`| `/api/consultations/:id/cancel` | Cancelación voluntaria o por timeout de consulta | Participantes / ADMIN | 200 OK |
 | `PATCH`| `/api/consultations/:id/complete` | Cierre clínico con evolución y diagnóstico | VET asignado | 200 OK |
 | `POST` | `/api/consultations/:id/prescriptions` | Emisión de receta oficial con firma/QR | VET asignado | 201 Created |
-| `POST` | `/api/consultations/:id/messages` | Envío de mensaje en chat con clientMsgId | Participantes | 201 Created |
+| `GET`  | `/api/consultations/:id/messages` | Historial de chat y sincronización incremental (`?after={ISO_TIMESTAMP}`) | Participantes | 200 OK |
+| `POST` | `/api/consultations/:id/messages` | Envío de mensaje en chat con deduplicación por `clientMsgId` | Participantes | 201 Created |
 | `POST` | `/api/consultations/:id/review` | Calificación de atención (1 a 5 estrellas, ADR-023) | CLIENT asignado | 201 Created |
-| `POST` | `/api/calls/:consultationId/token` | Generación de token efímero LiveKit SFU | Participantes | 200 OK |
-| `POST` | `/api/media` | Subida de archivos con chequeo de Magic Bytes| Autenticado | 201 Created |
+| `POST` | `/api/calls/:consultationId/token` | Generación de token efímero LiveKit SFU (sin PII) | Participantes | 200 OK |
+| `POST` | `/api/media` | Subida de archivos con chequeo binario de Magic Bytes y cuota diaria | Autenticado | 201 Created |
+| `GET`  | `/api/media/:id` | Descarga/streaming seguro autenticado (acceso restringido a participantes y ADMIN) | Participantes / ADMIN | 200 OK |
 | `PATCH`| `/api/admin/vets/:id/approve` | Aprobación de matrícula SENASA | ADMIN | 200 OK |
 
 ### 4.2 Formato Estándar de Errores (RFC 7807 Pattern)

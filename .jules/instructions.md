@@ -1,71 +1,123 @@
-# 🤖 Instructions for Google Jules & Autonomous Coding Agents (VetConnect)
+﻿# 🤖 Instructions for Google Jules & Autonomous Coding Agents (VetConnect)
 
-> **Repository:** VetConnect — Veterinary Telemedicine Monorepo (Node.js 20, Express 5, Prisma 6, React 19, React Native Expo SDK 54).
+> **Repository:** VetConnect — Veterinary Telemedicine Monorepo (Node.js 20, Express 5, Prisma 6, React 19, React Native Expo SDK 54).  
 > **Objective:** Act as an autonomous, FAANG-standard software engineer capable of taking backlog task packets, planning, implementing, writing tests, verifying, and opening clean PRs.
 
 ---
 
-## 🧭 1. Core Architecture & Sources of Truth
+## 🧭 1. Orchestration Protocol & Specialized Agent Roles
 
-Before modifying or creating any code, you MUST reference these documents:
-- **Contracts & Database Models:** [`docs/TECH_REFERENCE.md`](../docs/TECH_REFERENCE.md) — Exact Prisma schema, REST endpoints, Socket.io events, and payload definitions.
-- **Architectural Decisions:** [`docs/DECISIONS.md`](../docs/DECISIONS.md) — 24 ADRs governing monorepo architecture, auth, realtime, and storage.
-- **System Specifications:** [`docs/SPEC.md`](../docs/SPEC.md) — Functional business logic, roles (`CLIENT`, `VET`, `ADMIN`), and consultation lifecycles.
-- **Agent Operating Guidelines:** [`AGENTS.md`](../AGENTS.md) — Coding standards, anti-patterns, and layer-by-layer instructions.
-- **Task Backlog:** [`PLAN_ACCION_VETCONNECT.md`](../PLAN_ACCION_VETCONNECT.md) — Master backlog organized in discrete Task Packets (F0 to F7).
+Before taking any task, read:
+- **[`JULES_ORCHESTRATION.md`](../JULES_ORCHESTRATION.md)** — **PRIMARY REFERENCE:** Full orchestration protocol, 9 specialized agent roles, 5-phase Quirófano method, dependency sequence, and 20 GitHub Issues ready to assign.
+- **[`protocolo-nueva-feature-v3.md`](../protocolo-nueva-feature-v3.md)** — The "Quirófano de Código" method for implementing any new feature (5 phases: Spec → Cerco → Anti-regression → Quirófano → Validation).
 
 ---
 
-## ⚡ 2. Autonomous Execution Protocol
+## 🗂️ 2. Sources of Truth (Read Before Writing Any Code)
 
-When assigned a task or issue:
+| Document | Purpose |
+|---|---|
+| [`docs/TECH_REFERENCE.md`](../docs/TECH_REFERENCE.md) | **The Technical Bible:** Exact Prisma schema, REST endpoints (§2.1–§2.6), Socket.io events (§3), Zod schemas. |
+| [`docs/DECISIONS.md`](../docs/DECISIONS.md) | **24 ADRs** (ADR-001 to ADR-024) governing all architectural decisions. |
+| [`docs/SPEC.md`](../docs/SPEC.md) | Business logic, FSM states (§3.3), roles, consultation lifecycle, and timeout rules. |
+| [`AGENTS.md`](../AGENTS.md) | Coding standards, anti-patterns (NO USO 1–5), and layer-by-layer rules. |
+| [`PLAN_ACCION_VETCONNECT.md`](../PLAN_ACCION_VETCONNECT.md) | **Master backlog:** 20 Task Packets (TASK-0.1 to TASK-7.2) with exact file lists and acceptance criteria. |
 
-### Step 1: Context & Contract Discovery
-- Identify the affected layer (`backend/`, `web/`, or `mobile/`).
-- Inspect existing files and interfaces using directory listings and file readers.
-- DO NOT invent new endpoint paths, database column names, or socket events. Strictly follow [`docs/TECH_REFERENCE.md`](../docs/TECH_REFERENCE.md).
+---
 
-### Step 2: Test-Driven Development (TDD)
-- Write unit or integration tests in Jest / Vitest BEFORE or alongside your implementation.
-- Tests must be realistic: assert status codes, response payloads, database state, or error codes.
-- Target coverage: >80% for backend services and controllers.
+## ⚡ 3. Autonomous Execution Protocol (5 Phases)
 
-### Step 3: Implementation & Clean Code
-- **Backend:** Express 5 + TypeScript + Prisma 6 + Zod.
-  - All multi-word database columns MUST use `@map("snake_case")`.
-  - All endpoints MUST validate input with Zod schemas.
-  - Return standardized RFC 7807 errors on failure (`{ success: false, error: { code, message, timestamp } }`).
-  - Use atomic operations / transactions for data updates.
-- **Frontend / Mobile:** React 19 / React Native Expo.
-  - Zero `any` types (explicit TypeScript interfaces).
-  - Proper handling of loading, error, empty, and reconnecting states.
+For every Task Packet, apply the Quirófano de Código protocol:
 
-### Step 4: Self-Verification (Mandatory Before Opening PR)
-Run these commands locally in your environment and ensure all pass with 0 errors:
+### Phase 1 — Specification & Layer Mapping
+- Read the Task Packet. Identify Given/When/Then.
+- Consult `docs/TECH_REFERENCE.md` and `docs/DECISIONS.md` before writing anything.
+- **DO NOT invent** endpoint paths, column names, or socket events. Use exact contracts.
+
+### Phase 2 — Security Fence (Plan Mode, Cerco de Seguridad)
+Before writing code, generate a structured plan:
+1. FILES TO CREATE: exact list.
+2. FILES TO MODIFY: strict list.
+3. FILES OUT OF SCOPE: do not touch under any circumstance.
+4. RISK ASSESSMENT: which existing modules connect to this task.
+5. ATOMIC STEPS: ordered implementation sequence.
+
+Wait for Orchestrator approval before proceeding.
+
+### Phase 3 — Anti-Regression Shield
+- Grep cross-references to identify existing consumers.
+- All additions must be additive (new endpoints, optional params). Never break existing contracts.
+
+### Phase 4 — Quirófano (Minimal Implementation on Dedicated Branch)
+- Branch: `feat/task-X.Y-description` (e.g., `feat/task-2.2-auth-jwt`).
+- Build only what's specified. NO refactoring of neighboring modules.
+- **TDD first:** Test must exist and fail (red) before implementing logic (green).
+- Self-Correction Loop: Fix `tsc --noEmit` errors iteratively before escalating.
+
+### Phase 5 — Validation & Pull Request
 ```bash
-# 1. Validate Prisma schema (if touching database)
-cd backend && npx prisma validate
-
-# 2. Typecheck across workspaces
-npm run typecheck
-
-# 3. Execute test suite
-npm test
+cd backend && npx prisma validate   # If touching database
+npm run typecheck                   # 0 errors across all workspaces
+npm test                            # 100% passing
+npm run build                       # No compilation errors
 ```
 
-### Step 5: Pull Request Generation
-- Branch name format: `feat/<feature-name>`, `fix/<issue-name>`, `test/<area>`.
-- Commit message: Conventional Commits (e.g., `feat(auth): implement tokenVersion rotation and session revocation`).
-- PR description must include:
-  1. Summary of changes made.
-  2. Related task ID from [`PLAN_ACCION_VETCONNECT.md`](../PLAN_ACCION_VETCONNECT.md).
-  3. Verification output (paste terminal output of passing tests).
+PR format:
+- Title: `feat(task-X.Y): <brief description>`
+- Body: Acceptance criteria met + terminal output of passing tests.
+- Link to Task Packet in `PLAN_ACCION_VETCONNECT.md`.
 
 ---
 
-## 🛑 3. Safety Guardrails
+## 🔑 4. Canonical Socket.io Events (Immutable)
 
-1. **NEVER read, edit, or commit `.env` files.** Only update `.env.example` when adding new configuration keys.
-2. **NEVER execute destructive Git operations** (`git filter-repo`, `git push --force`, history purge).
-3. **NEVER execute physical database deletes (`DELETE`).** Always use soft-deletes with `deletedAt = new Date()`.
-4. **NEVER expose PII** (emails, phone numbers) in public endpoints or LiveKit access tokens. Use opaque IDs and public display names.
+| Event | Direction | Description |
+|---|---|---|
+| `join:consultation` | Client → Server | Join consultation chat room |
+| `message:send` | Client → Server | Send message (idempotent via `clientMsgId`) |
+| `message:new` | Server → Room | **Broadcast** new message to both participants |
+| `call:incoming` | Server → User | Incoming video call alert |
+| `call:answered` | Client → Server | Call answered |
+| `call:rejected` | Client → Server | Call rejected |
+| `prescription:new` | Server → Room | New prescription emitted |
+
+> ⚠️ **`message:received` DOES NOT EXIST.** The canonical event is `message:new`.
+
+---
+
+## 🔐 5. Auth Strategy: Dual Web / Mobile (ADR-004)
+
+- **Web SPA (no `X-Client-Platform` header):** Refresh Token in `HttpOnly; Secure; SameSite=Strict` cookie only. Access Token in JSON body.
+- **Mobile App (`X-Client-Platform: mobile` header):** Refresh Token **also** in JSON body `{ accessToken, refreshToken, user }`. App persists it in `expo-secure-store`. Mobile calls `POST /api/auth/refresh` with body `{ refreshToken }`.
+
+---
+
+## 🛑 6. Safety Guardrails
+
+1. **NEVER read, edit, or commit `.env` files.** Only update `.env.example`.
+2. **NEVER execute destructive Git operations** (`git push --force`, `filter-repo`, history purge).
+3. **NEVER execute physical database deletes.** Always use soft-deletes with `deletedAt = new Date()`.
+4. **NEVER expose PII** in public endpoints or LiveKit tokens. Use `identity: user.id`, `name: user.firstName`.
+5. **NEVER serve `/uploads` as static public.** Use authenticated `GET /api/media/:id` endpoint only.
+6. **NEVER emit `message:received`.** Use `message:new` exclusively.
+7. **NEVER add `<RoomAudioRenderer />` alongside `<VideoConference />`** — causes audio echo.
+
+---
+
+## 📐 7. Definition of Done (DoD) Checklist
+
+Before opening any PR, confirm ALL of these:
+
+- [ ] Security Fence respected: only listed files touched.
+- [ ] Contract-faithful: no endpoint/event/field differs from `docs/TECH_REFERENCE.md`.
+- [ ] Binding ADR cited in code comments and PR.
+- [ ] TDD: test was red before implementation turned it green.
+- [ ] Coverage >80% for the implemented module.
+- [ ] Typecheck: 0 errors across all 3 workspaces.
+- [ ] RFC 7807 on all backend errors `{ success: false, error: { code, message, timestamp } }`.
+- [ ] Zero `any` in TypeScript.
+- [ ] All multi-word DB columns have `@map("snake_case")`.
+- [ ] No PII in LiveKit tokens: `identity: user.id`.
+- [ ] No physical deletes: `deletedAt` only.
+- [ ] Conventional Commits: `feat(auth): ...` / `fix(chat): ...`
+- [ ] Descriptive PR with task ID + test output.

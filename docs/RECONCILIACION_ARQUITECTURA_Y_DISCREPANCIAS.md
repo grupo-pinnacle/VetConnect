@@ -130,7 +130,8 @@ Todos los documentos del repositorio han sido verificados y se encuentran 100% a
 - **Resolución Oficial:** El diagrama Gantt y la tabla de hitos de [`docs/PROJECT_CHARTER.md`](PROJECT_CHARTER.md) §4 fueron formalmente sincronizados con [`docs/PLAN_DE_PROYECTO_Y_GESTION.md`](PLAN_DE_PROYECTO_Y_GESTION.md) §8.2. Los 5 hitos (M0 a M4) mapean exactamente a los 10 Sprints del 01-Oct-2026 al 17-Feb-2027, con dos buffers de contingencia técnica integrados (Sprint 8 y Sprint 10).
 
 ### 4.2 Modelo de Gobernanza Dual: Product Backlog (PB) ↔ Agent Backlog (TASK)
-- **Diagnóstico:** Coexistencia de 40 ítems de backlog (`PB-01` a `PB-40`) organizados por Sprints para humanos frente a 18 paquetes de tareas (`TASK-0.1` a `TASK-7.2`) organizados por Fases para agentes de IA.
+- **Diagnóstico:** Coexistencia de 40 ítems de backlog (`PB-01` a `PB-40`) organizados por Sprints para humanos frente a 20 paquetes de tareas (`TASK-0.1` a `TASK-7.2`) organizados por Fases para agentes de IA.
+
 - **Resolución Oficial:** Se estableció formalmente el principio de **Gobernanza Dual**:
   - **Lente Humana / Scrumban (`PB-01..40`):** Destinada al seguimiento del equipo, métricas de avance por sprint y reporting de producto a stakeholders en [`docs/PLAN_DE_PROYECTO_Y_GESTION.md`](PLAN_DE_PROYECTO_Y_GESTION.md).
   - **Lente Agéntica / TDD (`TASK-0.1..7.2`):** Destinada a la ejecución técnica autónoma por agentes de IA (**Google Jules**) con criterios de aceptación atómicos y comandos de verificación en [`PLAN_ACCION_VETCONNECT.md`](../PLAN_ACCION_VETCONNECT.md).
@@ -142,7 +143,8 @@ Para evitar sobrecarga de mantenimiento en un equipo ágil de 5 personas durante
 2. **Documentos Vivos de Ejecución (Living Truth):**  
    - Gestión y Sprints: [`docs/PLAN_DE_PROYECTO_Y_GESTION.md`](PLAN_DE_PROYECTO_Y_GESTION.md).
    - Backlog Técnico para Agentes: [`PLAN_ACCION_VETCONNECT.md`](../PLAN_ACCION_VETCONNECT.md).
-   - Decisiones de Arquitectura: [`docs/DECISIONS.md`](DECISIONS.md) (ADRs 001 al 023).
+   - Decisiones de Arquitectura: [`docs/DECISIONS.md`](DECISIONS.md) (ADRs 001 al 024).
+
    - Contratos Técnicos: [`docs/TECH_REFERENCE.md`](TECH_REFERENCE.md) y [`docs/LIVEKIT_AUDIT.md`](LIVEKIT_AUDIT.md).
 
 ---

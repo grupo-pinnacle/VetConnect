@@ -97,40 +97,39 @@ El esquema inicial del MVP v2.0 comprende **exactamente 9 modelos principales** 
 ### 2.1 Autenticación (`/api/auth`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Registro de nuevos tutores o veterinarios | Público |
-| `POST` | `/api/auth/login` | Inicio de sesión, retorna JWT y cookies | Público |
-| `POST` | `/api/auth/refresh` | Renovación de access token mediante refresh token | Público |
-| `POST` | `/api/auth/logout` | Cierre de sesión y revocación de cookies | Autenticado |
+| `POST` | `/api/auth/register` | Registro de nuevos tutores o veterinarios (VET inicia en `PENDING`) | Público |
+| `POST` | `/api/auth/login` | Inicio de sesión. Web: Refresh Token en cookie `HttpOnly`. Mobile (`X-Client-Platform: mobile`): Refresh Token en JSON body para `expo-secure-store` | Público |
+| `POST` | `/api/auth/refresh` | Renovación de access token. Web: lee cookie `HttpOnly`. Mobile: lee payload `{ refreshToken }` | Público |
+| `POST` | `/api/auth/logout` | Cierre de sesión, incrementa `tokenVersion` e invalida cookies | Autenticado |
 
 ### 2.2 Mascotas (`/api/pets`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `GET` | `/api/pets` | Listar mascotas del usuario autenticado | CLIENT / ADMIN |
-| `POST` | `/api/pets` | Crear nueva ficha de mascota | CLIENT / ADMIN |
+| `POST` | `/api/pets` | Crear nueva ficha de mascota (microchip ISO opcional) | CLIENT / ADMIN |
 | `GET` | `/api/pets/:id` | Obtener detalle e historial clínico de una mascota | Dueño / Vet asignado / ADMIN |
 | `PATCH`| `/api/pets/:id` | Modificar datos de la mascota | Dueño / ADMIN |
-| `DELETE`| `/api/pets/:id` | Soft-delete de mascota | Dueño / ADMIN |
+| `DELETE`| `/api/pets/:id` | Soft-delete de mascota (`deletedAt`) | Dueño / ADMIN |
 
 ### 2.3 Consultas & Telemedicina (`/api/consultations`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage | CLIENT |
+| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min) | CLIENT |
 | `GET` | `/api/consultations/mine`| Listar consultas activas/pendientes del usuario | Autenticado |
 | `GET` | `/api/consultations/:id`| Obtener detalle completo de consulta e historial | Participantes / ADMIN |
-| `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o reasignación administrativa | VET (Approved) / ADMIN |
-| `PATCH`| `/api/consultations/:id/cancel` | Cancelar consulta telemática (transición a CANCELLED) | Participantes / ADMIN |
+| `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o auto-asignación FIFO | VET (Approved) / ADMIN |
+| `PATCH`| `/api/consultations/:id/cancel` | Cancelar consulta telemática (transición a `CANCELLED`) | Participantes / ADMIN |
 | `PATCH`| `/api/consultations/:id/complete` | Cerrar consulta registrando evolución (`diagnosisNotes`) | VET asignado |
 | `POST` | `/api/consultations/:id/prescriptions` | Emitir receta digital oficial con QR y firma | VET asignado |
-| `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico | Participantes |
+| `GET`  | `/api/consultations/:id/messages` | Listar mensajes de chat o sincronización incremental (`?after={ISO_TIMESTAMP}`) | Participantes |
+| `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico (idempotente con `clientMsgId`) | Participantes |
 | `POST` | `/api/consultations/:id/review` | Calificar atención médica (1 a 5 estrellas, ADR-023) | CLIENT asignado |
 
 ### 2.4 Videollamadas (`/api/calls`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `POST` | `/api/calls/:consultationId/token` | Generar token de acceso LiveKit para una consulta | Participantes de la consulta |
+| `POST` | `/api/calls/:consultationId/token` | Generar token de acceso LiveKit para una consulta (sin PII) | Participantes de la consulta |
 | `POST` | `/api/calls/:consultationId/ring` | Disparar notificación de timbrado global al par | Participantes de la consulta |
-
----
 
 ### 2.5 Notificaciones Push & In-App (`/api/notifications`)
 | Método | Endpoint | Descripción | Acceso |
@@ -138,6 +137,12 @@ El esquema inicial del MVP v2.0 comprende **exactamente 9 modelos principales** 
 | `POST` | `/api/notifications/register-token` | Registrar o actualizar token Expo Push (`ExponentPushToken[...]`) | Autenticado |
 | `GET`  | `/api/notifications` | Listar notificaciones in-app del usuario autenticado | Autenticado |
 | `PATCH`| `/api/notifications/:id/read` | Marcar notificación específica como leída | Autenticado |
+
+### 2.6 Archivos Médicos & Adjuntos (`/api/media`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `POST` | `/api/media` | Subida de archivos con validación binaria de Magic Bytes y cuota diaria | Autenticado |
+| `GET`  | `/api/media/:id` | Descarga/streaming seguro de archivo clínico (prohibido acceso estático público; valida que solicitante sea dueño, vet asignado o ADMIN) | Participantes / ADMIN |
 
 ---
 

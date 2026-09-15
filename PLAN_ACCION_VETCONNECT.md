@@ -164,19 +164,22 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 ### 📦 TASK-2.2: Módulo de Autenticación con JWT, Refresh Cookies y `tokenVersion`
 - **Capa:** Backend (`backend/src/modules/auth/`)
 - **Archivos:** `auth.controller.ts`, `auth.service.ts`, `auth.routes.ts`, `auth.middleware.ts`, `auth.schemas.ts`
-- **Contratos/ADRs:** [ADR-004](docs/DECISIONS.md) (JWT con `tokenVersion`), Antipatrón 1 de `AGENTS.md` (Cookies HttpOnly), [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) §3.
+- **Contratos/ADRs:** [ADR-004](docs/DECISIONS.md) (JWT con `tokenVersion` — Estrategia Dual Web/Mobile), Antipatrón 1 de `AGENTS.md` (Cookies HttpOnly + Mobile expo-secure-store), [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) §2.1.
 - **Instrucciones:**
   1. Crear esquemas Zod `registerSchema` (permite `role: 'CLIENT'` o `role: 'VET'`) y `loginSchema`.
-     - **Diseño Bloqueante Estricto (ADR-013):** Las cuentas con rol `VET` se crean con `vetStatus: 'PENDING'`. Quedan estrictamente bloqueadas para ingresar a colas de triage, atender consultas o emitir recetas hasta que un Administrador valide manualmente su matrícula profesional (quedando formalmente descartado cualquier auto-registro no bloqueante).
+     - **Diseño Bloqueante Estricto (ADR-013):** Las cuentas con rol `VET` se crean con `vetStatus: 'PENDING'`. Quedan estrictamente bloqueadas para ingresar a colas de triage, atender consultas o emitir recetas hasta que un Administrador valide manualmente su matrícula profesional.
   2. Implementar hash de contraseñas con `bcryptjs` (salt 12).
-  3. Emitir Access Token (15 min) en JSON y Refresh Token (7 días) exclusivamente en cookie `HttpOnly`, `Secure`, `SameSite: strict`.
+  3. **Estrategia Dual de Refresh Token (ADR-004):**
+     - **Web SPA (sin `X-Client-Platform` header):** Emitir Access Token (15 min) en JSON y Refresh Token (7 días) exclusivamente en cookie `HttpOnly`, `Secure`, `SameSite: strict`. No incluir `refreshToken` en el body.
+     - **Mobile App (header `X-Client-Platform: mobile`):** Emitir Access Token en JSON e incluir **también** el Refresh Token en el body JSON (`{ accessToken, refreshToken, user }`). La app React Native lo persiste en `expo-secure-store`. El endpoint `/api/auth/refresh` en mobile lee `{ refreshToken }` desde el body.
   4. Middleware `authenticate`: validar firma JWT con algoritmo fijo `algorithms: ['HS256']` y comprobar que `payload.tokenVersion === user.tokenVersion`.
   5. Endpoint `/logout`: incrementar `tokenVersion` del usuario e invalidar cookie para revocación instantánea de sesiones.
 - **Comando de Verificación:**
   ```bash
   cd backend && npm test -- -t "auth"
   ```
-- **Criterio de Aceptación:** Tests de registro, login, refresh en cookie y revocación de sesión por `tokenVersion` pasando en verde.
+- **Criterio de Aceptación:** Tests de registro, login (Web y Mobile), refresh en cookie y refresh por body, y revocación de sesión por `tokenVersion` pasando en verde.
+
 
 ### 📦 TASK-2.3: Módulo de Gestión de Mascotas & Validación de Microchip
 - **Capa:** Backend (`backend/src/modules/pets/`)
@@ -192,22 +195,26 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
   ```
 - **Criterio de Aceptación:** Registro exitoso con microchip válido, registro exitoso con microchip nulo, rechazo 400 ante formato de microchip inválido.
 
-### 📦 TASK-2.4: Módulo de Consultas & Máquina de Estados Médica
+### 📦 TASK-2.4: Módulo de Consultas & Máquina de Estados Médica (FSM con Timeouts)
 - **Capa:** Backend (`backend/src/modules/consultations/`)
 - **Archivos:** `consultations.controller.ts`, `consultations.service.ts`, `consultations.routes.ts`, `consultations.schemas.ts`
-- **Contratos/ADRs:** [ADR-013](docs/DECISIONS.md) (Sala de Espera), [`docs/SPEC.md`](docs/SPEC.md) §3.
+- **Contratos/ADRs:** [ADR-024](docs/DECISIONS.md) (FSM 4 estados con timeouts), [ADR-013](docs/DECISIONS.md) (Sala de Espera SENASA), [`docs/SPEC.md`](docs/SPEC.md) §3.3.
 - **Instrucciones:**
   1. Crear `createConsultationSchema` (motivo de consulta, síntomas, `petId`).
-  2. Flujo de estados:
+  2. **Flujo FSM de 4 estados con comportamiento determinista ante casos borde (ADR-024):**
      - Crear consulta: estado inicial `WAITING`.
-     - Si hay un veterinario `APPROVED` online (`isOnline = true`) con disponibilidad, auto-asignar y cambiar a `ACTIVE`.
-     - Finalizar consulta (`completeConsultation`): veterinario ingresa diagnóstico y receta médica opcional, estado transiciona a `COMPLETED`.
+     - Si hay veterinario `APPROVED` online disponible: auto-asignar FIFO atómicamente y cambiar a `ACTIVE`.
+     - **Si NO hay veterinarios online:** Dejar en `WAITING` y disparar un job de TTL con **15 minutos** de espera máxima. Al expirar el TTL: transicionar a `CANCELLED` con código `TIMEOUT_NO_VET_AVAILABLE`, emitir Socket.io al tutor y Push Notification de alerta.
+     - **Si el veterinario se desconecta durante `ACTIVE`:** Abrir ventana de gracia de **3 minutos** usando presencia Redis/heartbeat. Si reconecta: continuar sin interrupciones. Si el TTL expira: transicionar a `CANCELLED` (`VET_DISCONNECTED_TIMEOUT`) con opción de reencolado prioritario para el tutor.
+     - Finalizar consulta (`completeConsultation`): veterinario ingresa diagnóstico, estado transiciona a `COMPLETED`.
   3. Endpoint de calificación (`POST /api/consultations/:id/review`): calificar del 1 al 5 estrellas, recalculando atómicamente `rating_avg` y `rating_count` del veterinario en una transacción Prisma (ADR-019 y ADR-023).
+  4. Endpoint de mensajes (`GET /api/consultations/:id/messages?after={ISO_TIMESTAMP}`): soportar sincronización incremental de chat para reconciliar mensajes perdidos durante reconexión mobile.
 - **Comando de Verificación:**
   ```bash
   cd backend && npm test -- -t "consultations"
   ```
-- **Criterio de Aceptación:** Transiciones de estado validadas, imposibilidad de finalizar consultas ajenas, recálculo atómico de estrellas 1–5.
+- **Criterio de Aceptación:** Transiciones de estado validadas; TTL de triage genera `CANCELLED` a los 15 min en tests; ventana de gracia de 3 min documentada con test de desconexión; recálculo atómico de estrellas 1–5.
+
 
 ---
 
@@ -264,7 +271,8 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
   1. Evento `message:send`: recibir `{ consultationId, content, clientMsgId, mediaUrl? }`.
   2. Verificar que el emisor sea el cliente o veterinario asignado a la consulta `ACTIVE`.
   3. Almacenar mensaje en base de datos. Si ocurre colisión única de `clientMsgId` (código Prisma `P2002`), capturar el error y responder HTTP 200 con el mensaje existente en lugar de fallar con 500.
-  4. Broadcast del mensaje a la sala de Socket.io `consultation:${consultationId}` mediante evento `message:received`.
+  4. Broadcast del mensaje a la sala de Socket.io `consultation:${consultationId}` mediante evento `message:new`.
+
 - **Comando de Verificación:**
   ```bash
   cd backend && npm test -- -t "chat.idempotency"
@@ -295,24 +303,31 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
   ```
 - **Criterio de Aceptación:** Token JWT de LiveKit emitido; verificación de claims confirma ausencia de correo electrónico o PII sensible.
 
-### 📦 TASK-4.2: Subida Segura de Archivos con Validación Binaria de Magic Bytes
+### 📦 TASK-4.2: Subida & Descarga Segura de Archivos Médicos con Validación de Magic Bytes (ADR-010 & ADR-020)
 - **Capa:** Backend (`backend/src/modules/media/`)
 - **Archivos:** `media.middleware.ts`, `media.service.ts`, `media.controller.ts`, `media.routes.ts`
-- **Contratos/ADRs:** [ADR-010](docs/DECISIONS.md) (Storage Resiliente), [ADR-020](docs/DECISIONS.md) (Mitigación DoS & Streaming).
+- **Contratos/ADRs:** [ADR-010](docs/DECISIONS.md) (Acceso Autenticado — Prohibición de Serving Estático), [ADR-020](docs/DECISIONS.md) (Mitigación DoS & Streaming). Antipatrón 5 de `AGENTS.md` (NO servir `/uploads` como static).
 - **Instrucciones:**
-  1. Configurar Multer con `diskStorage` temporal en `./uploads/tmp/` (máximo 10 MB).
+  1. Configurar Multer con `diskStorage` temporal en `./uploads/tmp/` (máximo 10 MB). **PROHIBIDO usar `express.static()` sobre `/uploads/`.**
   2. Middleware `verifyMagicBytes`: leer los primeros 32 bytes del buffer en disco para comprobar la firma binaria real:
      - JPEG: `FF D8 FF`
      - PNG: `89 50 4E 47`
      - PDF: `25 50 44 46`
   3. Sanitizar nombres de archivo para neutralizar ataques de Path Traversal (`../`).
-  4. Mover el archivo validado a `./uploads/` (o subir a AWS S3 mediante presigned URL) y eliminar el archivo temporal inmediatamente.
+  4. Mover el archivo validado a `./uploads/` (local) o subir a AWS S3. Eliminar el archivo temporal inmediatamente. Registrar la referencia en la tabla `MediaFile` (o campo `attachmentUrl` del mensaje).
   5. Cuota de subida diaria: registrar consumo en `DailyUploadCounter` y limitar a 50 MB/día por usuario.
+  6. **Endpoint de Descarga Autenticada `GET /api/media/:id` (ADR-010):**
+     - Validar que el solicitante sea: dueño de la mascota asociada, veterinario asignado a la consulta vinculada, o ADMIN.
+     - Si no cumple: `403 Forbidden` con RFC 7807 (`{ code: 'FORBIDDEN' }`).
+     - Local: `res.sendFile(path.resolve(file.localPath))` con header `Content-Disposition: inline`.
+     - S3: emitir `getSignedUrl(getObject)` con TTL de **300 segundos** y redireccionar.
 - **Comando de Verificación:**
   ```bash
-  cd backend && npm test -- -t "media.magicbytes"
+  cd backend && npm test -- -t "media"
   ```
-- **Criterio de Aceptación:** Archivo `.exe` renombrado a `.jpg` es rechazado con código 400 por discordancia de magic bytes; imágenes legítimas se procesan exitosamente.
+- **Criterio de Aceptación:** Archivo `.exe` renombrado a `.jpg` rechazado con 400; imágenes legítimas procesadas; `GET /api/media/:id` sin token retorna 401; con token de tercero retorna 403; dueño recibe el archivo con 200.
+
+
 
 ---
 
@@ -353,19 +368,27 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 
 ## 📱 FASE 6: Aplicación Mobile (React Native + Expo SDK 54)
 
-### 📦 TASK-6.1: Scaffolding Mobile, Expo Router y Persistencia Segura
+### 📦 TASK-6.1: Scaffolding Mobile, Expo Router, Persistencia Segura y Sincronización Offline
 - **Capa:** Mobile (`mobile/`)
-- **Archivos:** `mobile/package.json`, `mobile/app.json`, `mobile/app/_layout.tsx`, `mobile/src/lib/authStore.ts`
-- **Contratos/ADRs:** [ADR-016](docs/DECISIONS.md) (ADB Reverse USB), [ADR-018](docs/DECISIONS.md) (Distribución Android).
+- **Archivos:** `mobile/package.json`, `mobile/app.json`, `mobile/app/_layout.tsx`, `mobile/src/lib/authStore.ts`, `mobile/src/lib/api.ts`, `mobile/src/lib/socket.ts`
+- **Contratos/ADRs:** [ADR-004](docs/DECISIONS.md) (Estrategia Dual Mobile — expo-secure-store), [ADR-016](docs/DECISIONS.md) (ADB Reverse USB), [ADR-018](docs/DECISIONS.md) (Distribución Android).
 - **Instrucciones:**
   1. Configurar proyecto Expo SDK 54 con Expo Router y NativeWind.
-  2. Implementar `authStore` utilizando `expo-secure-store` para el almacenamiento seguro de credenciales.
-  3. Configurar cliente Socket.io mobile con gestión de ciclo de vida (`AppState`: desconectar sockets en segundo plano para ahorrar batería).
+  2. **Almacenamiento Seguro de Credenciales (ADR-004):**
+     - Configurar `api.ts` para incluir el header `X-Client-Platform: mobile` en **todas** las peticiones.
+     - Al hacer login/refresh, el backend retorna `{ accessToken, refreshToken, user }`. Persistir el `refreshToken` en `expo-secure-store` bajo la clave `'vetconnect_refresh_token'`.
+     - Al iniciar la app, leer el refresh token de `expo-secure-store` y renovar el access token automáticamente mediante `POST /api/auth/refresh` con body `{ refreshToken }`.
+  3. **Gestión de Ciclo de Vida del Socket:**
+     - Al pasar a segundo plano (`AppState === 'background'`): desconectar el socket para ahorrar batería y datos.
+     - Al volver a primer plano (`AppState === 'active'`): reconectar el socket y ejecutar sincronización incremental de mensajes: `GET /api/consultations/:id/messages?after={lastKnownTimestamp}` para cada consulta activa, reconciliando los mensajes recibidos durante la ausencia con el store local de Zustand.
+  4. Implementar `authStore` con Zustand gestionando `accessToken`, `user` y lógica de renovación automática.
 - **Comando de Verificación:**
   ```bash
   cd mobile && npx expo-doctor || npm run typecheck
   ```
-- **Criterio de Aceptación:** Proyecto mobile compila y typecheck de TypeScript pasa sin errores.
+- **Criterio de Aceptación:** Proyecto mobile compila; refresh token persiste cifrado en secure store; sincronización incremental recupera mensajes correctamente tras regreso a foreground.
+
+
 
 ### 📦 TASK-6.2: Telemedicina Mobile con WebView y Handshake Bidireccional
 - **Capa:** Mobile (`mobile/app/(app)/call/[consultationId].tsx`)

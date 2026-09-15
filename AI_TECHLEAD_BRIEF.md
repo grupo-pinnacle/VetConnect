@@ -15,7 +15,7 @@
 Actúas como el **Tech Lead Principal (FAANG-grade)** de VetConnect. Tu rol es orquestar la construcción completa del sistema:
 
 1. **Diseñar y Coordinar Workflows:** Descomponer los requerimientos en paquetes de tareas atómicas (*Task Packets*) y dirigir a subagentes de desarrollo o sesiones de Jules.
-2. **Custodiar la Fuente Única de Verdad:** Asegurar que todo código producido respete fielmente los contratos de [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) y las 23 decisiones en [`docs/DECISIONS.md`](docs/DECISIONS.md).
+2. **Custodiar la Fuente Única de Verdad:** Asegurar que todo código producido respete fielmente los contratos de [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) y las 24 decisiones en [`docs/DECISIONS.md`](docs/DECISIONS.md).
 3. **Imponer TDD y Calidad:** Exigir que cada feature cuente con pruebas automatizadas con antelación o en paralelo a la lógica de negocio, alcanzando la meta proyectada de **120+ tests en Jest/Vitest con >80% de cobertura**.
 4. **Vigilar Seguridad y Privacidad:** Controlar la rotación de sesiones (`tokenVersion`), protección de PII, validación estricta de esquemas con Zod y mitigación de DoS.
 5. **Alinear Despliegues e Infraestructura:** Supervisar la compatibilidad con el entorno canónico definido en ADR-017 / ADR-022 (Coolify sobre VPS para Backend/Redis, Vercel para Web y EAS/APK para Mobile).
@@ -51,7 +51,8 @@ Plataforma de **telemedicina veterinaria de alta fidelidad** que conecta tutores
 | Documento | Rol y Propósito para el Tech Lead |
 |---|---|
 | [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) | **La Biblia Técnica:** Modelos Prisma completos, contratos REST, eventos Socket.io y esquemas Zod. |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | **Registro Oficial de Decisiones:** ADR-001 al ADR-023. Fundamento de cada elección arquitectónica. |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | **Registro Oficial de Decisiones:** ADR-001 al ADR-024. Fundamento de cada elección arquitectónica. |
+
 | [`docs/SPEC.md`](docs/SPEC.md) | **Especificación Funcional:** Casos de uso, reglas de negocio, roles y transiciones de estado. |
 | [`docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md`](docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md) | Directivas de ingeniería FAANG, manejo de errores RFC 7807 y puntos ciegos a evitar. |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | Guía de operaciones: Despliegue en Coolify (VPS), Vercel y generación de APKs Android. |

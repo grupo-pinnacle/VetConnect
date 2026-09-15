@@ -113,15 +113,24 @@ vetconnect/
 
 ## 🚫 5. Antipatrones Explícitos (Ejemplos de NO Uso)
 
-### ❌ NO USO 1: Devolver Refresh Tokens en el JSON de respuesta
+### ❌ NO USO 1: Devolver Refresh Tokens en el JSON de respuesta (Web SPA)
 ```typescript
-// BAD: Expone el token de refresco a ataques XSS
+// BAD: Expone el token de refresco a ataques XSS en navegadores
 app.post('/api/auth/login', async (req, res) => {
-  return res.json({ accessToken, refreshToken });
+  return res.json({ accessToken, refreshToken }); // ❌ NUNCA en Web SPA
 });
 
-// GOOD: Transmitir en cookie HttpOnly + Secure
+// GOOD — Web SPA: Transmitir en cookie HttpOnly + Secure
 res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+return res.json({ accessToken, user });
+
+// GOOD — Mobile (React Native): Detectar plataforma y retornar en body para expo-secure-store
+// El header X-Client-Platform: mobile discrimina el cliente
+if (req.headers['x-client-platform'] === 'mobile') {
+  return res.json({ accessToken, refreshToken, user }); // ✅ Seguro: persiste en hardware keychain
+}
+res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+return res.json({ accessToken, user });
 ```
 
 ### ❌ NO USO 2: Exponer correos o PII en los tokens JWT de LiveKit
@@ -159,6 +168,24 @@ if (error.code === 'P2002') {
 }
 ```
 
+### ❌ NO USO 5: Servir Archivos Médicos Clínicos como Estáticos Públicos
+```typescript
+// BAD: Expone documentación médica sin autenticación (viola Ley 25.326)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Cualquier persona con la URL accede a fotos de lesiones, análisis y recetas.
+
+// GOOD: Endpoint protegido con control de acceso estricto
+app.get('/api/media/:id', authenticate, async (req, res) => {
+  const file = await prisma.mediaFile.findUnique({ where: { id: req.params.id } });
+  const isAuthorized = file.ownerId === req.user.id
+    || file.consultationVetId === req.user.id
+    || req.user.role === 'ADMIN';
+  if (!isAuthorized) return res.status(403).json({ success: false, error: { code: 'FORBIDDEN' } });
+  // En producción S3: retornar Presigned URL con TTL 5 min
+  // En local: res.sendFile(path.resolve(file.localPath));
+});
+```
+
 ---
 
 ## 🤖 6. Matriz de Especialización para Subagentes Autónomos
@@ -171,10 +198,11 @@ Cuando un agente Tech Lead o el desarrollador delega trabajo en subagentes o ses
 | **Database Agent** | Prisma ORM & PostgreSQL | `schema.prisma`, migraciones, seeds | `npx prisma validate && npx prisma db push` |
 | **Backend REST Agent** | API Express 5 & Auth | Rutas, controladores, middleware JWT, Zod | `npm test -w backend` |
 | **Realtime Agent** | WebSockets & Socket.io | Gateways, rooms, presencia, Redis adapter | `npm test -w backend -- -t "realtime"` |
-| **Media & Video Agent** | LiveKit SFU & Uploads | Tokens LiveKit, Magic Bytes, S3/Local | `npm test -w backend -- -t "media"` |
+| **Media & Video Agent** | LiveKit SFU & Uploads | Tokens LiveKit, Magic Bytes, S3/Local, `GET /api/media/:id` auth | `npm test -w backend -- -t "media"` |
 | **Web Frontend Agent** | React 19 & Vite SPA | Pantallas, TanStack Query, LiveKit UI | `npm run build -w web && npm test -w web` |
-| **Mobile App Agent** | React Native & Expo SDK 54 | Navegación Expo Router, NativeWind | `npm run typecheck -w mobile` |
+| **Mobile App Agent** | React Native & Expo SDK 54 | Expo Router, NativeWind, expo-secure-store, offline sync | `npm run typecheck -w mobile` |
 | **QA & Verification Agent** | Testing E2E & Seguridad | Jest 120+ tests, Playwright, CI audit | `npm test --workspaces && npm run typecheck` |
+| **Debugger Agent** | Regresiones & Fallos | Análisis de diff, aislamiento de fallos, Self-Correction Loop | `npm test -- --verbose` |
 
 ---
 
@@ -198,3 +226,4 @@ npm run build
 
 ---
 *VetConnect Agent Operating System — Ecosistema de Ingeniería Greenfield 2026.*
+
