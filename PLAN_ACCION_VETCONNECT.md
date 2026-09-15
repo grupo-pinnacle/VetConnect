@@ -211,6 +211,32 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 
 ---
 
+### 📦 TASK-2.5: Módulo de Recetas Digitales Estructuradas con Firma y Código QR
+- **Capa:** Backend (`backend/src/modules/prescriptions/`)
+- **Archivos:** `prescriptions.controller.ts`, `prescriptions.service.ts`, `prescriptions.routes.ts`, `prescriptions.schemas.ts`, `qr.util.ts`
+- **Contratos/ADRs:** [ADR-013](docs/DECISIONS.md) (Veterinario Aprobado Bloqueante), PB-35 (Sprint 9), [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) §2.3, [`docs/SPEC.md`](docs/SPEC.md) §3.3 y §4.
+- **Instrucciones:**
+  1. Crear esquema Zod `createPrescriptionSchema` validando campos clínicos obligatorios:
+     - `medication: z.string().min(2).max(100)`
+     - `dosage: z.string().min(1).max(100)`
+     - `frequency: z.string().min(1).max(100)`
+     - `durationDays: z.number().int().positive().max(365)`
+     - `indications: z.string().min(5).max(1000)`
+  2. Implementar endpoint `POST /api/consultations/:id/prescriptions`:
+     - Validar que el usuario autenticado posea rol `VET` y matrícula aprobada (`vetStatus: 'APPROVED'`).
+     - Validar que sea el veterinario asignado a la consulta médica (`vetId === req.user.id`).
+     - Validar que la consulta se encuentre en estado `ACTIVE` o completándose en la misma transacción.
+  3. Generar firma digital inmutable y código QR único apuntando a la URL pública de validación de receta (`https://vetconnect.app/verify/prescription/:id`).
+  4. Persistir registro en la tabla `prescriptions` de PostgreSQL asociada a la consulta, veterinario y mascota.
+  5. Emitir evento en tiempo real `prescription:new` vía Socket.io hacia la sala `consultation:${consultationId}` para notificar instantáneamente al tutor en Web y Mobile.
+- **Comando de Verificación:**
+  ```bash
+  cd backend && npm test -- -t "prescriptions"
+  ```
+- **Criterio de Aceptación:** Emisión exitosa de receta con código QR por el veterinario asignado; rechazo HTTP 403 ante veterinarios no aprobados o ajenos a la consulta; broadcast de evento `prescription:new` recibido por ambos participantes.
+
+---
+
 ## ⚡ FASE 3: Motor de Tiempo Real & Chat WebSocket
 
 ### 📦 TASK-3.1: Servidor Socket.io con Redis Adapter & Autenticación
@@ -356,6 +382,29 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
   cd mobile && npm test -- -t "call"
   ```
 - **Criterio de Aceptación:** WebView gestiona correctamente el handshake sin inyecciones prematuras de scripts.
+
+---
+
+### 📦 TASK-6.3: Módulo de Notificaciones Push con Expo Push API & Bandeja In-App
+- **Capa:** Mobile & Backend (`backend/src/modules/notifications/`, `mobile/src/services/notifications.service.ts`)
+- **Archivos:** `backend/src/modules/notifications/notifications.controller.ts`, `backend/src/modules/notifications/notifications.service.ts`, `backend/src/modules/notifications/notifications.routes.ts`, `backend/src/modules/notifications/notifications.schemas.ts`, `mobile/src/services/notifications.service.ts`, `mobile/app/(app)/notifications.tsx`
+- **Contratos/ADRs:** [ADR-011](docs/DECISIONS.md) (Expo Push API & Bandeja In-App), PB-19 (S5), PB-20 (S6), PB-31 (S8), [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) §2.5.
+- **Instrucciones:**
+  1. Implementar en backend el despacho push mediante `expo-server-sdk`:
+     - Endpoint `POST /api/notifications/register-token`: registra o actualiza de forma idempotente el token de dispositivo (`ExponentPushToken[...]`) asociado al `userId` autenticado en la tabla `push_tokens`.
+     - Despacho automatizado de notificaciones ante eventos críticos: videollamada entrante (`call:incoming`), nuevo mensaje de chat con app en segundo plano y emisión de receta médica oficial (`prescription:new`).
+  2. Implementar persistencia y lectura de bandeja in-app en tabla `notifications`:
+     - Endpoint `GET /api/notifications`: lista las notificaciones históricas del usuario autenticado ordenadas por fecha descendente con paginación (`take`, `skip`).
+     - Endpoint `PATCH /api/notifications/:id/read`: marca una notificación individual como leída.
+  3. En la aplicación móvil (`mobile/src/services/notifications.service.ts`):
+     - Solicitar permisos nativos de notificación en el primer arranque mediante `expo-notifications`.
+     - Obtener el push token con `Notifications.getExpoPushTokenAsync()` y sincronizarlo con el backend mediante `POST /api/notifications/register-token`.
+     - Configurar listener de notificaciones en segundo plano para redirección directa (deep linking) a `/call/:consultationId` o `/consultations/:id`.
+- **Comando de Verificación:**
+  ```bash
+  cd backend && npm test -- -t "notifications"
+  ```
+- **Criterio de Aceptación:** Registro idempotente del push token de Expo; despacho simulado sin errores hacia los servidores de Expo; persistencia, consulta y marcado de lectura en bandeja in-app funcionando con 100% de tests en verde.
 
 ---
 

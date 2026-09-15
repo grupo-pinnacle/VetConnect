@@ -76,15 +76,20 @@ function runGovernanceCheck() {
     'TASK-7.1', 'TASK-7.2'
   ];
 
-  const taskRegex = /TASK-\d\.\d/g;
-  const tasksInPlanAccion = new Set(planAccion.match(taskRegex) || []);
-  const missingTasks = expectedTasks.filter(t => !tasksInPlanAccion.has(t));
+  // 3. Validar los 20 Task Packets estructurados con sección detallada (### 📦 TASK-X.Y)
+  const missingTasks = [];
+  const missingHeaders = [];
+  for (const t of expectedTasks) {
+    if (!planAccion.includes(t)) missingTasks.push(t);
+    if (!planAccion.includes(`### 📦 ${t}`)) missingHeaders.push(t);
+  }
 
-  if (missingTasks.length > 0) {
-    console.error(`  ❌ Faltan los siguientes Task Packets: ${missingTasks.join(', ')}`);
+  if (missingTasks.length > 0 || missingHeaders.length > 0) {
+    if (missingTasks.length > 0) console.error(`  ❌ Faltan los siguientes Task Packets en el documento: ${missingTasks.join(', ')}`);
+    if (missingHeaders.length > 0) console.error(`  ❌ Faltan las fichas detalladas (### 📦 TASK-X.Y) para: ${missingHeaders.join(', ')}`);
     errors++;
   } else {
-    console.log(`  ✅ 3. Task Packets: Los ${expectedTasks.length} paquetes de ingeniería (TASK-0.1 a TASK-7.2) están estructurados.`);
+    console.log(`  ✅ 3. Task Packets: Los ${expectedTasks.length} paquetes de ingeniería (TASK-0.1 a TASK-7.2) cuentan con especificación técnica completa (fichas detalladas).`);
   }
 
   // 4. Verificación Semántica de Modelos Prisma v2.0 (9 modelos obligatorios)
