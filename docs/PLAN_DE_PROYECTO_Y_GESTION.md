@@ -517,7 +517,16 @@ gantt
     section M4: Calidad & Deploy
     Sprint 9 - Pruebas Usabilidad, Recetas & QR:s9, 2027-01-21, 2027-02-03
     Sprint 10 - Hardening, 120+ Tests & Deploy :crit, s10, 2027-02-04, 2027-02-17
+
+    section Buffers de Contingencia Técnica
+    Buffer M3: Estabilización WebRTC/LiveKit   :active, b1, 2027-01-14, 2027-01-20
+    Buffer M4: Hardening de Seguridad & Release:active, b2, 2027-02-11, 2027-02-17
 ```
+
+> 🛡️ **Estrategia de Buffers de Contingencia Técnica:**  
+> Para mitigar el riesgo de variabilidad en telecomunicaciones e imprevistos de red móvil (R-06), el cronograma reserva formalmente dos ventanas de contingencia protegidas:  
+> 1. **Buffer de Telemedicina (Sprint 8 / Días 10 al 14):** Dedicado exclusivamente a pruebas de estrés sobre LiveKit SFU, optimización de códecs y calibración de latencia en redes 4G inestables.  
+> 2. **Buffer de Hardening & Release (Sprint 10 / Días 10 al 14):** Dedicado a auditoría de seguridad, penetración, revisión de cero-vulnerabilidades en Docker y simulacro de despliegue en VPS Coolify y Vercel.
 
 ```
 +-----------------------------------------------------------------------------------------------------------------------+

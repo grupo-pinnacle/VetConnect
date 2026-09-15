@@ -7,6 +7,40 @@
 
 ---
 
+## 🗺️ Gobernanza Dual & Matriz de Mapeo Biunívoco (PB ↔ TASK)
+
+Para garantizar total transparencia operativa entre el seguimiento de gestión de producto y la ejecución técnica automatizada por agentes de IA (**Google Jules**), el proyecto establece un **modelo de gobernanza dual**:
+
+1. **Lente de Producto & Humano (Product Backlog PB-01 a PB-40 en [`docs/PLAN_DE_PROYECTO_Y_GESTION.md`](docs/PLAN_DE_PROYECTO_Y_GESTION.md) §7.2):**  
+   Organizado cronológicamente por **Sprints (1 al 10)**. Es la fuente de verdad para el tablero Scrumban del equipo, reuniones de retrospectiva y reporting a stakeholders ejecutivos.
+2. **Lente de Ingeniería & Agente (Agent Backlog TASK-0.1 a TASK-7.2 en este documento):**  
+   Organizado estructuralmente por **Fases de dependencias arquitectónicas (F0 a F7)**. Es la fuente de verdad técnica para alimentar Issues de GitHub y prompts operativos de microVMs en Google Jules.
+
+### Tabla de Equivalencia Biunívoca
+
+| Tarea de Agente (Fase Técnica) | Ítems del Product Backlog (Sprints) | Alcance Concreto |
+|---|---|---|
+| **TASK-0.1** (Monorepo & Docker) | **PB-01**, **PB-02** (Sprint 1) | Scaffolding workspaces, .gitignore, Docker Postgres/Redis. |
+| **TASK-0.2** (Scripts DX & ADB) | **PB-03** (Sprint 1) | Scripts run.bat y start.ps1 con reverse ADB. |
+| **TASK-1.1** (Modelado Prisma) | **PB-05** (Sprint 2), **PB-15** (Sprint 4), **PB-16** (Sprint 5) | Esquema PostgreSQL, snake_case, soft-deletes y AuditLog. |
+| **TASK-1.2** (Seeds de Prueba) | **PB-05** (Sprint 2) | Semilla de usuarios, mascotas y relaciones en base de datos. |
+| **TASK-2.1** (Express 5 & RFC 7807) | **PB-13**, **PB-14** (Sprint 4) | Servidor HTTP, middleware de errores y panel admin VETs. |
+| **TASK-2.2** (Auth JWT & SENASA) | **PB-06**, **PB-07**, **PB-08** (Sprint 2) | Registro CLIENT/VET PENDING, login HttpOnly y tokenVersion. |
+| **TASK-2.3** (CRUD Mascotas & PII) | **PB-17**, **PB-18**, **PB-19** (Sprint 5) | Fichas de mascotas, validación microchip ISO y PII masking. |
+| **TASK-2.4** (Triage, FSM & Review) | **PB-21**, **PB-22** (Sprint 6), **PB-35**, **PB-36** (Sprint 9) | Máquina estados WAITING->ACTIVE, recetas QR y rating 1-5. |
+| **TASK-3.1** (Socket.io & Redis) | **PB-24**, **PB-25** (Sprint 7) | Servidor WebSockets con Redis Adapter y auth handshake. |
+| **TASK-3.2** (Chat Idempotente) | **PB-26**, **PB-27** (Sprint 7) | Mensajería con clientMsgId, deduplicación P2002 y presencia. |
+| **TASK-4.1** (Tokens LiveKit SFU) | **PB-29**, **PB-32** (Sprint 8) | Tokens WebRTC 720p sin PII y teardown server-side deleteRoom. |
+| **TASK-4.2** (Storage Magic Bytes) | **PB-20** (Sprint 5), **PB-28** (Sprint 7) | Subida segura a disco/S3 con validación de primeros 32 bytes. |
+| **TASK-5.1** (Frontend Web SPA) | **PB-04** (S2), **PB-09**, **PB-10**, **PB-11** (S3), **PB-12** (S4) | React 19 + Vite, TanStack Query, routing y UI Kit. |
+| **TASK-5.2** (Videollamada Web) | **PB-30** (Sprint 8) | Componente CallRoom, PreJoin y CERO doble RoomAudioRenderer. |
+| **TASK-6.1** (Mobile Expo Router) | **PB-10** (Sprint 3), **PB-19** (Sprint 5), **PB-20** (Sprint 6) | App Expo SDK 54, NativeWind, secure store y notificaciones. |
+| **TASK-6.2** (Mobile WebView LiveKit) | **PB-31** (Sprint 8) | Handshake bidireccional page:ready y permisos de hardware. |
+| **TASK-7.1** (Suite 120+ Tests) | **PB-37**, **PB-38** (Sprint 10) | 10 suites en Jest/Vitest con >80% cobertura y mock DB. |
+| **TASK-7.2** (CI/CD & Coolify) | **PB-39**, **PB-40** (Sprint 10) | GitHub Actions, Dockerfile multi-stage y deploy Vercel/VPS. |
+
+---
+
 ## 🧭 Metodología de Ejecución para Agentes
 
 Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`](AGENTS.md):

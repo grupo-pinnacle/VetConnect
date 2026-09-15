@@ -100,31 +100,35 @@ flowchart LR
 
 ```mermaid
 gantt
-    title Cronograma Estrategico de Hitos VetConnect
+    title Cronograma Estratégico de Hitos VetConnect (20 Semanas / 10 Sprints)
     dateFormat  YYYY-MM-DD
     axisFormat  %b %d
 
-    section Hito 0 (M0)
-    Cimientos y Hardening de Seguridad         :crit, m0, 2026-10-01, 2026-10-08
-    section Hito 1 (M1)
-    Core Telemedico y Video LiveKit           :m1, 2026-10-09, 2026-10-18
-    section Hito 2 (M2)
-    Cumplimiento Legal y Validacion SENASA    :m2, 2026-10-19, 2026-10-27
-    section Hito 3 (M3)
-    Quality Engineering y Testing Integral    :m3, 2026-10-28, 2026-11-06
-    section Hito 4 (M4)
-    Despliegue Productivo y Go-Live           :m4, 2026-11-07, 2026-11-18
+    section Hito 0 (M0) - Cimientos & Auth
+    S1-S2: Workspaces, DB Docker, Auth JWT      :crit, m0, 2026-10-01, 2026-10-28
+
+    section Hito 1 (M1) - UI Base & Admin
+    S3-S4: Layouts Web, Expo Router, SENASA Admin :m1, 2026-10-29, 2026-11-25
+
+    section Hito 2 (M2) - Core Clínico
+    S5-S6: CRUD Mascotas, Triage & Máquina Estados:m2, 2026-11-26, 2026-12-23
+
+    section Hito 3 (M3) - Realtime & Video
+    S7-S8: Chat Sockets, LiveKit SFU & Buffer WebRTC:m3, 2026-12-24, 2027-01-20
+
+    section Hito 4 (M4) - Calidad & Release
+    S9-S10: Recetas QR, 120+ Tests, Buffer & Deploy:crit, m4, 2027-01-21, 2027-02-17
 ```
 
 > **Nota de Contexto & Cronograma:** Septiembre de 2026 constituye la fase de planificación, especificación exhaustiva y diseño de arquitectura pre-desarrollo (100% Greenfield). El inicio formal de desarrollo e implementación de código (Sprints 1 al 10 / M0 a M4) está calendarizado para el **01 de Octubre de 2026**, desarrollándose a lo largo de 20 semanas (10 sprints de 2 semanas) hasta mediados de Febrero de 2027.
 
-| Hito | Nombre | Entregables Principales | Estado |
-|---|---|---|---|
-| **M0** | **Cimientos & Hardening de Seguridad** | Guardarraíles de seguridad, plantillas .env.example sin secretos, Docker Compose (Postgres 16 + Redis 7), contratos Zod y esquema relacional Prisma con mapeo `@map` snake_case. | `PLANNED` |
-| **M1** | **Core Telemédico & Video LiveKit** | Redis Adapter activo, LiveKit Web/Mobile funcional, subida de archivos segura a S3/local. | `PLANNED` |
-| **M2** | **Cumplimiento Legal & Recetas** | Flujo Sala de Espera SENASA, Soft-Deletes probados, recetas con QR y AuditLog. | `PLANNED` |
-| **M3** | **Quality Engineering & Concurrencia** | Tests de WebSockets, cobertura backend $> 80\%$, smoke tests E2E con Playwright. | `PLANNED` |
-| **M4** | **Despliegue Productivo & Go-Live** | Backend en VPS Coolify con SSL Traefik, Web en Vercel, EAS Android AAB/APK y APM. | `PLANNED` |
+| Hito | Nombre | Sprints y Fechas | Entregables Principales | Estado |
+|---|---|---|---|---|
+| **M0** | **Cimientos & Auth Core** | Sprints 1 y 2 (01-Oct a 28-Oct-2026) | Monorepo npm workspaces, Docker Compose (Postgres 16 + Redis 7), esquema Prisma snake_case, Auth JWT con tokenVersion. | `PLANNED` |
+| **M1** | **Navegación, UI & Validación SENASA** | Sprints 3 y 4 (29-Oct a 25-Nov-2026) | Scaffolding Web React 19 y Mobile Expo, Panel Admin con aprobación bloqueante SENASA (ADR-013) y AuditLog. | `PLANNED` |
+| **M2** | **Core Clínico, Fichas & Triage** | Sprints 5 y 6 (26-Nov a 23-Dic-2026) | CRUD Mascotas con microchip ISO, cola de triage con auto-asignación y máquina de estados médicas. | `PLANNED` |
+| **M3** | **Comunicación Realtime & Video SFU** | Sprints 7 y 8 (24-Dic-2026 a 20-Ene-2027) | Chat Socket.io idempotente, LiveKit SFU 720p sin PII, subida de media con Magic Bytes y **Buffer técnico WebRTC**. | `PLANNED` |
+| **M4** | **Calidad, Recetas QR & Despliegue** | Sprints 9 y 10 (21-Ene a 17-Feb-2027) | Recetas oficiales QR, rating 1-5 (ADR-023), 120+ tests en Jest (>80%), deploy Coolify VPS (ADR-017) y Vercel (ADR-022). | `PLANNED` |
 
 ### 4.2 Hitos Futuros — Roadmap v2.1+ (Requerimientos de Stakeholders)
 Alineado con los acuerdos tomados en la reunión con el stakeholder interno ([`MINUTA_STAKEHOLDER_2026-09.md`](MINUTA_STAKEHOLDER_2026-09.md)):
@@ -177,11 +181,13 @@ El sistema prioriza una arquitectura de **bajo costo recurrente y alto rendimien
 
 | ID | Riesgo Identificado | Severidad | Probabilidad | Estrategia de Mitigación / Contingencia |
 |---|---|---|---|---|
-| **R-01** | **Fuga de credenciales en commits de Git** | P0 (Crítico) | Alta | Purgar el árbol de Git mediante `git-filter-repo` y rotar todas las llaves (`JWT_SECRET`, Supabase, LiveKit). |
+| **R-01** | **Exposición accidental de credenciales en desarrollo** | P0 (Crítico) | Media | Guardarraíles en pre-commit (`.gitignore`, `.env.example` sin secretos), escaneo en CI (`trufflehog`) y rotación inmediata de llaves. |
 | **R-02** | **Desincronización de columnas Prisma vs SQL** | P0 (Crítico) | Media | Mapeo explícito `@map` en `schema.prisma` y verificación en CI (`prisma migrate status`). |
-| **R-03** | **Degradación de llamada en conexiones 4G débiles** | P1 (Alto) | Alta | Implementar simulcast y streaming adaptativo en LiveKit; fallback a chat con imágenes. |
+| **R-03** | **Degradación de llamada en conexiones 4G débiles** | P1 (Alto) | Alta | Implementar simulcast y streaming adaptativo en LiveKit; fallback automático a chat con imágenes. |
 | **R-04** | **Rechazo de app en Google Play Store** | P1 (Alto) | Media | Ajuste estricto de políticas de privacidad para apps de salud y justificación de permisos en `app.json`. |
 | **R-05** | **Agotamiento del pool de conexiones PostgreSQL** | P2 (Medio) | Baja | Singleton `PrismaClient` con pool acotado (`limit=20`) y Supabase Connection Pooler habilitado. |
+| **R-06** | **Variabilidad e incertidumbre técnica en WebRTC/Mobile** | P1 (Alto) | Media | Asignación de días de buffer técnico en Sprints 8 y 10; desconexión server-side (`deleteRoom`) y reconexión resiliente en WebView. |
+| **R-07** | **Divergencia entre tablero de producto y prompts de IA** | P2 (Medio) | Media | Gobernanza dual con Matriz de Mapeo Biunívoco PB (01-40) ↔ TASK (0.1-7.2) documentada en PLAN_ACCION y PLAN_DE_PROYECTO. |
 
 ---
 

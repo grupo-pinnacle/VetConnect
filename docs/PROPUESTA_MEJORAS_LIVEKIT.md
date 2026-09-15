@@ -1,5 +1,7 @@
 # 🎥 Integración de LiveKit en VetConnect: Hoja de Ruta Consolidada
 
+> 📦 **ESTADO DE ARCHIVO & HISTORIAL:** Este documento es un **Registro Histórico de Consolidación**. Su contenido técnico preliminar fue absorbido y elevado a normativa definitiva de ingeniería en [`docs/LIVEKIT_AUDIT.md`](LIVEKIT_AUDIT.md). La referencia viva oficial y única para videollamadas es **[`docs/LIVEKIT_AUDIT.md`](LIVEKIT_AUDIT.md)**.
+
 > **Referencia Oficial de Documentación:** [LiveKit Official Docs & MCP Reference](https://docs.livekit.io/mcp)  
 > **Estado:** **DOCUMENTO INTEGRADO Y CONSOLIDADO**  
 > **Fuente de Verdad Única:** Todos los análisis de diseño, puntos ciegos, delimitaciones de alcance y patrones de código preventivos han sido formalmente unificados y elevados a normativa de ingeniería en:  
