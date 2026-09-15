@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { User, Role } from '@prisma/client';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 
@@ -9,6 +11,18 @@ const uploadsDir = path.resolve(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local';
+const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
+const AWS_S3_BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'vetconnect-media';
+
+const s3Client = new S3Client({
+  region: AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  },
+});
 
 export class MediaService {
   public async uploadMediaFile(
@@ -31,7 +45,6 @@ export class MediaService {
 
     const currentTotalBytes = counter ? counter.totalBytes : BigInt(0);
     if (currentTotalBytes + fileSizeBigInt > BigInt(MAX_DAILY_BYTES)) {
-      // Delete temporary file
       if (fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
@@ -64,10 +77,31 @@ export class MediaService {
       }
     }
 
-    // 3. Move file from `./uploads/tmp/` to `./uploads/`
+    let finalPath: string | null = null;
+    let s3Key: string | null = null;
+
     const finalFileName = `${Date.now()}-${path.basename(file.path)}`;
-    const finalPath = path.join(uploadsDir, finalFileName);
-    fs.renameSync(file.path, finalPath);
+
+    if (STORAGE_PROVIDER === 's3') {
+      s3Key = `uploads/${user.id}/${finalFileName}`;
+      const fileBuffer = fs.readFileSync(file.path);
+
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: AWS_S3_BUCKET_NAME,
+          Key: s3Key,
+          Body: fileBuffer,
+          ContentType: file.mimetype,
+        })
+      );
+
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+    } else {
+      finalPath = path.join(uploadsDir, finalFileName);
+      fs.renameSync(file.path, finalPath);
+    }
 
     // 4. Update daily upload counter atomically
     await prisma.dailyUploadCounter.upsert({
@@ -98,6 +132,7 @@ export class MediaService {
         fileSize: file.size,
         mimeType: file.mimetype,
         localPath: finalPath,
+        s3Key,
       },
     });
 
@@ -114,8 +149,6 @@ export class MediaService {
       throw new AppError('Archivo no encontrado', 404, 'MEDIA_NOT_FOUND');
     }
 
-    // Access control check (ADR-010):
-    // Must be file owner, assigned vet for consultation, or admin
     const isOwner = mediaFile.ownerId === requester.id;
     const isAdmin = requester.role === Role.ADMIN;
     let isAssignedVet = false;
@@ -128,10 +161,28 @@ export class MediaService {
       throw new AppError('Acceso denegado al archivo medico', 403, 'FORBIDDEN');
     }
 
+    if (STORAGE_PROVIDER === 's3' && mediaFile.s3Key) {
+      const command = new GetObjectCommand({
+        Bucket: AWS_S3_BUCKET_NAME,
+        Key: mediaFile.s3Key,
+      });
+
+      const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+      return {
+        type: 's3' as const,
+        presignedUrl,
+        mediaFile,
+      };
+    }
+
     if (!mediaFile.localPath || !fs.existsSync(mediaFile.localPath)) {
       throw new AppError('El archivo fisico no esta disponible en el servidor', 404, 'FILE_NOT_FOUND_ON_DISK');
     }
 
-    return mediaFile;
+    return {
+      type: 'local' as const,
+      localPath: mediaFile.localPath,
+      mediaFile,
+    };
   }
 }

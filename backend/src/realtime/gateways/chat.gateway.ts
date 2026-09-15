@@ -33,6 +33,26 @@ export const registerChatGateway = (
     }
   });
 
+  // Event: call:answered
+  socket.on('call:answered', async (data: { consultationId: string }) => {
+    try {
+      if (!data?.consultationId) return;
+      io.to(`consultation:${data.consultationId}`).emit('call:answered', data);
+    } catch (err) {
+      console.error('Error in call:answered event:', err);
+    }
+  });
+
+  // Event: call:rejected
+  socket.on('call:rejected', async (data: { consultationId: string; reason?: string }) => {
+    try {
+      if (!data?.consultationId) return;
+      io.to(`consultation:${data.consultationId}`).emit('call:rejected', data);
+    } catch (err) {
+      console.error('Error in call:rejected event:', err);
+    }
+  });
+
   // Event: message:send
   socket.on(
     'message:send',
