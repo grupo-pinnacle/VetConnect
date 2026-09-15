@@ -9,7 +9,7 @@
 
 Before modifying or creating any code, you MUST reference these documents:
 - **Contracts & Database Models:** [`docs/TECH_REFERENCE.md`](../docs/TECH_REFERENCE.md) — Exact Prisma schema, REST endpoints, Socket.io events, and payload definitions.
-- **Architectural Decisions:** [`docs/DECISIONS.md`](../docs/DECISIONS.md) — 21 ADRs governing monorepo architecture, auth, realtime, and storage.
+- **Architectural Decisions:** [`docs/DECISIONS.md`](../docs/DECISIONS.md) — 24 ADRs governing monorepo architecture, auth, realtime, and storage.
 - **System Specifications:** [`docs/SPEC.md`](../docs/SPEC.md) — Functional business logic, roles (`CLIENT`, `VET`, `ADMIN`), and consultation lifecycles.
 - **Agent Operating Guidelines:** [`AGENTS.md`](../AGENTS.md) — Coding standards, anti-patterns, and layer-by-layer instructions.
 - **Task Backlog:** [`PLAN_ACCION_VETCONNECT.md`](../PLAN_ACCION_VETCONNECT.md) — Master backlog organized in discrete Task Packets (F0 to F7).

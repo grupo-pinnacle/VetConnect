@@ -127,8 +127,8 @@ El esquema inicial del MVP v2.0 comprende **exactamente 9 modelos principales** 
 ### 2.4 Videollamadas (`/api/calls`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `POST` | `/api/calls/token` | Generar token de acceso LiveKit para una consulta | Participantes de la consulta |
-| `POST` | `/api/calls/ring` | Disparar notificación de timbrado global al par | Participantes de la consulta |
+| `POST` | `/api/calls/:consultationId/token` | Generar token de acceso LiveKit para una consulta | Participantes de la consulta |
+| `POST` | `/api/calls/:consultationId/ring` | Disparar notificación de timbrado global al par | Participantes de la consulta |
 
 ---
 

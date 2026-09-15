@@ -266,7 +266,7 @@ El proyecto VetConnect está conformado por un equipo multidisciplinario de inge
 | Damian Orellana           | Frontend Web Lead                 | React 19, Vite, Tailwind CSS  |
 | Juan Mendoza              | Mobile App Lead                   | React Native, Expo SDK 54     |
 | Ezequiel Charca           | QA & Security Automation Lead     | Jest, Vitest, Playwright, IAM |
-| Lara *(Stakeholder)*      | Product Owner & Asesora Legal     | SENASA, Compliance Ley 25.326 |
+| Lara Bouso                | Project Manager & Compliance Lead | Product Owner, SENASA, Legal  |
 +---------------------------+-----------------------------------+-------------------------------+
 ```
 
@@ -275,7 +275,7 @@ El proyecto VetConnect está conformado por un equipo multidisciplinario de inge
 - **Frontend Web Lead (Damian Orellana):** Construcción del Portal Web Pro para veterinarios y administradores en React 19, integración de componentes de videollamada LiveKit y diseño UI bajo la norma ISO 9241-11.
 - **Mobile App Lead (Juan Mendoza):** Desarrollo de la aplicación móvil para tutores con Expo Router, diseño de navegación en NativeWind, integración del bridge WebView con LiveKit y manejo de permisos de cámara y micrófono.
 - **QA & Security Engineer (Ezequiel Charca):** Automatización de pruebas unitarias y de integración en Jest (meta: 120+ tests), auditoría de seguridad en JWT, validación de carga y pruebas de accesibilidad WCAG 2.1.
-- **Product Owner & Compliance (Lara):** Validación de historias de usuario, priorización del backlog, interlocución con veterinarios colegiados y control de cumplimiento normativo SENASA.
+- **Project Manager, Product Owner & Compliance (Lara Bouso):** Articula el puente de gobernanza entre la dirección de producto/legal y la ingeniería del proyecto. Como Product Owner y Asesora Legal, valida los criterios de aceptación, el cumplimiento de la Ley 25.326 y la normativa SENASA. Como Project Manager, asegura el cumplimiento de hitos, plazos de entregables regulatorios y la facilitación de revisiones formales con stakeholders externos.
 
 ### 6.3 Estrategia de Rotación de Roles
 Para evitar la formación de silos de conocimiento, mitigar el *bus factor* y potenciar el desarrollo integral del equipo, se implementa una **estrategia de rotación formal** estructurada en tres mecanismos:

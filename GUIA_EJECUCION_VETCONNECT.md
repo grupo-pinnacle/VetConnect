@@ -68,18 +68,18 @@ Debemos encender **tres partes** por separado. Lo ideal es abrir **3 pestañas d
    *(Te dará un enlace tipo `http://localhost:5173`. Si le hacés Ctrl + Clic, se abrirá en tu navegador).*
 
 ### Terminal 3: La App Móvil (Expo)
-1. Abrí una **tercera pestaña** de terminal.
-2. Entrá a la carpeta móvil:
+Podés iniciar la app móvil de dos formas equivalentes:
+
+#### Opción Recomendada (Desde la raíz del monorepo):
+```bash
+npm run dev:mobile
+```
+*(Este comando ejecuta internamente `npm start -w mobile`, configurando Metro bundler sin necesidad de cambiar de carpeta).*
+
+#### Opción Manual (Dentro de la carpeta mobile):
+1. Abrí una **tercera pestaña** de terminal y navegá a la carpeta móvil:
    ```bash
-   cd mobile
-   ```
-3. Descargá las dependencias:
-   ```bash
-   npm install
-   ```
-4. Encendé el servidor de la app y prepará el cable:
-   ```bash
-   npm start
+   cd mobile && npm install && npm start
    ```
 5. Al ejecutar esto, el sistema ejecutará un script especial que busca automáticamente tu celular por USB, configura los puertos de red y te abre una imagen con un código QR (por las dudas) en tu computadora.
 

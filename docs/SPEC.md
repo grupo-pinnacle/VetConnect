@@ -264,7 +264,7 @@ Todos los payloads de entrada y salida se validan estrictamente mediante esquema
 | `POST` | `/api/consultations/:id/prescriptions` | Emisión de receta oficial con firma/QR | VET asignado | 201 Created |
 | `POST` | `/api/consultations/:id/messages` | Envío de mensaje en chat con clientMsgId | Participantes | 201 Created |
 | `POST` | `/api/consultations/:id/review` | Calificación de atención (1 a 5 estrellas, ADR-023) | CLIENT asignado | 201 Created |
-| `POST` | `/api/calls/token` | Generación de token efímero LiveKit SFU | Participantes | 200 OK |
+| `POST` | `/api/calls/:consultationId/token` | Generación de token efímero LiveKit SFU | Participantes | 200 OK |
 | `POST` | `/api/media` | Subida de archivos con chequeo de Magic Bytes| Autenticado | 201 Created |
 | `PATCH`| `/api/admin/vets/:id/approve` | Aprobación de matrícula SENASA | ADMIN | 200 OK |
 
@@ -346,7 +346,7 @@ Cuando se solicita la baja de una cuenta:
 | Escenario de Falla | Componente | Detección | Impacto | Mecanismo de Mitigación / Auto-Recovery |
 |---|---|---|---|---|
 | **Caída de Redis Clúster** | Redis Store | Error de conexión en `@socket.io/redis-adapter` | Imposibilidad de sincronizar entre múltiples réplicas | Fallback automático a `Socket.io in-memory` por nodo; logs de alerta SEV-2 en APM. |
-| **Indisponibilidad de LiveKit SFU** | WebRTC Server | Error en handshake `POST /api/calls/token` | Falla en inicio de videoconsulta | El cliente conmuta a **Modo Chat de Contingencia con Notas de Audio e Imágenes**. |
+| **Indisponibilidad de LiveKit SFU** | WebRTC Server | Error en handshake `POST /api/calls/:consultationId/token` | Falla en inicio de videoconsulta | El cliente conmuta a **Modo Chat de Contingencia con Notas de Audio e Imágenes**. |
 | **Falla en Almacenamiento S3** | Amazon S3 | Excepción en llamada a SDK AWS | Error al adjuntar exámenes clínicos | Fallback transparente a almacenamiento local en disco (`/uploads`) con permisos restringidos. |
 | **Microcortes en Red Móvil 4G** | Dispositivo Tutor | Evento `disconnect` en Socket.io | Mensaje en tránsito potencialmente perdido | Reintento automático con backoff exponencial y deduplicación por clave única `clientMsgId`. |
 | **Agotamiento Pool Postgres** | Prisma Client | Código de error P2024 | Tiempos de espera elevados en API | Connection Pooling activo en Supabase con límite estricto de conexiones concurrentes por instancia. |

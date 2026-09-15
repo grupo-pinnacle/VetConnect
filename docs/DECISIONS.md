@@ -41,6 +41,16 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 - **Decisión:** Monolito modular basado en Domain-Driven Design (`modules/auth`, `modules/users`, `modules/pets`, `modules/consultations`, `modules/calls`, `modules/media`, `modules/notifications`).
 - **Consecuencias:** Despliegue simple en un solo contenedor, latencia interna cero entre módulos y separación limpia de responsabilidades.
 
+### ADR-002: Prisma ORM 6 vs TypeORM / Drizzle
+- **Contexto:** Se requería un ORM moderno para Node.js y TypeScript que garantizara tipado de datos estricto de extremo a extremo, soporte nativo de migraciones reproducibles y mapeo transparente a PostgreSQL.
+- **Decisión:** Adoptar **Prisma ORM 6**. Su cliente autogenerado a partir de `schema.prisma` garantiza type-safety absoluto en consultas relacionales complejas, con generación estricta de DTOs y mapeos explícitos a `snake_case` mediante directivas `@map`.
+- **Consecuencias:** Cero discrepancias de tipos en tiempo de compilación entre TypeScript y PostgreSQL, migraciones reproducibles en CI/CD con `prisma migrate`, y eliminación de modelos fragmentados con decoradores propensos a errores en tiempo de ejecución.
+
+### ADR-003: PostgreSQL Cloud (Supabase) vs Local/RDS
+- **Contexto:** Se evaluó si alojar la base de datos de producción en AWS RDS, en contenedores autohospedados en el VPS o en un servicio administrado especializado en PostgreSQL.
+- **Decisión:** Utilizar **Supabase Managed PostgreSQL** como proveedor de persistencia relacional principal, aprovechando su capa gratuita generosa (500 MB), backups automáticos diarios, pooling de conexiones integrado (PgBouncer) y métricas de rendimiento en tiempo real.
+- **Consecuencias:** Ahorro total de costos fijos de base de datos en fase MVP ($0 USD), delegación de la seguridad y copias de seguridad a una infraestructura cloud resiliente, con plan de contingencia de fallback a PostgreSQL local en Docker dentro del VPS Coolify (ADR-017).
+
 ### ADR-004: Autenticación JWT con Rotación & `tokenVersion`
 - **Contexto:** Si un token JWT es emitido y luego el usuario cambia su contraseña o es dado de baja, los tokens tradicionales permanecen válidos hasta su expiración.
 - **Decisión:** Implementar un campo `tokenVersion` en el modelo `User`. Cada cambio de credenciales, logout global o baneo incrementa este contador. El middleware valida el payload JWT contra la versión activa en base de datos.
@@ -51,6 +61,16 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 - **Decisión:** Cuando un usuario solicita la baja, se ejecuta una anonimización de sus datos de contacto (email, teléfono, nombre), marcando `deletedAt = now()`. El historial clínico y las consultas de sus mascotas persisten inalterables vinculadas al ID anonimizado.
 - **Consecuencias:** Cumplimiento legal pleno ante inspecciones judiciales y del SENASA.
 
+### ADR-006: Singleton de PrismaClient con Connection Pooling
+- **Contexto:** En desarrollo con recarga en caliente (Hot Reload / `tsx watch`) y en entornos serverless o de múltiples workers, instanciar repetidamente `new PrismaClient()` satura rápidamente el pool de conexiones de PostgreSQL, arrojando errores críticos de `FATAL: too many connections`.
+- **Decisión:** Implementar un patrón **Singleton estricto** en `src/lib/prisma.ts` que almacena la instancia de `PrismaClient` en el objeto global de Node.js (`globalThis.prisma`) durante el modo desarrollo, y reutiliza una única conexión en producción.
+- **Consecuencias:** Consumo predecible de conexiones al pool de base de datos (límite fijo de 10 conexiones en pool local), prevención total de fugas de descriptores de sockets y arranque limpio de pruebas sin advertencias de colisión de clientes.
+
+### ADR-007: Validación de Contratos con Zod
+- **Contexto:** Toda entrada de datos a la API REST (`req.body`, `req.query`, `req.params`) debe ser rigurosamente sanitizada para evitar inyecciones maliciosas, errores por tipos inesperados y fallos en cascada en la capa de servicios.
+- **Decisión:** Estandarizar **Zod** como la librería exclusiva de validación de esquemas y contratos para todo el backend. Todo endpoint REST cuenta con un middleware Zod (`validateBody`, `validateQuery`) que valida y tipa estáticamente la carga útil antes de invocar los controladores.
+- **Consecuencias:** Validación declarativa con mensajes de error descriptivos estandarizados en formato RFC 7807, inferencia estática automática de tipos TypeScript con `z.infer<typeof schema>` (eliminando la necesidad de duplicar interfaces manuales) y prevención total de campos extraños o contaminantes (`strict()` mode).
+
 ### ADR-008: Estrategia de Tipos TypeScript Monorepo & Exclusión de packages/shared
 - **Contexto:** En la planificación de la arquitectura monorepo se evaluó la conveniencia de crear un paquete compartido (`packages/shared`) para tipos, DTOs y validadores Zod, o mantener los workspaces completamente desacoplados.
 - **Decisión:** Mantener una estructura limpia de tres workspaces principales (`backend`, `web`, `mobile`) descartando formalmente la creación de `packages/shared`. Los contratos y validaciones se definen como la única fuente de verdad en esquemas Zod y TypeScript dentro del Backend (`backend/src/contracts/` y DTOs modulares), y se consumen/duplican limpiamente en Web y Mobile mediante interfaces sincronizadas sin requerir pipelines de compilación intermedia complejos (Turborepo/Nx no requeridos), ni scripts de transpilación previa.
@@ -60,6 +80,11 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 - **Contexto:** Necesidad de chat en vivo y notificaciones globales con capacidad de escalar a múltiples nodos backend.
 - **Decisión:** Integrar Socket.io acoplado con `@socket.io/redis-adapter` en clúster Redis.
 - **Consecuencias:** Comunicación bidireccional instantánea con broadcast sincronizado entre todas las instancias del servidor.
+
+### ADR-010: Almacenamiento Resiliente Multi-Cloud (S3 + Fallback Local)
+- **Contexto:** Los archivos clínicos (estudios de laboratorio, recetas, imágenes de chat y avatares) deben guardarse de forma duradera y accesible mediante URLs autenticadas con tiempo de vida (TTL), pero sin depender rígidamente de un único proveedor de almacenamiento cloud en caso de fallas o costos imprevistos.
+- **Decisión:** Implementar un adaptador desacoplado de almacenamiento con **Amazon S3 / Cloudinary** como almacenamiento primario en la nube y un **Fallback Local Automático** hacia el directorio `/app/uploads/` montado en volumen persistente de Docker en el VPS Coolify, expuesto mediante Traefik.
+- **Consecuencias:** Resiliencia operativa del 100%: si las credenciales de S3 o la cuota cloud fallan, el sistema conmuta transparentemente a almacenamiento en disco local sin interrupción del servicio clínico ni pérdida de archivos adjuntos.
 
 ### ADR-011: Notificaciones Push con Expo Push API & Bandeja In-App
 - **Contexto:** Los tutores y veterinarios requieren enterarse de llamadas entrantes, mensajes de chat y recetas sin mantener la aplicación permanentemente en primer plano, sin incurrir en costos de servicios de terceros como OneSignal.
@@ -81,10 +106,28 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 - **Decisión:** Crear tabla `AuditLog` no modificable donde se almacenan todas las mutaciones administrativas con IP y UserAgent.
 - **Consecuencias:** Capacidad de auditoría forense en tiempo real.
 
+### ADR-015: TanStack React Query v5 para Caché y Sincronización Web
+- **Contexto:** La interfaz web de veterinarios y administradores requiere consultar continuamente el estado de consultas, mensajes y pacientes, evitando llamadas REST redundantes y gestionando estados asíncronos complejos (carga, error, reconexión, datos obsoletos).
+- **Decisión:** Adoptar **TanStack React Query v5** como la capa estándar de gestión de estado del servidor en la aplicación Web SPA (React 19).
+- **Consecuencias:** Caché inteligente en memoria con deduplicación de peticiones en vuelo, invalidación reactiva de queries ante eventos Socket.io (`queryClient.invalidateQueries({ queryKey: ['consultations'] })`), actualizaciones optimistas en la UI y sincronización automática en segundo plano al recuperar el foco de la ventana.
+
+### ADR-016: Conexión Mobile USB Directa con ADB Reverse para Redes Corporativas
+- **Contexto:** En oficinas, hospitales veterinarios o redes Wi-Fi corporativas con aislamiento de clientes (Client Isolation) o firewalls estrictos, los celulares no pueden comunicarse vía Wi-Fi local con la máquina de desarrollo en el puerto 3001, bloqueando el testing con Expo Go.
+- **Decisión:** Implementar un flujo de desarrollo mobile por cable USB directo utilizando **ADB Reverse** (`adb reverse tcp:3001 tcp:3001`), automatizado en el script `start.ps1` y accesible en terminal mediante comandos multiplataforma.
+- **Consecuencias:** Tráfico de red ruteado 100% por cable USB con latencia cero, independencia total de la red Wi-Fi o proxies corporativos, y recarga en caliente de Expo instantánea y reproducible.
+
 ### ADR-017: Despliegue Backend Autohosteado en Coolify (VPS)
 - **Contexto:** Minimizar costos recurrentes en dólares sin perder las comodidades de una plataforma moderna (CI/CD, certificados SSL automáticos, gestión de variables de entorno y servicios auxiliares).
 - **Decisión:** Desplegar el Backend Node.js y la instancia de Redis sobre un servidor VPS propio utilizando **Coolify**, y el Frontend Web SPA sobre **Vercel** (o Hosting Web estático de **Hostinger**).
 - **Consecuencias:** Costo predecible y bajo (servidor VPS fijo de $8 – $12 USD/mes), control total sobre la infraestructura de WebSockets persistentes (Traefik) y CDN global para la Web.
+
+### ADR-018: Estrategia Tripartita de Distribución Android (EAS Play Store, APK Web y Local Build)
+- **Contexto:** Se requería una estrategia de despliegue móvil que permitiera validar rápidamente el MVP con clínicas beta sin quedar bloqueados por los tiempos de revisión de Google Play Store (que pueden demorar días o semanas), pero manteniendo la vía formal para producción.
+- **Decisión:** Establecer una **estrategia tripartita de empaquetado y distribución**:
+  1. *Camino 1 (Producción Oficial):* Compilación en la nube con EAS Build en formato Android App Bundle (`.aab`) firmado para Google Play Store.
+  2. *Camino 2 (Beta Privada Inmediata):* Compilación directa de instalable APK (`.apk`) distribuido desde la web oficial de VetConnect para instalación directa (sideloading) por clínicas aliadas.
+  3. *Camino 3 (Desarrollo Local Offline):* Compilación de APK en la máquina local mediante `npx expo prebuild` y Gradle sin consumir créditos de EAS Cloud.
+- **Consecuencias:** Cero fricción para pruebas piloto con usuarios reales desde el Sprint 6, independencia frente a políticas de tiendas para betas y preparación formal para la publicación final en Google Play Store en el Sprint 10.
 
 ### ADR-019: Denormalización Atómica de Calificaciones e Índices Compuestos
 - **Contexto:** El listado de veterinarios realizaba agregaciones N+1 y filtros de calificación en memoria después del `take`/`skip`, causando discrepancias en la paginación e impidiendo consultas eficientes bajo alta concurrencia.

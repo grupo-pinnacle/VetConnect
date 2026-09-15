@@ -46,7 +46,7 @@ Para garantizar total transparencia operativa entre el seguimiento de gestión d
 ### 🚦 Criterio de Entrada: Definition of Ready (DoR) para Task Packets
 Antes de que un agente autónomo (**Google Jules**) o desarrollador tome un paquete de tareas (`TASK-X.X`), se debe verificar que:
 1. **Contrato Congelado:** Los endpoints, DTOs Zod y esquemas Prisma requeridos están declarados explícitamente en [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) sin campos ambiguos de v2.1+.
-2. **ADR Vinculante:** La tarea referencia explícitamente las decisiones de arquitectura aplicables (de los 23 ADRs en [`docs/DECISIONS.md`](docs/DECISIONS.md)).
+2. **ADR Vinculante:** La tarea referencia explícitamente las decisiones de arquitectura aplicables (de los 24 ADRs en [`docs/DECISIONS.md`](docs/DECISIONS.md)).
 3. **Dependencias Previas Satisfechas:** La fase o tarea antecesora completó su Definition of Done (DoD) con CI en verde (`npm run typecheck && npm test`).
 4. **Protección de PII Verificada:** Se prohíbe explícitamente inyectar emails o teléfonos en tokens WebRTC, logs o responses públicas.
 5. **Comando CLI de Verificación:** El paquete especifica el comando exacto para validar la entrega (ej. `npx prisma validate`, `npm test -- -t auth`).
@@ -104,7 +104,8 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 > 🛡️ **AISLAMIENTO DE ALCANCE (Scope Isolation MVP v2.0 vs v2.1+):**  
 > Para preservar la velocidad de entrega del Greenfield inicial y evitar sobrecarga en la base de datos:  
 > - **Modelos v2.0 In-Scope:** Los 9 modelos base del dominio (`User`, `Pet`, `Consultation`, `Message`, `Call`, `Prescription`, `Review`, `AuditLog`, `DailyUploadCounter`) y soporte de notificaciones (`PushToken`, `Notification`).  
-> - **Modelos v2.1+ Excluidos (Prohibidos en F1):** Quedan terminantemente excluidos del `schema.prisma` inicial: `VaccinationRecord`, `PetDocument`, `MedicationSchedule`, `FavoriteVet`.  
+> > - **Protocolo de Migraciones Sin Caídas (Expand/Contract):** A partir del Hito M5, todo campo nuevo de v2.1+ debe crearse inicialmente como opcional/nullable (`@nullable`), desplegar el código que escribe en ambos estados, ejecutar backfill asíncrono y posteriormente contraer la columna si se requiere obligatoriedad (`SPEC.md` §8.2).
+- **Modelos v2.1+ Excluidos (Prohibidos en F1):** Quedan terminantemente excluidos del `schema.prisma` inicial: `VaccinationRecord`, `PetDocument`, `MedicationSchedule`, `FavoriteVet`.  
 > - **Campos v2.1+ Excluidos de `Pet`:** No agregar en esta fase los campos `isHidden`, `deathDate`, `birthDate`.  
 > - **Evolución:** Estos elementos pertenecen exclusivamente a los Hitos M5 a M8 del Roadmap v2.1 y se incorporarán mediante migraciones *expand/contract* cuando comience dicha fase.
 
@@ -219,7 +220,9 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 - **Instrucciones:**
   1. Configurar servidor Socket.io adjunto a la instancia HTTP de Express.
   2. Conectar `@socket.io/redis-adapter` si `REDIS_URL` está definido (obligatorio en producción).
-  3. Middleware de autenticación de sockets: extraer JWT del handshake (`auth.token` o cookie), validar firma y cargar usuario en `socket.data.user`.
+  3. Configurar CORS estricto en Socket.io validando `origin` contra lista blanca (`process.env.FRONTEND_URL`, prohibido `origin: "*"` en producción según ADR-009).
+  4. Implementar rate limiting por socket para mitigar inundaciones de paquetes (máximo 10 eventos/segundo por cliente).
+  5. Middleware de autenticación de sockets: extraer JWT del handshake (`auth.token` o cookie), validar firma y cargar usuario en `socket.data.user`.
   4. Manejo de conexión y desconexión: actualizar `isOnline` y `lastSeen = new Date()` en PostgreSQL.
 - **Comando de Verificación:**
   ```bash

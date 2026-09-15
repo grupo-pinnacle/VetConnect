@@ -58,12 +58,12 @@ A continuación se detalla la resolución definitiva de las 4 inconsistencias de
 
 ---
 
-### 2.1 Contradicción 1: Numeración de ADRs Unificada (ADR-001 al ADR-023)
+### 2.1 Contradicción 1: Numeración de ADRs Unificada (ADR-001 al ADR-024)
 * **Diagnóstico:** El registro oficial en [`docs/DECISIONS.md`](DECISIONS.md) ya contaba con 21 decisiones aprobadas, entre ellas:
   - **ADR-009:** *Mensajería Tiempo Real con Socket.io & Redis Adapter*.
   - **ADR-010:** *Almacenamiento Resiliente Multi-Cloud (S3 + Fallback Local)*.
   - **ADR-011:** *Notificaciones Push con Expo Push API & Bandeja In-App*.
-* **Resolución Oficial:** Se mantuvieron intactos los ADR-001 al ADR-021. Las decisiones arquitectónicas de despliegue web y calificación médica se numeraron secuencialmente como **ADR-022** y **ADR-023**, erradicando cualquier solapamiento o sobreescritura.
+* **Resolución Oficial:** Se mantuvieron intactos los ADR-001 al ADR-021. Las decisiones arquitectónicas de despliegue web, calificación médica y máquina de estados se numeraron secuencialmente como **ADR-022**, **ADR-023** y **ADR-024**, erradicando cualquier solapamiento o sobreescritura.
 
 ---
 

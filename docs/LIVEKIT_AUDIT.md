@@ -33,13 +33,13 @@ sequenceDiagram
     participant LK as ☁️ LiveKit SFU Server
 
     Note over V,GW: 1. Fase de Validación y Señalización
-    V->>API: POST /api/calls/:id/token (Solicita token WebRTC)
+    V->>API: POST /api/calls/:consultationId/token (Solicita token WebRTC)
     API-->>V: 200 OK { token, serverUrl }
     V->>GW: socket.emit("call:initiate", { consultationId, callerName: "Dra. Gómez" })
     GW->>C: socket.emit("call:incoming", { consultationId, callerName: "Dra. Gómez" })
 
     Note over C,API: 2. Aceptación y Handshake Móvil
-    C->>API: POST /api/calls/:id/token (Solicita token WebRTC)
+    C->>API: POST /api/calls/:consultationId/token (Solicita token WebRTC)
     API-->>C: 200 OK { token, serverUrl }
     C->>GW: socket.emit("call:accept", { consultationId })
     GW->>V: socket.emit("call:accepted", { consultationId })
@@ -156,7 +156,7 @@ Este checklist consolida los 13 mandatos de ingeniería preventiva que deben imp
   ```
 * **Criterio de Aceptación BDD (Preventivo):**
   > **Dado que** una consulta se encuentra en estado `WAITING` o `PENDING`,  
-  > **Cuando** se intenta emitir `call:initiate` o solicitar `POST /api/calls/:id/token`,  
+  > **Cuando** se intenta emitir `call:initiate` o solicitar `POST /api/calls/:consultationId/token`,  
   > **Entonces** ambos canales rechazan la operación con código de error unificado.
 
 ---
