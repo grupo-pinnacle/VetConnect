@@ -4,7 +4,7 @@
 > **Marco Metodológico:** Incorpora formalmente la **Actividad 26 – Definición del Sistema de Diseño del Producto**  
 > **Normativas Aplicadas:** ISO 9241-210 (Diseño Centrado en el Usuario), ISO 9241-11 (Usabilidad), WCAG 2.1 Nivel AA (Accesibilidad Web) y Leyes de la Psicología del Diseño (Fitts, Hick, Miller y Gestalt).  
 > **Proyecto:** VetConnect — Plataforma Integral de Telemedicina Veterinaria & Gestión Clínica  
-> **Equipo de Diseño & Desarrollo:** Tobias Vera, Damian Orellana, Juan Mendoza, Ezequiel Charca  
+> **Equipo de Diseño & Desarrollo:** Tobias Vera, Damian Orellana (Técnico Multimedial & UI/UX Lead en Figma), Juan Mendoza, Ezequiel Charca  
 > **Fecha:** Septiembre 2026 | **Estado:** `APPROVED (ACTIVE DESIGN SYSTEM SPECIFICATION)`
 
 ---
@@ -300,12 +300,12 @@ Las decisiones del Sistema de Diseño de VetConnect se sustentan en principios c
 
 ### 3.2 Conclusión de Coherencia y Mantenibilidad del Producto
 
-El **Sistema de Diseño de VetConnect** establece un lenguaje visual y funcional común entre desarrolladores, diseñadores y agentes de inteligencia artificial autónomos.
+El **Sistema de Diseño de VetConnect** establece un lenguaje visual y funcional común entre desarrolladores, diseñadores y agentes de inteligencia artificial autónomos. Su fuente visual de verdad reside en el archivo maestro de **Figma diseñado por el Técnico Multimedial (Damian Orellana)**, desde donde se derivan los design tokens de Tailwind CSS y los componentes React 19 implementados por el equipo humano.
 
 Al fundamentarse en estándares internacionales (**ISO 9241-210** para Diseño Centrado en el Usuario e **ISO 9241-11** para Usabilidad) y aplicar de forma rigurosa la regla cromática 60-30-10 y componentes atómicos reutilizables:
 1. **Reduce el tiempo de aprendizaje:** Los usuarios tutores y médicos reconocen patrones interactivos consistentes en cualquier pantalla.
 2. **Minimiza errores médicos:** La jerarquía tipográfica y el código de colores previenen confusiones en dosis de medicamentos o estados de urgencia.
-3. **Agiliza el desarrollo:** Los agentes autónomos y desarrolladores cuentan con especificaciones inequívocas de estilos, espaciados y contratos visuales para la construcción inmediata del prototipo interactivo en React 19 y Expo SDK 54.
+3. **Agiliza el desarrollo:** Los agentes autónomos (como Google Jules) cuentan con especificaciones inequívocas de estilos, espaciados y contratos visuales para proveer scaffolding y contratos, mientras el equipo humano plasma fielmente el diseño de Figma en React 19 y Expo SDK 54.
 
 ---
 *Documento de Sistema de Diseño elaborado bajo estándares FAANG/ISO — Grupo Pinnacle 2026.*

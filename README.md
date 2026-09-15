@@ -19,7 +19,7 @@
 
 ## 📖 Índice General de Documentación & Sistema de Agentes
 
-> **Enfoque Greenfield & Agent-First:** Este repositorio está estructurado para que tanto desarrolladores humanos como agentes de IA autónomos (**Google Jules**, Antigravity, Cursor, Claude Code) puedan trazar sus propios flujos de trabajo, ejecutar el ciclo TDD y construir el monorepo paso a paso mediante paquetes de tareas atómicas (*Task Packets*).
+> **Enfoque Greenfield, Agent-First & Modelo Híbrido:** Este repositorio está estructurado bajo un **modelo de ingeniería híbrido**: el diseño de la plataforma Web (UI/UX) es prototipado integralmente en **Figma por el Técnico Multimedial (Damian Orellana)** y codificado en React 19 por el equipo de desarrollo, mientras agentes de IA autónomos (**Google Jules**, Antigravity, Claude Code) construyen de forma continua y 24/7 la infraestructura de Backend, Prisma ORM, WebSockets, Media Segura, Mobile y la suite de tests mediante paquetes de tareas atómicas (*Task Packets*).
 
 Toda la documentación técnica, operativa y de agentes de VetConnect se encuentra organizada en los siguientes documentos maestros:
 
@@ -179,7 +179,7 @@ cd backend && npx prisma validate
 
 - **Tobias Vera** — *Tech Lead & Backend Developer*
 - **Juan Mendoza** — *Mobile Lead Developer*
-- **Damian Orellana** — *Web Frontend Developer*
+- **Damian Orellana** — *Técnico Multimedial & Web Frontend Developer (UI/UX en Figma)*
 - **Ezequiel Charca** — *QA Automation Engineer & Product Designer*
 - **Lara Bouso** — *Project Manager & Compliance Specialist*
 

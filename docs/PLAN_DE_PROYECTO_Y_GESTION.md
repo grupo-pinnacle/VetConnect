@@ -264,7 +264,7 @@ El proyecto VetConnect está conformado por un equipo multidisciplinario de inge
 | Integrante                | Rol Principal Asignado            | Especialidad Técnica          |
 +---------------------------+-----------------------------------+-------------------------------+
 | Tobias Vera               | Tech Lead & Solutions Architect   | Node.js, Express, DevOps, CI  |
-| Damian Orellana           | Frontend Web Lead                 | React 19, Vite, Tailwind CSS  |
+| Damian Orellana           | Técnico Multimedial & Web Lead    | UI/UX Figma, React 19, Tailwind|
 | Juan Mendoza              | Mobile App Lead                   | React Native, Expo SDK 54     |
 | Ezequiel Charca           | QA & Security Automation Lead     | Jest, Vitest, Playwright, IAM |
 | Lara Bouso                | Project Manager & Compliance Lead | Product Owner, SENASA, Legal  |
@@ -273,7 +273,7 @@ El proyecto VetConnect está conformado por un equipo multidisciplinario de inge
 
 ### 6.2 Roles Previstos & Responsabilidades
 - **Tech Lead & Arquitectura (Tobias Vera):** Diseño de la arquitectura de sistemas, definición de modelos relacionales Prisma, orquestación Docker, infraestructura en la nube (Coolify/Vercel) y revisión de código maestro.
-- **Frontend Web Lead (Damian Orellana):** Construcción del Portal Web Pro para veterinarios y administradores en React 19, integración de componentes de videollamada LiveKit y diseño UI bajo la norma ISO 9241-11.
+- **Técnico Multimedial & Frontend Web Lead (Damian Orellana):** Creación y custodia del diseño visual en **Figma** (wireframes, prototipos de alta fidelidad, design tokens y flujos UI/UX) bajo norma ISO 9241-11. Dirección técnica de la codificación del Portal Web Pro en React 19 + Tailwind CSS en conjunto con el equipo de desarrollo a partir de los prototipos aprobados en Figma.
 - **Mobile App Lead (Juan Mendoza):** Desarrollo de la aplicación móvil para tutores con Expo Router, diseño de navegación en NativeWind, integración del bridge WebView con LiveKit y manejo de permisos de cámara y micrófono.
 - **QA & Security Engineer (Ezequiel Charca):** Automatización de pruebas unitarias y de integración en Jest (meta: 120+ tests), auditoría de seguridad en JWT, validación de carga y pruebas de accesibilidad WCAG 2.1.
 - **Project Manager, Product Owner & Compliance (Lara Bouso):** Articula el puente de gobernanza entre la dirección de producto/legal y la ingeniería del proyecto. Como Product Owner y Asesora Legal, valida los criterios de aceptación, el cumplimiento de la Ley 25.326 y la normativa SENASA. Como Project Manager, asegura el cumplimiento de hitos, plazos de entregables regulatorios y la facilitación de revisiones formales con stakeholders externos.

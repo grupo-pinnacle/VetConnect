@@ -199,10 +199,13 @@ Cuando un agente Tech Lead o el desarrollador delega trabajo en subagentes o ses
 | **Backend REST Agent** | API Express 5 & Auth | Rutas, controladores, middleware JWT, Zod | `npm test -w backend` |
 | **Realtime Agent** | WebSockets & Socket.io | Gateways, rooms, presencia, Redis adapter | `npm test -w backend -- -t "realtime"` |
 | **Media & Video Agent** | LiveKit SFU & Uploads | Tokens LiveKit, Magic Bytes, S3/Local, `GET /api/media/:id` auth | `npm test -w backend -- -t "media"` |
-| **Web Frontend Agent** | React 19 & Vite SPA | Pantallas, TanStack Query, LiveKit UI | `npm run build -w web && npm test -w web` |
+| **Web Frontend Agent** *(Híbrido)* | React 19 & Vite SPA | Scaffolding técnico, contratos API y armado UI post-Figma | `npm run build -w web && npm test -w web` |
 | **Mobile App Agent** | React Native & Expo SDK 54 | Expo Router, NativeWind, expo-secure-store, offline sync | `npm run typecheck -w mobile` |
 | **QA & Verification Agent** | Testing E2E & Seguridad | Jest 120+ tests, Playwright, CI audit | `npm test --workspaces && npm run typecheck` |
 | **Debugger Agent** | Regresiones & Fallos | Análisis de diff, aislamiento de fallos, Self-Correction Loop | `npm test -- --verbose` |
+
+> 🎨 **Directiva de Trabajo para la Capa Web (Figma-First):**  
+> El diseño visual, pantallas y experiencia de usuario (UI/UX) del Frontend Web son ideados y prototipados en **Figma por el Técnico Multimedial (Damian Orellana)**. La codificación de las pantallas la realiza el equipo humano de desarrollo basándose en dicho diseño. Los agentes autónomos de IA (como Google Jules) **tienen prohibido inventar interfaces visuales o bloquearse esperando a Figma**: Jules avanza 24/7 de forma continua en Backend, Prisma, Sockets, Media, Mobile y QA, proveyendo para la Web únicamente el scaffolding técnico y contratos tipados (TASK-5.1).
 
 ---
 

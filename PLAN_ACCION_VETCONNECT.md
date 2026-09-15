@@ -345,6 +345,11 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 
 ## 💻 FASE 5: Frontend Web SPA (React 19 + Vite)
 
+> 🎨 **MODELO OPERATIVO WEB (FIGMA-FIRST & DESACOPLAMIENTO DE JULES):**  
+> - **Diseño en Figma (Técnico Multimedial — Damian Orellana):** El diseño visual, pantallas, flujos de navegación, wireframes y design tokens del Frontend Web son elaborados integralmente en **Figma** conforme a [`docs/SISTEMA_DE_DISENO.md`](docs/SISTEMA_DE_DISENO.md).  
+> - **Implementación de Código (Equipo Humano + Damian Orellana):** El equipo codifica la interfaz en `web/` tomando los prototipos de Figma aprobados como especificación estética vinculante.  
+> - **Rol de Jules en Web:** Jules ejecuta de forma autónoma el scaffolding técnico y contratos tipados (TASK-5.1). Jules **no inventa pantallas arbitrarias** ni se detiene a esperar diseños; mientras Figma y el equipo avanzan con la UI, Jules trabaja 24/7 en el backend, sockets, media, mobile y testing (Fases 0 a 4, 6 y 7).
+
 ### 📦 TASK-5.1: Scaffolding Web, Enrutamiento y Capa de Datos (TanStack Query v5)
 - **Capa:** Web (`web/`)
 - **Archivos:** `web/package.json`, `web/vite.config.ts`, `web/src/main.tsx`, `web/src/App.tsx`, `web/src/services/api.ts`

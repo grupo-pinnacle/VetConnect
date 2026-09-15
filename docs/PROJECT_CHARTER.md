@@ -166,7 +166,8 @@ Alineado con los acuerdos tomados en la reunión con el stakeholder interno ([`M
 | Despliegue VPS Coolify & EAS       |  A/R   |   R    |   R    |    C     |      I       |
 +------------------------------------+--------+--------+--------+----------+--------------+
 ```
-*Leyenda: **A** = Accountable (Aprobador final); **R** = Responsible (Ejecutor); **C** = Consulted (Consultado); **I** = Informed (Informado).*
+*Leyenda: **A** = Accountable (Aprobador final); **R** = Responsible (Ejecutor); **C** = Consulted (Consultado); **I** = Informed (Informado).*  
+*(Nota Operativa: Damian Orellana se desempeña como Técnico Multimedial & Web Lead, liderando el diseño UI/UX completo en Figma previo a la codificación de la web con el equipo, mientras Google Jules avanza de forma 100% autónoma en backend, base de datos y mobile).*
 
 ---
 
@@ -225,6 +226,6 @@ Para que cualquier componente o versión de VetConnect sea promovido a Producci�
 |---|---|---|---|
 | **Tobias Vera** | Lead Backend Engineer & Tech Lead | `APPROVED` | 2026-09-12 |
 | **Juan Mendoza** | Lead Mobile Developer | `APPROVED` | 2026-09-12 |
-| **Damian Orellana** | Lead Web Frontend Developer | `APPROVED` | 2026-09-12 |
+| **Damian Orellana** | Técnico Multimedial & Lead Web Frontend Developer | `APPROVED` | 2026-09-12 |
 | **Ezequiel Charca** | QA Engineer & Product Designer | `APPROVED` | 2026-09-12 |
 | **Lara Bouso** | Project Manager & Legal Operations | `APPROVED` | 2026-09-12 |
