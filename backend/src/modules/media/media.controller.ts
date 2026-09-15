@@ -23,8 +23,13 @@ export class MediaController {
   public getById = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const mediaId = getParamId(req.params.id);
-      const mediaFile = await mediaService.getMediaFile(mediaId, req.user!);
-      res.sendFile(mediaFile.localPath!);
+      const result = await mediaService.getMediaFile(mediaId, req.user!);
+
+      if (result.type === 's3' && result.presignedUrl) {
+        res.redirect(302, result.presignedUrl);
+      } else if (result.localPath) {
+        res.sendFile(result.localPath);
+      }
     } catch (error) {
       next(error);
     }

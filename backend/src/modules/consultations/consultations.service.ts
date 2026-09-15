@@ -8,9 +8,22 @@ import {
   ReviewConsultationDTO,
 } from './consultations.schemas';
 
+const userSelectFields = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  phone: true,
+  role: true,
+  vetStatus: true,
+  licenseNumber: true,
+  ratingAvg: true,
+  ratingCount: true,
+  photoUrl: true,
+};
+
 export class ConsultationsService {
   public async createConsultation(clientId: string, dto: CreateConsultationDTO) {
-    // Verify pet belongs to client
     const pet = await prisma.pet.findFirst({
       where: { id: dto.petId, ownerId: clientId, deletedAt: null },
     });
@@ -19,7 +32,6 @@ export class ConsultationsService {
       throw new AppError('Mascota no encontrada o no pertenece al usuario', 404, 'PET_NOT_FOUND');
     }
 
-    // Check for existing active consultation for this pet
     const activeCons = await prisma.consultation.findFirst({
       where: {
         petId: dto.petId,
@@ -29,14 +41,12 @@ export class ConsultationsService {
     });
 
     if (activeCons) {
-      // Check if the existing active consultation has timed out
       const checkedCons = await this.checkTriageTimeout(activeCons.id);
       if (checkedCons && (checkedCons.status === ConsultationStatus.WAITING || checkedCons.status === ConsultationStatus.ACTIVE)) {
         throw new AppError('La mascota ya cuenta con una consulta activa o en sala de espera', 409, 'CONSULTATION_ALREADY_ACTIVE');
       }
     }
 
-    // Check for available APPROVED vet online FIFO
     const availableVet = await prisma.user.findFirst({
       where: {
         role: Role.VET,
@@ -61,12 +71,8 @@ export class ConsultationsService {
       },
       include: {
         pet: true,
-        client: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        vet: {
-          select: { id: true, firstName: true, lastName: true, licenseNumber: true, ratingAvg: true },
-        },
+        client: { select: userSelectFields },
+        vet: { select: userSelectFields },
       },
     });
 
@@ -153,8 +159,8 @@ export class ConsultationsService {
       },
       include: {
         pet: true,
-        client: true,
-        vet: true,
+        client: { select: userSelectFields },
+        vet: { select: userSelectFields },
       },
     });
   }
@@ -185,8 +191,8 @@ export class ConsultationsService {
       },
       include: {
         pet: true,
-        client: true,
-        vet: true,
+        client: { select: userSelectFields },
+        vet: { select: userSelectFields },
       },
     });
   }
@@ -231,12 +237,8 @@ export class ConsultationsService {
       where: { id: consultationId, deletedAt: null },
       include: {
         pet: true,
-        client: {
-          select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-        },
-        vet: {
-          select: { id: true, firstName: true, lastName: true, licenseNumber: true, ratingAvg: true, photoUrl: true },
-        },
+        client: { select: userSelectFields },
+        vet: { select: userSelectFields },
         prescriptions: true,
         review: true,
       },
@@ -272,7 +274,7 @@ export class ConsultationsService {
           OR: [{ vetId: requester.id }, { status: ConsultationStatus.WAITING }],
           deletedAt: null,
         },
-        include: { pet: true, client: { select: { firstName: true, lastName: true } } },
+        include: { pet: true, client: { select: userSelectFields } },
         orderBy: { createdAt: 'desc' },
       });
     }
@@ -287,7 +289,7 @@ export class ConsultationsService {
 
     return prisma.consultation.findMany({
       where: { clientId: requester.id, deletedAt: null },
-      include: { pet: true, vet: { select: { firstName: true, lastName: true, licenseNumber: true } } },
+      include: { pet: true, vet: { select: userSelectFields } },
       orderBy: { createdAt: 'desc' },
     });
   }
