@@ -77,6 +77,21 @@ vetconnect/
 
 ---
 
+### 1.1 Modelos Canónicos del Schema de Base de Datos (Prisma v2.0)
+El esquema inicial del MVP v2.0 comprende **exactamente 9 modelos principales** más soporte de notificaciones:
+1. `User`: Identidades con autenticación JWT, rol (`CLIENT`, `VET`, `ADMIN`), `vetStatus` y `tokenVersion`.
+2. `Pet`: Mascotas con soporte de soft-delete (`deletedAt`) y validación opcional de microchip ISO 15 dígitos.
+3. `Consultation`: Ciclo clínico y máquina de estados (`WAITING`, `ACTIVE`, `COMPLETED`, `CANCELLED`).
+4. `Message`: Mensajería sincrónica de chat con deduplicación por `clientMsgId` único.
+5. `Call`: Sesiones de teleconsulta WebRTC con estado (`INITIATED`, `ACTIVE`, `ENDED`) y duración.
+6. `Prescription`: Recetas médicas digitales oficiales con firma profesional y código QR.
+7. `Review`: Calificaciones médicas profesionales en escala universal de 1 a 5 estrellas (ADR-023).
+8. `AuditLog`: Registro inmutable de auditoría para trazabilidad de mutaciones administrativas (ADR-014).
+9. `DailyUploadCounter`: Control de cuota diaria de subidas por usuario para mitigación de abusos.
+*(Soporte de notificaciones: modelos `PushToken` y `Notification` para Expo Push API bajo ADR-011).*
+
+---
+
 ## 2. Contratos de API REST (Endpoints Clave)
 
 ### 2.1 Autenticación (`/api/auth`)
@@ -114,6 +129,15 @@ vetconnect/
 |---|---|---|---|
 | `POST` | `/api/calls/token` | Generar token de acceso LiveKit para una consulta | Participantes de la consulta |
 | `POST` | `/api/calls/ring` | Disparar notificación de timbrado global al par | Participantes de la consulta |
+
+---
+
+### 2.5 Notificaciones Push & In-App (`/api/notifications`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `POST` | `/api/notifications/register-token` | Registrar o actualizar token Expo Push (`ExponentPushToken[...]`) | Autenticado |
+| `GET`  | `/api/notifications` | Listar notificaciones in-app del usuario autenticado | Autenticado |
+| `PATCH`| `/api/notifications/:id/read` | Marcar notificación específica como leída | Autenticado |
 
 ---
 

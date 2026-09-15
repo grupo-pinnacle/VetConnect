@@ -61,6 +61,11 @@ Este registro documenta las 23 decisiones arquitectónicas clave tomadas durante
 - **Decisión:** Integrar Socket.io acoplado con `@socket.io/redis-adapter` en clúster Redis.
 - **Consecuencias:** Comunicación bidireccional instantánea con broadcast sincronizado entre todas las instancias del servidor.
 
+### ADR-011: Notificaciones Push con Expo Push API & Bandeja In-App
+- **Contexto:** Los tutores y veterinarios requieren enterarse de llamadas entrantes, mensajes de chat y recetas sin mantener la aplicación permanentemente en primer plano, sin incurrir en costos de servicios de terceros como OneSignal.
+- **Decisión:** Implementar el servicio oficial de Expo Push API en el backend (`modules/notifications/`), persistiendo los tokens de dispositivo (`ExponentPushToken[...]`) en la base de datos, complementado con una bandeja de notificaciones persistidas in-app.
+- **Consecuencias:** Notificaciones en tiempo real en Android/iOS a costo $0, con historial recuperable en la bandeja de la app ante pérdidas de conectividad.
+
 ### ADR-012: Teleconsulta con WebRTC / LiveKit SFU
 - **Contexto:** Se requería soporte de videollamadas de alta fidelidad entre el panel Web de veterinarios y la aplicación móvil de tutores.
 - **Decisión:** Utilizar LiveKit SFU (Selective Forwarding Unit) con tokens de acceso criptográficos generados por el backend y componentes WebRTC nativos/WebView.

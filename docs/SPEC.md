@@ -94,13 +94,14 @@ erDiagram
     User ||--o{ Message : "sends"
     User ||--o{ Prescription : "issues"
     User ||--o{ Review : "evaluates/receives"
-    User ||--o{ FavoriteVet : "favorites"
+    User ||--o{ FavoriteVet : "favorites (v2.1+)"
     User ||--o{ PushToken : "registers"
     User ||--o{ Notification : "receives"
     User ||--o{ Attachment : "uploads"
 
     Pet ||--o{ Consultation : "subject"
     Consultation ||--o{ Message : "contains"
+    Consultation ||--o{ Call : "initiates"
     Consultation ||--o{ Prescription : "generates"
     Consultation ||--o| Review : "receives"
 
@@ -153,6 +154,24 @@ erDiagram
         string clientMsgId UK
         datetime createdAt
         datetime deletedAt
+    }
+
+    Call {
+        string id PK
+        string consultationId FK
+        string roomName
+        string status
+        datetime startedAt
+        datetime endedAt
+        int durationSeconds
+        datetime createdAt
+    }
+
+    DailyUploadCounter {
+        string id PK
+        string userId FK
+        string date
+        int count
     }
 
     Prescription {
@@ -376,7 +395,7 @@ Documentado en detalle en [`MINUTA_STAKEHOLDER_2026-09.md`](MINUTA_STAKEHOLDER_2
 - **`VaccinationRecord`:** Historial de dosis aplicadas, fecha de inoculación, lote y `nextDueDate` para disparo de alarmas preventivas.
 - **`MedicationSchedule`:** Prescripción y alarmas configurables (dosis, frecuencia horaria, fecha inicio/fin).
 - **`PetDocument` ("VetDrive"):** Repositorio de archivos clínicos adjuntos (estudios de laboratorio, ecografías, recetas) categorizados en S3/local.
-- **`FavoriteVet`:** Relación persistida para acceso rápido y reconsultas (modelo activo en Prisma).
+- **`FavoriteVet`:** Relación persistida para acceso rápido y reconsultas (programado para migración v2.1+ en Hito M5).
 
 ### 10.2 Integraciones Externas & Spikes
 - **Sincronización de Calendario:** Generación de feed iCal RFC 5545 (`GET /api/pets/:id/calendar.ics`) y URLs para adición directa a Google Calendar.

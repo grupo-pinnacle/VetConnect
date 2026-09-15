@@ -27,7 +27,8 @@ Para garantizar total transparencia operativa entre el seguimiento de gestión d
 | **TASK-2.1** (Express 5 & RFC 7807) | **PB-13**, **PB-14** (Sprint 4) | Servidor HTTP, middleware de errores y panel admin VETs. |
 | **TASK-2.2** (Auth JWT & SENASA) | **PB-06**, **PB-07**, **PB-08** (Sprint 2) | Registro CLIENT/VET PENDING, login HttpOnly y tokenVersion. |
 | **TASK-2.3** (CRUD Mascotas & PII) | **PB-17**, **PB-18**, **PB-19** (Sprint 5) | Fichas de mascotas, validación microchip ISO y PII masking. |
-| **TASK-2.4** (Triage, FSM & Review) | **PB-21**, **PB-22** (Sprint 6), **PB-35**, **PB-36** (Sprint 9) | Máquina estados WAITING->ACTIVE, recetas QR y rating 1-5. |
+| **TASK-2.4** (Triage, FSM & Review) | **PB-21**, **PB-22** (Sprint 6), **PB-36** (Sprint 9) | Máquina estados WAITING->ACTIVE, balanceo y rating 1-5. |
+| **TASK-2.5** (Recetas Oficiales QR) | **PB-35** (Sprint 9) | Receta estructurada con firma, modelo Prescription y QR. |
 | **TASK-3.1** (Socket.io & Redis) | **PB-24**, **PB-25** (Sprint 7) | Servidor WebSockets con Redis Adapter y auth handshake. |
 | **TASK-3.2** (Chat Idempotente) | **PB-26**, **PB-27** (Sprint 7) | Mensajería con clientMsgId, deduplicación P2002 y presencia. |
 | **TASK-4.1** (Tokens LiveKit SFU) | **PB-29**, **PB-32** (Sprint 8) | Tokens WebRTC 720p sin PII y teardown server-side deleteRoom. |
@@ -36,6 +37,7 @@ Para garantizar total transparencia operativa entre el seguimiento de gestión d
 | **TASK-5.2** (Videollamada Web) | **PB-30** (Sprint 8) | Componente CallRoom, PreJoin y CERO doble RoomAudioRenderer. |
 | **TASK-6.1** (Mobile Expo Router) | **PB-10** (Sprint 3), **PB-19** (Sprint 5), **PB-20** (Sprint 6), **PB-23** (Sprint 6) | App Expo SDK 54, NativeWind, secure store y FAQ de soporte. |
 | **TASK-6.2** (Mobile WebView LiveKit) | **PB-31** (Sprint 8) | Handshake bidireccional page:ready y permisos de hardware. |
+| **TASK-6.3** (Notificaciones Push & In-App) | **PB-19** (S5), **PB-20** (S6), **PB-31** (S8) | Expo Push API, registro de tokens y bandeja in-app (ADR-011). |
 | **TASK-7.1** (Suite 120+ Tests) | **PB-33**, **PB-34** (Sprint 9), **PB-37**, **PB-38** (Sprint 10) | Heurística ISO 9241-11, UX <60s, 10 suites Jest (>80%). |
 | **TASK-7.2** (CI/CD & Coolify) | **PB-39**, **PB-40** (Sprint 10) | GitHub Actions, Dockerfile multi-stage y deploy Vercel/VPS. |
 
@@ -101,7 +103,7 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 - **Contratos/ADRs:** [ADR-002](docs/DECISIONS.md) (Prisma 6), [ADR-005](docs/DECISIONS.md) (Soft-Deletes), [ADR-019](docs/DECISIONS.md) (Índices & Denormalización), [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) §1.
 > 🛡️ **AISLAMIENTO DE ALCANCE (Scope Isolation MVP v2.0 vs v2.1+):**  
 > Para preservar la velocidad de entrega del Greenfield inicial y evitar sobrecarga en la base de datos:  
-> - **Modelos v2.0 In-Scope:** Únicamente los 8 modelos base (`User`, `Pet`, `Consultation`, `Message`, `Call`, `Review`, `AuditLog`, `DailyUploadCounter`).  
+> - **Modelos v2.0 In-Scope:** Los 9 modelos base del dominio (`User`, `Pet`, `Consultation`, `Message`, `Call`, `Prescription`, `Review`, `AuditLog`, `DailyUploadCounter`) y soporte de notificaciones (`PushToken`, `Notification`).  
 > - **Modelos v2.1+ Excluidos (Prohibidos en F1):** Quedan terminantemente excluidos del `schema.prisma` inicial: `VaccinationRecord`, `PetDocument`, `MedicationSchedule`, `FavoriteVet`.  
 > - **Campos v2.1+ Excluidos de `Pet`:** No agregar en esta fase los campos `isHidden`, `deathDate`, `birthDate`.  
 > - **Evolución:** Estos elementos pertenecen exclusivamente a los Hitos M5 a M8 del Roadmap v2.1 y se incorporarán mediante migraciones *expand/contract* cuando comience dicha fase.
@@ -109,7 +111,7 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 - **Instrucciones:**
   1. Configurar datasource PostgreSQL y client generator de Prisma en `backend/prisma/schema.prisma`.
   2. Definir enums: `Role` (`CLIENT`, `VET`, `ADMIN`), `VetStatus` (`PENDING`, `APPROVED`, `REJECTED`), `ConsultationStatus` (`WAITING`, `ACTIVE`, `COMPLETED`, `CANCELLED`), `CallStatus` (`INITIATED`, `ACTIVE`, `ENDED`).
-  3. Implementar modelos: `User`, `Pet`, `Consultation`, `Message`, `Call`, `Review`, `AuditLog`, `DailyUploadCounter`.
+  3. Implementar modelos: `User`, `Pet`, `Consultation`, `Message`, `Call`, `Prescription`, `Review`, `AuditLog`, `DailyUploadCounter`, `PushToken`, `Notification`.
   4. Mapear **todas** las columnas multi-palabra explícitamente a snake_case: `@map("is_email_verified")`, `@map("token_version")`, `@map("last_seen")`, `@map("deleted_at")`, `@map("rating_avg")`, etc.
   5. Mapear todas las tablas en plural: `@@map("users")`, `@@map("pets")`, etc.
   6. Configurar índices compuestos de alto rendimiento:

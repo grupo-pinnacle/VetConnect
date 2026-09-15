@@ -49,7 +49,7 @@ Debemos encender **tres partes** por separado. Lo ideal es abrir **3 pestañas d
    ```bash
    npm run dev
    ```
-   *(Debería decirte que el servidor está corriendo en el puerto 3000 o 3001).*
+   *(Debería confirmar que el servidor está corriendo en el puerto 3001).*
 
 ### Terminal 2: La Web (Panel Administrativo)
 1. Abrí una **segunda pestaña** de terminal (botón `+`).

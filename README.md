@@ -39,6 +39,7 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 
 | Documento | Rol y Estado Post-Kickoff | Enlace |
 |---|---|---|
+| 📄 **Product & Project Brief** | Brief ejecutivo de producto, modelo de negocio y OKRs (Aprobado). | [Ver Brief de Producto](docs/BRIEF.md) |
 | 📜 **Project Charter** | Carta fundacional y visión del proyecto *(Congelado al 01/Oct/2026)*. | [Ver Project Charter](docs/PROJECT_CHARTER.md) |
 | 🧭 **Brief del Tech Lead** | Contexto maestro inicial de orquestación *(Congelado)*. | [Ver Tech Lead Brief](AI_TECHLEAD_BRIEF.md) |
 | 📜 **Reconciliación Arquitectónica** | Informe de auditoría pre-kickoff y resolución de discrepancias *(Congelado)*. | [Ver Reconciliación](docs/RECONCILIACION_ARQUITECTURA_Y_DISCREPANCIAS.md) |

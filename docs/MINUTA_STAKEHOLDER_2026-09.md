@@ -153,12 +153,12 @@ mindmap
 | **Sincronización Google Calendar** | `pets`, `consultations` | Token o endpoint iCal (`/api/pets/:id/calendar.ics`) | Botón "Añadir a Google Calendar" | Deep-link a app de calendario del SO | Google Calendar URL generator / iCalendar RFC 5545 |
 | **Microchip Opcional (ISO 15)** | `pets` | `microchip String? @unique` (nullable en base de datos, 15 dígitos numéricos si se provee) | Validación de 15 dígitos en formulario de alta si se ingresa | Validación en formulario con escáner de código de barras opcional | - |
 | **Raza "Otros"** | `pets` | Enum o string con flag `isOtherBreed Boolean` | Dropdown con opción "Otros" y campo de texto | Dropdown con opción "Otros" | Pipeline de Analytics / BI |
-| **Veterinario Favorito** | `users` | Modelo `FavoriteVet` (ya existente en Prisma) | Toggle de estrella en card de veterinario | Botón de favorito y filtro "Mis Favoritos" | - |
+| **Veterinario Favorito** | `users` | Modelo `FavoriteVet` (programado para migración v2.1+ en M5) | Toggle de estrella en card de veterinario | Botón de favorito y filtro "Mis Favoritos" | - |
 | **Estudios & VetDrive** | `media`, `pets` | Modelo `PetDocument` con categoría y URL S3 | Gestor de archivos estilo Drive con carpetas y preview | Visor de documentos y subida desde cámara | AWS S3 / Local Storage con Magic Bytes |
 | **Badge de Verificación Vet** | `users`, `auth` | `vetStatus` (`APPROVED`), `verifiedAt DateTime?` | Insignia azul/verde en perfil público y chat | Badge "Verificado" en tarjeta de profesional | - |
 | **Ocultar Mascota & Leyenda** | `pets`, `notifications` | `isHidden Boolean @default(false)` | Switch "Ocultar Mascota" con modal informativo | Switch en ajustes de mascota con leyenda | Supresión en motor de notificaciones |
-| **Fecha Fallecimiento & Condolencias** | `pets`, `notifications` | `deathDate DateTime?`, `isDeceased Boolean` (en schema) | Formulario de reporte de fallecimiento con aviso | Registro de fecha y confirmación | Mailer: Template de condolencias institucional |
-| **Cumpleaños de Perros** | `pets`, `notifications` | `birthDate DateTime?` (ya en schema) | Indicador visual de próximo cumpleaños | Push conmemorativo en el día del cumpleaños | Cron diario de cumpleaños |
+| **Fecha Fallecimiento & Condolencias** | `pets`, `notifications` | `deathDate DateTime?`, `isDeceased Boolean` (programado para v2.1+ en M6) | Formulario de reporte de fallecimiento con aviso | Registro de fecha y confirmación | Mailer: Template de condolencias institucional |
+| **Cumpleaños de Perros** | `pets`, `notifications` | `birthDate DateTime?` (programado para v2.1+ en M6) | Indicador visual de próximo cumpleaños | Push conmemorativo en el día del cumpleaños | Cron diario de cumpleaños |
 | **Admin: Eliminada vs Oculta** | `users`, `pets`, `audit` | Query con `deletedAt` e `isHidden` | Tabla Admin con badges diferenciados por estado | N/A | Auditoría en `AuditLog` |
 
 ---

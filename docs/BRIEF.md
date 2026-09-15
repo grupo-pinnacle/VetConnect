@@ -42,7 +42,7 @@ Capturar la demanda latente en una región donde **más del 70% de los hogares c
 +---------------------------------------------------+-------------------------------------+
 | Objetivo Estratégico                              | Key Result (Resultado Clave)        |
 +---------------------------------------------------+-------------------------------------+
-| 1. Eficiencia en el Acceso a la Salud Animal      | KR 1.1: Time to Care (TTC) < 3 min. |
+| 1. Eficiencia en el Acceso a la Salud Animal      | KR 1.1: TTC Mediana < 3 min (P95 < 5m)|
 |    (Reducir fricción y demoras críticas)          | KR 1.2: Tasa de asignación > 92%.   |
 +---------------------------------------------------+-------------------------------------+
 | 2. Excelencia y Cumplimiento Sanitario/Legal      | KR 2.1: 100% de veterinarios con    |
@@ -136,7 +136,7 @@ flowchart TD
 | Métrica | Definición | Meta Trimestral (Q1 Post-Launch) |
 |---|---|---|
 | **North Star KPI** | Total de consultas finalizadas exitosamente con diagnóstico y/o receta emitida. | $> 2,500$ consultas/mes |
-| **Time to Care (TTC)** | Tiempo desde la solicitud de consulta hasta el contacto con el profesional. | Mediana $< 180$ segundos |
+| **Time to Care (TTC)** | Tiempo desde la solicitud de consulta hasta el contacto con el profesional. | Mediana $< 180$ s ($P_{95} < 300$ s) |
 | **First Contact Resolution (FCR)** | Consultas resueltas sin derivación urgente por el mismo síntoma en 48 hs. | $> 70\%$ |
 | **Net Promoter Score (NPS)** | Grado de recomendación de tutores tras la consulta. | $> 75$ puntos |
 | **Professional Compliance Rate** | Porcentaje de veterinarios en atención con matrícula debidamente aprobada. | **$100\%$ (Cero desvíos)** |
@@ -145,12 +145,12 @@ flowchart TD
 
 ## 8. Gobernanza, Cronograma de Hitos & Recursos
 
-### 8.1 Cronograma Resumido de Hitos
-- **Hito 0 (M0):** Cimientos de Seguridad, Sanitización de Git & Zero-Drift de Base de Datos.
-- **Hito 1 (M1):** Core Telemédico, Clustered WebSockets & Teleconsulta LiveKit.
-- **Hito 2 (M2):** Cumplimiento Normativo SENASA, Soft-Deletes & Recetas con QR.
-- **Hito 3 (M3):** Quality Engineering, Tests de Concurrencia y E2E Crítico.
-- **Hito 4 (M4):** Despliegue en VPS (Coolify + Traefik), Vercel CDN y Release Mobile EAS.
+### 8.1 Cronograma Canónico de Hitos Estratégicos (Alineado con PROJECT_CHARTER)
+- **Hito 0 (M0) — Semanas 1 a 4 (S1-S2):** Cimientos del Monorepo, Workspaces, Scaffolding y Autenticación JWT con `tokenVersion`.
+- **Hito 1 (M1) — Semanas 5 a 8 (S3-S4):** Navegación, Interfaz Web/Mobile, Panel Admin y Validación de Matrículas SENASA con `AuditLog`.
+- **Hito 2 (M2) — Semanas 9 a 12 (S5-S6):** Core Clínico, CRUD de Mascotas, Ficha Médica y Flujo de Triage Inteligente con Auto-asignación.
+- **Hito 3 (M3) — Semanas 13 a 16 (S7-S8):** Chat en Tiempo Real (Socket.io/Redis), Telemedicina LiveKit SFU 720p y Estabilización WebRTC.
+- **Hito 4 (M4) — Semanas 17 a 20 (S9-S10):** Recetas Digitales QR, Hardening FAANG, Suite 120+ Tests y Despliegue en Producción (Coolify/Vercel/EAS).
 
 ### 8.2 Matriz de Liderazgo del Equipo
 - **Tech Lead & Backend Systems:** Tobias Vera
