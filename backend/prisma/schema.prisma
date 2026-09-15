@@ -1,0 +1,273 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CLIENT
+  VET
+  ADMIN
+}
+
+enum VetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ConsultationStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum CallStatus {
+  INITIATED
+  ACTIVE
+  ENDED
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  password      String
+  firstName     String     @map("first_name")
+  lastName      String     @map("last_name")
+  phone         String?
+  role          Role       @default(CLIENT)
+  vetStatus     VetStatus? @map("vet_status")
+  licenseNumber String?    @map("license_number")
+  bio           String?
+  photoUrl      String?    @map("photo_url")
+  tokenVersion  Int        @default(1) @map("token_version")
+  ratingAvg     Float      @default(0.0) @map("rating_avg")
+  ratingCount   Int        @default(0) @map("rating_count")
+  isOnline      Boolean    @default(false) @map("is_online")
+  lastSeen      DateTime?  @map("last_seen")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  deletedAt     DateTime?  @map("deleted_at")
+
+  pets                Pet[]
+  clientConsultations Consultation[]       @relation("ClientConsultations")
+  vetConsultations    Consultation[]       @relation("VetConsultations")
+  messages            Message[]
+  issuedPrescriptions Prescription[]
+  givenReviews        Review[]             @relation("GivenReviews")
+  receivedReviews     Review[]             @relation("ReceivedReviews")
+  auditLogs           AuditLog[]
+  pushTokens          PushToken[]
+  notifications       Notification[]
+  mediaFiles          MediaFile[]
+  dailyUploadCounters DailyUploadCounter[]
+
+  @@index([role, isOnline, vetStatus, deletedAt])
+  @@map("users")
+}
+
+model Pet {
+  id                String    @id @default(uuid())
+  ownerId           String    @map("owner_id")
+  name              String
+  species           String
+  breed             String
+  weightKg          Float?    @map("weight_kg")
+  sex               String?
+  microchip         String?
+  allergies         String?
+  chronicConditions String?   @map("chronic_conditions")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  consultations Consultation[]
+
+  @@index([ownerId, deletedAt])
+  @@map("pets")
+}
+
+model Consultation {
+  id             String             @id @default(uuid())
+  clientId       String             @map("client_id")
+  vetId          String?            @map("vet_id")
+  petId          String             @map("pet_id")
+  status         ConsultationStatus @default(WAITING)
+  notes          String?
+  diagnosisNotes String?            @map("diagnosis_notes")
+  startedAt      DateTime?          @map("started_at")
+  endedAt        DateTime?          @map("ended_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  deletedAt      DateTime?          @map("deleted_at")
+
+  client        User           @relation("ClientConsultations", fields: [clientId], references: [id])
+  vet           User?          @relation("VetConsultations", fields: [vetId], references: [id])
+  pet           Pet            @relation(fields: [petId], references: [id])
+  messages      Message[]
+  calls         Call[]
+  prescriptions Prescription[]
+  review        Review?
+  mediaFiles    MediaFile[]
+
+  @@index([clientId, status, deletedAt])
+  @@index([vetId, status, deletedAt])
+  @@map("consultations")
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  consultationId String    @map("consultation_id")
+  senderId       String    @map("sender_id")
+  content        String
+  attachmentUrl  String?   @map("attachment_url")
+  clientMsgId    String    @unique @map("client_msg_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  consultation Consultation @relation(fields: [consultationId], references: [id])
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([consultationId, createdAt])
+  @@map("messages")
+}
+
+model Call {
+  id              String     @id @default(uuid())
+  consultationId  String     @map("consultation_id")
+  roomName        String     @map("room_name")
+  status          CallStatus @default(INITIATED)
+  startedAt       DateTime?  @map("started_at")
+  endedAt         DateTime?  @map("ended_at")
+  durationSeconds Int?       @map("duration_seconds")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  consultation Consultation @relation(fields: [consultationId], references: [id])
+
+  @@map("calls")
+}
+
+model Prescription {
+  id             String   @id @default(uuid())
+  consultationId String   @map("consultation_id")
+  vetId          String   @map("vet_id")
+  medication     String
+  dosage         String
+  frequency      String
+  durationDays   Int      @map("duration_days")
+  indications    String
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  consultation Consultation @relation(fields: [consultationId], references: [id])
+  vet          User         @relation(fields: [vetId], references: [id])
+
+  @@map("prescriptions")
+}
+
+model Review {
+  id             String   @id @default(uuid())
+  consultationId String   @unique @map("consultation_id")
+  clientId       String   @map("client_id")
+  vetId          String   @map("vet_id")
+  rating         Int
+  comment        String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  consultation Consultation @relation(fields: [consultationId], references: [id])
+  client       User         @relation("GivenReviews", fields: [clientId], references: [id])
+  vet          User         @relation("ReceivedReviews", fields: [vetId], references: [id])
+
+  @@map("reviews")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  adminId   String   @map("admin_id")
+  action    String
+  targetId  String?  @map("target_id")
+  ipAddress String?  @map("ip_address")
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model DailyUploadCounter {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  date       String // Format: YYYY-MM-DD
+  count      Int      @default(0)
+  totalBytes BigInt   @default(0) @map("total_bytes")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("daily_upload_counters")
+}
+
+model MediaFile {
+  id             String    @id @default(uuid())
+  ownerId        String    @map("owner_id")
+  consultationId String?   @map("consultation_id")
+  fileName       String    @map("file_name")
+  fileSize       Int       @map("file_size")
+  mimeType       String    @map("mime_type")
+  localPath      String?   @map("local_path")
+  s3Key          String?   @map("s3_key")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  owner        User          @relation(fields: [ownerId], references: [id])
+  consultation Consultation? @relation(fields: [consultationId], references: [id])
+
+  @@index([ownerId, deletedAt])
+  @@index([consultationId, deletedAt])
+  @@map("media_files")
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  platform  String // "ios" | "android" | "web"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  title     String
+  body      String
+  type      String // "CALL_INCOMING | MESSAGE_NEW | PRESCRIPTION_NEW | SYSTEM"
+  data      Json?
+  isRead    Boolean   @default(false) @map("is_read")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
