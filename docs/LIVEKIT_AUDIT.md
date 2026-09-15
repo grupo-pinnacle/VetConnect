@@ -68,7 +68,8 @@ sequenceDiagram
    - **Renderizado Eficiente:** Montaje exclusivo de `<VideoConference />` sin duplicación de `<RoomAudioRenderer />`.
    - **Resiliencia de Red:** Handlers `onError` y `onMediaDeviceFailure` con UI de diagnóstico y reconexión.
 3. **Mobile Client (`mobile/app/(app)/call/[consultationId].tsx`):**
-   - **Handshake Robusto:** Protocolo reactivo de postMessage (`page:ready` (ightarrow` `call:init`) para evitar condiciones de carrera en WebViews.
+   - **Handshake Robusto:** Protocolo reactivo de postMessage (`page:ready` (
+ightarrow` `call:init`) para evitar condiciones de carrera en WebViews.
    - **Permisos de Hardware:** Solicitud transparente de micrófono y cámara en Android/iOS.
 
 ---
@@ -450,8 +451,8 @@ Este checklist consolida los 16 mandatos de ingeniería preventiva que deben imp
   };
   ```
 * **Criterio de Aceptación BDD (Preventivo):**
-  > **Dado que** un tutor sostiene su dispositivo móvil en videollamada,  
-  > **Cuando** presiona el botón "Girar Cámara",  
+  > **Dado que** un tutor sostiene su dispositivo móvil en videollamada,
+  > **Cuando** presiona el botón "Girar Cámara",
   > **Entonces** el stream conmuta a la cámara trasera con autoenfoque en menos de 800 ms sin reiniciar la conexión WebRTC.
 
 ---
@@ -478,8 +479,8 @@ Este checklist consolida los 16 mandatos de ingeniería preventiva que deben imp
   </div>
   ```
 * **Criterio de Aceptación BDD (Preventivo):**
-  > **Dado que** el veterinario y el tutor están en videoconsulta activa,  
-  > **Cuando** el tutor toma una foto macro de una lesión y la envía por el chat,  
+  > **Dado que** el veterinario y el tutor están en videoconsulta activa,
+  > **Cuando** el tutor toma una foto macro de una lesión y la envía por el chat,
   > **Entonces** la foto se sube mediante `POST /api/media`, aparece instantáneamente en el chat lateral del veterinario con opción de zoom 100%, y el audio/video continúa transmitiendo sin corte alguno.
 
 ---
@@ -511,8 +512,8 @@ Este checklist consolida los 16 mandatos de ingeniería preventiva que deben imp
   }}
   ```
 * **Criterio de Aceptación BDD (Preventivo):**
-  > **Dado que** un dispositivo móvil experimenta una caída de throughput en red 4G a menos de 300 kbps,  
-  > **Cuando** el SFU ajusta la capa de simulcast a baja resolución,  
+  > **Dado que** un dispositivo móvil experimenta una caída de throughput en red 4G a menos de 300 kbps,
+  > **Cuando** el SFU ajusta la capa de simulcast a baja resolución,
   > **Entonces** el canal de audio del veterinario permanece claro y libre de entrecortes, evitando la desconexión del paciente.
 
 ---

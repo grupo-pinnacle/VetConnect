@@ -1,4 +1,4 @@
-import { ConsultationStatus, Role, VetStatus, User } from '@prisma/client';
+import { ConsultationStatus, Role, VetStatus, User, Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import {
@@ -321,7 +321,7 @@ export class ConsultationsService {
     }
 
     // Atomic transaction (ADR-019 & ADR-023)
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const review = await tx.review.create({
         data: {
           consultationId,

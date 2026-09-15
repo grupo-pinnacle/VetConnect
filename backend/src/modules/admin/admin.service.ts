@@ -1,4 +1,4 @@
-import { Role, VetStatus } from '@prisma/client';
+import { Role, VetStatus, Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import { RejectVetDTO } from './admin.schemas';
@@ -44,7 +44,7 @@ export class AdminService {
       throw new AppError('Veterinario no encontrado', 404, 'VET_NOT_FOUND');
     }
 
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updatedVet = await tx.user.update({
         where: { id: vetId },
         data: { vetStatus: VetStatus.APPROVED },
@@ -73,7 +73,7 @@ export class AdminService {
       throw new AppError('Veterinario no encontrado', 404, 'VET_NOT_FOUND');
     }
 
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updatedVet = await tx.user.update({
         where: { id: vetId },
         data: { vetStatus: VetStatus.REJECTED },

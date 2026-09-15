@@ -83,11 +83,11 @@ Los agentes autónomos deben invocar las herramientas indicadas según la natura
 
 ### 5.1 Protocolo de Trabajo: Técnico Multimedial en Figma + Equipo Humano + Jules 24/7
 Para maximizar la fidelidad estética y acelerar la entrega técnica sin cuellos de botella:
-1. **Diseño Visual & UI/UX en Figma (Técnico Multimedial — Damian Orellana):**  
+1. **Diseño Visual & UI/UX en Figma (Técnico Multimedial — Damian Orellana):**
    El Técnico Multimedial diseña integralmente en **Figma** los flujos de navegación, wireframes, componentes interactivos y pantallas de alta fidelidad del Portal Web Pro (tutores, veterinarios y administradores), anclándose a [`docs/SISTEMA_DE_DISENO.md`](docs/SISTEMA_DE_DISENO.md).
-2. **Implementación de Código Web (Equipo Humano + Damian Orellana):**  
+2. **Implementación de Código Web (Equipo Humano + Damian Orellana):**
    El equipo de desarrollo codifica el Frontend Web (`web/` en React 19 + Tailwind CSS) tomando los prototipos de Figma aprobados como especificación visual vinculante.
-3. **Avance Continuo de Jules en Backend & Core (Sin Bloqueos):**  
+3. **Avance Continuo de Jules en Backend & Core (Sin Bloqueos):**
    Mientras el diseño en Figma y la maquetación web se orquestan, **Google Jules y los subagentes de IA avanzan de forma continua y 100% autónoma** en la construcción de los cimientos, base de datos, APIs REST, mensajería en tiempo real, LiveKit backend, aplicación mobile y suite de tests. Jules solo interviene en la capa web para preparar el scaffolding técnico de base (Vite, TypeScript, cliente Axios y TanStack Query) sin inventar interfaces visuales arbitrarias.
 
 ### 5.2 Fases de Ejecución (F0 a F7)

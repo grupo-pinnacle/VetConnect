@@ -106,7 +106,7 @@ describe('Realtime & Chat Socket Gateway (TASK-3.1 & TASK-3.2)', () => {
       reconnection: false,
     });
 
-    invalidSocket.on('connect_error', (err) => {
+    invalidSocket.on('connect_error', (err: any) => {
       expect(err.message).toBe('Invalid or expired authentication token');
       invalidSocket.disconnect();
       done();
@@ -160,7 +160,7 @@ describe('Realtime & Chat Socket Gateway (TASK-3.1 & TASK-3.2)', () => {
     socket.on('connect', () => {
       socket.emit('join:consultation', { consultationId: 'consultation-chat-1' });
 
-      socket.on('message:new', (message) => {
+      socket.on('message:new', (message: any) => {
         expect(message.content).toBe('Hola Dr.');
         expect(message.clientMsgId).toBe('client-msg-unique-123');
         socket.disconnect();

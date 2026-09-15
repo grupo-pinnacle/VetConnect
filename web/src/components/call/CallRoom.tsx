@@ -11,7 +11,7 @@ interface CallRoomProps {
 
 export const CallRoom: React.FC<CallRoomProps> = ({
   token,
-  serverUrl = import.meta.env.VITE_LIVEKIT_URL || 'wss://vetconnect-dev.livekit.cloud',
+  serverUrl = import.meta.env.VITE_LIVEKIT_URL || 'wss://vetconnect-mrsu677e.livekit.cloud',
   onDisconnected,
 }) => {
   const [hasJoined, setHasJoined] = useState<boolean>(false);

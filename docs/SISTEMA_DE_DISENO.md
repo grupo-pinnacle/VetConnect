@@ -4,7 +4,7 @@
 > **Marco Metodológico:** Incorpora formalmente la **Actividad 26 – Definición del Sistema de Diseño del Producto**  
 > **Normativas Aplicadas:** ISO 9241-210 (Diseño Centrado en el Usuario), ISO 9241-11 (Usabilidad), WCAG 2.1 Nivel AA (Accesibilidad Web) y Leyes de la Psicología del Diseño (Fitts, Hick, Miller y Gestalt).  
 > **Proyecto:** VetConnect — Plataforma Integral de Telemedicina Veterinaria & Gestión Clínica  
-> **Equipo de Diseño & Desarrollo:** Tobias Vera, Damian Orellana (Técnico Multimedial & UI/UX Lead en Figma), Juan Mendoza, Ezequiel Charca  
+> **Equipo de Diseño & Desarrollo:** Tobias Vera, Damian Orellana (Técnico Multimedial & UI/UX Lead en Figma), Juan Mendoza, Ezequiel Charca
 > **Fecha:** Septiembre 2026 | **Estado:** `APPROVED (ACTIVE DESIGN SYSTEM SPECIFICATION)`
 
 ---

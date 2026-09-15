@@ -43,8 +43,10 @@ export class AuthService {
   }
 
   public async register(dto: RegisterDTO) {
+    const emailStr = String(dto.email).toLowerCase();
+
     const existing = await prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
+      where: { email: emailStr },
     });
 
     if (existing) {
@@ -56,7 +58,7 @@ export class AuthService {
 
     const user = await prisma.user.create({
       data: {
-        email: dto.email.toLowerCase(),
+        email: emailStr,
         password: hashedPassword,
         firstName: dto.firstName,
         lastName: dto.lastName,
@@ -73,8 +75,10 @@ export class AuthService {
   }
 
   public async login(dto: LoginDTO) {
+    const emailStr = String(dto.email).toLowerCase();
+
     const user = await prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
+      where: { email: emailStr },
     });
 
     if (!user || user.deletedAt) {

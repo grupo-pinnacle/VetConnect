@@ -204,7 +204,7 @@ Cuando un agente Tech Lead o el desarrollador delega trabajo en subagentes o ses
 | **QA & Verification Agent** | Testing E2E & Seguridad | Jest 120+ tests, Playwright, CI audit | `npm test --workspaces && npm run typecheck` |
 | **Debugger Agent** | Regresiones & Fallos | Análisis de diff, aislamiento de fallos, Self-Correction Loop | `npm test -- --verbose` |
 
-> 🎨 **Directiva de Trabajo para la Capa Web (Figma-First):**  
+> 🎨 **Directiva de Trabajo para la Capa Web (Figma-First):**
 > El diseño visual, pantallas y experiencia de usuario (UI/UX) del Frontend Web son ideados y prototipados en **Figma por el Técnico Multimedial (Damian Orellana)**. La codificación de las pantallas la realiza el equipo humano de desarrollo basándose en dicho diseño. Los agentes autónomos de IA (como Google Jules) **tienen prohibido inventar interfaces visuales o bloquearse esperando a Figma**: Jules avanza 24/7 de forma continua en Backend, Prisma, Sockets, Media, Mobile y QA, proveyendo para la Web únicamente el scaffolding técnico y contratos tipados (TASK-5.1).
 
 ---

@@ -122,11 +122,7 @@ export const registerChatGateway = (
             },
           });
         } catch (err) {
-          // Idempotency check: Prisma P2002 error on clientMsgId unique constraint
-          if (
-            err instanceof Prisma.PrismaClientKnownRequestError &&
-            err.code === 'P2002'
-          ) {
+          if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
             const existingMessage = await prisma.message.findUnique({
               where: { clientMsgId: data.clientMsgId },
               include: {

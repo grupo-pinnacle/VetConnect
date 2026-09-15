@@ -166,7 +166,7 @@ Alineado con los acuerdos tomados en la reunión con el stakeholder interno ([`M
 | Despliegue VPS Coolify & EAS       |  A/R   |   R    |   R    |    C     |      I       |
 +------------------------------------+--------+--------+--------+----------+--------------+
 ```
-*Leyenda: **A** = Accountable (Aprobador final); **R** = Responsible (Ejecutor); **C** = Consulted (Consultado); **I** = Informed (Informado).*  
+*Leyenda: **A** = Accountable (Aprobador final); **R** = Responsible (Ejecutor); **C** = Consulted (Consultado); **I** = Informed (Informado).*
 *(Nota Operativa: Damian Orellana se desempeña como Técnico Multimedial & Web Lead, liderando el diseño UI/UX completo en Figma previo a la codificación de la web con el equipo, mientras Google Jules avanza de forma 100% autónoma en backend, base de datos y mobile).*
 
 ---
