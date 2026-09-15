@@ -37,7 +37,8 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 | 📜 **Project Charter** | Carta fundamental del proyecto: visión, misión, OKRs, matriz funcional y roadmap FAANG. | [Ver Project Charter](docs/PROJECT_CHARTER.md) |
 | 📋 **Plan de Proyecto y Gestión** | RACI, Mapa de Stakeholders, Gestión del Cambio, DCU (ISO 9241-210), UX/UI, Sprints y KPIs. | [Ver Plan de Proyecto](docs/PLAN_DE_PROYECTO_Y_GESTION.md) |
 | 🏛️ **Arquitectura del Sistema** | Topología distribuida, Domain-Driven Design, Sockets en clúster y marco legal (SENASA / Ley 25.326). | [Ver Arquitectura](docs/ARCHITECTURE.md) |
-| ⚖️ **Registro de Decisiones (ADRs)** | 21 Architecture Decision Records detallando el porqué técnico de cada tecnología adoptada. | [Ver Decisiones](docs/DECISIONS.md) |
+| ⚖️ **Registro de Decisiones (ADRs)** | 23 Architecture Decision Records detallando el porqué técnico de cada tecnología adoptada (ADR-001 a ADR-023). | [Ver Decisiones](docs/DECISIONS.md) |
+| 📜 **Reconciliación Arquitectónica** | Informe oficial de resolución de discrepancias, numeración de ADRs y validación 100% Greenfield. | [Ver Reconciliación](docs/RECONCILIACION_ARQUITECTURA_Y_DISCREPANCIAS.md) |
 | 📚 **Referencia Técnica & APIs** | Mapa completo de endpoints REST, matriz de eventos Socket.io y modelos de datos Prisma. | [Ver Referencia Técnica](docs/TECH_REFERENCE.md) |
 | 📘 **Guía Oficial de Buenas Prácticas & Sistema** | Puntos ciegos, antipatrones (ejemplos de NO uso), LiveKit y estándares de código por módulo. | [Ver Guía de Buenas Prácticas](docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md) |
 | 📱 **Guía de Ejecución Local** | Tutorial paso a paso para encender todo el sistema y conectar un celular por cable USB con ADB. | [Ver Guía de Ejecución](GUIA_EJECUCION_VETCONNECT.md) |

@@ -68,7 +68,8 @@ vetconnect/
     ├── SPEC.md                     # Especificación técnica, modelos de dominio y protocolos
     ├── MINUTA_STAKEHOLDER_2026-09.md # Requerimientos acordados con stakeholders y backlog v2.1+
     ├── LIVEKIT_AUDIT.md            # Guía Maestra & Checklist Preventivo de Implementación LiveKit SFU
-    └── PROPUESTA_MEJORAS_LIVEKIT.md # Hoja de Ruta Consolidada LiveKit
+    ├── PROPUESTA_MEJORAS_LIVEKIT.md # Hoja de Ruta Consolidada LiveKit
+    └── RECONCILIACION_ARQUITECTURA_Y_DISCREPANCIAS.md # Registro Oficial de Reconciliación de Arquitectura
 ```
 
 > ℹ️ **Nota de Diseño sobre `packages/shared` (ADR-008):**  

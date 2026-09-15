@@ -24,7 +24,7 @@ Este registro documenta todas las decisiones arquitectónicas clave tomadas dura
 | **ADR-014** | Registro Inmutable de Auditoría (`AuditLog`) | Aprobado | Seguridad / Auditoría |
 | **ADR-015** | TanStack React Query v5 para Caché y Sincronización Web | Aprobado | Frontend Web |
 | **ADR-016** | Conexión Mobile USB Directa con ADB Reverse para Redes Corporativas | Aprobado | DevOps / DX |
-| **ADR-017** | Despliegue Backend Autohosteado en Coolify (VPS) & Web en Vercel/Hostinger | Aprobado | Infraestructura / Cloud |
+| **ADR-017** | Despliegue Backend Autohosteado en Coolify (VPS) | Aprobado | Infraestructura / Cloud |
 | **ADR-018** | Estrategia Tripartita de Distribución Android (EAS Play Store, APK Web y Local Build) | Aprobado | Mobile / Release |
 | **ADR-019** | Denormalización Atómica de Calificaciones e Índices Compuestos | Aprobado | Base de Datos / Performance |
 | **ADR-020** | Streaming de Archivos Seguros y Mitigación de DoS de Heap | Aprobado | Seguridad / Storage |
