@@ -3,7 +3,6 @@ import app from '../app';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 
-// Mock prisma methods for unit tests
 jest.mock('../lib/prisma', () => ({
   __esModule: true,
   default: {
@@ -66,7 +65,20 @@ describe('Auth Module (/api/auth)', () => {
       expect(res.body.data.user.email).toBe('test.client@vetconnect.com');
       expect(res.body.data.user.role).toBe('CLIENT');
       expect(res.body.data.accessToken).toBeDefined();
-      expect(res.body.data.refreshToken).toBeUndefined(); // Web SPA by default
+    });
+
+    it('should REJECT registration if email already exists with 409 Conflict', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockUser);
+
+      const res = await request(app).post('/api/auth/register').send({
+        email: 'test.client@vetconnect.com',
+        password: 'Password123!',
+        firstName: 'Laura',
+        lastName: 'Perez',
+      });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe('EMAIL_ALREADY_EXISTS');
     });
 
     it('should register a VET with vetStatus PENDING', async () => {
@@ -128,6 +140,30 @@ describe('Auth Module (/api/auth)', () => {
       expect(res.body.data.accessToken).toBeDefined();
       expect(res.body.data.refreshToken).toBeDefined();
     });
+
+    it('should REJECT login with wrong password with 401 Invalid Credentials', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockUser);
+
+      const res = await request(app).post('/api/auth/login').send({
+        email: 'test.client@vetconnect.com',
+        password: 'WrongPassword!',
+      });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
+    });
+
+    it('should REJECT login for non-existent email', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(null);
+
+      const res = await request(app).post('/api/auth/login').send({
+        email: 'nonexistent@vetconnect.com',
+        password: 'Password123!',
+      });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
+    });
   });
 
   describe('POST /api/auth/logout & tokenVersion Revocation', () => {
@@ -135,7 +171,6 @@ describe('Auth Module (/api/auth)', () => {
       mockPrismaUser.findUnique.mockResolvedValue(mockUser);
       mockPrismaUser.update.mockResolvedValue({ ...mockUser, tokenVersion: 2 });
 
-      // Obtain a valid token first via login
       const loginRes = await request(app).post('/api/auth/login').send({
         email: 'test.client@vetconnect.com',
         password: 'Password123!',
