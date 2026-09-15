@@ -480,12 +480,14 @@ Se define la asignación formal de responsabilidades para garantizar una rendici
 | Autenticación JWT & Middleware Zod |    A / R    |       I        |       I       |       C       |         I         |
 | Panel Admin & Validación SENASA    |      A      |       R        |       I       |       C       |        A/R        |
 | Módulo CRUD de Mascotas & Ficha    |      A      |       R        |       R       |       C       |         I         |
-| Flujo de Triage & Máquina Estados  |    A / R    |       C        |       R       |       C       |         C         |
+| Flujo de Triage & Máquina Estados  |      A      |       C        |       R       |       C       |         C         |
 | Chat Socket.io & Redis Adapter     |    A / R    |       R        |       C       |       C       |         I         |
 | Videoconsulta LiveKit SFU (Web/Mob)|      A      |       R        |       R       |       C       |         I         |
 | Receta Médica Digital con QR       |      A      |       R        |       C       |       C       |        A/R        |
 | Pruebas Automatizadas (120+ tests) |      A      |       C        |       C       |     A / R     |         I         |
-| Despliegue VPS Coolify / Vercel    |    A / R    |       I        |       I       |       C       |         I         |
+| Despliegue Backend (VPS Coolify)   |    A / R    |       I        |       I       |  C (Backup Ops)|        I         |
+| Despliegue Web Frontend (Vercel)   |      A      |     A / R      |       I       |       C       |         I         |
+| Compilación & Release Mobile (EAS) |      A      |       I        |     A / R     |       C       |         I         |
 +------------------------------------+-------------+----------------+---------------+---------------+-------------------+
 ```
 

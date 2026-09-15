@@ -32,6 +32,16 @@ graph LR
 
 ---
 
+### 1.2 Criterio de Entrada: Definition of Ready (DoR) para Tareas Agénticas
+Ningún subagente debe iniciar una tarea sin validar que:
+1. **Contrato Congelado:** Los contratos requeridos están presentes en `docs/TECH_REFERENCE.md` sin campos de v2.1+.
+2. **ADR Vinculante:** La tarea referencia su ADR de los 23 aprobados en `docs/DECISIONS.md`.
+3. **Pipeline Previo Verde:** Las pruebas de la fase previa compilan y pasan exitosamente.
+4. **Cero PII en diseño:** No se requiere ni permite el transporte de correos o teléfonos en tokens WebRTC ni logs.
+5. **Comando de Verificación:** El prompt o task packet define el comando exacto para verificar el resultado.
+
+---
+
 ## 🛡️ 2. Guardarraíles Absolutos de Seguridad
 
 1. **Gestión de Secretos (`.env` Guardrail):**

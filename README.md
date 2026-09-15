@@ -23,29 +23,31 @@
 
 Toda la documentación técnica, operativa y de agentes de VetConnect se encuentra organizada en los siguientes documentos maestros:
 
-### 🤖 Gobernanza de Agentes de IA & Ejecución
-| Documento | Descripción y Contenido | Enlace |
-|---|---|---|
-| 🤖 **Agent Operating System (AOS)** | Protocolo de autonomía para agentes de IA: ciclo TDD, antipatrones explícitos y comandos de verificación. | [Ver AGENTS.md](AGENTS.md) |
-| 📋 **Backlog Greenfield para Agentes** | Backlog maestro de ejecución por Fases (F0 a F7) estructurado en Task Packets listos para Jules/GitHub Issues. | [Ver Plan de Acción](PLAN_ACCION_VETCONNECT.md) |
-| 🧭 **Brief del Tech Lead Orquestador** | Contexto maestro para IA actuando como Tech Lead o supervisora de subagentes de desarrollo. | [Ver Tech Lead Brief](AI_TECHLEAD_BRIEF.md) |
-| 🎯 **Instrucciones para Google Jules** | Guía de ejecución nativa para tareas y Pull Requests abiertos por Google Jules. | [Ver Jules Instructions](.jules/instructions.md) |
+### 🌟 Nivel 1 (Tier 1) — Fuentes Vivas de Ejecución Diaria (Single Sources of Truth - SSOT)
+> **Autoridad Suprema:** Estos 5 documentos gobiernan el desarrollo diario. Cualquier cambio de contrato, decisión técnica, asignación o estándar debe actualizarse **únicamente** aquí:
 
-### 📚 Arquitectura & Especificaciones Técnicas
-| Documento | Descripción y Contenido | Enlace |
+| Documento | Descripción & Rol en Desarrollo | Enlace |
 |---|---|---|
-| 📜 **Project Charter** | Carta fundamental del proyecto: visión, misión, OKRs, matriz funcional y roadmap FAANG. | [Ver Project Charter](docs/PROJECT_CHARTER.md) |
-| 📋 **Plan de Proyecto y Gestión** | RACI, Mapa de Stakeholders, Gestión del Cambio, DCU (ISO 9241-210), UX/UI, Sprints y KPIs. | [Ver Plan de Proyecto](docs/PLAN_DE_PROYECTO_Y_GESTION.md) |
-| 🏛️ **Arquitectura del Sistema** | Topología distribuida, Domain-Driven Design, Sockets en clúster y marco legal (SENASA / Ley 25.326). | [Ver Arquitectura](docs/ARCHITECTURE.md) |
-| ⚖️ **Registro de Decisiones (ADRs)** | 23 Architecture Decision Records detallando el porqué técnico de cada tecnología adoptada (ADR-001 a ADR-023). | [Ver Decisiones](docs/DECISIONS.md) |
-| 📜 **Reconciliación Arquitectónica** | Informe oficial de resolución de discrepancias, numeración de ADRs y validación 100% Greenfield. | [Ver Reconciliación](docs/RECONCILIACION_ARQUITECTURA_Y_DISCREPANCIAS.md) |
-| 📚 **Referencia Técnica & APIs** | Mapa completo de endpoints REST, matriz de eventos Socket.io y modelos de datos Prisma. | [Ver Referencia Técnica](docs/TECH_REFERENCE.md) |
-| 📘 **Guía Oficial de Buenas Prácticas & Sistema** | Puntos ciegos, antipatrones (ejemplos de NO uso), LiveKit y estándares de código por módulo. | [Ver Guía de Buenas Prácticas](docs/GUIA_OFICIAL_BUENAS_PRACTICAS_Y_SISTEMA.md) |
-| 📱 **Guía de Ejecución Local** | Tutorial paso a paso para encender todo el sistema y conectar un celular por cable USB con ADB. | [Ver Guía de Ejecución](GUIA_EJECUCION_VETCONNECT.md) |
-| 🚀 **Guía de Despliegue & Ops** | Guía de producción: Coolify (VPS) para Backend, Vercel para Web (Hostinger contingencia) y 3 vías para Android (EAS / APK web / Local). | [Ver Guía de Deploy & Ops](docs/DEPLOY.md) |
-| 📑 **Minuta de Stakeholder & Backlog v2.1** | Requerimientos de producto acordados con stakeholder interno (vacunas, VetDrive, microchip, ciclo de vida, calendario). | [Ver Minuta de Stakeholder](docs/MINUTA_STAKEHOLDER_2026-09.md) |
-| 🖥️ **Presentación Ejecutiva** | Diapositivas ejecutivas de alta densidad visual sintetizando las decisiones clave del proyecto (problema, PMV, arquitectura, Scrumban y KPIs). | [Ver Presentación](docs/PRESENTACION_EJECUTIVA.md) |
-| 🎨 **Sistema de Diseño (Design System)** | Guía integral de UX/UI: flujos clínicos, Clean Clinical Modernism, paleta 60-30-10, tipografías Inter/Jakarta, UI Kit y WCAG 2.1 AA. | [Ver Sistema de Diseño](docs/SISTEMA_DE_DISENO.md) |
+| 📚 **Referencia Técnica & Contratos** | Contratos de API REST (Zod), Socket.io y Prisma Schema v2.0 definitivo. | [Ver TECH_REFERENCE.md](docs/TECH_REFERENCE.md) |
+| ⚖️ **Registro de Decisiones (ADRs)** | Las 23 decisiones arquitectónicas oficiales vinculantes (ADR-001 al ADR-023). | [Ver DECISIONS.md](docs/DECISIONS.md) |
+| 📋 **Backlog Operativo de Agentes** | Backlog técnico por fases F0..F7 (TASK-0.1 a TASK-7.2) con DoR y DoD para Jules. | [Ver PLAN_ACCION_VETCONNECT.md](PLAN_ACCION_VETCONNECT.md) |
+| 📊 **Plan de Proyecto y Gestión** | Product Backlog PB-01..40, Sprints 1..10, RACI balanceado y métricas KPIs. | [Ver PLAN_DE_PROYECTO_Y_GESTION.md](docs/PLAN_DE_PROYECTO_Y_GESTION.md) |
+| 🤖 **Agent Operating System (AOS)** | Protocolo operativo supremo, ciclo TDD, guardarraíles y antipatrones con código. | [Ver AGENTS.md](AGENTS.md) |
+
+### 🧊 Nivel 2 (Tier 2) — Baselines de Inicio & Archivo Histórico (Read-Only Post-Kickoff)
+> **Línea Base Congelada:** Documentos aprobados para la fase de inicio que actúan como registro estático o de referencia contextual. No requieren mantenimiento diario sincronizado:
+
+| Documento | Rol y Estado Post-Kickoff | Enlace |
+|---|---|---|
+| 📜 **Project Charter** | Carta fundacional y visión del proyecto *(Congelado al 01/Oct/2026)*. | [Ver Project Charter](docs/PROJECT_CHARTER.md) |
+| 🧭 **Brief del Tech Lead** | Contexto maestro inicial de orquestación *(Congelado)*. | [Ver Tech Lead Brief](AI_TECHLEAD_BRIEF.md) |
+| 📜 **Reconciliación Arquitectónica** | Informe de auditoría pre-kickoff y resolución de discrepancias *(Congelado)*. | [Ver Reconciliación](docs/RECONCILIACION_ARQUITECTURA_Y_DISCREPANCIAS.md) |
+| 🖥️ **Presentación Ejecutiva** | Deck visual de 11 diapositivas para síntesis de stakeholders *(Congelado)*. | [Ver Presentación](docs/PRESENTACION_EJECUTIVA.md) |
+| 📑 **Minuta de Stakeholder (v2.1+)** | Requerimientos de producto para fase futura Hitos M5..M8 *(Congelado)*. | [Ver Minuta de Stakeholder](docs/MINUTA_STAKEHOLDER_2026-09.md) |
+| 🎥 **Auditoría & Checklist LiveKit** | Guía normativa maestra y checklist preventivo de WebRTC. | [Ver LiveKit Audit](docs/LIVEKIT_AUDIT.md) |
+| 🎨 **Sistema de Diseño (Design System)** | Guía visual y UI Kit para prototipado (Actividad 26). | [Ver Sistema de Diseño](docs/SISTEMA_DE_DISENO.md) |
+| 🚀 **Guía de Despliegue & Ops** | Manual de infraestructura: Coolify (VPS) y Vercel (Edge). | [Ver Guía de Deploy & Ops](docs/DEPLOY.md) |
+| 📱 **Guía de Ejecución Local** | Tutorial de inicio local y configuración de depuración ADB. | [Ver Guía de Ejecución](GUIA_EJECUCION_VETCONNECT.md) |
 
 
 ---

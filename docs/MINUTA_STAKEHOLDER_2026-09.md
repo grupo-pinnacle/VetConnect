@@ -1,4 +1,10 @@
 # 📋 MINUTA DE REUNIÓN & BACKLOG DE REQUERIMIENTOS — STAKEHOLDER INTERNO
+
+> 🧊 **DOCUMENTO DE ARCHIVO HISTÓRICO / BASELINE INICIAL (READ-ONLY)**  
+> *Este documento representa la línea base conceptual aprobada para el Kickoff del 1 de octubre de 2026. A partir de esa fecha, toda modificación o evolución técnica se gobierna exclusivamente en las 5 Fuentes Vivas de Ejecución (Tier 1: `docs/TECH_REFERENCE.md`, `docs/DECISIONS.md`, `PLAN_ACCION_VETCONNECT.md`, `docs/PLAN_DE_PROYECTO_Y_GESTION.md` y `AGENTS.md`). No editar este archivo de forma activa durante los sprints.*
+
+---
+
 ## Proyecto: VetConnect v2.0+
 **Document ID:** `MEETING-STAKEHOLDER-2026-09`  
 **Fecha de Emisión:** 14 de Septiembre de 2026  

@@ -32,15 +32,25 @@ Para garantizar total transparencia operativa entre el seguimiento de gestión d
 | **TASK-3.2** (Chat Idempotente) | **PB-26**, **PB-27** (Sprint 7) | Mensajería con clientMsgId, deduplicación P2002 y presencia. |
 | **TASK-4.1** (Tokens LiveKit SFU) | **PB-29**, **PB-32** (Sprint 8) | Tokens WebRTC 720p sin PII y teardown server-side deleteRoom. |
 | **TASK-4.2** (Storage Magic Bytes) | **PB-20** (Sprint 5), **PB-28** (Sprint 7) | Subida segura a disco/S3 con validación de primeros 32 bytes. |
-| **TASK-5.1** (Frontend Web SPA) | **PB-04** (S2), **PB-09**, **PB-10**, **PB-11** (S3), **PB-12** (S4) | React 19 + Vite, TanStack Query, routing y UI Kit. |
+| **TASK-5.1** (Frontend Web SPA) | **PB-04** (S2), **PB-09**, **PB-10**, **PB-11** (S3), **PB-12** (S4), **PB-23** (S6) | React 19 + Vite, TanStack Query, routing, FAQ y UI Kit. |
 | **TASK-5.2** (Videollamada Web) | **PB-30** (Sprint 8) | Componente CallRoom, PreJoin y CERO doble RoomAudioRenderer. |
-| **TASK-6.1** (Mobile Expo Router) | **PB-10** (Sprint 3), **PB-19** (Sprint 5), **PB-20** (Sprint 6) | App Expo SDK 54, NativeWind, secure store y notificaciones. |
+| **TASK-6.1** (Mobile Expo Router) | **PB-10** (Sprint 3), **PB-19** (Sprint 5), **PB-20** (Sprint 6), **PB-23** (Sprint 6) | App Expo SDK 54, NativeWind, secure store y FAQ de soporte. |
 | **TASK-6.2** (Mobile WebView LiveKit) | **PB-31** (Sprint 8) | Handshake bidireccional page:ready y permisos de hardware. |
-| **TASK-7.1** (Suite 120+ Tests) | **PB-37**, **PB-38** (Sprint 10) | 10 suites en Jest/Vitest con >80% cobertura y mock DB. |
+| **TASK-7.1** (Suite 120+ Tests) | **PB-33**, **PB-34** (Sprint 9), **PB-37**, **PB-38** (Sprint 10) | Heurística ISO 9241-11, UX <60s, 10 suites Jest (>80%). |
 | **TASK-7.2** (CI/CD & Coolify) | **PB-39**, **PB-40** (Sprint 10) | GitHub Actions, Dockerfile multi-stage y deploy Vercel/VPS. |
 
 ---
 
+### 🚦 Criterio de Entrada: Definition of Ready (DoR) para Task Packets
+Antes de que un agente autónomo (**Google Jules**) o desarrollador tome un paquete de tareas (`TASK-X.X`), se debe verificar que:
+1. **Contrato Congelado:** Los endpoints, DTOs Zod y esquemas Prisma requeridos están declarados explícitamente en [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) sin campos ambiguos de v2.1+.
+2. **ADR Vinculante:** La tarea referencia explícitamente las decisiones de arquitectura aplicables (de los 23 ADRs en [`docs/DECISIONS.md`](docs/DECISIONS.md)).
+3. **Dependencias Previas Satisfechas:** La fase o tarea antecesora completó su Definition of Done (DoD) con CI en verde (`npm run typecheck && npm test`).
+4. **Protección de PII Verificada:** Se prohíbe explícitamente inyectar emails o teléfonos en tokens WebRTC, logs o responses públicas.
+5. **Comando CLI de Verificación:** El paquete especifica el comando exacto para validar la entrega (ej. `npx prisma validate`, `npm test -- -t auth`).
+6. **Idempotencia / Manejo de Error Declarado:** En endpoints mutables o chat, se especifica el comportamiento ante reintentos (ej. HTTP 200 ante duplicado de `clientMsgId`).
+
+---
 ## 🧭 Metodología de Ejecución para Agentes
 
 Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`](AGENTS.md):
@@ -89,6 +99,13 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 - **Capa:** Backend (`backend/prisma/schema.prisma`)
 - **Archivos:** `backend/prisma/schema.prisma`
 - **Contratos/ADRs:** [ADR-002](docs/DECISIONS.md) (Prisma 6), [ADR-005](docs/DECISIONS.md) (Soft-Deletes), [ADR-019](docs/DECISIONS.md) (Índices & Denormalización), [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) §1.
+> 🛡️ **AISLAMIENTO DE ALCANCE (Scope Isolation MVP v2.0 vs v2.1+):**  
+> Para preservar la velocidad de entrega del Greenfield inicial y evitar sobrecarga en la base de datos:  
+> - **Modelos v2.0 In-Scope:** Únicamente los 8 modelos base (`User`, `Pet`, `Consultation`, `Message`, `Call`, `Review`, `AuditLog`, `DailyUploadCounter`).  
+> - **Modelos v2.1+ Excluidos (Prohibidos en F1):** Quedan terminantemente excluidos del `schema.prisma` inicial: `VaccinationRecord`, `PetDocument`, `MedicationSchedule`, `FavoriteVet`.  
+> - **Campos v2.1+ Excluidos de `Pet`:** No agregar en esta fase los campos `isHidden`, `deathDate`, `birthDate`.  
+> - **Evolución:** Estos elementos pertenecen exclusivamente a los Hitos M5 a M8 del Roadmap v2.1 y se incorporarán mediante migraciones *expand/contract* cuando comience dicha fase.
+
 - **Instrucciones:**
   1. Configurar datasource PostgreSQL y client generator de Prisma en `backend/prisma/schema.prisma`.
   2. Definir enums: `Role` (`CLIENT`, `VET`, `ADMIN`), `VetStatus` (`PENDING`, `APPROVED`, `REJECTED`), `ConsultationStatus` (`WAITING`, `ACTIVE`, `COMPLETED`, `CANCELLED`), `CallStatus` (`INITIATED`, `ACTIVE`, `ENDED`).
@@ -231,6 +248,9 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 - **Capa:** Backend (`backend/src/modules/calls/`)
 - **Archivos:** `calls.controller.ts`, `calls.service.ts`, `calls.routes.ts`
 - **Contratos/ADRs:** [ADR-012](docs/DECISIONS.md) (LiveKit SFU), Antipatrón 2 de `AGENTS.md` (Tokens LiveKit seguros).
+> 🔬 **GATE DE VERIFICACIÓN PREVIA (Spike LiveKit):**  
+> Antes de codificar TASK-4.1 en producción, ejecutar la prueba de concepto aislada en `spikes/livekit-spike/` (`npm test` en esa carpeta) para validar empíricamente la emisión de tokens opacos sin PII, el teardown determinista con `deleteRoom` y el handshake WebView (`page:ready`).
+
 - **Instrucciones:**
   1. Integrar SDK oficial `livekit-server-sdk`.
   2. Endpoint `POST /api/calls/:consultationId/token`:

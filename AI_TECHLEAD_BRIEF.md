@@ -1,5 +1,11 @@
 # AI_TECHLEAD_BRIEF.md — Brief Greenfield para IA Tech Lead (VetConnect)
 
+> 🧊 **DOCUMENTO DE ARCHIVO HISTÓRICO / BASELINE INICIAL (READ-ONLY)**  
+> *Este documento representa la línea base conceptual aprobada para el Kickoff del 1 de octubre de 2026. A partir de esa fecha, toda modificación o evolución técnica se gobierna exclusivamente en las 5 Fuentes Vivas de Ejecución (Tier 1: `docs/TECH_REFERENCE.md`, `docs/DECISIONS.md`, `PLAN_ACCION_VETCONNECT.md`, `docs/PLAN_DE_PROYECTO_Y_GESTION.md` y `AGENTS.md`). No editar este archivo de forma activa durante los sprints.*
+
+---
+
+
 > **Propósito:** Este archivo es la fuente maestra de contexto para una **IA actuando como Tech Lead o Agente Orquestador** (como Google Jules, Antigravity o Claude Code). Su misión es dirigir la construcción e implementación autónoma desde cero (**Greenfield**) del monorepo **VetConnect**, delegando tareas en agentes especializados, coordinando el ciclo TDD y asegurando que cada módulo cumpla rigurosamente con los estándares FAANG y la documentación del repositorio.
 
 ---

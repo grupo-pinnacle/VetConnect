@@ -1,0 +1,9 @@
+{
+  "name": "vetconnect-livekit-spike",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Spike técnico aislado para validación empírica de LiveKit WebRTC y teardown determinista",
+  "scripts": {
+    "test": "node spike-token-and-room.js"
+  }
+}

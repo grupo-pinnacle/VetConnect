@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VetConnect — LiveKit WebView Bridge Spike</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0F172A;
+      color: #F8FAFC;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90vh;
+    }
+    .card {
+      background-color: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background-color: #059669;
+      color: white;
+      margin-bottom: 12px;
+    }
+    .log-window {
+      background-color: #0B0F19;
+      border: 1px solid #1E293B;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #38BDF8;
+      height: 180px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+    button {
+      background-color: #2563EB;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 16px;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #1D4ED8;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Directiva 5 — Handshake Bidireccional</div>
+    <h2 style="margin-top: 0;">Spike: Mobile WebView Bridge</h2>
+    <p style="color: #94A3B8; font-size: 14px;">
+      Simulación del handshake bidireccional entre la app React Native (Expo) y la sala WebRTC para evitar race conditions.
+    </p>
+
+    <div class="log-window" id="logs">
+      [0.00s] Inicializando WebView Bridge...<br>
+    </div>
+
+    <button onclick="simulateReactNativeHost()">Simular Inyección desde React Native</button>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('logs');
+    function log(msg) {
+      logEl.innerHTML += `[${((Date.now() - startTime)/1000).toFixed(2)}s] ${msg}<br>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    const startTime = Date.now();
+
+    // 1. Paso 1: El WebView emite 'page:ready' inmediatamente al cargar el DOM
+    window.addEventListener('DOMContentLoaded', () => {
+      log("🟢 DOM cargado. Emitiendo mensaje '{ type: \"page:ready\" }' a React Native...");
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'page:ready' }));
+      } else {
+        log("ℹ️ Modo standalone de pruebas (sin React Native container host).");
+      }
+    });
+
+    // 2. Paso 2: Escuchar token inyectado por el contenedor nativo
+    window.addEventListener('message', (event) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data && data.type === 'init:call') {
+          log(`🔑 Token recibido de la app nativa (Sala: ${data.roomName}). Conectando WebRTC...`);
+          setTimeout(() => {
+            log("🎉 Conexión SFU establecida con éxito. 720p 30fps adaptativo.");
+          }, 800);
+        }
+      } catch (e) {
+        log("⚠️ Mensaje no estructurado recibido.");
+      }
+    });
+
+    // Función de prueba en navegador
+    function simulateReactNativeHost() {
+      log("📱 React Native detectó 'page:ready'. Inyectando credenciales...");
+      window.postMessage(JSON.stringify({
+        type: 'init:call',
+        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        roomName: 'consultation:cly778899'
+      }), '*');
+    }
+  </script>
+</body>
+</html>

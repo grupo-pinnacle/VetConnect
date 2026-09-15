@@ -1,5 +1,11 @@
 # 📜 Informe de Reconciliación Arquitectónica & Cierre de Discrepancias — VetConnect
 
+> 🧊 **DOCUMENTO DE ARCHIVO HISTÓRICO / BASELINE INICIAL (READ-ONLY)**  
+> *Este documento representa la línea base conceptual aprobada para el Kickoff del 1 de octubre de 2026. A partir de esa fecha, toda modificación o evolución técnica se gobierna exclusivamente en las 5 Fuentes Vivas de Ejecución (Tier 1: `docs/TECH_REFERENCE.md`, `docs/DECISIONS.md`, `PLAN_ACCION_VETCONNECT.md`, `docs/PLAN_DE_PROYECTO_Y_GESTION.md` y `AGENTS.md`). No editar este archivo de forma activa durante los sprints.*
+
+---
+
+
 > **Fecha:** Septiembre 2026  
 > **Estado:** `RESOLVED & RATIFIED (FINAL GOVERNANCE RECORD)`  
 > **Autores:** Senior Technical Program Manager & Solutions Architect (FAANG Tier)  
