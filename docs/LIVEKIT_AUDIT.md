@@ -11,7 +11,7 @@
 
 1. [Arquitectura de Videollamadas WebRTC & Flujo de Señalización](#1-arquitectura-de-videollamadas-webrtc--flujo-de-señalización)
 2. [Delimitación de Alcance (Scope MVP v2.0 vs. Post-MVP v2.2+)](#2-delimitación-de-alcance-scope-mvp-v20-vs-post-mvp-v22)
-3. [Checklist Preventivo de 13 Directivas y Antipatrones](#3-checklist-preventivo-de-13-directivas-y-antipatrones)
+3. [Checklist Preventivo de 16 Directivas y Antipatrones](#3-checklist-preventivo-de-16-directivas-y-antipatrones)
 4. [Patrones de Código de Referencia Aprobados (Golden Code)](#4-patrones-de-código-de-referencia-aprobados-golden-code)
 5. [Matriz de Verificación y Criterios de Aceptación Pre-PR](#5-matriz-de-verificación-y-criterios-de-aceptación-pre-pr)
 
@@ -94,9 +94,9 @@ Para evitar distorsiones de alcance y garantizar la entrega oportuna en los Spri
 
 ---
 
-## 3. Checklist Preventivo de 13 Directivas y Antipatrones
+## 3. Checklist Preventivo de 16 Directivas y Antipatrones
 
-Este checklist consolida los 13 mandatos de ingeniería preventiva que deben implementarse rigurosamente en el código de videollamadas.
+Este checklist consolida los 16 mandatos de ingeniería preventiva que deben implementarse rigurosamente en el código de videollamadas.
 
 ---
 
@@ -429,6 +429,91 @@ Este checklist consolida los 13 mandatos de ingeniería preventiva que deben imp
   > **Dado que** se compila el backend con TypeScript,  
   > **Cuando** se analiza el grafo de dependencias de producción,  
   > **Entonces** cero librerías con dependencias DOM/WebRTC cliente están vinculadas al servidor Node.js.
+
+---
+
+### 🛡️ DIRECTIVA-14: Conmutación de Cámara para Examen Clínico (Frontal / Trasera / Autoenfoque)
+* **Principio:** El examen físico de la mascota exige enfocar zonas específicas (mucosas gingivales, conducto auditivo, abdomen, lesiones cutáneas). La interfaz móvil debe proveer un control táctil prominente de conmutación hacia la cámara trasera (`facingMode: 'environment'`) con autoenfoque activo, evitando que el tutor manipule el dispositivo en ángulos forzados.
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Bloquea la cámara a modo 'user' (selfie), forzando al tutor a girar el celular a ciegas
+  const constraints = { video: { facingMode: 'user' } };
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Soporte de toggle dinámico entre frontal y trasera con preservación de track
+  const toggleCamera = async (room: Room) => {
+    const currentTrack = room.localParticipant.videoTrackPublications.values().next().value?.track;
+    const currentMode = currentTrack?.mediaStreamTrack?.getSettings()?.facingMode;
+    const nextMode = currentMode === 'environment' ? 'user' : 'environment';
+    await room.switchActiveDevice('videoinput', nextDeviceIdOrFacingMode);
+  };
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** un tutor sostiene su dispositivo móvil en videollamada,  
+  > **Cuando** presiona el botón "Girar Cámara",  
+  > **Entonces** el stream conmuta a la cámara trasera con autoenfoque en menos de 800 ms sin reiniciar la conexión WebRTC.
+
+---
+
+### 🛡️ DIRECTIVA-15: Multicanal Sincrónico: Videoconsulta + Chat + Macro-Fotografías en Paralelo
+* **Principio:** Durante una consulta activa (`status = 'ACTIVE'`), la videollamada WebRTC y el canal de mensajería/archivos deben operar en simultáneo sin interrupción de audio ni congelamiento de video. En Web: Layout de pantalla dividida con video central 720p y panel lateral de chat acoplado con visor lightbox (zoom 100%). En Mobile: Modo Picture-in-Picture (PiP) / Bottom-Sheet deslizante que permite chatear o capturar y adjuntar fotografías de alta resolución vía `POST /api/media` sin pausar la llamada.
+* **❌ Antipatrón a Evitar:**
+  ```tsx
+  // BAD: Desmonta el componente de videollamada al abrir la pestaña de chat
+  {activeTab === 'video' ? <VideoConference /> : <ChatSection />}
+  ```
+* **✅ Patrón Correcto:**
+  ```tsx
+  // GOOD: Persistencia simultánea de tracks WebRTC y chat lateral / flotante
+  <div className="flex h-screen w-full">
+    <main className="flex-1 relative">
+      <LiveKitRoom token={token} serverUrl={serverUrl}>
+        <VideoConference />
+      </LiveKitRoom>
+    </main>
+    <aside className="w-96 border-l flex flex-col">
+      <ChatSection consultationId={consultationId} />
+    </aside>
+  </div>
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** el veterinario y el tutor están en videoconsulta activa,  
+  > **Cuando** el tutor toma una foto macro de una lesión y la envía por el chat,  
+  > **Entonces** la foto se sube mediante `POST /api/media`, aparece instantáneamente en el chat lateral del veterinario con opción de zoom 100%, y el audio/video continúa transmitiendo sin corte alguno.
+
+---
+
+### 🛡️ DIRECTIVA-16: Resiliencia en Celulares de Gama Baja (Bitrate Adaptativo & Prioridad de Audio)
+* **Principio:** Garantizar que dispositivos con especificaciones reducidas (Android Go, 2-3 GB RAM) mantengan estabilidad térmica y de memoria. El códec de video debe ser acelerado por hardware (H.264 Baseline o VP8), con bitrate tope de 1.2 Mbps a 720p/24fps y degradación elegante ante caídas de señal 4G (prioridad absoluta a la continuidad ininterrumpida del audio sobre la tasa de cuadros).
+* **❌ Antipatrón a Evitar:**
+  ```typescript
+  // BAD: Forzar resolución 1080p a 60fps sin simulcast, saturando la GPU/CPU de gama baja
+  options={{ videoCaptureDefaults: { resolution: VideoPresets.h1080, maxBitrate: 3_500_000 } }}
+  ```
+* **✅ Patrón Correcto:**
+  ```typescript
+  // GOOD: Preset clínico balanceado 720p @ 24fps con prioridad de audio
+  options={{
+    videoCaptureDefaults: {
+      resolution: { width: 1280, height: 720, frameRate: 24 },
+      maxBitrate: 1_200_000,
+    },
+    audioCaptureDefaults: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
+    publishDefaults: {
+      simulcast: true,
+      backupCodecPolicy: 'prefer-backup',
+    }
+  }}
+  ```
+* **Criterio de Aceptación BDD (Preventivo):**
+  > **Dado que** un dispositivo móvil experimenta una caída de throughput en red 4G a menos de 300 kbps,  
+  > **Cuando** el SFU ajusta la capa de simulcast a baja resolución,  
+  > **Entonces** el canal de audio del veterinario permanece claro y libre de entrecortes, evitando la desconexión del paciente.
 
 ---
 

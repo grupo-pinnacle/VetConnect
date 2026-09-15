@@ -112,7 +112,9 @@ graph TD
 
 #### Criterios de Organización de la Información:
 - **Jerarquía Visual Clara:** En la aplicación móvil, el botón de **Solicitar Atención** domina el tercio superior de la pantalla principal (*Thumb Zone* ergonómica).
-- **Proximidad Contextual:** En la pantalla de consulta activa, el veterinario tiene el video del paciente en el panel central, la historia clínica de la mascota en el lateral izquierdo y el chat con el tutor en el lateral derecho, eliminando la necesidad de cambiar de pestaña durante el acto médico.
+- **Proximidad Contextual & Multicanal Sincrónico (ADR-012):**
+  - **Portal Web (Veterinario):** Layout de pantalla dividida con área de Video HD 720p central del paciente, ficha clínica de la mascota y panel de **Chat en Vivo** acoplado en el lateral derecho con soporte para recepción de fotografías en alta resolución y visor Lightbox con zoom 100% (para inspección macroscópica de lesiones, mucosas o vómitos).
+  - **Mobile App (Tutor):** Video 720p a pantalla completa optimizado para dispositivos de gama baja (bitrate adaptativo 1.2 Mbps a 24fps con prioridad ininterrumpida de audio). Botón táctil prominente de **Conmutación de Cámara (Frontal / Trasera)** con autoenfoque activo para examinar al paciente sin posturas forzadas. Botón flotante de **Chat / Macro-Fotos** que despliega un panel inferior (*Bottom Sheet*) no bloqueante o modo Picture-in-Picture (PiP) para escribir o capturar y adjuntar imágenes vía `POST /api/media` sin pausar la videollamada ni el audio.
 - **Historial Cronológico Inmutable:** Las consultas pasadas y recetas se presentan ordenadas temporalmente en orden descendente con indicadores de estado claros (`Completada`, `Urgencia Derivada`, `En Tratamiento`).
 
 ---
