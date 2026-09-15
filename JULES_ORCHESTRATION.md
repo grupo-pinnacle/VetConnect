@@ -1,4 +1,4 @@
-﻿# 🤖 JULES_ORCHESTRATION.md — Protocolo Maestro de Orquestación Multi-Agente (VetConnect)
+# 🤖 JULES_ORCHESTRATION.md — Protocolo Maestro de Orquestación Multi-Agente (VetConnect)
 
 > **Destinatario Principal:** Google Jules (IA autónoma 24/7) y cualquier agente de IA orquestador.  
 > **Propósito:** Documento operativo supremo para la construcción autónoma completa del monorepo VetConnect desde cero (Greenfield), usando el **Método del Quirófano de Código** adaptado a una arquitectura de agentes especializados.  
@@ -187,7 +187,7 @@ Se activa cuando un agente reporta tests rojos insolubles, CI falla, o hay regre
 #02 [TASK-0.2] Scripts DX: run.bat + start.ps1 + ADB reverse
     Agente: Scaffolding | Rama: feat/task-0.2-scripts-dx
 
-#03 [TASK-1.1] Database: schema.prisma — 9 modelos + snake_case + índices
+#03 [TASK-1.1] Database: schema.prisma — 10 modelos canónicos + 2 de soporte + snake_case + índices
     Agente: Database | Rama: feat/task-1.1-prisma-schema
     Criterio: npx prisma validate sin warnings
 
@@ -218,12 +218,12 @@ Se activa cuando un agente reporta tests rojos insolubles, CI falla, o hay regre
     Agente: Realtime | Rama: feat/task-3.2-chat-idempotent
     Criterio: Reintento con mismo clientMsgId retorna HTTP 200
 
-#12 [TASK-4.1] Media: Tokens LiveKit SFU sin PII (identity=user.id)
-    Agente: Media & Video | Rama: feat/task-4.1-livekit-tokens
+#12 [TASK-4.1] Media & Calls: Tokens LiveKit SFU sin PII + POST ring timbrado
+    Agente: Media & Video | Rama: feat/task-4.1-livekit-tokens-ring
 
-#13 [TASK-4.2] Media: Upload Magic Bytes + GET /api/media/:id auth
+#13 [TASK-4.2] Media: Upload Magic Bytes + GET /api/media/:id auth + Cuota 50MB (RNF-06)
     Agente: Media & Video | Rama: feat/task-4.2-media-secure
-    Criterio: .exe rechazado 400; dueño 200; tercero 403
+    Criterio: .exe rechazado 400; >10MB 413; >50MB 429; dueño 200; tercero 403
 
 #14 [TASK-5.1] Web: Scaffolding React 19 + Vite + TanStack Query + routing
     Agente: Web Frontend | Rama: feat/task-5.1-web-scaffold

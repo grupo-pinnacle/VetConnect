@@ -78,7 +78,7 @@ vetconnect/
 ---
 
 ### 1.1 Modelos Canónicos del Schema de Base de Datos (Prisma v2.0)
-El esquema inicial del MVP v2.0 comprende **exactamente 9 modelos principales** más soporte de notificaciones:
+El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales** más soporte de notificaciones:
 1. `User`: Identidades con autenticación JWT, rol (`CLIENT`, `VET`, `ADMIN`), `vetStatus` y `tokenVersion`.
 2. `Pet`: Mascotas con soporte de soft-delete (`deletedAt`) y validación opcional de microchip ISO 15 dígitos.
 3. `Consultation`: Ciclo clínico y máquina de estados (`WAITING`, `ACTIVE`, `COMPLETED`, `CANCELLED`).
@@ -87,8 +87,9 @@ El esquema inicial del MVP v2.0 comprende **exactamente 9 modelos principales** 
 6. `Prescription`: Recetas médicas digitales oficiales con firma profesional y código QR.
 7. `Review`: Calificaciones médicas profesionales en escala universal de 1 a 5 estrellas (ADR-023).
 8. `AuditLog`: Registro inmutable de auditoría para trazabilidad de mutaciones administrativas (ADR-014).
-9. `DailyUploadCounter`: Control de cuota diaria de subidas por usuario para mitigación de abusos.
-*(Soporte de notificaciones: modelos `PushToken` y `Notification` para Expo Push API bajo ADR-011).*
+9. `DailyUploadCounter`: Control de cuota diaria de subidas por usuario (`totalBytes` acumulado hasta 50 MB/día y `count`, mitigación DoS).
+10. `MediaFile`: Metadatos de archivos clínicos y adjuntos (`id`, `ownerId`, `consultationId`, `fileName`, `fileSize`, `mimeType`, `localPath`, `s3Key`, `createdAt`, `deletedAt`). Cumple con ADR-010 (acceso autenticado, prohibición de serving estático) y ADR-020.
+*(Soporte de notificaciones: modelos `PushToken` [tokens de dispositivo Expo Push API con `platform` y unicidad de token] y `Notification` [bandeja in-app persistida con `title`, `body`, `type`, `data`, `isRead`, `readAt`] bajo ADR-011).*
 
 ---
 
@@ -129,20 +130,20 @@ El esquema inicial del MVP v2.0 comprende **exactamente 9 modelos principales** 
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/calls/:consultationId/token` | Generar token de acceso LiveKit para una consulta (sin PII) | Participantes de la consulta |
-| `POST` | `/api/calls/:consultationId/ring` | Disparar notificación de timbrado global al par | Participantes de la consulta |
+| `POST` | `/api/calls/:consultationId/ring` | Disparar notificación de timbrado global al par (emite `call:incoming` con Cero PII y fallback Push Expo). Requiere consulta en estado `ACTIVE`. Errores: `400 INVALID_STATE`, `403 FORBIDDEN` | Participantes de la consulta |
 
 ### 2.5 Notificaciones Push & In-App (`/api/notifications`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `POST` | `/api/notifications/register-token` | Registrar o actualizar token Expo Push (`ExponentPushToken[...]`) | Autenticado |
-| `GET`  | `/api/notifications` | Listar notificaciones in-app del usuario autenticado | Autenticado |
-| `PATCH`| `/api/notifications/:id/read` | Marcar notificación específica como leída | Autenticado |
+| `POST` | `/api/notifications/register-token` | Registrar o actualizar token Expo Push (`ExponentPushToken[...]`) idempotentemente | Autenticado |
+| `GET`  | `/api/notifications` | Listar notificaciones in-app del usuario autenticado (`take`, `skip`) | Autenticado |
+| `PATCH`| `/api/notifications/:id/read` | Marcar notificación específica como leída (`isRead: true`, `readAt`) | Autenticado |
 
 ### 2.6 Archivos Médicos & Adjuntos (`/api/media`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `POST` | `/api/media` | Subida de archivos con validación binaria de Magic Bytes y cuota diaria | Autenticado |
-| `GET`  | `/api/media/:id` | Descarga/streaming seguro de archivo clínico (prohibido acceso estático público; valida que solicitante sea dueño, vet asignado o ADMIN) | Participantes / ADMIN |
+| `POST` | `/api/media` | Subida multipart con validación binaria de Magic Bytes (JPEG, PNG, PDF). Límite individual de 10 MB/archivo y cuota agregada de 50 MB/día por usuario (RNF-06). Persiste metadatos en `MediaFile` y consumo en `DailyUploadCounter`. Retorna `413 FILE_TOO_LARGE` si archivo > 10 MB o `429 UPLOAD_QUOTA_EXCEEDED` si supera 50 MB/día | Autenticado |
+| `GET`  | `/api/media/:id` | Descarga/streaming seguro de archivo clínico (prohibido acceso estático público ADR-010; valida que solicitante sea dueño, vet asignado o ADMIN). En S3 retorna URL presignada con TTL 300s; en local sirve vía stream seguro | Participantes / ADMIN |
 
 ---
 

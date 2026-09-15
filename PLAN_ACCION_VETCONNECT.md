@@ -103,7 +103,7 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 - **Contratos/ADRs:** [ADR-002](docs/DECISIONS.md) (Prisma 6), [ADR-005](docs/DECISIONS.md) (Soft-Deletes), [ADR-019](docs/DECISIONS.md) (Índices & Denormalización), [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) §1.
 > 🛡️ **AISLAMIENTO DE ALCANCE (Scope Isolation MVP v2.0 vs v2.1+):**  
 > Para preservar la velocidad de entrega del Greenfield inicial y evitar sobrecarga en la base de datos:  
-> - **Modelos v2.0 In-Scope:** Los 9 modelos base del dominio (`User`, `Pet`, `Consultation`, `Message`, `Call`, `Prescription`, `Review`, `AuditLog`, `DailyUploadCounter`) y soporte de notificaciones (`PushToken`, `Notification`).  
+> - **Modelos v2.0 In-Scope:** Los 10 modelos base del dominio (`User`, `Pet`, `Consultation`, `Message`, `Call`, `Prescription`, `Review`, `AuditLog`, `DailyUploadCounter`, `MediaFile`) y soporte de notificaciones (`PushToken`, `Notification`).  
 > > - **Protocolo de Migraciones Sin Caídas (Expand/Contract):** A partir del Hito M5, todo campo nuevo de v2.1+ debe crearse inicialmente como opcional/nullable (`@nullable`), desplegar el código que escribe en ambos estados, ejecutar backfill asíncrono y posteriormente contraer la columna si se requiere obligatoriedad (`SPEC.md` §8.2).
 - **Modelos v2.1+ Excluidos (Prohibidos en F1):** Quedan terminantemente excluidos del `schema.prisma` inicial: `VaccinationRecord`, `PetDocument`, `MedicationSchedule`, `FavoriteVet`.  
 > - **Campos v2.1+ Excluidos de `Pet`:** No agregar en esta fase los campos `isHidden`, `deathDate`, `birthDate`.  
@@ -112,13 +112,17 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 - **Instrucciones:**
   1. Configurar datasource PostgreSQL y client generator de Prisma en `backend/prisma/schema.prisma`.
   2. Definir enums: `Role` (`CLIENT`, `VET`, `ADMIN`), `VetStatus` (`PENDING`, `APPROVED`, `REJECTED`), `ConsultationStatus` (`WAITING`, `ACTIVE`, `COMPLETED`, `CANCELLED`), `CallStatus` (`INITIATED`, `ACTIVE`, `ENDED`).
-  3. Implementar modelos: `User`, `Pet`, `Consultation`, `Message`, `Call`, `Prescription`, `Review`, `AuditLog`, `DailyUploadCounter`, `PushToken`, `Notification`.
-  4. Mapear **todas** las columnas multi-palabra explícitamente a snake_case: `@map("is_email_verified")`, `@map("token_version")`, `@map("last_seen")`, `@map("deleted_at")`, `@map("rating_avg")`, etc.
-  5. Mapear todas las tablas en plural: `@@map("users")`, `@@map("pets")`, etc.
+  3. Implementar modelos: `User`, `Pet`, `Consultation`, `Message`, `Call`, `Prescription`, `Review`, `AuditLog`, `DailyUploadCounter`, `MediaFile`, `PushToken`, `Notification`.
+  4. Mapear **todas** las columnas multi-palabra explícitamente a snake_case: `@map("is_email_verified")`, `@map("token_version")`, `@map("last_seen")`, `@map("deleted_at")`, `@map("rating_avg")`, `@map("total_bytes")`, etc.
+  5. Mapear todas las tablas en plural: `@@map("users")`, `@@map("pets")`, `@@map("media_files")`, `@@map("push_tokens")`, `@@map("notifications")`, etc.
   6. Configurar índices compuestos de alto rendimiento:
      - `@@index([role, isOnline, vetStatus, deletedAt])` en `User`.
      - `@@index([clientId, status, deletedAt])` y `@@index([vetId, status, deletedAt])` en `Consultation`.
-     - `@@index([consultationId, createdAt])` en `Message`.
+     - `@@index([consultationId, createdAt])` y `@@unique([clientMsgId])` en `Message`.
+     - `@@index([ownerId, deletedAt])` y `@@index([consultationId, deletedAt])` en `MediaFile`.
+     - `@@unique([token])` y `@@index([userId])` en `PushToken`.
+     - `@@index([userId, isRead, createdAt])` en `Notification`.
+     - `@@unique([userId, date])` en `DailyUploadCounter`.
 - **Comando de Verificación:**
   ```bash
   cd backend && npx prisma validate && npx prisma format
@@ -283,10 +287,10 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 
 ## 🎥 FASE 4: Telemedicina WebRTC & Manejo Seguro de Archivos
 
-### 📦 TASK-4.1: Minting de Tokens Criptográficos de LiveKit SFU sin Exposición de PII
+### 📦 TASK-4.1: Minting de Tokens Criptográficos de LiveKit SFU sin Exposición de PII & Señalización de Timbrado
 - **Capa:** Backend (`backend/src/modules/calls/`)
-- **Archivos:** `calls.controller.ts`, `calls.service.ts`, `calls.routes.ts`
-- **Contratos/ADRs:** [ADR-012](docs/DECISIONS.md) (LiveKit SFU), Antipatrón 2 de `AGENTS.md` (Tokens LiveKit seguros).
+- **Archivos:** `calls.controller.ts`, `calls.service.ts`, `calls.routes.ts`, `calls.schemas.ts`
+- **Contratos/ADRs:** [ADR-012](docs/DECISIONS.md) (LiveKit SFU), [ADR-011](docs/DECISIONS.md) (Push Fallback), Antipatrón 2 de `AGENTS.md` (Tokens LiveKit seguros), [`docs/TECH_REFERENCE.md`](docs/TECH_REFERENCE.md) §2.4.
 > 🔬 **GATE DE VERIFICACIÓN PREVIA (Spike LiveKit):**  
 > Antes de codificar TASK-4.1 en producción, ejecutar la prueba de concepto aislada en `spikes/livekit-spike/` (`npm test` en esa carpeta) para validar empíricamente la emisión de tokens opacos sin PII, el teardown determinista con `deleteRoom` y el handshake WebView (`page:ready`).
 
@@ -297,25 +301,33 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
      - Generar `AccessToken` con `identity: user.id` (ID opaco) y `name: user.firstName` (nombre de pila público).
      - **Prohibido incluir correos electrónicos (`user.email`) en los claims o metadatos de LiveKit.**
      - Asignar permisos de sala: `roomJoin: true`, `room: consultationId`.
+  3. **Endpoint `POST /api/calls/:consultationId/ring` (Timbrado & Notificación de Llamada Entrante):**
+     - Validar que la consulta exista y esté en estado `ACTIVE`. Si está en otro estado, responder con `400 Bad Request` (`INVALID_CONSULTATION_STATE`).
+     - Validar que el usuario autenticado (`req.user.id`) sea participante (`clientId` o `vetId`). Si no lo es, responder con `403 Forbidden` (`NOT_CONSULTATION_PARTICIPANT`).
+     - Identificar al par destinatario: si el emisor es el cliente (`clientId`), el receptor es `vetId`; si el emisor es el veterinario (`vetId`), el receptor es `clientId`.
+     - Emitir evento Socket.io `call:incoming` con payload `{ consultationId, callerName: req.user.firstName, roomName: consultationId }` a la sala del destinatario (`user:${targetUserId}`). **Cero PII garantizado.**
+     - Si el usuario destinatario no tiene sockets activos conectados en la sala, despachar notificación push de alta prioridad vía Expo Push API (`modules/notifications/`) para alertar al dispositivo móvil en segundo plano.
+     - Responder con `200 OK` `{ success: true, data: { consultationId, targetUserId, status: 'RINGING' } }`.
 - **Comando de Verificación:**
   ```bash
-  cd backend && npm test -- -t "calls.token"
+  cd backend && npm test -- -t "calls"
   ```
-- **Criterio de Aceptación:** Token JWT de LiveKit emitido; verificación de claims confirma ausencia de correo electrónico o PII sensible.
+- **Criterio de Aceptación:** Token JWT de LiveKit emitido sin PII sensible; `POST /api/calls/:consultationId/ring` valida permisos, emite `call:incoming` al par correcto con nombre público y retorna 200; accesos no autorizados retornan 403.
 
 ### 📦 TASK-4.2: Subida & Descarga Segura de Archivos Médicos con Validación de Magic Bytes (ADR-010 & ADR-020)
 - **Capa:** Backend (`backend/src/modules/media/`)
 - **Archivos:** `media.middleware.ts`, `media.service.ts`, `media.controller.ts`, `media.routes.ts`
-- **Contratos/ADRs:** [ADR-010](docs/DECISIONS.md) (Acceso Autenticado — Prohibición de Serving Estático), [ADR-020](docs/DECISIONS.md) (Mitigación DoS & Streaming). Antipatrón 5 de `AGENTS.md` (NO servir `/uploads` como static).
+- **Contratos/ADRs:** [ADR-010](docs/DECISIONS.md) (Acceso Autenticado — Prohibición de Serving Estático), [ADR-020](docs/DECISIONS.md) (Mitigación DoS & Streaming), RNF-06 (Cuota de Media). Antipatrón 5 de `AGENTS.md` (NO servir `/uploads` como static).
 - **Instrucciones:**
-  1. Configurar Multer con `diskStorage` temporal en `./uploads/tmp/` (máximo 10 MB). **PROHIBIDO usar `express.static()` sobre `/uploads/`.**
+  1. Configurar Multer con `diskStorage` temporal en `./uploads/tmp/` (máximo 10 MB). Rechazar archivos individuales mayores a 10 MB con `413 Payload Too Large` (`FILE_TOO_LARGE`). **PROHIBIDO usar `express.static()` sobre `/uploads/`.**
   2. Middleware `verifyMagicBytes`: leer los primeros 32 bytes del buffer en disco para comprobar la firma binaria real:
      - JPEG: `FF D8 FF`
      - PNG: `89 50 4E 47`
      - PDF: `25 50 44 46`
+     Archivos sin concordancia binaria son rechazados de inmediato con `400 Bad Request` (`INVALID_FILE_TYPE`).
   3. Sanitizar nombres de archivo para neutralizar ataques de Path Traversal (`../`).
-  4. Mover el archivo validado a `./uploads/` (local) o subir a AWS S3. Eliminar el archivo temporal inmediatamente. Registrar la referencia en la tabla `MediaFile` (o campo `attachmentUrl` del mensaje).
-  5. Cuota de subida diaria: registrar consumo en `DailyUploadCounter` y limitar a 50 MB/día por usuario.
+  4. Mover el archivo validado a `./uploads/` (local) o subir a AWS S3. Eliminar el archivo temporal inmediatamente. Registrar la referencia y metadatos en la tabla `MediaFile` (`ownerId`, `consultationId`, `fileName`, `fileSize`, `mimeType`, etc.).
+  5. Cuota de subida diaria (RNF-06): registrar consumo de bytes en `DailyUploadCounter` (`totalBytes`) y limitar a un máximo de 50 MB/día por usuario (52.428.800 bytes). Si la subida sobrepasa la cuota restante, responder con `429 Too Many Requests` (`UPLOAD_QUOTA_EXCEEDED`).
   6. **Endpoint de Descarga Autenticada `GET /api/media/:id` (ADR-010):**
      - Validar que el solicitante sea: dueño de la mascota asociada, veterinario asignado a la consulta vinculada, o ADMIN.
      - Si no cumple: `403 Forbidden` con RFC 7807 (`{ code: 'FORBIDDEN' }`).
@@ -325,7 +337,7 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
   ```bash
   cd backend && npm test -- -t "media"
   ```
-- **Criterio de Aceptación:** Archivo `.exe` renombrado a `.jpg` rechazado con 400; imágenes legítimas procesadas; `GET /api/media/:id` sin token retorna 401; con token de tercero retorna 403; dueño recibe el archivo con 200.
+- **Criterio de Aceptación:** Archivo `.exe` renombrado a `.jpg` rechazado con 400; subidas mayores a 10 MB rechazadas con 413; cuota diaria >50 MB rechazada con 429; `GET /api/media/:id` sin token retorna 401; tercero retorna 403; dueño recibe el archivo con 200.
 
 
 

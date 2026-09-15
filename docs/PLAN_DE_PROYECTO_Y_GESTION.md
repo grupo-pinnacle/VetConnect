@@ -248,6 +248,7 @@ El sistema se rige por la especificación formal detallada en [`docs/SPEC.md`](S
 - **RNF-03 (Privacidad & Protección de Datos):** Cumplimiento de Ley N° 25.326; supresión de PII en tokens públicos y logs de auditoría; soft-delete generalizado en datos clínicos.
 - **RNF-04 (Disponibilidad y Confiabilidad):** Disponibilidad operativa del backend de 99.9% mediante contenedor Docker con healthchecks automáticos en PostgreSQL y Redis.
 - **RNF-05 (Calidad de Código y Tipado):** TypeScript estricto al 100%, cero uso de `any`, esquemas de validación Zod en todos los endpoints REST y suite de más de 120 pruebas automatizadas en Jest/Vitest.
+- **RNF-06 (Almacenamiento y Protección de Media):** Límite individual de 10 MB por archivo; cuota agregada de 50 MB/día por usuario persistida en `DailyUploadCounter` (`totalBytes`); validación estricta de Magic Bytes en disco (JPEG, PNG, PDF); prohibición de serving estático público con acceso autenticado exclusivo (ADR-010 y ADR-020).
 
 ---
 

@@ -97,13 +97,14 @@ erDiagram
     User ||--o{ FavoriteVet : "favorites (v2.1+)"
     User ||--o{ PushToken : "registers"
     User ||--o{ Notification : "receives"
-    User ||--o{ Attachment : "uploads"
+    User ||--o{ MediaFile : "uploads"
 
     Pet ||--o{ Consultation : "subject"
     Consultation ||--o{ Message : "contains"
     Consultation ||--o{ Call : "initiates"
     Consultation ||--o{ Prescription : "generates"
     Consultation ||--o| Review : "receives"
+    Consultation ||--o{ MediaFile : "contains"
 
     User {
         string id PK
@@ -170,8 +171,43 @@ erDiagram
     DailyUploadCounter {
         string id PK
         string userId FK
-        string date
-        int count
+        string date "YYYY-MM-DD"
+        int count "cantidad de archivos"
+        int totalBytes "volumen acumulado en bytes (máx 50 MB / 52428800)"
+    }
+
+    MediaFile {
+        string id PK
+        string ownerId FK
+        string consultationId FK "nullable"
+        string fileName
+        int fileSize
+        string mimeType
+        string localPath "nullable"
+        string s3Key "nullable"
+        datetime createdAt
+        datetime deletedAt
+    }
+
+    PushToken {
+        string id PK
+        string userId FK
+        string token UK "ExponentPushToken[...]"
+        string platform "ios | android | web"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Notification {
+        string id PK
+        string userId FK
+        string title
+        string body
+        string type "CALL_INCOMING | MESSAGE_NEW | PRESCRIPTION_NEW | SYSTEM"
+        json data
+        boolean isRead
+        datetime readAt "nullable"
+        datetime createdAt
     }
 
     Prescription {
@@ -213,6 +249,10 @@ Optimizada para consultas de alta concurrencia:
 2. `consultations`: `@@index([clientId, status, deletedAt])` y `@@index([vetId, status, deletedAt])` — Consultas activas de dashboards.
 3. `messages`: `@@index([consultationId, createdAt])` — Paginación cronológica del chat clínico.
 4. `messages`: `@@unique([clientMsgId])` — Deduplicación atómica garantizada por motor SQL.
+5. `media_files`: `@@index([ownerId, deletedAt])` y `@@index([consultationId, deletedAt])` — Búsqueda y control de acceso de adjuntos clínicos.
+6. `push_tokens`: `@@unique([token])` y `@@index([userId])` — Registro idempotente y despacho de notificaciones push.
+7. `notifications`: `@@index([userId, isRead, createdAt])` — Consulta eficiente de bandeja in-app y badge de no leídas.
+8. `daily_upload_counters`: `@@unique([userId, date])` — Validación atómica de cuota diaria de subida (RNF-06).
 
 ---
 
@@ -345,6 +385,16 @@ Cuando se solicita la baja de una cuenta:
 | Integridad Criptográfica de Repo   | Escaneo en CI pre-merge     | 0 secretos expuestos |
 +------------------------------------+-----------------------------+----------------------+
 ```
+
+### 6.1 Requerimientos No Funcionales de Almacenamiento & Media (RNF-06)
+- **Tamaño Máximo por Archivo:** 10 MB por adjunto individual. Archivos que superen este umbral son rechazados inmediatamente con `HTTP 413 Payload Too Large` (`FILE_TOO_LARGE`).
+- **Cuota Agregada Diaria por Usuario:** Máximo de **50 MB / día (52.428.800 bytes)** acumulados por usuario en una ventana móvil de 24 horas. El consumo se audita en la tabla `DailyUploadCounter` (`totalBytes`). Al superarse, se bloquea la subida retornando `HTTP 429 Too Many Requests` (`UPLOAD_QUOTA_EXCEEDED`).
+- **Inspección Binaria Obligatoria (Magic Bytes):** Verificación forzosa de los primeros 32 bytes en disco (`uploads/tmp/`) antes de procesar:
+  - JPEG: `FF D8 FF`
+  - PNG: `89 50 4E 47`
+  - PDF: `25 50 44 46`
+  Extensiones disfrazadas o payloads maliciosos son rechazados con `HTTP 400 Bad Request` (`INVALID_FILE_TYPE`).
+- **Control de Acceso Estricto (ADR-010 & ADR-020):** Prohibido el uso de `express.static()` para archivos clínicos. Las descargas se realizan exclusivamente por `GET /api/media/:id`, validando que el solicitante sea dueño de la mascota, veterinario asignado o administrador. En AWS S3 se generan presigned URLs con TTL de 300 segundos (5 minutos); en almacenamiento local se transmiten por streaming protegido.
 
 ---
 

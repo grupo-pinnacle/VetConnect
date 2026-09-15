@@ -3,7 +3,7 @@
  * Valida:
  * 1. Correspondencia biunívoca entre Product Backlog (PB-01 a PB-40) y Task Packets (TASK-X.Y).
  * 2. Estructura completa de los 20 Task Packets en PLAN_ACCION_VETCONNECT.md.
- * 3. Consistencia de los 9 modelos canónicos de Prisma v2.0 entre PLAN_ACCION, TECH_REFERENCE y SPEC.
+ * 3. Consistencia de los 10 modelos canónicos de Prisma v2.0 entre PLAN_ACCION, TECH_REFERENCE y SPEC.
  * 4. Aislamiento estricto de modelos v2.1+ (cero contaminación de alcance en v2.0).
  */
 
@@ -92,7 +92,7 @@ function runGovernanceCheck() {
     console.log(`  ✅ 3. Task Packets: Los ${expectedTasks.length} paquetes de ingeniería (TASK-0.1 a TASK-7.2) cuentan con especificación técnica completa (fichas detalladas).`);
   }
 
-  // 4. Verificación Semántica de Modelos Prisma v2.0 (9 modelos obligatorios)
+  // 4. Verificación Semántica de Modelos Prisma v2.0 (10 modelos obligatorios)
   const canonicalV2Models = [
     'User',
     'Pet',
@@ -102,7 +102,8 @@ function runGovernanceCheck() {
     'Prescription',
     'Review',
     'AuditLog',
-    'DailyUploadCounter'
+    'DailyUploadCounter',
+    'MediaFile'
   ];
 
   const missingInPlanAccion = canonicalV2Models.filter(m => !planAccion.includes(m));
@@ -116,7 +117,7 @@ function runGovernanceCheck() {
     if (missingInSpec.length > 0) console.error(`     - Faltan en SPEC: ${missingInSpec.join(', ')}`);
     errors++;
   } else {
-    console.log(`  ✅ 4. Consistencia de Modelos v2.0: Los 9 modelos canónicos (${canonicalV2Models.join(', ')}) coinciden en PLAN_ACCION, TECH_REF y SPEC.`);
+    console.log(`  ✅ 4. Consistencia de Modelos v2.0: Los 10 modelos canónicos (${canonicalV2Models.join(', ')}) coinciden en PLAN_ACCION, TECH_REF y SPEC.`);
   }
 
   // 5. Aislamiento de Alcance (Modelos v2.1+ prohibidos en la lista v2.0 In-Scope)
