@@ -7,6 +7,7 @@ export const AdminVets: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<{ [id: string]: string }>({});
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const fetchPendingVets = async () => {
     try {
@@ -26,15 +27,20 @@ export const AdminVets: React.FC = () => {
     fetchPendingVets();
   }, []);
 
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
   const handleApprove = async (id: string) => {
     try {
       const res = await api.patch<ApiResponse<User>>(`/api/admin/vets/${id}/approve`);
       if (res.data.success) {
         setPendingVets((prev) => prev.filter((v) => v.id !== id));
-        alert('Matrícula aprobada exitosamente');
+        showToast('success', 'Matrícula aprobada exitosamente');
       }
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al aprobar matrícula');
+      showToast('error', err.response?.data?.error?.message || 'Error al aprobar matrícula');
     }
   };
 
@@ -44,10 +50,10 @@ export const AdminVets: React.FC = () => {
       const res = await api.patch<ApiResponse<User>>(`/api/admin/vets/${id}/reject`, { reason });
       if (res.data.success) {
         setPendingVets((prev) => prev.filter((v) => v.id !== id));
-        alert('Matrícula rechazada');
+        showToast('success', 'Matrícula rechazada');
       }
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al rechazar matrícula');
+      showToast('error', err.response?.data?.error?.message || 'Error al rechazar matrícula');
     }
   };
 
@@ -71,6 +77,26 @@ export const AdminVets: React.FC = () => {
           </p>
         </div>
       </header>
+
+      {/* Custom Toast Notification */}
+      {notification && (
+        <div
+          data-testid="admin-toast-notification"
+          className={`p-4 rounded-xl mb-6 text-sm font-semibold flex justify-between items-center transition ${
+            notification.type === 'success'
+              ? 'bg-emerald-100 border border-emerald-300 text-emerald-900'
+              : 'bg-red-100 border border-red-300 text-red-900'
+          }`}
+        >
+          <span>{notification.message}</span>
+          <button
+            onClick={() => setNotification(null)}
+            className="text-xs font-bold px-2 py-0.5 rounded hover:bg-black/10"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium" data-testid="admin-error-alert">
