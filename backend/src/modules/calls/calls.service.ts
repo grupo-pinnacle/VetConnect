@@ -1,4 +1,4 @@
-import { AccessToken } from 'livekit-server-sdk';
+import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import { User, Role, ConsultationStatus } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
@@ -9,6 +9,24 @@ const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || 'secret';
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://vetconnect-dev.livekit.cloud';
 
 export class CallsService {
+  private roomService: RoomServiceClient;
+
+  constructor() {
+    // Convert wss:// or ws:// URL to http:// or https:// for LiveKit HTTP API Client
+    const httpUrl = LIVEKIT_URL.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
+    this.roomService = new RoomServiceClient(httpUrl, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
+  }
+
+  public async deleteLiveKitRoom(roomName: string): Promise<void> {
+    try {
+      if (!roomName) return;
+      await this.roomService.deleteRoom(roomName);
+    } catch (err) {
+      // Gracefully handle room already closed or connection error
+      console.warn(`[LiveKit Teardown] Room ${roomName} teardown notice:`, err);
+    }
+  }
+
   public async generateLiveKitToken(consultationId: string, user: User) {
     const consultation = await prisma.consultation.findUnique({
       where: { id: consultationId },
