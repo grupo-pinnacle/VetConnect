@@ -72,8 +72,27 @@ describe('Consultations Module (/api/consultations)', () => {
     licenseNumber: 'MP-8921',
   };
 
+  const mockVet2 = {
+    ...mockVet,
+    id: 'vet-uuid-2',
+    email: 'vet2@vetconnect.com',
+    licenseNumber: 'MP-9900',
+  };
+
   const clientToken = jwt.sign(
     { userId: mockClient.id, role: mockClient.role, tokenVersion: 1 },
+    JWT_SECRET,
+    { algorithm: 'HS256' }
+  );
+
+  const vetToken = jwt.sign(
+    { userId: mockVet.id, role: mockVet.role, tokenVersion: 1 },
+    JWT_SECRET,
+    { algorithm: 'HS256' }
+  );
+
+  const vet2Token = jwt.sign(
+    { userId: mockVet2.id, role: mockVet2.role, tokenVersion: 1 },
     JWT_SECRET,
     { algorithm: 'HS256' }
   );
@@ -134,6 +153,113 @@ describe('Consultations Module (/api/consultations)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.status).toBe('ACTIVE');
       expect(res.body.data.vetId).toBe(mockVet.id);
+    });
+
+    it('should create consultation in WAITING status when NO approved VET is online', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+      mockPrismaPet.findFirst.mockResolvedValue({
+        id: 'pet-uuid-1',
+        ownerId: mockClient.id,
+        name: 'Rex',
+        species: 'Canine',
+        breed: 'Golden Retriever',
+        weightKg: 28,
+        sex: 'Male',
+        microchip: null,
+        allergies: null,
+        chronicConditions: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      });
+
+      mockPrismaConsultation.findFirst.mockResolvedValue(null);
+      mockPrismaUser.findFirst.mockResolvedValue(null); // No vet available
+
+      mockPrismaConsultation.create.mockResolvedValue({
+        id: 'consultation-uuid-waiting-1',
+        clientId: mockClient.id,
+        vetId: null,
+        petId: 'pet-uuid-1',
+        status: 'WAITING',
+        notes: 'Fiebre alta',
+        diagnosisNotes: null,
+        startedAt: null,
+        endedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        pet: {} as any,
+        client: mockClient as any,
+        vet: null as any,
+      });
+
+      const res = await request(app)
+        .post('/api/consultations')
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({
+          petId: 'pet-uuid-1',
+          notes: 'Fiebre alta',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.status).toBe('WAITING');
+      expect(res.body.data.vetId).toBeNull();
+    });
+  });
+
+  describe('PATCH /api/consultations/:id/assign (Race Condition Handling)', () => {
+    it('should allow an approved VET to assign a WAITING consultation', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockVet);
+      mockPrismaConsultation.findUnique.mockResolvedValue({
+        id: 'consultation-uuid-waiting-1',
+        clientId: mockClient.id,
+        vetId: null,
+        petId: 'pet-uuid-1',
+        status: 'WAITING',
+        notes: 'Guardia',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any);
+
+      mockPrismaConsultation.update.mockResolvedValue({
+        id: 'consultation-uuid-waiting-1',
+        clientId: mockClient.id,
+        vetId: mockVet.id,
+        petId: 'pet-uuid-1',
+        status: 'ACTIVE',
+        startedAt: new Date(),
+      } as any);
+
+      const res = await request(app)
+        .patch('/api/consultations/consultation-uuid-waiting-1/assign')
+        .set('Authorization', `Bearer ${vetToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.status).toBe('ACTIVE');
+      expect(res.body.data.vetId).toBe(mockVet.id);
+    });
+
+    it('should REJECT assignment if consultation is ALREADY ACTIVE or claimed by another vet with HTTP 400/409', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockVet2);
+      mockPrismaConsultation.findUnique.mockResolvedValue({
+        id: 'consultation-uuid-active-1',
+        clientId: mockClient.id,
+        vetId: mockVet.id, // Already assigned to Vet 1
+        petId: 'pet-uuid-1',
+        status: 'ACTIVE',
+        notes: 'Guardia',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any);
+
+      const res = await request(app)
+        .patch('/api/consultations/consultation-uuid-active-1/assign')
+        .set('Authorization', `Bearer ${vet2Token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('INVALID_STATUS');
     });
   });
 
