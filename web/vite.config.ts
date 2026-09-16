@@ -11,6 +11,18 @@ export default defineConfig({
       'react-dom': path.resolve(__dirname, '../node_modules/react-dom'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-livekit': ['@livekit/components-react', 'livekit-client'],
+          'vendor-query': ['@tanstack/react-query', 'axios'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
