@@ -74,6 +74,38 @@ describe('Pets Module (/api/pets)', () => {
     jest.clearAllMocks();
   });
 
+  describe('GET /api/pets', () => {
+    it('should list all non-deleted pets belonging to the logged-in owner', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockOwner);
+      mockPrismaPet.findMany.mockResolvedValue([
+        {
+          id: 'pet-uuid-1',
+          ownerId: mockOwner.id,
+          name: 'Firulais',
+          species: 'Canine',
+          breed: 'Labrador',
+          weightKg: 20,
+          sex: 'Male',
+          microchip: '123456789012345',
+          allergies: null,
+          chronicConditions: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null,
+        },
+      ]);
+
+      const res = await request(app)
+        .get('/api/pets')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(1);
+      expect(res.body.data[0].name).toBe('Firulais');
+    });
+  });
+
   describe('POST /api/pets', () => {
     it('should create a pet with valid 15-digit ISO microchip', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(mockOwner);

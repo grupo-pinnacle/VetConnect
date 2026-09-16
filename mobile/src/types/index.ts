@@ -54,6 +54,21 @@ export interface Consultation {
   vet?: Partial<User>;
 }
 
+export interface Prescription {
+  id: string;
+  consultationId: string;
+  vetId: string;
+  medication: string;
+  dosage: string;
+  frequency: string;
+  durationDays: number;
+  indications: string;
+  createdAt: string;
+  qrCodeDataUrl?: string;
+  verifyUrl?: string;
+  vet?: Partial<User>;
+}
+
 export interface Message {
   id: string;
   consultationId: string;

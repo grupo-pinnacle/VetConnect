@@ -1,6 +1,7 @@
 import { ConsultationStatus, Role, VetStatus, User, Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
+import { CallsService } from '../calls/calls.service';
 import {
   CreateConsultationDTO,
   CompleteConsultationDTO,
@@ -23,6 +24,8 @@ const userSelectFields = {
 };
 
 export class ConsultationsService {
+  private callsService = new CallsService();
+
   public async createConsultation(clientId: string, dto: CreateConsultationDTO) {
     const pet = await prisma.pet.findFirst({
       where: { id: dto.petId, ownerId: clientId, deletedAt: null },
@@ -90,7 +93,7 @@ export class ConsultationsService {
 
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
     if (consultation.createdAt < fifteenMinutesAgo) {
-      return prisma.consultation.update({
+      const updated = await prisma.consultation.update({
         where: { id: consultationId },
         data: {
           status: ConsultationStatus.CANCELLED,
@@ -100,6 +103,9 @@ export class ConsultationsService {
             : '[CANCELLED_TIMEOUT_NO_VET_AVAILABLE]',
         },
       });
+
+      await this.callsService.deleteLiveKitRoom(consultationId).catch(() => {});
+      return updated;
     }
 
     return consultation;
@@ -116,7 +122,7 @@ export class ConsultationsService {
 
     const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
     if (disconnectedAt < threeMinutesAgo) {
-      return prisma.consultation.update({
+      const updated = await prisma.consultation.update({
         where: { id: consultationId },
         data: {
           status: ConsultationStatus.CANCELLED,
@@ -126,6 +132,9 @@ export class ConsultationsService {
             : '[VET_DISCONNECTED_TIMEOUT]',
         },
       });
+
+      await this.callsService.deleteLiveKitRoom(consultationId).catch(() => {});
+      return updated;
     }
 
     return consultation;
@@ -182,7 +191,7 @@ export class ConsultationsService {
       throw new AppError('Solo se pueden finalizar consultas en estado ACTIVE', 400, 'INVALID_STATUS');
     }
 
-    return prisma.consultation.update({
+    const completed = await prisma.consultation.update({
       where: { id: consultationId },
       data: {
         status: ConsultationStatus.COMPLETED,
@@ -195,6 +204,11 @@ export class ConsultationsService {
         vet: { select: userSelectFields },
       },
     });
+
+    // Tear down LiveKit cloud room to release bandwidth
+    await this.callsService.deleteLiveKitRoom(consultationId).catch(() => {});
+
+    return completed;
   }
 
   public async cancelConsultation(consultationId: string, requester: User, dto?: CancelConsultationDTO) {
@@ -220,7 +234,7 @@ export class ConsultationsService {
 
     const reasonText = dto?.reason ? ` [Razón: ${dto.reason}]` : '';
 
-    return prisma.consultation.update({
+    const cancelled = await prisma.consultation.update({
       where: { id: consultationId },
       data: {
         status: ConsultationStatus.CANCELLED,
@@ -228,6 +242,11 @@ export class ConsultationsService {
         notes: consultation.notes ? `${consultation.notes}${reasonText}` : reasonText,
       },
     });
+
+    // Tear down LiveKit room
+    await this.callsService.deleteLiveKitRoom(consultationId).catch(() => {});
+
+    return cancelled;
   }
 
   public async getConsultationById(consultationId: string, requester: User) {

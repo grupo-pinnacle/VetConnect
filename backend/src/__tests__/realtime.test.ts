@@ -2,6 +2,7 @@ import { createServer } from 'http';
 import { AddressInfo } from 'net';
 import { io as Client, Socket as ClientSocket } from 'socket.io-client';
 import jwt from 'jsonwebtoken';
+import { Prisma } from '@prisma/client';
 import app from '../app';
 import prisma from '../lib/prisma';
 import { initializeSocketServer } from '../realtime/socket.server';
@@ -19,6 +20,7 @@ jest.mock('../lib/prisma', () => ({
     message: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
     },
     $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
   },
@@ -176,6 +178,72 @@ describe('Realtime & Chat Socket Gateway (TASK-3.1 & TASK-3.2)', () => {
         },
         (response: any) => {
           expect(response.success).toBe(true);
+        }
+      );
+    });
+  });
+
+  it('should return existing message on duplicate clientMsgId (Prisma P2002 error)', (done) => {
+    mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+    mockPrismaUser.update.mockResolvedValue(mockClient);
+
+    mockPrismaConsultation.findUnique.mockResolvedValue({
+      id: 'consultation-chat-1',
+      clientId: mockClient.id,
+      vetId: 'vet-uuid-1',
+      petId: 'pet-uuid-1',
+      status: 'ACTIVE',
+      notes: 'Notes',
+      diagnosisNotes: null,
+      startedAt: new Date(),
+      endedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    });
+
+    const existingMsg = {
+      id: 'msg-dup-1',
+      consultationId: 'consultation-chat-1',
+      senderId: mockClient.id,
+      content: 'Duplicated message',
+      attachmentUrl: null,
+      clientMsgId: 'client-msg-dup-999',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sender: {
+        id: mockClient.id,
+        firstName: mockClient.firstName,
+        lastName: mockClient.lastName,
+        role: mockClient.role,
+      },
+    };
+
+    const p2002Error = new Prisma.PrismaClientKnownRequestError(
+      'Unique constraint failed on the fields: (clientMsgId)',
+      { code: 'P2002', clientVersion: '6.0.0' }
+    );
+    mockPrismaMessage.create.mockRejectedValue(p2002Error);
+    mockPrismaMessage.findUnique.mockResolvedValue(existingMsg as any);
+
+    const socket = Client(`http://localhost:${port}`, {
+      auth: { token: `Bearer ${validToken}` },
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      socket.emit(
+        'message:send',
+        {
+          consultationId: 'consultation-chat-1',
+          content: 'Duplicated message',
+          clientMsgId: 'client-msg-dup-999',
+        },
+        (response: any) => {
+          expect(response.success).toBe(true);
+          expect(response.data.id).toBe('msg-dup-1');
+          socket.disconnect();
+          done();
         }
       );
     });

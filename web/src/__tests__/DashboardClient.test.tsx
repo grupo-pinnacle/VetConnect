@@ -66,4 +66,41 @@ describe('DashboardClient Page', () => {
     expect(screen.getByTestId('add-pet-modal')).toBeDefined();
     expect(screen.getByTestId('input-pet-name')).toBeDefined();
   });
+
+  it('should submit pet registration form and post to /api/pets', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } } as any);
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        success: true,
+        data: { id: 'p1', name: 'Max', species: 'CANINE', breed: 'Labrador' },
+      },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <DashboardClient />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('add-pet-button')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTestId('add-pet-button'));
+
+    fireEvent.change(screen.getByTestId('input-pet-name'), { target: { value: 'Max' } });
+    fireEvent.change(screen.getByTestId('input-pet-breed'), { target: { value: 'Labrador' } });
+
+    fireEvent.click(screen.getByTestId('save-pet-button'));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith(
+        '/api/pets',
+        expect.objectContaining({
+          name: 'Max',
+          breed: 'Labrador',
+        })
+      );
+    });
+  });
 });

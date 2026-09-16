@@ -60,4 +60,106 @@ describe('DashboardVet Page', () => {
     fireEvent.click(toggle);
     expect(toggle.checked).toBe(false);
   });
+
+  it('should render waiting FIFO queue and assign patient on clicking "Atender Paciente"', async () => {
+    const mockWaitingConsultation = {
+      id: 'c1',
+      clientId: 'u1',
+      petId: 'p1',
+      status: 'WAITING',
+      notes: 'AMARILLO — Fiebre leve',
+      createdAt: new Date().toISOString(),
+      pet: { name: 'Firulais', species: 'CANINE' },
+    };
+
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, data: [mockWaitingConsultation] },
+    } as any);
+
+    vi.mocked(api.patch).mockResolvedValue({
+      data: { success: true, data: { ...mockWaitingConsultation, status: 'ACTIVE', vetId: 'v1' } },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <DashboardVet />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('waiting-card-c1')).toBeDefined();
+      expect(screen.getByTestId('assign-patient-button-c1')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTestId('assign-patient-button-c1'));
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledWith('/api/consultations/c1/assign');
+    });
+  });
+
+  it('should open prescription modal and submit prescription form to create digital prescription with QR', async () => {
+    const mockAssignedConsultation = {
+      id: 'c2',
+      clientId: 'u1',
+      vetId: 'v1',
+      petId: 'p1',
+      status: 'ACTIVE',
+      notes: 'Consulta activa',
+      createdAt: new Date().toISOString(),
+      pet: { name: 'Max', breed: 'Labrador' },
+    };
+
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, data: [mockAssignedConsultation] },
+    } as any);
+
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          id: 'rx1',
+          medication: 'Amoxicilina 250mg',
+          dosage: '1 comprimido',
+          frequency: 'Cada 12 hs',
+          durationDays: 7,
+          indications: 'Junto con alimento',
+          qrCodeDataUrl: 'data:image/png;base64,fakeqr',
+        },
+      },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <DashboardVet />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('emit-prescription-button-c2')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTestId('emit-prescription-button-c2'));
+
+    expect(screen.getByTestId('prescription-modal')).toBeDefined();
+
+    fireEvent.change(screen.getByTestId('input-prescription-medication'), { target: { value: 'Amoxicilina 250mg' } });
+    fireEvent.change(screen.getByTestId('input-prescription-dosage'), { target: { value: '1 comprimido' } });
+    fireEvent.change(screen.getByTestId('input-prescription-frequency'), { target: { value: 'Cada 12 hs' } });
+    fireEvent.change(screen.getByTestId('input-prescription-duration'), { target: { value: '7' } });
+    fireEvent.change(screen.getByTestId('input-prescription-indications'), { target: { value: 'Junto con alimento' } });
+
+    fireEvent.click(screen.getByTestId('save-prescription-button'));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/api/consultations/c2/prescriptions', {
+        medication: 'Amoxicilina 250mg',
+        dosage: '1 comprimido',
+        frequency: 'Cada 12 hs',
+        durationDays: 7,
+        indications: 'Junto con alimento',
+      });
+      expect(screen.getByTestId('prescription-qr-image')).toBeDefined();
+    });
+  });
 });

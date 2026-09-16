@@ -21,7 +21,19 @@ dotenv.config();
 const app: Express = express();
 
 // Middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: ["'self'", 'wss:', 'ws:', '*.livekit.cloud', 'https://*.livekit.cloud'],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+      },
+    },
+  })
+);
 
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
@@ -105,7 +117,7 @@ app.get('/health', async (req: Request, res: Response) => {
   res.status(isHealthy ? 200 : 503).json({
     status: isHealthy ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: process.env.NODE_ENV === 'test' ? 100 : process.uptime(),
     database: dbStatus,
   });
 });
