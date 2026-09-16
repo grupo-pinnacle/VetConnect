@@ -5,11 +5,13 @@ import { AuthenticatedRequest } from './auth.middleware';
 
 const authService = new AuthService();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const setRefreshCookie = (res: Response, refreshToken: string) => {
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/api/auth',
   });
@@ -94,7 +96,12 @@ export class AuthController {
       if (req.user) {
         await authService.logout(req.user.id);
       }
-      res.clearCookie('refreshToken', { path: '/api/auth' });
+      res.clearCookie('refreshToken', {
+        path: '/api/auth',
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+      });
       res.status(200).json({
         success: true,
         message: 'Sesion cerrada exitosamente',

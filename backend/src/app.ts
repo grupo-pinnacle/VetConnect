@@ -14,6 +14,7 @@ import callRoutes from './modules/calls/calls.routes';
 import mediaRoutes from './modules/media/media.routes';
 import notificationRoutes from './modules/notifications/notifications.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import userRoutes from './modules/users/users.routes';
 
 dotenv.config();
 
@@ -83,6 +84,7 @@ app.use('/api/calls', callRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api', prescriptionRoutes);
 
 // Health Check Endpoint

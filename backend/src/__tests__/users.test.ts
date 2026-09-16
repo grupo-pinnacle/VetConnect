@@ -29,6 +29,7 @@ describe('Users & Vet Directory Module', () => {
     role: 'ADMIN' as const,
     vetStatus: null,
     licenseNumber: null,
+    speciality: null,
     bio: null,
     photoUrl: null,
     tokenVersion: 1,
@@ -50,12 +51,19 @@ describe('Users & Vet Directory Module', () => {
     role: 'VET' as const,
     vetStatus: 'APPROVED' as const,
     licenseNumber: 'MP-8921',
+    speciality: 'Cardiología Veterinaria',
     ratingAvg: 4.9,
     ratingCount: 15,
   };
 
   const adminToken = jwt.sign(
     { userId: mockAdmin.id, role: mockAdmin.role, tokenVersion: 1 },
+    JWT_SECRET,
+    { algorithm: 'HS256' }
+  );
+
+  const vetToken = jwt.sign(
+    { userId: mockApprovedVet.id, role: mockApprovedVet.role, tokenVersion: 1 },
     JWT_SECRET,
     { algorithm: 'HS256' }
   );
@@ -80,11 +88,55 @@ describe('Users & Vet Directory Module', () => {
     });
   });
 
+  describe('PATCH /api/users/profile', () => {
+    it('should update online presence and bio for authenticated vet', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockApprovedVet as any);
+      mockPrismaUser.update.mockResolvedValue({
+        ...mockApprovedVet,
+        isOnline: true,
+        bio: 'Especialista en ecocardiografía felina y canina',
+      } as any);
+
+      const res = await request(app)
+        .patch('/api/users/profile')
+        .set('Authorization', `Bearer ${vetToken}`)
+        .send({
+          isOnline: true,
+          bio: 'Especialista en ecocardiografía felina y canina',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.isOnline).toBe(true);
+      expect(res.body.data.bio).toContain('ecocardiografía');
+      expect(mockPrismaUser.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: mockApprovedVet.id },
+          data: expect.objectContaining({
+            isOnline: true,
+            bio: 'Especialista en ecocardiografía felina y canina',
+          }),
+        })
+      );
+    });
+
+    it('should reject unauthenticated request with HTTP 401', async () => {
+      const res = await request(app)
+        .patch('/api/users/profile')
+        .send({ isOnline: true });
+
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
+    });
+  });
+
   describe('Vet Status Guardrail (ADR-013 SENASA)', () => {
     it('should enforce APPROVED vetStatus for active triage and prescription operations', () => {
       expect(mockApprovedVet.vetStatus).toBe('APPROVED');
       expect(mockApprovedVet.licenseNumber).toBe('MP-8921');
       expect(mockApprovedVet.ratingAvg).toBeGreaterThan(0);
+      expect(mockApprovedVet.speciality).toBe('Cardiología Veterinaria');
     });
   });
 });

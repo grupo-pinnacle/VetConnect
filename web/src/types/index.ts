@@ -12,6 +12,7 @@ export interface User {
   role: Role;
   vetStatus?: VetStatus | null;
   licenseNumber?: string | null;
+  speciality?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
   ratingAvg: number;
@@ -28,6 +29,7 @@ export interface Pet {
   name: string;
   species: string;
   breed: string;
+  birthDate?: string | null;
   weightKg?: number | null;
   sex?: string | null;
   microchip?: string | null;

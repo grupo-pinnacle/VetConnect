@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import DashboardClient from './pages/DashboardClient';
 import DashboardVet from './pages/DashboardVet';
+import AdminVets from './pages/AdminVets';
 import ConsultationRoom from './pages/ConsultationRoom';
 
 const queryClient = new QueryClient({
@@ -35,6 +36,11 @@ export const App: React.FC = () => {
 
             <Route element={<ProtectedRoute allowedRoles={['VET']} />}>
               <Route path="/vet/dashboard" element={<DashboardVet />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+              <Route path="/admin/vets" element={<AdminVets />} />
+              <Route path="/admin/dashboard" element={<Navigate to="/admin/vets" replace />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['CLIENT', 'VET', 'ADMIN']} />}>
