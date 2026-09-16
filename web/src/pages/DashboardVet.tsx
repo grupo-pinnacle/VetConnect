@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Consultation, Prescription, ApiResponse } from '../types';
+import { Consultation, Prescription, ApiResponse, User } from '../types';
 
 export const DashboardVet: React.FC = () => {
   const { user, logout } = useAuth();
@@ -42,8 +42,14 @@ export const DashboardVet: React.FC = () => {
     fetchQueue();
   }, []);
 
-  const handleToggleOnline = () => {
-    setIsOnline((prev) => !prev);
+  const handleToggleOnline = async () => {
+    const nextState = !isOnline;
+    setIsOnline(nextState);
+    try {
+      await api.patch<ApiResponse<User>>('/api/users/profile', { isOnline: nextState });
+    } catch (err) {
+      console.warn('Error updating online presence:', err);
+    }
   };
 
   const handleAssignAndJoin = async (consultationId: string) => {

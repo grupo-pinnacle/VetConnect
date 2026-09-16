@@ -95,6 +95,7 @@ export const AdminVets: React.FC = () => {
                   <th className="p-3 font-semibold text-slate-700">Nombre Profesional</th>
                   <th className="p-3 font-semibold text-slate-700">Email</th>
                   <th className="p-3 font-semibold text-slate-700">Matrícula</th>
+                  <th className="p-3 font-semibold text-slate-700">Especialidad</th>
                   <th className="p-3 font-semibold text-slate-700">Fecha Registro</th>
                   <th className="p-3 font-semibold text-slate-700 text-right">Acciones de Auditoría</th>
                 </tr>
@@ -108,6 +109,9 @@ export const AdminVets: React.FC = () => {
                     <td className="p-3 text-slate-600">{vet.email}</td>
                     <td className="p-3 font-mono text-xs text-sky-700 font-bold" data-testid={`vet-license-${vet.id}`}>
                       {vet.licenseNumber || 'N/A'}
+                    </td>
+                    <td className="p-3 text-slate-600 text-xs" data-testid={`vet-speciality-${vet.id}`}>
+                      {vet.speciality || 'General'}
                     </td>
                     <td className="p-3 text-slate-500 text-xs">
                       {new Date(vet.createdAt).toLocaleDateString()}
