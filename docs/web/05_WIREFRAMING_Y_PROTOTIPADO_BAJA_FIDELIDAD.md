@@ -22,7 +22,7 @@ Cada pantalla representa una hipótesis de solución operativa diseñada para re
 ## 2. Catálogo de Pantallas Estructurales Clave (Actividad 25)
 
 > 💡 **Relación con la Especificación de Alta Fidelidad (Fase 3):**  
-> Este catálogo define la disposición espacial en bloques funcionales (Wireframing). Para la especificación pixel-perfect con tokens de Tailwind CSS, clases atómicas y microinteracciones de cada una de estas 7 pantallas, consultar la especificación complementaria en [`09_PLANIFICACION_UI_ALTA_FIDELIDAD_CODE_FIRST.md`](./09_PLANIFICACION_UI_ALTA_FIDELIDAD_CODE_FIRST.md).
+> Este catálogo define la disposición espacial en bloques funcionales (Wireframing). Para especificación visual de Tailwind CSS, referirse a [09_PLANIFICACION_UI_ALTA_FIDELIDAD_CODE_FIRST.md](./09_PLANIFICACION_UI_ALTA_FIDELIDAD_CODE_FIRST.md).
 
 A continuación se detallan las pantallas esenciales del ecosistema web de VetConnect, especificando su maquetación estructural en bloques, los datos que contiene y las acciones disponibles.
 

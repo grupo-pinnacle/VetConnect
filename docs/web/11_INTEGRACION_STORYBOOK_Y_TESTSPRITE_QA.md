@@ -58,19 +58,7 @@ Storybook opera como el **taller de desarrollo aislado** del equipo de frontend.
 
 ### 2.3 Taxonomía de Componentes a Desarrollar en Storybook
 
-| Nivel Atómico | Componente | Ubicación en Código | Estados / Variantes Requeridas |
-|---|---|---|---|
-| **Átomo** | `Button` | `web/src/components/ui/Button.tsx` | `primary`, `secondary`, `outline`, `danger`, `ghost`, `sm`, `md`, `lg`, `isLoading`, `disabled` |
-| **Átomo** | `Badge` (Triage) | `web/src/components/ui/Badge.tsx` | `green` (No urgente), `yellow` (Urgencia moderada), `red` (Emergencia crítica), `online`, `offline` |
-| **Átomo** | `Input` | `web/src/components/ui/Input.tsx` | `default`, `focused`, `error` (mensaje de validación Zod), `disabled`, con icono prefijo |
-| **Átomo** | `Avatar` | `web/src/components/ui/Avatar.tsx` | Especie animal (perro, gato), foto de perfil tutor, avatar veterinario con badge online |
-| **Molécula** | `PetCard` | `web/src/components/ui/PetCard.tsx` | Nombre, especie, raza, peso, microchip ISO 11784/11785, botón de solicitar consulta |
-| **Molécula** | `TriageSelector` | `web/src/components/ui/TriageSelector.tsx` | Selección de síntomas (dificultad respiratoria, trauma, vómitos) y cálculo visual de severidad |
-| **Molécula** | `ChatMessage` | `web/src/components/ui/ChatMessage.tsx` | Mensaje entrante / saliente, texto, foto clínica adjunta con apertura modal Lightbox, timestamp |
-| **Molécula** | `CallControls` | `web/src/components/ui/CallControls.tsx` | Micrófono on/off, cámara on/off, colgar llamada, indicador de calidad WebRTC |
-| **Molécula** | `Breadcrumbs` | `web/src/components/ui/Breadcrumbs.tsx` | Rutas jerárquicas (items: label, href, active), separador Chevron accesible, roles ARIA `nav` y `aria-label="Breadcrumb"` |
-| **Organismo** | `PrescriptionModal` | `web/src/components/ui/PrescriptionModal.tsx` | Formulario veterinario oficial para emitir receta con diagnóstico, fármaco, dosis y matrícula |
-| **Organismo** | `PrescriptionDoc` | `web/src/components/ui/PrescriptionDoc.tsx` | Formato A4 oficial SENASA con código QR dinámico y estilos para `@media print` |
+> 📌 Ver contratos de props canónicos e interfaces TypeScript en [06_SISTEMA_DE_DISENO_UI_KIT.md (§8)](./06_SISTEMA_DE_DISENO_UI_KIT.md#8-contratos-de-props-typescript-para-componentes-atómicos-ssot).
 
 ### 2.4 Estrategia de Refactorización Progresiva (De Páginas Monolíticas a Componentes Atómicos)
 Las pantallas en `web/src/pages/` operan actualmente como prototipos de alta madurez funcional (Nivel 4.5). Para evitar duplicación visual y maximizar la reutilización, la elevación de UI sigue el siguiente protocolo de 3 pasos:

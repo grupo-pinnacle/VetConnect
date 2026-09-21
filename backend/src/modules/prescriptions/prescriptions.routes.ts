@@ -5,9 +5,10 @@ import { authenticate } from '../auth/auth.middleware';
 const router = Router();
 const controller = new PrescriptionsController();
 
-router.use(authenticate);
+// Public QR verification endpoint for third-party pharmacies / official scans
+router.get('/prescriptions/:id', controller.getByIdPublic);
 
-router.post('/consultations/:id/prescriptions', controller.create);
-router.get('/prescriptions/:id', controller.getById);
+// Authenticated creation of official digital prescriptions
+router.post('/consultations/:id/prescriptions', authenticate, controller.create);
 
 export default router;

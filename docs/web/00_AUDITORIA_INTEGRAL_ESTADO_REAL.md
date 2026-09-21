@@ -39,7 +39,7 @@ Se ejecutaron todas las suites de validación y compilación en el monorepo con 
 | **Mobile App** | Jest + React Native | **7 suites / 16 tests PASSED** en 0.82s | ✅ 100% Verde |
 | **Typecheck Monorepo** | `tsc --noEmit` | **0 errores en los 3 workspaces** | ✅ TypeScript Estricto (Cero `any`) |
 | **Gobernanza Semántica** | `verify-governance.js` | **40 PBs y 20 Tasks sincronizados** | ✅ Cero desvío de alcance |
-| **Total Tests Monorepo** | Suite Unificada | **36 suites / 123 tests PASSED (0 fallos)** | 🏆 Cobertura Robusta FAANG Tier |
+| **Total Tests Monorepo** | Suite Unificada | **36 suites / 124 tests PASSED (0 fallos)** | 🏆 Cobertura Robusta FAANG Tier |
 
 ---
 
@@ -59,8 +59,7 @@ Un desarrollador Senior / Staff de Google, Meta o Netflix valoraría especialmen
      - **WCAG 2.1 Nivel AA:** Ratios de contraste 4.5:1, etiquetas ARIA, navegación por teclado (`Escape` para cerrar modales, focus rings visibles).
      - **Marco Legal:** Cumplimiento de **Ley 25.326** (Protección de Datos Personales de Salud) y **SENASA** (Receta médica con firma y validación de matrícula).
 3. **Modelo de Ingeniería Colaborativa Híbrida (Storybook + Figma + `html.to.design`):**
-   - Damian Orellana lidera y custodia la dirección de arte, identidad visual y maquetado en Figma, mientras el equipo de desarrollo construye componentes atómicos en Storybook 8 con tokens Tailwind sincronizados y pruebas de accesibilidad Axe (`@storybook/addon-a11y`). La exportación e importación bidireccional mediante `html.to.design` permite sincronizar estados interactivos complejos (WebRTC 720p, chats multilínea, modales) con el lienzo de Figma sin trabajo manual redundante ni deuda de diseño.
-   - **Descarte de Google Stitch:** VetConnect no es una hoja en blanco; ya cuenta con contratos Zod, modelos Prisma y WebSockets consolidados. Stitch generaría pantallas aisladas desconectadas de la arquitectura existente.
+   - > 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 4. **Arquitectura Monorepo sin Complejidad Innecesaria (ADR-008):**
    - Se descartó `packages/shared` para no generar fricción de transpilación entre Vite y Metro/Expo. La fuente de verdad son los contratos Zod y DTOs del backend sincronizados nativamente.
 
@@ -181,7 +180,7 @@ flowchart TD
 | **13. Sincronización Bidireccional Figma (`html.to.design`)** | 🎨 **Puente Abierto** | Damian Orellana + Frontend Lead |
 
 ### 💡 Conclusión del Análisis:
-La ingeniería del sistema VetConnect ha consolidado el **Nivel 4.5: Pre-Gold Master / Staging-Ready (9.8/10 - FAANG Staff Tier)**. El backend y la infraestructura están 100% endurecidos (Nivel 5), la seguridad está blindada contra ataques XSS y filtraciones de datos médicos (Ley 25.326), y el sistema cuenta con **123 pruebas automatizadas rigurosas en verde**. La culminación del catálogo atómico en Storybook y la validación visual en conjunto con Figma marcarán la entrega del **Nivel 5: Gold Master comercial definitivo**.
+La ingeniería del sistema VetConnect ha consolidado el **Nivel 4.5: Pre-Gold Master / Staging-Ready (9.8/10 - FAANG Staff Tier)**. El backend y la infraestructura están 100% endurecidos (Nivel 5), la seguridad está blindada contra ataques XSS y filtraciones de datos médicos (Ley 25.326), y el sistema cuenta con **124 pruebas automatizadas rigurosas en verde**. La culminación del catálogo atómico en Storybook y la validación visual en conjunto con Figma marcarán la entrega del **Nivel 5: Gold Master comercial definitivo**.
 
 ---
 *Documento Canónico de Auditoría Técnica Web — VetConnect 2026.*

@@ -2,7 +2,7 @@
 
 > **Destinatarios:** Agentes autónomos de IA (**Google Jules**, Antigravity, Claude Code, Cursor) y desarrolladores del equipo.
 > **Enfoque:** Construcción desde cero (**Greenfield**) del monorepo VetConnect, sin deuda técnica heredada y con arquitectura FAANG.
-> **Naturaleza del Documento:** Backlog maestro de especificación para la construcción desde cero y **Guía Preventiva de Antipatrones de Diseño**. No constituye un conjunto de parches sobre código previo (el repositorio es pre-código y parte de cero absoluto).
+> **Naturaleza del Documento:** Backlog maestro de especificación y **Guía Preventiva de Antipatrones de Diseño** (Estado del monorepo: **Nivel 4.5 Pre-Gold Master**, 124 tests automatizados pasando al 100%).
 > **Estructura:** Dividido en **Task Packets** atómicos y autocontenidos. Cada tarea puede ser copiada directamente como un Issue de GitHub o prompt operativo para Google Jules.
 
 ---
@@ -33,7 +33,7 @@ Para garantizar total transparencia operativa entre el seguimiento de gestión d
 | **TASK-3.2** (Chat Idempotente) | **PB-26**, **PB-27** (Sprint 7) | Mensajería con clientMsgId, deduplicación P2002 y presencia. |
 | **TASK-4.1** (Tokens LiveKit SFU) | **PB-29**, **PB-32** (Sprint 8) | Tokens WebRTC 720p sin PII y teardown server-side deleteRoom. |
 | **TASK-4.2** (Storage Magic Bytes) | **PB-20** (Sprint 5), **PB-28** (Sprint 7) | Subida segura a disco/S3 con validación de primeros 32 bytes. |
-| **TASK-5.1** (Frontend Web SPA) | **PB-04** (S2), **PB-09**, **PB-10**, **PB-11** (S3), **PB-12** (S4), **PB-23** (S6) | React 18.3.1 (LTS) + Vite, TanStack Query, routing, FAQ y UI Kit. |
+| **TASK-5.1** (Web Storybook CDD) | **PB-04** (S2), **PB-09**, **PB-10**, **PB-11** (S3), **PB-12** (S4), **PB-23** (S6) | Extracción Atómica de Componentes en Storybook (CDD) y Refactorización Progresiva de Pantallas. |
 | **TASK-5.2** (Videollamada Web) | **PB-30** (Sprint 8) | Componente CallRoom, PreJoin y CERO doble RoomAudioRenderer. |
 | **TASK-6.1** (Mobile Expo Router) | **PB-10** (Sprint 3), **PB-19** (Sprint 5), **PB-20** (Sprint 6), **PB-23** (Sprint 6) | App Expo SDK 54, NativeWind, secure store y FAQ de soporte. |
 | **TASK-6.2** (Mobile WebView LiveKit) | **PB-31** (Sprint 8) | Handshake bidireccional page:ready y permisos de hardware. |
@@ -350,7 +350,7 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 > - **Desarrollo Atómico en Storybook & Código SPA (Equipo de Desarrollo + Agentes):** Los componentes atómicos, estados y accesibilidad WCAG se construyen y verifican de forma aislada en **Storybook 8** (`web/src/components/ui/`) con tokens Tailwind CSS sincronizados. Las pantallas se ensamblan sobre la SPA viva en React 18.3.1 (LTS).
 > - **Sincronización Bidireccional:** Las vistas interactivas vivas se exportan a Figma mediante `html.to.design` para refinamiento estético de Damian sin bloqueos de ingeniería, y los flujos E2E se verifican con **TestSprite MCP**.
 
-### 📦 TASK-5.1: Scaffolding Web, Enrutamiento y Capa de Datos (TanStack Query v5)
+### 📦 TASK-5.1: Web: Extracción Atómica de Componentes en Storybook (CDD) y Refactorización Progresiva de Pantallas
 - **Capa:** Web (`web/`)
 - **Archivos:** `web/package.json`, `web/vite.config.ts`, `web/src/main.tsx`, `web/src/App.tsx`, `web/src/services/api.ts`, `web/src/pages/*`, `web/src/components/ui/*`
 - **Contratos/ADRs:** [ADR-015](docs/DECISIONS.md) (TanStack Query v5), [ADR-008](docs/DECISIONS.md), [ADR-022](docs/DECISIONS.md) (Vercel Oficial).

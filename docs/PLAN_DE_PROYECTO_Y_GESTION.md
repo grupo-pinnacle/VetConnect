@@ -426,8 +426,8 @@ graph LR
 |           |                   | firma/QR y calificación 1 a 5.    |                               | de valoraciones por estrellas calibrado.  |
 +-----------+-------------------+-----------------------------------+-------------------------------+-------------------------------------------+
 | Sprint 10 | PB-37, PB-38,     | Release v2.0 de producción con    | Sprint 9 (Feedback de pruebas | Sistema productivo 100% operativo,       |
-|           | PB-39, PB-40      | 120+ tests en Jest (>80%), CI/CD y| de usabilidad incorporado).   | auditado, sin deuda técnica y desplegado  |
-|           |                   | deploy en Coolify VPS y Vercel.   |                               | en infraestructura Cloud de alta disponib.|
+| (ACTIVO)  | PB-39, PB-40      | 120+ tests en Jest (>80%), CI/CD y| de usabilidad incorporado).   | auditado, sin deuda técnica y desplegado  |
+|           |                   | deploy en Coolify VPS y Vercel.   | (Sprints 1 al 9 COMPLETADOS)   | en infraestructura Cloud de alta disponib.|
 +-----------+-------------------+-----------------------------------+-------------------------------+-------------------------------------------+
 ```
 

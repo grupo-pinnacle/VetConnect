@@ -2,11 +2,11 @@
 
 # 🐾 VetConnect v2.0
 ### *Plataforma Integral de Telemedicina Veterinaria & Gestión Clínica de Alta Disponibilidad*
-**Arquitectura Greenfield & Agent-First (Optimizada para Google Jules & Agentes de IA Autónomos)**
+**Arquitectura Nivel 4.5: Pre-Gold Master & Agent-First (Optimizada para Google Jules & Agentes de IA Autónomos)**
 
 [![Node.js](https://img.shields.io/badge/Node.js-20.x_LTS-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![React](https://img.shields.io/badge/React-18.3.1_LTS-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![React Native / Expo](https://img.shields.io/badge/Expo-SDK_54-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev)
 [![Prisma ORM](https://img.shields.io/badge/Prisma-6.x-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
 [![LiveKit](https://img.shields.io/badge/LiveKit-WebRTC_SFU-00D1B2?style=for-the-badge&logo=webrtc&logoColor=white)](https://livekit.io)
@@ -19,7 +19,7 @@
 
 ## 📖 Índice General de Documentación & Sistema de Agentes
 
-> **Enfoque Greenfield, Agent-First & Modelo Híbrido:** Este repositorio está estructurado bajo un **modelo de ingeniería híbrido**: el diseño de la plataforma Web (UI/UX) es prototipado integralmente en **Figma por el Técnico Multimedial (Damian Orellana)** y codificado en React 19 por el equipo de desarrollo, mientras agentes de IA autónomos (**Google Jules**, Antigravity, Claude Code) construyen de forma continua y 24/7 la infraestructura de Backend, Prisma ORM, WebSockets, Media Segura, Mobile y la suite de tests mediante paquetes de tareas atómicas (*Task Packets*).
+> 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./docs/web/06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 Toda la documentación técnica, operativa y de agentes de VetConnect se encuentra organizada en los siguientes documentos maestros:
 
@@ -73,7 +73,7 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 flowchart TB
     subgraph Frontend["Capas de Cliente (Monorepo Workspaces)"]
         Mobile["📱 Mobile App (React Native + Expo 54)\n• NativeWind Tailwind\n• SecureStore\n• TanStack Query"]
-        WebClient["💻 Web App & Pro Dashboard (React 19 + Vite)\n• Layered Shadows Craft\n• GlobalCallListener\n• LiveKit Components"]
+        WebClient["💻 Web App & Pro Dashboard (React 18.3.1 LTS + Vite)\n• Layered Shadows Craft\n• GlobalCallListener\n• LiveKit Components"]
     end
 
     subgraph Backend["Cerebro Backend (Node.js + Express 5 + TypeScript)"]

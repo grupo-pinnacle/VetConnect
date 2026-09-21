@@ -104,6 +104,7 @@ El sistema tipográfico combina la precisión técnica de una fuente para pantal
 - **Variante `secondary` (Acción Secundaria de Salud / Marca):** `bg-teal-600 hover:bg-teal-700 text-white shadow-sm focus:ring-teal-500`
 - **Variante `outline` (Superficie Blanca con Borde):** `border border-slate-300 text-slate-700 hover:bg-slate-50 bg-white`
 - **Variante `danger` (Finalizar / Cancelación):** `bg-rose-600 hover:bg-rose-700 text-white shadow-sm focus:ring-rose-500`
+- **Radio de Curvatura Estándar:** `rounded-lg` (8px) como estándar base en botones e inputs, coincidente con `Button.tsx`.
 - **Variante `ghost` (Acción Sutil sin Contenedor):** `text-slate-600 hover:bg-slate-100 hover:text-slate-900`
 - **Tamaños Estándar:** `sm` (`px-2.5 py-1.5 text-xs`), `md` (`px-4 py-2 text-sm`), `lg` (`px-5 py-2.5 text-base`).
 - **Estado `isLoading`:** Spinner SVG animado integrado con `aria-hidden="true"` y texto dinámico.
@@ -229,8 +230,7 @@ flowchart LR
 
 ## 8. Contratos Canónicos de Props de UI & Estados Resilientes (Storybook Roadmap)
 
-> ℹ️ **Nota de Implementación Real:**
-> Actualmente en `web/src/components/ui/` el componente base **`Button.tsx`** y su historia **`Button.stories.tsx`** están 100% implementados y testeados. Los demás componentes de esta taxonomía forman parte de la hoja de ruta de extracción progresiva desde `web/src/pages/` hacia Storybook.
+> 🛑 **ESTADO ACTUAL DEL CÓDIGO:** En `web/src/components/ui/` únicamente existen `Button.tsx` y `Button.stories.tsx`. Los restantes componentes (`Badge`, `Input`, `Avatar`, `PetCard`, etc.) están embebidos monolíticamente en las páginas (`DashboardClient.tsx`, `DashboardVet.tsx`, etc.). La tarea de desarrollo consiste en la extracción progresiva átomo por átomo hacia `components/ui/` con su correspondiente historia de Storybook, sustituyendo el bloque en la página viva y validando que los 29 tests de Vitest se mantengan en verde.
 
 ### 8.1 Interfaces TypeScript de Props (Extienden `BaseComponentProps`)
 
@@ -238,6 +238,12 @@ flowchart LR
 export interface BaseComponentProps {
   className?: string;
   'data-testid'?: string; // MANDATORIO: Preserva selectores Vitest
+}
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, BaseComponentProps {
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  isLoading?: boolean;
 }
 
 // 1. Badge
@@ -329,7 +335,10 @@ export interface ReviewModalProps extends BaseComponentProps {
 }
 ```
 
-### 8.2 Gestión de Estados Resilientes de UI
+### 8.2 Directiva de Integración de TanStack React Query v5 en Extracción Atómica
+Al extraer un componente atómico o sección hacia Storybook, la gestión de datos remotos debe implementarse mediante hooks de TanStack Query (`useQuery` / `useMutation`), reemplazando ordenadamente los bloques tradicionales de `useState` + `useEffect` de las páginas sin alterar la lógica de negocio ni romper los tests de Vitest.
+
+### 8.3 Gestión de Estados Resilientes de UI
 Todo componente interactivo o contenedor asíncrono debe contemplar explícitamente los 4 estados canónicos de experiencia de usuario:
 1. **`loading` (Cargando):** Renderizado de Skeleton loaders animados con Tailwind (`animate-pulse bg-slate-200 rounded-lg`).
 2. **`error` (Fallo de Red / API):** Mensaje accesible con formato RFC 7807 y botón de reintento (`Retry`).

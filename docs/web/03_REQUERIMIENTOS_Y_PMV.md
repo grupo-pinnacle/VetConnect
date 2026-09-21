@@ -72,7 +72,7 @@ graph TD
 1. **Página Principal (Landing Page):** Propuesta de valor, acceso rápido al botón de emergencia médica, explicación de cómo funciona en 3 pasos, testimonios de tutores y sellos de habilitación sanitaria.
 2. **Registro e Inicio de Sesión:** Pantallas unificadas con selector de rol (`Tutor` / `Veterinario`), validaciones Zod en tiempo real y flujo de recuperación de contraseña.
 3. **Apartado Institucional / Legal:** Misión médica, nómina de directores técnicos veterinarios, términos de servicio y políticas de protección de datos (Ley 25.326).
-4. **Formulario de Contacto y Soporte:** Canal de asistencia técnica directa para problemas de conexión o cobros, complementado con botón directo de WhatsApp de soporte.
+4. **Formulario de Contacto y Soporte:** Canal de asistencia técnica directa para problemas de conectividad, acceso a la cuenta o funcionamiento de la videoconsulta, complementado con botón directo de WhatsApp de soporte.
 5. **Operaciones CRUD Universales:** Todas las entidades gestionables (mascotas, consultas, recetas) implementan creación, lectura estructurada, edición controlada y eliminación lógica (*soft-delete* con `deletedAt`).
 
 ---
@@ -156,7 +156,7 @@ Para garantizar que cualquier agente de IA o desarrollador cuente con el contrat
 | **`pets`** | `GET` | `/api/pets/:id` | `pages/DashboardClient.tsx` | Param: `id` (UUID v4) → `{ success: true, data: Pet }` | `modules/pets/pets.schemas.ts` |
 | **`pets`** | `PATCH` | `/api/pets/:id` | `pages/DashboardClient.tsx` | Param: `id`, Body: `Partial<PetInput>` → `{ success: true, data: Pet }` | `modules/pets/pets.schemas.ts` |
 | **`pets`** | `DELETE` | `/api/pets/:id` | `pages/DashboardClient.tsx` | Param: `id` → Soft-delete (`deletedAt = now`) | `modules/pets/pets.schemas.ts` |
-| **`consultations`**| `GET` | `/api/consultations` | `pages/DashboardClient.tsx`, `pages/DashboardVet.tsx` | Query: `?status=ACTIVE` o `status=WAITING_ROOM` → `{ success: true, data: Consultation[] }` | `modules/consultations/consultations.schemas.ts` |
+| **`consultations`**| `GET` | `/api/consultations/mine` | `pages/DashboardClient.tsx`, `pages/DashboardVet.tsx` | Query: `?status=ACTIVE` o `status=WAITING` → `{ success: true, data: Consultation[] }` | `modules/consultations/consultations.schemas.ts` |
 | **`consultations`**| `POST` | `/api/consultations` | `pages/DashboardClient.tsx` (Triage) | Body: `{ petId, reason, priority: 'GREEN'\|'YELLOW'\|'RED' }` → `{ success: true, data: Consultation }` | `modules/consultations/consultations.schemas.ts` |
 | **`consultations`**| `GET` | `/api/consultations/:id` | `pages/ConsultationRoom.tsx` | Param: `id` (UUID v4) → `{ success: true, data: Consultation & { pet, client, vet } }` | `modules/consultations/consultations.schemas.ts` |
 | **`calls`** | `POST` | `/api/calls/:id/token` | `pages/ConsultationRoom.tsx` | Param: `id` (Consultation UUID) → `{ success: true, data: { token: string, wsUrl: string } }` (Zero PII) | `modules/calls/calls.schemas.ts` |
