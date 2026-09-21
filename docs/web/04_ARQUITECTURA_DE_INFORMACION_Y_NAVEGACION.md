@@ -148,6 +148,17 @@ flowchart TD
     I --> J["Tutor descarga PDF de Receta (/prescriptions/:id) y califica la atención"]
 ```
 
+> ⚠️ **Flujo Crítico Documentado: Triage → Sala de Espera → Videoconsulta**
+>
+> El flujo real implementado en código es el siguiente:
+> 1. **Triage:** El tutor completa el formulario de urgencia en `DashboardClient.tsx` y envía `POST /api/consultations` con `{ petId, notes }` (la prioridad `ROJO|AMARILLO|VERDE` se preantepone en `notes` como `[Prioridad: ROJO] descripción`).
+> 2. **Redirección Inmediata:** Tras recibir `{ success: true, data: { id } }`, el cliente navega de inmediato a `/call/:id` via `navigate('/call/' + id)`. No hay una pantalla de "sala de espera" separada.
+> 3. **Estado de Espera en ConsultationRoom:** `ConsultationRoom.tsx` renderiza un estado de "En sala de espera..." mientras `consultation.status === 'WAITING'`. **El frontend NO debe solicitar el token LiveKit mientras el estado sea `WAITING`** — el backend retornará `400 INVALID_STATE` si la consulta no está en estado `ACTIVE`.
+> 4. **Transición a Activo:** Cuando el veterinario ejecuta `PATCH /api/consultations/:id/assign`, la consulta pasa a `ACTIVE`. `ConsultationRoom.tsx` detecta este cambio (polling `GET /api/consultations/:id` cada 5 segundos, o via escucha de eventos Socket.io en la sala `consultationId`) y entonces solicita `POST /api/calls/:id/token` para generar el token LiveKit.
+> 5. **Entrada a LiveKit:** Con el token válido, `<CallRoom>` inicializa `LiveKitRoom` y el componente `VideoConference` (sin duplicar `RoomAudioRenderer`).
+>
+> **Nota de Implementación Backend:** El evento Socket.io `consultation:assigned` está especificado arquitecturalmente pero **aún no es emitido por el backend en v2.0**. El frontend debe usar polling de 5s como mecanismo de fallback para detectar la transición `WAITING → ACTIVE`.
+
 > ℹ️ **Nota de Alcance (v2.0 vs. v2.1+):** Conforme a [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), la pasarela arancelaria se encuentra formalmente excluida (ScopeOut) del MVP v2.0, garantizando auxilio médico inmediato sin barreras de cobro. La integración de pasarela transaccional se incorporará en el flujo comercial de la versión v2.1+.
 
 ---
