@@ -21,13 +21,16 @@ vetconnect/
 │   │   │   ├── calls/              # Señalización WebRTC y tokens LiveKit
 │   │   │   ├── media/              # Subida de adjuntos (S3 / Local), magic bytes
 │   │   │   └── notifications/      # Push Expo API y bandeja in-app
-│   │   ├── shared/
-│   │   │   ├── middlewares/        # Auth, Role Guard, Rate Limit, Error Handler
-│   │   │   ├── prisma.ts           # Cliente Prisma singleton
-│   │   │   ├── redis.ts            # Cliente ioredis & socket.io adapter
-│   │   │   └── types/              # Contratos y tipos compartidos
-│   │   ├── app.ts                  # Configuración de Express & Middlewares
-│   │   └── server.ts               # Punto de entrada HTTP y Socket.io
+│   │   ├── config/
+│   │   │   ├── cors.ts             # Política CORS dinámica Express y Socket.io
+│   │   │   └── env.ts              # Validación Zod fail-fast de variables de entorno
+│   │   ├── lib/
+│   │   │   ├── prisma.ts           # Cliente Prisma singleton con connection pooling
+│   │   │   └── redis.ts            # Cliente ioredis y Redis adapter
+│   │   ├── middlewares/            # Auth, requireRole, rateLimiter, errorHandler RFC 7807
+│   │   ├── realtime/               # Gateway de Socket.io y multiplexación de salas
+│   │   ├── app.ts                  # Configuración de Express, Helmet & Middlewares
+│   │   └── server.ts               # Punto de entrada HTTP, Socket.io y Graceful Shutdown
 │   ├── jest.config.js              # Configuración de pruebas automatizadas
 │   └── package.json
 │
@@ -72,7 +75,7 @@ vetconnect/
     └── RECONCILIACION_ARQUITECTURA_Y_DISCREPANCIAS.md # Registro Oficial de Reconciliación de Arquitectura
 ```
 
-> ℹ️ **Nota de Diseño sobre `packages/shared` (ADR-008):**  
+> ℹ️ **Nota de Diseño sobre `packages/shared` (ADR-008):**
 > Para maximizar la velocidad de desarrollo y evitar la sobrecarga de tooling complejo de monorepos (Nx, Turborepo o transpiladores cruzados), la arquitectura descarta formalmente un workspace `packages/shared`. Los contratos y esquemas Zod se definen con rigor en el Backend (`backend/src/contracts/` y DTOs por módulo) y se sincronizan como interfaces TypeScript nativas en los clientes `web` y `mobile`.
 
 ---
@@ -102,8 +105,15 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `POST` | `/api/auth/login` | Inicio de sesión. Web: Refresh Token en cookie `HttpOnly`. Mobile (`X-Client-Platform: mobile`): Refresh Token en JSON body para `expo-secure-store` | Público |
 | `POST` | `/api/auth/refresh` | Renovación de access token. Web: lee cookie `HttpOnly`. Mobile: lee payload `{ refreshToken }` | Público |
 | `POST` | `/api/auth/logout` | Cierre de sesión, incrementa `tokenVersion` e invalida cookies | Autenticado |
+| `GET`  | `/api/auth/me`     | Rehidratación del perfil de usuario autenticado activo en `AuthContext.tsx` | Autenticado |
 
-### 2.2 Mascotas (`/api/pets`)
+### 2.2 Usuarios & Perfil (`/api/users`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `GET`  | `/api/users/profile` | Obtener perfil completo del usuario autenticado | Autenticado |
+| `PATCH`| `/api/users/profile` | Conmutación reactiva de guardia (`isOnline: boolean`), edición de `bio`, `licenseNumber` y `photoUrl` | Autenticado |
+
+### 2.3 Mascotas (`/api/pets`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `GET` | `/api/pets` | Listar mascotas del usuario autenticado | CLIENT / ADMIN |
@@ -115,8 +125,9 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 ### 2.3 Consultas & Telemedicina (`/api/consultations`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min) | CLIENT |
-| `GET` | `/api/consultations/mine`| Listar consultas activas/pendientes del usuario | Autenticado |
+| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min). Convención UI: la prioridad elegida (`GREEN`\|`YELLOW`\|`RED`) se antepone en `notes` como `[Prioridad: ${priority}] ${notes}` | CLIENT |
+| `GET`  | `/api/consultations/mine`| Listar consultas activas/pendientes del usuario autenticado | Autenticado |
+| `GET`  | `/api/consultations`     | Listar consultas en cola filtradas por estado (ej. `?status=WAITING`) | VET / ADMIN |
 | `GET` | `/api/consultations/:id`| Obtener detalle completo de consulta e historial | Participantes / ADMIN |
 | `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o auto-asignación FIFO | VET (Approved) / ADMIN |
 | `PATCH`| `/api/consultations/:id/cancel` | Cancelar consulta telemática (transición a `CANCELLED`) | Participantes / ADMIN |
@@ -126,7 +137,20 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico (idempotente con `clientMsgId`) | Participantes |
 | `POST` | `/api/consultations/:id/review` | Calificar atención médica (1 a 5 estrellas, ADR-023) | CLIENT asignado |
 
-### 2.4 Videollamadas (`/api/calls`)
+### 2.4 Administración & Fiscalización SENASA (`/api/admin`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `GET`  | `/api/admin/vets/pending` | Listar veterinarios pendientes de validación de matrícula SENASA (`vetStatus = PENDING`) | ADMIN |
+| `PATCH`| `/api/admin/vets/:id/approve` | Aprobar matrícula profesional (`vetStatus = APPROVED`) y registrar auditoría inmutable en `AuditLog` | ADMIN |
+| `PATCH`| `/api/admin/vets/:id/reject` | Rechazar solicitud profesional con motivo obligatorio (`{ reason }`), pasa a `REJECTED` y audita | ADMIN |
+
+### 2.5 Recetas Digitales SENASA (`/api/prescriptions`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `GET`  | `/api/prescriptions/:id` | Verificación pública no confidencial de receta digital oficial escaneada vía QR | Público |
+| `POST` | `/api/consultations/:id/prescriptions` | Emisión de receta digital oficial con firma y código QR | VET asignado |
+
+### 2.6 Videollamadas (`/api/calls`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/calls/:consultationId/token` | Generar token de acceso LiveKit para una consulta (sin PII) | Participantes de la consulta |
@@ -151,7 +175,7 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 
 | Evento | Payload | Emisor | Receptor | Descripción |
 |---|---|---|---|---|
-| `join:consultation` | `consultationId: string` | Cliente / Vet | Servidor | Une el socket a la sala de chat de la consulta |
+| `join:consultation` | `{ consultationId: string }` | Cliente / Vet | Servidor | Une el socket a la sala de chat de la consulta |
 | `message:send` | `{ consultationId, content, clientMsgId, attachmentUrl }` | Cliente / Vet | Servidor | Envía un nuevo mensaje de chat con deduplicación idempotente por clientMsgId |
 | `message:new` | `Message` object | Servidor | Sala de Consulta | Broadcast del mensaje a ambos participantes |
 | `call:incoming` | `{ consultationId, callerName, roomName }` | Servidor | Usuario llamado | Dispara la alerta de llamada entrante en Web y Mobile |

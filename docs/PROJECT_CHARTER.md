@@ -1,17 +1,17 @@
 # 📜 PROJECT CHARTER: VETCONNECT
 
-> 🧊 **DOCUMENTO DE ARCHIVO HISTÓRICO / BASELINE INICIAL (READ-ONLY)**  
+> 🧊 **DOCUMENTO DE ARCHIVO HISTÓRICO / BASELINE INICIAL (READ-ONLY)**
 > *Este documento representa la línea base conceptual aprobada para el Kickoff del 1 de octubre de 2026. A partir de esa fecha, toda modificación o evolución técnica se gobierna exclusivamente en las 5 Fuentes Vivas de Ejecución (Tier 1: `docs/TECH_REFERENCE.md`, `docs/DECISIONS.md`, `PLAN_ACCION_VETCONNECT.md`, `docs/PLAN_DE_PROYECTO_Y_GESTION.md` y `AGENTS.md`). No editar este archivo de forma activa durante los sprints.*
 
 ---
 
 ## Plataforma Integral de Telemedicina Veterinaria & Gestión Clínica de Alta Disponibilidad
-**Document ID:** `CHARTER-VETCONNECT-2026-V2`  
-**Autor:** Senior / Staff Technical Program Manager & Solutions Architect (FAANG Tier)  
-**Organización:** Grupo Pinnacle / VetConnect Team  
-**Fecha de Emisión:** Septiembre 2026  
-**Estado:** `APPROVED (ACTIVE GOVERNANCE CHARTER)`  
-**Nivel de Estándar:** FAANG Engineering Governance (Google / Meta / Stripe / Vercel level)  
+**Document ID:** `CHARTER-VETCONNECT-2026-V2`
+**Autor:** Senior / Staff Technical Program Manager & Solutions Architect (FAANG Tier)
+**Organización:** Grupo Pinnacle / VetConnect Team
+**Fecha de Emisión:** Septiembre 2026
+**Estado:** `APPROVED (ACTIVE GOVERNANCE CHARTER)`
+**Nivel de Estándar:** FAANG Engineering Governance (Google / Meta / Stripe / Vercel level)
 
 ---
 
@@ -141,8 +141,8 @@ Alineado con los acuerdos tomados en la reunión con el stakeholder interno ([`M
 - **Hito 5 (M5) — Ficha Clínica Expandida & Bóveda "VetDrive":** Bóveda documental estructurada para estudios clínicos y recetas, carnet de vacunación digital con alarmas preventivas.
 - **Hito 6 (M6) — Identidad Animal & Ciclo de Vida Empático:** Validación de microchip (15 dígitos estándar ISO, opcional en alta), raza "Otros" para analítica de datos, cumpleaños de mascotas, ocultamiento empático de mascotas (silenciado de alertas con leyenda explicativa), fecha de fallecimiento, emails de condolencias y visualización diferenciada en Panel Admin.
 - **Hito 7 (M7) — Tratamientos, Calendario & Fidelización:** Alarmas personalizadas de medicación, exportación/sincronización con Google Calendar e iCal, veterinarios favoritos y badges de verificación profesional con matrícula visible.
-- **Hito 8 (M8) — Spikes Regulatorios e Interoperabilidad:** Gestión de padrones oficiales (SENASA / RENAPER / Colegios) e investigación de recetas digitales veterinarias en el circuito farmacéutico.  
-  *(Nota de Gobernanza: Lara Bouso tiene como fecha límite el cierre de M2 — **23 de Diciembre de 2026** — para emitir el dictamen legal vinculante sobre la factibilidad técnica y jurídica de conexión directa vía API con los colegios veterinarios para la v2.1)*.  
+- **Hito 8 (M8) — Spikes Regulatorios e Interoperabilidad:** Gestión de padrones oficiales (SENASA / RENAPER / Colegios) e investigación de recetas digitales veterinarias en el circuito farmacéutico.
+  *(Nota de Gobernanza: Lara Bouso tiene como fecha límite el cierre de M2 — **23 de Diciembre de 2026** — para emitir el dictamen legal vinculante sobre la factibilidad técnica y jurídica de conexión directa vía API con los colegios veterinarios para la v2.1)*.
   > ⚖️ **Plan de Contingencia Regulatoria Oficial:** Si la integración directa vía API con SENASA o los colegios profesionales experimenta demoras burocráticas ajenas al equipo, VetConnect opera de forma 100% legal y autónoma mediante su **mecanismo de verificación manual asistida en el Panel Admin** (`AuditLog` inmutable, carga de constancia de matrícula en PDF y cotejo humano en padrones web públicos oficiales). La ausencia de API externa no bloquea en ningún escenario el lanzamiento de la v2.0 ni la operatoria continua de la v2.1.
 
 ---
@@ -184,11 +184,11 @@ El sistema prioriza una arquitectura de **bajo costo recurrente y alto rendimien
 | **Almacenamiento** | Amazon S3 / Cloudinary (con fallback local) | Almacenamiento seguro de adjuntos médicos y avatares | \$1 - \$5 USD / mes |
 | **Distribución Mobile** | Expo Application Services (EAS) | Compilación en la nube de binarios Android (AAB/APK) | Free tier |
 
-> 🛡️ **Plan de Contingencia ante Agotamiento de Free Tiers:**  
-> Para evitar interrupciones o sobrecostos si el volumen de teleconsultas supera las cuotas gratuitas:  
-> - **PostgreSQL:** Si Supabase excede 500 MB, el VPS Coolify aloja PostgreSQL 16 local en Docker (costo $0 incremental).  
-> - **LiveKit SFU:** Si LiveKit Cloud agota los 50 GB mensuales, se despliega `livekit/livekit-server` autohospedado en Coolify (VPS) en 1 clic.  
-> - **Almacenamiento:** Fallback local automático a `/app/uploads/` con Traefik (ADR-010) sin costo cloud.  
+> 🛡️ **Plan de Contingencia ante Agotamiento de Free Tiers:**
+> Para evitar interrupciones o sobrecostos si el volumen de teleconsultas supera las cuotas gratuitas:
+> - **PostgreSQL:** Si Supabase excede 500 MB, el VPS Coolify aloja PostgreSQL 16 local en Docker (costo $0 incremental).
+> - **LiveKit SFU:** Si LiveKit Cloud agota los 50 GB mensuales, se despliega `livekit/livekit-server` autohospedado en Coolify (VPS) en 1 clic.
+> - **Almacenamiento:** Fallback local automático a `/app/uploads/` con Traefik (ADR-010) sin costo cloud.
 > - **Presupuesto de Contingencia en Reserva:** Se asigna un fondo fijo de reserva de **$20 USD / mes** para absorber picos imprevistos de ancho de banda o base de datos.
 
 ---

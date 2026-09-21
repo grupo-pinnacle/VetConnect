@@ -1,17 +1,17 @@
 # 📐 SYSTEM & TECHNICAL SPECIFICATION (SPEC)
 ## Proyecto: VetConnect — Especificación Técnica y Arquitectónica Integral
-**Document ID:** `SPEC-VETCONNECT-2026-V2`  
-**Autor:** Senior / Staff Systems Architect & Tech Lead (FAANG Tier Standards)  
-**Organización:** Grupo Pinnacle / VetConnect Team  
-**Fecha de Emisión:** Septiembre 2026  
-**Estado:** `APPROVED (ACTIVE SYSTEM SPEC)`  
-**Clasificación:** Tier-1 Engineering RFC & Implementation Specification  
+**Document ID:** `SPEC-VETCONNECT-2026-V2`
+**Autor:** Senior / Staff Systems Architect & Tech Lead (FAANG Tier Standards)
+**Organización:** Grupo Pinnacle / VetConnect Team
+**Fecha de Emisión:** Septiembre 2026
+**Estado:** `APPROVED (ACTIVE SYSTEM SPEC)`
+**Clasificación:** Tier-1 Engineering RFC & Implementation Specification
 
 ---
 
 ## 1. Visión General & Objetivos del Sistema
 
-Esta especificación técnica define de manera exhaustiva la arquitectura, contratos de datos, protocolos de tiempo real, seguridad y modelos de falla para la plataforma **VetConnect v2.0**. 
+Esta especificación técnica define de manera exhaustiva la arquitectura, contratos de datos, protocolos de tiempo real, seguridad y modelos de falla para la plataforma **VetConnect v2.0**.
 
 ### 1.1 Objetivos de Ingeniería
 - **Latencia Ultra Baja:** Entrega de mensajería en tiempo real con latencia P95 $< 80\text{ ms}$ e inicio de videollamadas WebRTC P95 $< 1500\text{ ms}$.
@@ -440,7 +440,7 @@ Cuando se solicita la baja de una cuenta:
 Documentado en detalle en [`MINUTA_STAKEHOLDER_2026-09.md`](MINUTA_STAKEHOLDER_2026-09.md). Define la evolución de contratos para los 15 puntos acordados con el stakeholder interno:
 
 ### 10.1 Extensiones del Modelo de Datos (Prisma)
-- **`Pet`:** 
+- **`Pet`:**
   - `microchip`: Validación opcional de 15 dígitos al crear mascota (`createPetSchema`).
   - `breed`: Soporte explícito de valor `"OTROS"` con campo auxiliar para tipificación y telemetría analítica.
   - `isHidden`: Booleano para ocultamiento voluntario del tutor (silencia recordatorios clínicos y notificaciones sin borrar historial).
@@ -455,4 +455,3 @@ Documentado en detalle en [`MINUTA_STAKEHOLDER_2026-09.md`](MINUTA_STAKEHOLDER_2
 - **Sincronización de Calendario:** Generación de feed iCal RFC 5545 (`GET /api/pets/:id/calendar.ics`) y URLs para adición directa a Google Calendar.
 - **Spike Regulatorio SENASA/RENAPER:** Factibilidad de conexión a bases de datos de matrículas oficiales.
 - **Spike Receta Digital en Farmacias:** Análisis de integración con repositorios de farmacias bajo marco normativo argentino.
-

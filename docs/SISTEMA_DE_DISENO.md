@@ -167,7 +167,8 @@ La paleta se rige por la **regla clásica de armonía cromática 60-30-10**, com
 |                   | Bordes/Líneas | #E2E8F0           | Slate 200 | Separadores y bordes sutiles de tarjetas. |
 +-------------------+---------------+-------------------+-----------+-------------------------------------------+
 | 10% Acento        | Acción / CTA  | #2563EB           | Med Blue  | Botones principales de auxilio y llamada. |
-|                   | Éxito / Salud | #059669           | Teal Clin | Recetas válidas, vet online y éxito.      |
+|                   | Acción Marca  | #0D9488           | Teal 600  | Acción secundaria de salud y marca (Button.tsx). |
+|                   | Éxito / Triage| #059669           | Emerald 600| Estado de triage GREEN, vet online y éxito. |
 +-------------------+---------------+-------------------+-----------+-------------------------------------------+
 | Estados Clínicos  | Alerta Crítica| #DC2626           | Red Alert | Triage Rojo (Emergencia vital inmediata). |
 | (Funcionales)     | Alerta Media  | #D97706           | Amber Med | Triage Amarillo (Urgencia moderada).      |
