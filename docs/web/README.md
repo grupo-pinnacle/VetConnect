@@ -44,7 +44,7 @@ La suite completa del monorepo cuenta con **36 suites / 123 tests PASSED (0 fall
 #### ⚖️ Alineación Arquitectónica, Alcance v2.0 y Correspondencia de Código:
 El mapeo uno a uno entre especificación planificada y archivos de código fuente (`web/src/pages/`, `context/`, `services/`) está documentado en [**`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#4-contraste-empírico-planificación-vs-código-real`**](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#4-contraste-empírico-planificación-vs-código-real).
 
-- **Estrategia Colaborativa Híbrida (Storybook + Figma + `html.to.design`):** Conforme a [`06_SISTEMA_DE_DISENO_UI_KIT.md`](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-de-sincronización-diseño-código-flujo-híbrido-virtuoso-storybook--figma--htmltodesign), Damian Orellana lidera el diseño visual en Figma mientras el equipo de desarrollo construye componentes atómicos testeados en Storybook con tokens Tailwind sincronizados. Los estados vivos e interactivos de la SPA se sincronizan con Figma mediante `html.to.design`, asegurando consistencia sin trabajo duplicado ni bloqueos.
+> 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 - **Modelo de Acceso en v2.0 (Sin Pasarela de Pago):** Conforme a [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), la pasarela de pagos es formalmente **ScopeOut para v2.0**, operando bajo modelo de guardia institucional sin barreras arancelarias de entrada en el PMV (pagos diferidos a v2.1+).
 
 ---

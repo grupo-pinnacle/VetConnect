@@ -14,7 +14,7 @@ Para consolidar el portal web de **VetConnect** en el estándar **Gold Master (N
 ```mermaid
 flowchart TD
     P["⚡ 1. RENDIMIENTO EXTREMO\nLCP < 800ms | CLS = 0 | INP < 50ms\nFuentes Locales WOFF2 + WebP + TanStack Cache"] --> Core["🏆 VetConnect Web: Gold Master (Nivel 5)"]
-    A["♿ 2. ACCESIBILIDAD UNIVERSAL\nWCAG 2.1 AA/AAA | Radix Primitives\nLectores de Pantalla (NVDA/VoiceOver) + aria-live"] --> Core
+    A["♿ 2. ACCESIBILIDAD UNIVERSAL\nWCAG 2.1 AA/AAA | HTML5 Semantic + WAI-ARIA\nLectores de Pantalla (NVDA/VoiceOver) + aria-live"] --> Core
     S["🔍 3. SEO ESTRATÉGICO BRUTAL\nSchema.org JSON-LD (VeterinaryCare 24/7)\nOpenGraph WhatsApp + sitemap.xml + robots.txt"] --> Core
 ```
 

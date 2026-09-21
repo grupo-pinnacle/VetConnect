@@ -13,7 +13,7 @@ El maquetado estructural mediante **wireframes de baja y media fidelidad** tradu
 
 > 🔬 **Diagnóstico de Madurez Actual (Nivel 4.5 / 5 — Pre-Gold Master / Staging-Ready):**  
 > Las pantallas implementadas en el código fuente (`web/src/pages/`) operan con éxito como **Wireframes Interactivos de Media Fidelidad Completamente Funcionales**. Cuentan con toda la reactividad, llamadas a endpoints Zod, WebSockets, WebRTC 720p, code-splitting y subida de fotos operativas al 100%.  
-> Conforme al **Modelo de Ingeniería Colaborativa Híbrida (Storybook + Figma + `html.to.design`)** ([`06_SISTEMA_DE_DISENO_UI_KIT.md`](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-de-sincronización-diseño-código-flujo-híbrido-virtuoso-storybook--figma--htmltodesign)), Damian Orellana lidera el arte en Figma mientras los componentes atómicos se construyen y auditan en Storybook con tokens Tailwind CSS sincronizados, exportando los estados interactivos en vivo mediante `html.to.design` para enriquecer el archivo maestro de Figma sin fricción ni duplicación de esfuerzos.
+> 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 Cada pantalla representa una hipótesis de solución operativa diseñada para resolver las tareas críticas identificadas en los requerimientos del sistema.
 
@@ -58,7 +58,7 @@ A continuación se detallan las pantallas esenciales del ecosistema web de VetCo
 - **Información que contiene:** Propuesta de valor médica, tiempos de atención garantizados, pasos del flujo, credenciales de respaldo sanitario, testimonios verificados y acceso directo a la aplicación móvil.
 - **Acciones disponibles:** 
   - Iniciar flujo de auxilio médico inmediato (`[SOLICITAR GUARDIA AHORA]`).
-  - Descargar directamente el instalador de la app móvil Android (`.apk`) para la fase piloto clínica sin costo.
+  - Descargar directamente el instalador de la app móvil Android (`.apk`) desde `/downloads/vetconnect-preview.apk` para la fase piloto clínica sin costo.
   - Explorar servicios telemédicos.
   - Iniciar sesión o registrarse.
   - Acceder a los números de emergencia presencial física.

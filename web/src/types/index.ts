@@ -27,6 +27,7 @@ export interface User {
   role: Role;
   vetStatus?: VetStatus | null;
   licenseNumber?: string | null;
+  speciality?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
   ratingAvg: number;
@@ -35,6 +36,14 @@ export interface User {
   lastSeen?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BadgeProps {
+  variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'online' | 'offline' | 'green' | 'yellow' | 'red';
+  size?: 'sm' | 'md';
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  className?: string;
 }
 
 export interface Pet {
