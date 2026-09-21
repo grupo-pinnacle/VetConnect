@@ -48,14 +48,14 @@ En una plataforma de emergencias veterinarias, **cada segundo de demora genera a
      ```
    - Esto reserva el espacio exacto en el viewport antes de que la imagen termine de descargarse, impidiendo que el contenido "salte".
 
-### 2.4 Instancia y Configuración de TanStack Query v5 en `App.tsx`
+### 2.4 Instancia y Configuración de TanStack Query v5 en `App.tsx` & Data Fetching Actual
 `QueryClient` se encuentra instanciado y configurado globalmente en `web/src/App.tsx`, envolviendo toda la SPA con `QueryClientProvider`:
 ```typescript
 // web/src/App.tsx
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutos de validez para datos estables (perfil, lista de mascotas)
+      staleTime: 5 * 60 * 1000, // 5 minutos de validez para datos estables
       gcTime: 10 * 60 * 1000,    // 10 minutos de permanencia en memoria caché
       refetchOnWindowFocus: false, // Evita refetches molestos al cambiar de pestaña
       retry: 1,
@@ -63,8 +63,8 @@ const queryClient = new QueryClient({
   },
 });
 ```
-- **Actualizaciones Optimistas (*Optimistic UI*) en Chat:**  
-  Cuando el tutor o veterinario envía un mensaje o fotografía clínica, el mensaje se inserta en el estado local de React al instante con estado visual *"enviando..."* (`isPending: true`). Cuando Socket.io confirma la recepción, se consolida el timestamp sin provocar parpadeos ni demoras perceptibles.
+> 🛑 **Aclaración Arquitectónica de Consumo de Datos:**
+> Las páginas de la SPA (`DashboardClient.tsx`, `DashboardVet.tsx`, `AdminVets.tsx`) actualmente consumen datos mediante `useState` y `useEffect` con llamadas directas a `api.ts`. Los 29 tests de Vitest se ejecutan mockeando `api.get` / `api.post` sin un `QueryClientProvider`. Por esta razón, las páginas vivas mantienen sus bloques `useEffect` para asegurar 100% de compatibilidad con Vitest.
 
 ### 2.5 Preservación del Code-Splitting de Bundles
 - El bundle inicial de la Landing Page se mantiene blindado en **20.38 kB** (gzip: **6.09 kB**).

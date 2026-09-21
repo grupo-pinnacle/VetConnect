@@ -254,7 +254,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 // 1. Badge
 export interface BadgeProps extends BaseComponentProps {
-  variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'online' | 'offline' | 'green' | 'yellow' | 'red';
+  variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'online' | 'offline' | 'green' | 'yellow' | 'red' | 'rojo' | 'amarillo' | 'verde';
   size?: 'sm' | 'md';
   children: React.ReactNode;
   icon?: React.ReactNode;
@@ -351,29 +351,34 @@ export interface ReviewModalProps extends BaseComponentProps {
 ### 8.3 Estandarización de Clases CSS (Helper `cn`)
 Para resolver colisiones de clases en componentes atómicos de `web/src/components/ui/`, se utiliza una función utilitaria liviana `cn(...inputs: (string | undefined | null | false)[]) => string` basada en concatenación y filtrado condicional limpio (`inputs.filter(Boolean).join(' ')`), sin añadir dependencias externas pesadas.
 
-## 9. Inventario Canónico de `data-testid` (Contrato Anti-Regresión Vitest)
-Para preservar la estabilidad de los 29 tests de Vitest durante la extracción atómica de componentes, ninguna IA debe modificar los siguientes selectores y textos clave:
-
-| Componente / Pantalla | Selector Requerido (`data-testid` o texto exacto) | Archivo de Test Vinculante |
-|---|---|---|
-| Formulario Login | `placeholder="ejemplo@vetconnect.com"`, `placeholder="********"`, Botón `"Iniciar Sesión"` | `Login.test.tsx` |
-| Formulario Register | Botones con texto exacto `"Soy Tutor de Mascotas"` y `"Soy Veterinario"` | `Register.test.tsx` |
-| Dashboard Tutor | Textos de cabecera `"Mis Mascotas"`, `"Solicitar Consulta de Guardia"` | `DashboardClient.test.tsx` |
-| Dashboard Vet | Switch con texto `"Disponible para Guardia"`, cabecera `"Sala de Espera"` | `DashboardVet.test.tsx` |
-| Sala de Llamada | Botón `"Finalizar Consulta"` / `"Colgar"` | `CallRoom.test.tsx` |
-
-## 10. Secuencia Obligatoria de Extracción Atómica (CDD Roadmap)
-El orden de implementación atómica de componentes debe respetar la jerarquía de dependencias:
-1. **Fase 1 (Átomos Básicos):** `Badge.tsx`, `Input.tsx`, `Avatar.tsx`
-2. **Fase 2 (Moléculas Clínicas):** `PetCard.tsx`, `TriageSelector.tsx`, `Breadcrumbs.tsx`, `ChatMessage.tsx`
-3. **Fase 3 (Organismos y Controles Complejos):** `CallControls.tsx`, `PrescriptionDoc.tsx`, `PrescriptionModal.tsx`
-
 ### 8.4 Gestión de Estados Resilientes de UI
 Todo componente interactivo o contenedor asíncrono debe contemplar explícitamente los 4 estados canónicos de experiencia de usuario:
 1. **`loading` (Cargando):** Renderizado de Skeleton loaders animados con Tailwind (`animate-pulse bg-slate-200 rounded-lg`).
 2. **`error` (Fallo de Red / API):** Mensaje accesible con formato RFC 7807 y botón de reintento (`Retry`).
 3. **`empty` (Estado Vacío):** Ilustración amigable desaturada con llamada a la acción clara (`CTA`).
 4. **`reconnecting` (Reconexión de Socket/LiveKit):** Banner superior no intrusivo con spinner avisando restablecimiento de enlace en tiempo real.
+
+## 9. Inventario Canónico de `data-testid` (Contrato Anti-Regresión Vitest)
+Para preservar la estabilidad de los 29 tests de Vitest durante la extracción atómica de componentes, ninguna IA debe modificar los siguientes selectores y textos clave:
+
+| Componente / Pantalla | Selectores y Textos Exactos Evaluados por Vitest | Archivo de Test Vinculante (`web/src/__tests__/`) |
+|---|---|---|
+| **Landing Page** | `data-testid="brand-logo"`, `data-testid="trust-badge-senasa"`, `data-testid="hero-title"`, `data-testid="cta-client-portal"`, `data-testid="cta-vet-portal"`, `data-testid="cta-admin-portal"`, `data-testid="download-apk-link"` | `Landing.test.tsx` |
+| **Formulario Login** | `placeholder="ejemplo@vetconnect.com"`, `placeholder="********"`, texto `"Iniciar Sesión"` | `Login.test.tsx` |
+| **Formulario Register** | Texto `"Registro en VetConnect"`, texto `"Crear Cuenta"` | `Register.test.tsx` |
+| **Pre-Join Llamada** | Texto `"Verificacion Previa de Camara y Microfono"`, texto `"Microfono"`, texto `"Camara Web"`, botón con texto `"Ingresar a la Consulta"` | `CallRoom.test.tsx` |
+| **Dashboard Tutor** | Textos `"Mis Mascotas"`, `"Solicitar Consulta de Guardia"` | `DashboardClient.test.tsx` |
+| **Dashboard Vet** | Texto `"Disponible para Guardia"`, texto `"Sala de Espera"`, `data-testid="badge-priority-rojo"`, `data-testid="badge-priority-amarillo"`, `data-testid="badge-priority-verde"`, `data-testid="prescription-modal"` | `DashboardVet.test.tsx` |
+| **Receta Pública** | `data-testid="prescription-header-title"`, `data-testid="rx-medication"`, `data-testid="prescription-qr-code"`, `data-testid="print-prescription-button"` | `PrescriptionView.test.tsx` |
+| **Admin Veterinarios** | `data-testid="admin-title"`, `data-testid="vet-row-*"`, `data-testid="vet-speciality-*"`, `data-testid="approve-vet-button-*"`, `data-testid="reject-vet-button-*"`, `data-testid="input-reject-reason-*"` | `AdminVets.test.tsx` |
+| **Admin Modales / Toast** | `data-testid="admin-toast-notification"` (con texto `'Matrícula aprobada exitosamente'`), `data-testid="reject-modal-textarea"` | `AdminVetsModal.test.tsx` |
+| **Página 404** | `data-testid="not-found-code"`, `data-testid="not-found-title"`, `data-testid="not-found-home-button"` | `NotFound.test.tsx` |
+
+## 10. Secuencia Obligatoria de Extracción Atómica (CDD Roadmap)
+El orden de implementación atómica de componentes debe respetar la jerarquía de dependencias:
+1. **Fase 1 (Átomos Básicos):** `Badge.tsx`, `Input.tsx`, `Avatar.tsx`
+2. **Fase 2 (Moléculas Clínicas):** `PetCard.tsx`, `TriageSelector.tsx`, `Breadcrumbs.tsx`, `ChatMessage.tsx`
+3. **Fase 3 (Organismos y Controles Complejos):** `CallControls.tsx`, `PrescriptionDoc.tsx`, `PrescriptionModal.tsx`, `ReviewModal.tsx`
 
 ---
 *Documento de Sistema de Diseño Web y UI Kit — VetConnect 2026.*

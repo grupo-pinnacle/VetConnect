@@ -39,7 +39,7 @@ export interface User {
 }
 
 export interface BadgeProps {
-  variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'online' | 'offline' | 'green' | 'yellow' | 'red';
+  variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'online' | 'offline' | 'green' | 'yellow' | 'red' | 'rojo' | 'amarillo' | 'verde';
   size?: 'sm' | 'md';
   children: React.ReactNode;
   icon?: React.ReactNode;
