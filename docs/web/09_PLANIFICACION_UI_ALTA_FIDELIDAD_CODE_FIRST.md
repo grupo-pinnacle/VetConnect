@@ -115,9 +115,8 @@ A continuación se detalla la especificación visual, la disposición de element
        - **🔴 Triage Rojo (Urgencia Vital):** Cartel de advertencia prioritario, conexión directa con el primer médico libre.
        - **🟡 Triage Amarillo (Moderado):** Cola regular de espera estimada (< 5 min).
        - **🟢 Triage Verde (Leve / Consulta General):** Opción de espera o agendamiento diferido.
-4. **Sala de Espera Interactiva en Tiempo Real (Socket.io):**
-   - Banner animado cuando la consulta está en cola: *"Médico asignado: Dr. Mariano Mendoza. Preparando sala de telemedicina..."*.
-   - Botón para ingresar a la sala (`/call/:id`) tan pronto el médico acepta la consulta.
+4. **Redirección Inmediata a Telemedicina en Tiempo Real:**
+   - Al enviar el formulario de triage en `DashboardClient.tsx`, el sistema navega inmediatamente a `/call/:id`, conectando al tutor a la sala telemédica (`ConsultationRoom.tsx`).
 
 ---
 

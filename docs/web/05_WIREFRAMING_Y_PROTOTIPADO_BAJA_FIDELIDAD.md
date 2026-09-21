@@ -200,36 +200,39 @@ A continuación se detallan las pantallas esenciales del ecosistema web de VetCo
 
 ---
 
-### Pantalla 6: Editor y Emisor de Recetas Electrónicas SENASA (`/prescriptions/:id`)
+### Pantalla 6: Vista y Verificación Pública de Receta Oficial SENASA (`/prescriptions/:id`)
 
-*Conexión con el Árbol Web: [Nivel 3] Emisión & Consulta de Receta Oficial*  
-*Archivos Fuente Reales:* Emisión en [`web/src/pages/DashboardVet.tsx`](../../web/src/pages/DashboardVet.tsx) y vista pública de verificación con código QR en [`web/src/pages/PrescriptionView.tsx`](../../web/src/pages/PrescriptionView.tsx)
+*Conexión con el Árbol Web: [Nivel 3] Consulta & Verificación Pública de Receta Oficial*
+*Archivo Fuente Real:* [`web/src/pages/PrescriptionView.tsx`](../../web/src/pages/PrescriptionView.tsx)
+
+Ruta pública, imprimible y accesible sin autenticación para validación sanitaria y farmacéutica mediante escaneo de código QR (cargada por `web/src/pages/PrescriptionView.tsx`).
 
 ```
 +-------------------------------------------------------------------------------------------------------------+
-| Breadcrumbs: Inicio > Prescripciones > Emisión de Receta Oficial SENASA                                     |
+| [ VETCONNECT ]               SISTEMA OFICIAL DE PRESCRIPCIÓN VETERINARIA DIGITAL                             |
 +-------------------------------------------------------------------------------------------------------------+
-| DATOS DE LA RECETA MÉDICA OFICIAL                                                                           |
+| RECETA MÉDICA OFICIAL N° rx-84920-2026                                                                      |
 | Paciente: Milo (Canino, 4 años, 8.5 kg) | Tutor: Laura Gómez (Contacto Autorizado)                           |
-| Médico: Dr. Juan Mendoza | Matrícula SENASA: MP-84920 / MN-1234                                             |
+| Médico Emisor: Dr. Juan Mendoza | Matrícula SENASA: MP-84920 / MN-1234                                      |
 +-------------------------------------------------------------------------------------------------------------+
-| FÁRMACOS Y POSOLOGÍA (Contrato Prisma: Prescription individual vinculada a Consultation)                    |
+| INDICACIÓN FARMACÉUTICA (Rp/):                                                                              |
 | Medicamento: Metoclopramida Gotas (0.5%)                                                                    |
-| Dosis: 8 gotas cada 8 hs durante 3 días                                                                      |
-| Frecuencia: Cada 8 horas | Duración: 3 días                                                                 |
+| Dosis & Frecuencia: 8 gotas cada 8 hs durante 3 días                                                        |
+| Indicaciones: Administrar con alimentos. Control en 24 hs.                                                  |
 +-------------------------------------------------------------------------------------------------------------+
-| INDICACIONES GENERALES DE CUIDADO:                                                                          |
-| [ Ayuno de sólidos por 8 horas. Hidratación constante con solución de sales orales. Control en 24 hs.    ] |
+| VALIDACIÓN SANITARIA CRIPTOGRÁFICA & QR:                                                                    |
+| [ QR CODE VALIDACIÓN ]  https://app.vetconnect.com.ar/prescriptions/rx-84920-2026                           |
+|                         [ BADGE: RECETA OFICIAL FIRMADA DIGITALMENTE Y VERIFICADA ANTE SENASA ]              |
 +-------------------------------------------------------------------------------------------------------------+
-| FIRMA DIGITAL Y VALIDACIÓN SANITARIA:                                                                       |
-| [✓] Certifico bajo juramento profesional la veracidad del diagnóstico emitido.                              |
-|                                                                                                             |
-| [ PREVISUALIZAR RECETA PDF CON CÓDIGO QR ]             [ EMITIR Y FIRMAR DIGITALMENTE ]                     |
+| ACCIONES DISPONIBLES:                                                                                       |
+| [ 🖨️ IMPRIMIR RECETA OFICIAL (window.print()) ]               [ ← Volver a la Aplicación ]                   |
 +-------------------------------------------------------------------------------------------------------------+
 ```
 
-- **Información que contiene:** Datos obligatorios del animal y del tutor, matrícula habilitada del profesional, fármaco prescrito, posología estructurada (`dosage`, `frequency`, `durationDays`) e indicaciones.
-- **Acciones disponibles:** Confeccionar posología, redactar indicaciones, previsualizar el PDF con código QR y firmar digitalmente para su archivo inmutable.
+- **Información que contiene:** Identificación oficial de la receta, datos del animal y tutor, matrícula validada del profesional, fármaco prescrito con posología estructurada, código QR de verificación pública y certificado de firma digital.
+- **Acciones disponibles:** Imprimir o guardar documento en formato físico/PDF (`window.print()`) y validar inmutabilidad escaneando el código QR desde cualquier dispositivo.
+
+> 🛑 **NOTA DE ARQUITECTURA:** La confección y emisión interactiva de recetas médicas NO ocurre en la ruta `/prescriptions/:id`. Se realiza mediante el componente modal interactivo `PrescriptionModal` (`data-testid="prescription-modal"`), el cual reside operativamente en `web/src/pages/DashboardVet.tsx` (consumiendo `POST /api/consultations/:id/prescriptions`) y está planificado para reutilizarse en `ConsultationRoom.tsx`.
 
 ---
 

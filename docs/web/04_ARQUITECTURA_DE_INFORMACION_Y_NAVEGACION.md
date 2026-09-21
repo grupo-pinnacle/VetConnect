@@ -24,13 +24,12 @@ El mapa del sitio web se divide en tres dominios principales: **Portal Público 
    ├── [Nivel 2] Autenticación & Acceso (/login, /register)
    ├── [Nivel 2] Portal del Tutor (/client/dashboard)
    │    ├── [Nivel 3] Gestión de Mascotas (Alta & Ficha Médica ISO)
-   │    ├── [Nivel 3] Triage Clínico Reactivo (Modal de Urgencia)
-   │    └── [Nivel 3] Sala de Espera Virtual (Espera de Guardia)
+   │    └── [Nivel 3] Triage Clínico Reactivo (Modal de Urgencia) ──> Redirección inmediata a /call/:id
    ├── [Nivel 2] Videoconsulta Telemédica HD (/call/:id)
    │    ├── [Nivel 3] Audio/Video WebRTC LiveKit 720p
    │    └── [Nivel 3] Chat Clínico con Adjuntos Fotográficos (/api/media)
    └── [Nivel 2] Receta Digital Oficial SENASA (/prescriptions/:id)
-        └── [Página Final] Vista Imprimible A4 & Verificador QR
+        └── [Página Final] Vista Imprimible A4 & Verificador QR (PrescriptionView.tsx)
 
 ### 2.1 Árbol Web del Portal Profesional de Guardia (`VET`) & Panel Admin (`ADMIN`)
 
@@ -38,11 +37,11 @@ El mapa del sitio web se divide en tres dominios principales: **Portal Público 
 [Nivel 1] Tablero de Guardia (/vet/dashboard)
    ├── [Nivel 2] Control de Guardia (Switch isOnline & Cola en Espera)
    ├── [Nivel 2] Atención de Consulta (/call/:id)
-   │    └── [Modal Clínico] Emisión de Receta Oficial SENASA con QR
+   │    └── [Modal Clínico] Emisión de Receta Oficial SENASA con QR (PrescriptionModal)
    └── [Nivel 2] Historial de Consultas Atendidas (/vet/dashboard#historial)
 
-[Nivel 1] Panel de Administración SENASA (/admin/vets y /admin/dashboard)
-   └── [Nivel 2] Fiscalización de Matrículas Pendientes & AuditLogs (Mapea a AdminVets.tsx)
+[Nivel 1] Panel de Administración SENASA (/admin/vets y /admin/dashboard - Alias equivalentes)
+   └── [Nivel 2] Fiscalización de Matrículas Pendientes & AuditLogs (Mapean a AdminVets.tsx)
 
 > 🔒 **Aislamiento de Pacientes & Protección PII (Ley 25.326):**  
 > Se descarta formalmente cualquier ruta de "bóveda global de pacientes" abierta (`/patients`). El médico veterinario accede a los datos clínicos del paciente exclusivamente dentro del contexto de una consulta activa asignada, garantizando el secreto médico y la minimización de datos personales.
@@ -144,11 +143,9 @@ flowchart TD
     B --> C["Cuestionario de Triage (< 60s) en Modal"]
     C --> D{"¿Riesgo Vital Inminente?"}
     D -- Sí --> E["Alerta Roja: Geolocalización de Guardia Presencial + Primeros Auxilios"]
-    D -- No --> F["Ingreso a Cola de Espera (/client/dashboard)"]
-    F --> G["Sala de Espera Interactiva (Contador de Espera en Vivo)"]
-    G -->|Asignación de Médico| H["Consola de Videoconsulta HD (LiveKit) + Chat (/call/:id)"]
-    H --> I["Cierre Médico: Veterinario emite Receta SENASA con QR"]
-    I --> J["Tutor descarga PDF de Receta y califica la atención"]
+    D -- No --> H["Redirección Inmediata a Consola /call/:id (LiveKit + Chat)"]
+    H --> I["Cierre Médico: Veterinario emite Receta SENASA con QR (PrescriptionModal)"]
+    I --> J["Tutor descarga PDF de Receta (/prescriptions/:id) y califica la atención"]
 ```
 
 > ℹ️ **Nota de Alcance (v2.0 vs. v2.1+):** Conforme a [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), la pasarela arancelaria se encuentra formalmente excluida (ScopeOut) del MVP v2.0, garantizando auxilio médico inmediato sin barreras de cobro. La integración de pasarela transaccional se incorporará en el flujo comercial de la versión v2.1+.

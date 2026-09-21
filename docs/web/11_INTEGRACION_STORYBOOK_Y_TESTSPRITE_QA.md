@@ -153,7 +153,7 @@ graph LR
 3. Analizar los reportes de video y capturas de pantalla de TestSprite; corregir iterativamente cualquier anomalía detectada.
 
 ### 🔹 Fase 4: Exportación Vectorial a Figma para el Diseñador Multimedial
-Se sigue el flujo canónico de sincronización bidireccional mediante `html.to.design` detallado en [**`06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-de-sincronización-diseño-código-flujo-híbrido-virtuoso-storybook--figma--htmltodesign`**](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-de-sincronización-diseño-código-flujo-híbrido-virtuoso-storybook--figma--htmltodesign) para entregar a Damian Orellana los frames vectoriales nativos para su supervisión visual.
+> 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 ---
 
