@@ -12,19 +12,17 @@ import {
   SocketData,
 } from './socket.types';
 
+import { isAllowedOrigin } from '../config/cors';
+
 export let io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
 
 export const initializeSocketServer = (httpServer: HttpServer) => {
-  const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-    : ['http://localhost:5173', 'http://localhost:3000'];
-
   io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(
     httpServer,
     {
       cors: {
         origin: (origin, callback) => {
-          if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'test') {
+          if (isAllowedOrigin(origin)) {
             callback(null, true);
           } else {
             callback(new Error('CORS policy violation'));

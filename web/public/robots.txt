@@ -1,0 +1,15 @@
+# VetConnect Robots.txt — Cumplimiento de Privacidad y SEO
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /prescriptions/*
+
+# Bloquear consolas privadas y áreas médicas confidenciales
+Disallow: /client/
+Disallow: /vet/
+Disallow: /call/
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://app.vetconnect.com.ar/sitemap.xml

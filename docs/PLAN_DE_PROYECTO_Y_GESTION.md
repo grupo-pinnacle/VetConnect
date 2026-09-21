@@ -72,7 +72,7 @@ VetConnect es una solución telemédica multiplataforma (Web SPA y Mobile App na
 
 ### 1.4 Objetivos Generales y Específicos
 - **Objetivo General:**  
-  Diseñar, desarrollar y desplegar una plataforma omnicanal (Web React 19 y Mobile Expo SDK 54) con backend modular escalable (Node.js, Express 5, PostgreSQL y Prisma ORM 6) que brinde atención veterinaria primaria a distancia, resguarde la seguridad del paciente y garantice trazabilidad legal e inmutabilidad clínica.
+  Diseñar, desarrollar y desplegar una plataforma omnicanal (Web React 18.3.1 LTS / React 19 Ready y Mobile Expo SDK 54) con backend modular escalable (Node.js, Express 5, PostgreSQL y Prisma ORM 6) que brinde atención veterinaria primaria a distancia, resguarde la seguridad del paciente y garantice trazabilidad legal e inmutabilidad clínica.
 - **Objetivos Específicos:**
   1. Reducir el tiempo $P_{95}$ de espera en la cola de triage médico a menos de 5 minutos.
   2. Implementar canales de comunicación sincrónicos de grado médico: mensajería en tiempo real con latencia menor a 80 ms y videollamadas WebRTC (720p) con conexión inicial menor a 1500 ms.
@@ -95,7 +95,7 @@ VetConnect atiende a tres arquetipos de usuario diferenciados con roles de acces
 | Tutor de Mascota  | Personas o familias con animales  | App Móvil (Expo SDK 54) y Web SPA     |
 | (CLIENT)          | de compañía (perros, gatos, etc.) | Flujos rápidos de solicitud y triage. |
 +-------------------+-----------------------------------+---------------------------------------+
-| Médico Veterinario| Profesionales de la salud animal  | Portal Web Pro (React 19 / Vite)      |
+| Médico Veterinario| Profesionales de la salud animal  | Portal Web Pro (React 18.3.1 LTS/Vite)|
 | (VET)             | matriculados y en ejercicio legal | Consola clínica, videoconsulta y receta|
 +-------------------+-----------------------------------+---------------------------------------+
 | Administrador     | Personal de gestión, auditoría    | Dashboard /admin Web Pro              |
@@ -264,7 +264,7 @@ El proyecto VetConnect está conformado por un equipo multidisciplinario de inge
 | Integrante                | Rol Principal Asignado            | Especialidad Técnica          |
 +---------------------------+-----------------------------------+-------------------------------+
 | Tobias Vera               | Tech Lead & Solutions Architect   | Node.js, Express, DevOps, CI  |
-| Damian Orellana           | Técnico Multimedial & Web Lead    | UI/UX Figma, React 19, Tailwind|
+| Damian Orellana           | Técnico Multimedial & Web Lead    | UI/UX Figma, React 18.3.1, Tailwind|
 | Juan Mendoza              | Mobile App Lead                   | React Native, Expo SDK 54     |
 | Ezequiel Charca           | QA & Security Automation Lead     | Jest, Vitest, Playwright, IAM |
 | Lara Bouso                | Project Manager & Compliance Lead | Product Owner, SENASA, Legal  |
@@ -273,7 +273,7 @@ El proyecto VetConnect está conformado por un equipo multidisciplinario de inge
 
 ### 6.2 Roles Previstos & Responsabilidades
 - **Tech Lead & Arquitectura (Tobias Vera):** Diseño de la arquitectura de sistemas, definición de modelos relacionales Prisma, orquestación Docker, infraestructura en la nube (Coolify/Vercel) y revisión de código maestro.
-- **Técnico Multimedial & Frontend Web Lead (Damian Orellana):** Creación y custodia del diseño visual en **Figma** (wireframes, prototipos de alta fidelidad, design tokens y flujos UI/UX) bajo norma ISO 9241-11. Dirección técnica de la codificación del Portal Web Pro en React 19 + Tailwind CSS en conjunto con el equipo de desarrollo a partir de los prototipos aprobados en Figma.
+- **Técnico Multimedial & Frontend Web Lead (Damian Orellana):** Creación y custodia del diseño visual en **Figma** (identidad de marca, wireframes, prototipos de alta fidelidad, design tokens y flujos UI/UX) bajo norma ISO 9241-11. Dirección del diseño de interfaz en colaboración virtuosa con el equipo de desarrollo, donde los componentes atómicos se construyen y auditan en Storybook con tokens Tailwind sincronizados y se exportan e importan bidireccionalmente hacia Figma mediante `html.to.design`.
 - **Mobile App Lead (Juan Mendoza):** Desarrollo de la aplicación móvil para tutores con Expo Router, diseño de navegación en NativeWind, integración del bridge WebView con LiveKit y manejo de permisos de cámara y micrófono.
 - **QA & Security Engineer (Ezequiel Charca):** Automatización de pruebas unitarias y de integración en Jest (meta: 120+ tests), auditoría de seguridad en JWT, validación de carga y pruebas de accesibilidad WCAG 2.1.
 - **Project Manager, Product Owner & Compliance (Lara Bouso):** Articula el puente de gobernanza entre la dirección de producto/legal y la ingeniería del proyecto. Como Product Owner y Asesora Legal, valida los criterios de aceptación, el cumplimiento de la Ley 25.326 y la normativa SENASA. Como Project Manager, asegura el cumplimiento de hitos, plazos de entregables regulatorios y la facilitación de revisiones formales con stakeholders externos.
@@ -619,7 +619,7 @@ La arquitectura de software es el plano maestro que vincula los requerimientos f
 | ORM Layer         | Prisma ORM 6          | Migraciones seguras, type-safe query builder.     |
 | Realtime Sockets  | Socket.io + Redis     | Múltiples salas, reconexión automática y cluster.|
 | Video SFU         | LiveKit Cloud / SFU   | Ultra baja latencia WebRTC, simulcast adaptativo. |
-| Web Frontend      | React 19 + Vite       | Renderizado veloz, concurrencia y SPA moderna.    |
+| Web Frontend      | React 18.3.1 LTS+Vite  | Renderizado veloz, compatibilidad WebRTC y SPA.   |
 | Mobile Frontend   | Expo SDK 54 / RN      | Desarrollo multiplataforma nativo con Expo Router.|
 | Reverse Proxy/Ops | Coolify VPS + Vercel  | Despliegue automatizado, Traefik SSL y CDN Edge.  |
 +-------------------+-----------------------+---------------------------------------------------+

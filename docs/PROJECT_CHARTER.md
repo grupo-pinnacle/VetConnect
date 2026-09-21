@@ -86,7 +86,7 @@ flowchart LR
   │     ├── 1.3.2 Solicitud de triaje y visualización de cola
   │     ├── 1.3.3 Chat bidireccional y visor de recetas descargables
   │     └── 1.3.4 WebView optimizado con permisos de hardware para LiveKit
-  ├── 1.4 Panel Web Profesional de Veterinarios (React 19 / Vite)
+  ├── 1.4 Panel Web Profesional de Veterinarios (React 18.3.1 LTS / Vite)
   │     ├── 1.4.1 Módulo de atención telemática con controles de videollamada
   │     ├── 1.4.2 Generador de recetas médicas estructuradas con QR
   │     └── 1.4.3 Registro de evolución clínica y notas de diagnóstico
@@ -131,7 +131,7 @@ gantt
 | Hito | Nombre | Sprints y Fechas | Entregables Principales | Estado |
 |---|---|---|---|---|
 | **M0** | **Cimientos & Auth Core** | Sprints 1 y 2 (01-Oct a 28-Oct-2026) | Monorepo npm workspaces, Docker Compose (Postgres 16 + Redis 7), esquema Prisma snake_case, Auth JWT con tokenVersion. | `PLANNED` |
-| **M1** | **Navegación, UI & Validación SENASA** | Sprints 3 y 4 (29-Oct a 25-Nov-2026) | Scaffolding Web React 19 y Mobile Expo, Panel Admin con aprobación bloqueante SENASA (ADR-013) y AuditLog. | `PLANNED` |
+| **M1** | **Navegación, UI & Validación SENASA** | Sprints 3 y 4 (29-Oct a 25-Nov-2026) | Scaffolding Web React 18.3.1 LTS y Mobile Expo, Panel Admin con aprobación bloqueante SENASA (ADR-013) y AuditLog. | `PLANNED` |
 | **M2** | **Core Clínico, Fichas & Triage** | Sprints 5 y 6 (26-Nov a 23-Dic-2026) | CRUD Mascotas con microchip ISO, cola de triage con auto-asignación y máquina de estados médicas. | `PLANNED` |
 | **M3** | **Comunicación Realtime & Video SFU** | Sprints 7 y 8 (24-Dic-2026 a 20-Ene-2027) | Chat Socket.io idempotente, LiveKit SFU 720p sin PII, subida de media con Magic Bytes y **Buffer técnico WebRTC**. | `PLANNED` |
 | **M4** | **Calidad, Recetas QR & Despliegue** | Sprints 9 y 10 (21-Ene a 17-Feb-2027) | Recetas oficiales QR, rating 1-5 (ADR-023), 120+ tests en Jest (>80%), deploy Coolify VPS (ADR-017) y Vercel (ADR-022). | `PLANNED` |
@@ -159,7 +159,7 @@ Alineado con los acuerdos tomados en la reunión con el stakeholder interno ([`M
 | Arquitectura de API & Base Datos   |  A/R   |   C    |   C    |    I     |      I       |
 | Infraestructura Redis & WebSockets |  A/R   |   C    |   C    |    I     |      I       |
 | App Móvil React Native (Expo)      |   C    |  A/R   |   I    |    C     |      I       |
-| Frontend Web (React 19 / Vite)     |   C    |   I    |  A/R   |    C     |      I       |
+| Frontend Web (React 18.3.1 / Vite) |   C    |   I    |  A/R   |    C     |      I       |
 | Teleconsulta LiveKit SFU           |   C    |   R    |   R    |    A     |      I       |
 | Pruebas Automatizadas & QA         |   C    |   C    |   C    |   A/R    |      I       |
 | Validación Legal SENASA & PII      |   C    |   I    |   I    |    I     |     A/R      |

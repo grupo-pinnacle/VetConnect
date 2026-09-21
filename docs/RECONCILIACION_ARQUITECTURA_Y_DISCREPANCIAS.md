@@ -80,7 +80,7 @@ A continuación se detalla la resolución definitiva de las 4 inconsistencias de
 * **Diagnóstico:** Ambigüedad sobre la plataforma principal de hosting web y confusión en el número de ADR (se citaba erróneamente ADR-015, el cual corresponde formalmente a TanStack React Query v5).
 * **Resolución Oficial:**
   - **ADR-017:** Gobierna el despliegue del Backend Node.js y clúster Redis sobre un servidor VPS autohosteado con **Coolify** y proxy reverso Traefik (SSL automático).
-  - **ADR-022:** Establece formalmente a **Vercel** como la plataforma oficial de producción para el Frontend Web SPA (React 19 + Vite), integrada de forma nativa al pipeline de CI/CD (`.github/workflows/ci.yml`) con preview deployments por Pull Request.
+  - **ADR-022:** Establece formalmente a **Vercel** como la plataforma oficial de producción para el Frontend Web SPA (React 18.3.1 LTS + Vite), integrada de forma nativa al pipeline de CI/CD (`.github/workflows/ci.yml`) con preview deployments por Pull Request.
   - **Hostinger:** Se cataloga formalmente **fuera del pipeline de CI/CD**, como una **alternativa de contingencia manual** (subida manual de `web/dist/` vía SFTP a `public_html/` ante caídas mayores de Vercel).
 
 ---

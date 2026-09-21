@@ -33,7 +33,7 @@ Para garantizar total transparencia operativa entre el seguimiento de gestión d
 | **TASK-3.2** (Chat Idempotente) | **PB-26**, **PB-27** (Sprint 7) | Mensajería con clientMsgId, deduplicación P2002 y presencia. |
 | **TASK-4.1** (Tokens LiveKit SFU) | **PB-29**, **PB-32** (Sprint 8) | Tokens WebRTC 720p sin PII y teardown server-side deleteRoom. |
 | **TASK-4.2** (Storage Magic Bytes) | **PB-20** (Sprint 5), **PB-28** (Sprint 7) | Subida segura a disco/S3 con validación de primeros 32 bytes. |
-| **TASK-5.1** (Frontend Web SPA) | **PB-04** (S2), **PB-09**, **PB-10**, **PB-11** (S3), **PB-12** (S4), **PB-23** (S6) | React 19 + Vite, TanStack Query, routing, FAQ y UI Kit. |
+| **TASK-5.1** (Frontend Web SPA) | **PB-04** (S2), **PB-09**, **PB-10**, **PB-11** (S3), **PB-12** (S4), **PB-23** (S6) | React 18.3.1 (LTS) + Vite, TanStack Query, routing, FAQ y UI Kit. |
 | **TASK-5.2** (Videollamada Web) | **PB-30** (Sprint 8) | Componente CallRoom, PreJoin y CERO doble RoomAudioRenderer. |
 | **TASK-6.1** (Mobile Expo Router) | **PB-10** (Sprint 3), **PB-19** (Sprint 5), **PB-20** (Sprint 6), **PB-23** (Sprint 6) | App Expo SDK 54, NativeWind, secure store y FAQ de soporte. |
 | **TASK-6.2** (Mobile WebView LiveKit) | **PB-31** (Sprint 8) | Handshake bidireccional page:ready y permisos de hardware. |
@@ -343,23 +343,24 @@ Cada tarea debe ejecutarse siguiendo estrictamente el estándar de [`AGENTS.md`]
 
 ---
 
-## 💻 FASE 5: Frontend Web SPA (React 19 + Vite)
+## 💻 FASE 5: Frontend Web SPA (React 18.3.1 LTS + Vite)
 
-> 🎨 **MODELO OPERATIVO WEB (FIGMA-FIRST & DESACOPLAMIENTO DE JULES):**
-> - **Diseño en Figma (Técnico Multimedial — Damian Orellana):** El diseño visual, pantallas, flujos de navegación, wireframes y design tokens del Frontend Web son elaborados integralmente en **Figma** conforme a [`docs/SISTEMA_DE_DISENO.md`](docs/SISTEMA_DE_DISENO.md).
-> - **Implementación de Código (Equipo Humano + Damian Orellana):** El equipo codifica la interfaz en `web/` tomando los prototipos de Figma aprobados como especificación estética vinculante.
-> - **Rol de Jules en Web:** Jules ejecuta de forma autónoma el scaffolding técnico y contratos tipados (TASK-5.1). Jules **no inventa pantallas arbitrarias** ni se detiene a esperar diseños; mientras Figma y el equipo avanzan con la UI, Jules trabaja 24/7 en el backend, sockets, media, mobile y testing (Fases 0 a 4, 6 y 7).
+> 🎨 **MODELO OPERATIVO WEB HÍBRIDO (STORYBOOK + FIGMA COLABORATIVO — AGENTS.md §6):**
+> - **Dirección de Arte en Figma (Técnico Multimedial — Damian Orellana):** El diseño visual, pantallas y experiencia de usuario (UI/UX) son dirigidos en **Figma** conforme a [`docs/SISTEMA_DE_DISENO.md`](docs/SISTEMA_DE_DISENO.md).
+> - **Desarrollo Atómico en Storybook & Código SPA (Equipo de Desarrollo + Agentes):** Los componentes atómicos, estados y accesibilidad WCAG se construyen y verifican de forma aislada en **Storybook 8** (`web/src/components/ui/`) con tokens Tailwind CSS sincronizados. Las pantallas se ensamblan sobre la SPA viva en React 18.3.1 (LTS).
+> - **Sincronización Bidireccional:** Las vistas interactivas vivas se exportan a Figma mediante `html.to.design` para refinamiento estético de Damian sin bloqueos de ingeniería, y los flujos E2E se verifican con **TestSprite MCP**.
 
 ### 📦 TASK-5.1: Scaffolding Web, Enrutamiento y Capa de Datos (TanStack Query v5)
 - **Capa:** Web (`web/`)
-- **Archivos:** `web/package.json`, `web/vite.config.ts`, `web/src/main.tsx`, `web/src/App.tsx`, `web/src/services/api.ts`
+- **Archivos:** `web/package.json`, `web/vite.config.ts`, `web/src/main.tsx`, `web/src/App.tsx`, `web/src/services/api.ts`, `web/src/pages/*`, `web/src/components/ui/*`
 - **Contratos/ADRs:** [ADR-015](docs/DECISIONS.md) (TanStack Query v5), [ADR-008](docs/DECISIONS.md), [ADR-022](docs/DECISIONS.md) (Vercel Oficial).
 - **Instrucciones:**
-  1. Inicializar proyecto React 19 + Vite + TypeScript + Tailwind CSS.
+  1. Inicializar proyecto React 18.3.1 (LTS) + Vite + TypeScript + Tailwind CSS (conforme a AGENTS.md por compatibilidad con LiveKit).
   2. Configurar cliente HTTP Axios con interceptor para refresh token automático en 401.
   3. Configurar `QueryClient` de TanStack Query con tiempos de invalidación optimizados (`staleTime: 5 min`).
   4. Configurar rutas protegidas (`ProtectedRoute`) para clientes, veterinarios y administradores.
-- **Comando de Verificación:**
+  5. **Implementación y Ensamblado de Pantallas:** Desarrollar y mantener los portales `Landing.tsx`, `Login.tsx`, `Register.tsx`, `DashboardClient.tsx` (Bóveda y Triage reactivo), `DashboardVet.tsx` (Tablero de guardia en vivo), `PrescriptionView.tsx` (Validación QR SENASA) y `AdminVets.tsx` (Fiscalización médica).
+  6. **Desacople Atómico Progresivo (Storybook CDD):** Extraer los bloques UI de las páginas hacia el catálogo de componentes en `web/src/components/ui/` (`Badge.tsx`, `Input.tsx`, `PetCard.tsx`, `TriageSelector.tsx`, `ChatMessage.tsx`, etc.), desarrollando sus historias `.stories.tsx` y validando accesibilidad (WCAG 2.1 AA) conforme a [`docs/web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md`](docs/web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md).
   ```bash
   cd web && npm run build
   ```

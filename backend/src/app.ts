@@ -20,6 +20,9 @@ dotenv.config();
 
 const app: Express = express();
 
+// Trust reverse proxy (Coolify, Nginx, Traefik, Vercel, ALB) for secure cookies and accurate IPs
+app.set('trust proxy', 1);
+
 // Middlewares
 app.use(
   helmet({
@@ -35,20 +38,26 @@ app.use(
   })
 );
 
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-  : ['http://localhost:5173', 'http://localhost:3000'];
+import { isAllowedOrigin } from './config/cors';
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'test') {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
         callback(new Error('CORS policy violation'));
       }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Client-Platform',
+      'sentry-trace',
+      'baggage',
+    ],
   })
 );
 

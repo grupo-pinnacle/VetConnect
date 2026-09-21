@@ -8,13 +8,22 @@ export const Landing: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans" data-testid="landing-page">
       {/* Navigation Header */}
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-black text-lg">
-            V
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-lg">
+              V
+            </div>
+            <span className="font-bold text-xl text-slate-800 tracking-tight" data-testid="brand-logo">
+              VetConnect
+            </span>
           </div>
-          <span className="font-bold text-xl text-slate-800 tracking-tight" data-testid="brand-logo">
-            VetConnect
-          </span>
+
+          <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-slate-600">
+            <a href="#servicios" className="hover:text-blue-600 transition">Servicios</a>
+            <a href="#directorio" className="hover:text-blue-600 transition">Portales</a>
+            <a href="#marco-legal" className="hover:text-blue-600 transition">Respaldo Legal</a>
+            <a href="#ayuda" className="hover:text-blue-600 transition">Ayuda</a>
+          </nav>
         </div>
 
         <div className="flex items-center gap-3">
@@ -28,7 +37,7 @@ export const Landing: React.FC = () => {
           <button
             data-testid="landing-register-button"
             onClick={() => navigate('/register')}
-            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-semibold shadow-sm transition"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm transition"
           >
             Registrarse
           </button>
@@ -37,7 +46,7 @@ export const Landing: React.FC = () => {
 
       {/* Hero Section */}
       <main className="flex-1 max-w-5xl mx-auto px-6 py-12 flex flex-col items-center text-center">
-        <span className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-xs font-bold uppercase tracking-wider mb-4" data-testid="trust-badge-senasa">
+        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold uppercase tracking-wider mb-4" data-testid="trust-badge-senasa">
           Plataforma Homologada SENASA Ley 25.326
         </span>
 
@@ -50,14 +59,14 @@ export const Landing: React.FC = () => {
         </p>
 
         {/* Portal CTAs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl mb-12" data-testid="cta-buttons-container">
+        <div id="directorio" className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl mb-12" data-testid="cta-buttons-container">
           <button
             data-testid="cta-client-portal"
             onClick={() => navigate('/login')}
-            className="p-5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-md font-bold text-base transition flex flex-col items-center justify-center gap-1"
+            className="p-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md font-bold text-base transition flex flex-col items-center justify-center gap-1"
           >
             <span>Solicitar Teleconsulta</span>
-            <span className="text-xs font-normal text-sky-100">Portal para Tutores</span>
+            <span className="text-xs font-normal text-blue-100">Portal para Tutores</span>
           </button>
 
           <button
@@ -80,7 +89,7 @@ export const Landing: React.FC = () => {
         </div>
 
         {/* Mobile APK Download Direct Banner */}
-        <section className="w-full bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-12 text-left flex flex-col md:flex-row items-center justify-between gap-6" data-testid="apk-download-banner">
+        <section id="servicios" className="w-full bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-12 text-left flex flex-col md:flex-row items-center justify-between gap-6" data-testid="apk-download-banner">
           <div>
             <h3 className="font-bold text-slate-800 text-lg mb-1">
               Descarga la App Móvil VetConnect para Android
@@ -101,7 +110,7 @@ export const Landing: React.FC = () => {
         </section>
 
         {/* Compliance & Security Features */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left" data-testid="features-section">
+        <section id="marco-legal" className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left" data-testid="features-section">
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
             <h4 className="font-bold text-slate-800 text-sm mb-2">Receta Digital QR</h4>
             <p className="text-xs text-slate-600 leading-normal">
@@ -126,7 +135,7 @@ export const Landing: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500" data-testid="landing-footer">
+      <footer id="ayuda" className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500" data-testid="landing-footer">
         <p>© {new Date().getFullYear()} VetConnect Monorepo v2.0. Todos los derechos reservados.</p>
       </footer>
     </div>

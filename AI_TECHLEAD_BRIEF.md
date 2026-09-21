@@ -31,7 +31,7 @@ Plataforma de **telemedicina veterinaria de alta fidelidad** que conecta tutores
 | Capa | Tecnologías | Directorio & Entrada |
 |---|---|---|
 | **Backend REST & WS** | Node.js 20 LTS + Express 5 + Prisma 6 + PostgreSQL + Redis 7 + Socket.io | `backend/src/server.ts` (puerto 3001 en dev) |
-| **Frontend Web** | React 19 + Vite + Tailwind CSS + TanStack Query v5 + LiveKit Components | `web/` (build estático distribuido en Vercel) |
+| **Frontend Web** | React 18.3.1 (LTS) + Vite + Tailwind CSS + TanStack Query v5 + LiveKit Components | `web/` (build estático distribuido en Vercel) |
 | **Mobile App** | React Native + Expo SDK 54 + Expo Router + NativeWind | `mobile/` (EAS Build / APK directo con deep-links `vetconnect://`) |
 | **Videollamadas SFU** | LiveKit SFU Cloud / Local | Tokens firmados con TTL corto en `backend`, clientes Web y Mobile WebView |
 | **Infraestructura Dev** | Docker Compose (PostgreSQL 16 Alpine + Redis 7 Alpine) | `docker-compose.yml` en raíz del monorepo |
@@ -81,14 +81,14 @@ Los agentes autónomos deben invocar las herramientas indicadas según la natura
 
 ## 5. Hoja de Ruta Greenfield & Modelo Operativo Híbrido
 
-### 5.1 Protocolo de Trabajo: Técnico Multimedial en Figma + Equipo Humano + Jules 24/7
+### 5.1 Protocolo de Trabajo: Storybook + Dirección de Arte en Figma + Jules 24/7
 Para maximizar la fidelidad estética y acelerar la entrega técnica sin cuellos de botella:
-1. **Diseño Visual & UI/UX en Figma (Técnico Multimedial — Damian Orellana):**
+1. **Dirección Visual & UI/UX en Figma (Técnico Multimedial — Damian Orellana):**
    El Técnico Multimedial diseña integralmente en **Figma** los flujos de navegación, wireframes, componentes interactivos y pantallas de alta fidelidad del Portal Web Pro (tutores, veterinarios y administradores), anclándose a [`docs/SISTEMA_DE_DISENO.md`](docs/SISTEMA_DE_DISENO.md).
-2. **Implementación de Código Web (Equipo Humano + Damian Orellana):**
-   El equipo de desarrollo codifica el Frontend Web (`web/` en React 19 + Tailwind CSS) tomando los prototipos de Figma aprobados como especificación visual vinculante.
+2. **Implementación de Código Web & Catálogo en Storybook (Equipo + Agentes):**
+   El equipo y los agentes desarrollan los componentes atómicos en **Storybook 8** (`web/src/components/ui/`) con tokens Tailwind CSS y React 18.3.1 (LTS) verificado con tests unitarios. Las vistas interactivas vivas se sincronizan con Figma mediante `html.to.design` para refinamiento estético sin retrabajos.
 3. **Avance Continuo de Jules en Backend & Core (Sin Bloqueos):**
-   Mientras el diseño en Figma y la maquetación web se orquestan, **Google Jules y los subagentes de IA avanzan de forma continua y 100% autónoma** en la construcción de los cimientos, base de datos, APIs REST, mensajería en tiempo real, LiveKit backend, aplicación mobile y suite de tests. Jules solo interviene en la capa web para preparar el scaffolding técnico de base (Vite, TypeScript, cliente Axios y TanStack Query) sin inventar interfaces visuales arbitrarias.
+   Mientras el diseño en Figma y los componentes en Storybook se desarrollan, **Google Jules y los subagentes de IA avanzan de forma continua y 100% autónoma** en la construcción de los cimientos, base de datos, APIs REST, mensajería en tiempo real, LiveKit backend, aplicación mobile y suite de tests.
 
 ### 5.2 Fases de Ejecución (F0 a F7)
 El Tech Lead supervisa la ejecución secuencial de las 8 fases detalladas en [`PLAN_ACCION_VETCONNECT.md`](PLAN_ACCION_VETCONNECT.md):

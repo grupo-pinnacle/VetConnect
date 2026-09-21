@@ -67,7 +67,7 @@ vetconnect/
 ├── backend/                        # API REST Express 5 + TypeScript + Prisma 6 + Socket.io
 │   ├── prisma/schema.prisma        # Modelo relacional PostgreSQL con snake_case mappings
 │   └── src/modules/                # Módulos DDD: auth, users, pets, consultations, calls, media, notifications
-├── web/                            # SPA React 19 + Vite + Tailwind CSS + TanStack Query + LiveKit
+├── web/                            # SPA React 18.3.1 (LTS) + Vite + Tailwind CSS + TanStack Query + LiveKit
 ├── mobile/                         # App React Native + Expo SDK 54 + Expo Router + NativeWind
 └── docs/                           # Documentación técnica, contratos y decisiones de arquitectura
 ```
@@ -104,7 +104,8 @@ vetconnect/
 - **Seguridad JWT:** Firmas con algoritmo fijo `algorithms: ['HS256']`, verificación de `tokenVersion` contra base de datos para revocación instantánea de sesiones.
 - **Idempotencia en Chat:** Reintentos con `clientMsgId` existente deben retornar HTTP 200 con el mensaje preexistente, nunca HTTP 500 ni mensajes duplicados.
 
-### 4.3 Frontend Web & Mobile App (React 19 & Expo SDK 54)
+### 4.3 Frontend Web & Mobile App (React 18.3.1 LTS & Expo SDK 54)
+> *Nota técnica:* El frontend web emplea **React 18.3.1 (LTS)** para compatibilidad estricta de peer-dependencies con `@livekit/components-react` y `@testing-library/react`. La migración a React 19 está programada post-soporte oficial upstream.
 - **Cero `any`:** Prohibido el uso de `any` explícito o implícito. Utilizar interfaces TypeScript estrictas.
 - **Minimización de PII:** En listas de veterinarios y directorios públicos, redactar `email` y `phone`. Solo exponerlos al veterinario asignado durante una consulta activa.
 - **Resiliencia de UI:** Todo componente asíncrono debe manejar estados de: `cargando`, `error`, `vacío (empty state)` y `reconectando`.
@@ -199,13 +200,13 @@ Cuando un agente Tech Lead o el desarrollador delega trabajo en subagentes o ses
 | **Backend REST Agent** | API Express 5 & Auth | Rutas, controladores, middleware JWT, Zod | `npm test -w backend` |
 | **Realtime Agent** | WebSockets & Socket.io | Gateways, rooms, presencia, Redis adapter | `npm test -w backend -- -t "realtime"` |
 | **Media & Video Agent** | LiveKit SFU & Uploads | Tokens LiveKit, Magic Bytes, S3/Local, `GET /api/media/:id` auth | `npm test -w backend -- -t "media"` |
-| **Web Frontend Agent** *(Híbrido)* | React 19 & Vite SPA | Scaffolding técnico, contratos API y armado UI post-Figma | `npm run build -w web && npm test -w web` |
+| **Web Frontend Agent** *(Híbrido)* | React 18.3.1 (LTS) & Vite SPA | Scaffolding técnico, contratos API, catálogo atómico en Storybook y armado UI post-Figma | `npm run build -w web && npm test -w web` |
 | **Mobile App Agent** | React Native & Expo SDK 54 | Expo Router, NativeWind, expo-secure-store, offline sync | `npm run typecheck -w mobile` |
 | **QA & Verification Agent** | Testing E2E & Seguridad | Jest 120+ tests, Playwright, CI audit | `npm test --workspaces && npm run typecheck` |
 | **Debugger Agent** | Regresiones & Fallos | Análisis de diff, aislamiento de fallos, Self-Correction Loop | `npm test -- --verbose` |
 
-> 🎨 **Directiva de Trabajo para la Capa Web (Figma-First):**
-> El diseño visual, pantallas y experiencia de usuario (UI/UX) del Frontend Web son ideados y prototipados en **Figma por el Técnico Multimedial (Damian Orellana)**. La codificación de las pantallas la realiza el equipo humano de desarrollo basándose en dicho diseño. Los agentes autónomos de IA (como Google Jules) **tienen prohibido inventar interfaces visuales o bloquearse esperando a Figma**: Jules avanza 24/7 de forma continua en Backend, Prisma, Sockets, Media, Mobile y QA, proveyendo para la Web únicamente el scaffolding técnico y contratos tipados (TASK-5.1).
+> 🎨 **Directiva de Trabajo para la Capa Web (Storybook + Figma Colaborativo):**
+> El diseño visual, pantallas y experiencia de usuario (UI/UX) del Frontend Web son ideados y dirigidos en **Figma por el Técnico Multimedial (Damian Orellana)**. El equipo de desarrollo construye y verifica los componentes atómicos y accesibilidad en **Storybook** utilizando tokens Tailwind sincronizados, y exporta vistas interactivas a Figma mediante `html.to.design`. Los agentes autónomos de IA avanzan de forma continua en Backend, Prisma, Sockets, Media, Mobile, contratos tipados y catálogo de Storybook, manteniendo alineación total con las directivas de arte sin bloqueos operativos.
 
 ---
 

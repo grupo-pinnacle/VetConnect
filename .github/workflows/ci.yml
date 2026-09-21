@@ -114,6 +114,46 @@ jobs:
             npm test --if-present
           fi
 
+  web-tests:
+    name: 🌐 Frontend Web Tests (Vitest)
+    runs-on: ubuntu-latest
+    needs: [typecheck-and-lint]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts || npm install
+
+      - name: Run Web Tests
+        run: npm test -w web
+
+  mobile-tests:
+    name: 📱 Mobile App Tests (Jest)
+    runs-on: ubuntu-latest
+    needs: [typecheck-and-lint]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts || npm install
+
+      - name: Run Mobile Tests
+        run: npm test -w mobile
+
   security-scan:
     name: 🛡️ Security Audit
     runs-on: ubuntu-latest

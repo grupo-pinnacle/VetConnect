@@ -101,7 +101,7 @@ graph TD
         M2 --> M2_2["Historial Clínico Cronológico"]
     end
 
-    subgraph Web["💻 Portal Web Profesional & Admin (React 19)"]
+    subgraph Web["💻 Portal Web Profesional & Admin (React 18.3.1 LTS)"]
         W1["📊 Tablero de Guardia\n(Switch isOnline, cola de pacientes)"]
         W2["🩺 Consulta Médica Activa\n(Video 720p, chat, notas de evolución)"]
         W3["📋 Generador de Recetas\n(Fármacos, dosis, firma, código QR)"]
@@ -300,12 +300,12 @@ Las decisiones del Sistema de Diseño de VetConnect se sustentan en principios c
 
 ### 3.2 Conclusión de Coherencia y Mantenibilidad del Producto
 
-El **Sistema de Diseño de VetConnect** establece un lenguaje visual y funcional común entre desarrolladores, diseñadores y agentes de inteligencia artificial autónomos. Su fuente visual de verdad reside en el archivo maestro de **Figma diseñado por el Técnico Multimedial (Damian Orellana)**, desde donde se derivan los design tokens de Tailwind CSS y los componentes React 19 implementados por el equipo humano.
+El **Sistema de Diseño de VetConnect** establece un lenguaje visual y funcional común entre desarrolladores, diseñadores y agentes de inteligencia artificial autónomos. Su dirección visual de arte reside en **Figma a cargo del Técnico Multimedial (Damian Orellana)**, mientras que el equipo de desarrollo y los agentes construyen los componentes atómicos en **Storybook** utilizando tokens sincronizados de Tailwind CSS, con exportación hacia Figma mediante `html.to.design` para sincronizar estados dinámicos de WebRTC y tiempo real.
 
 Al fundamentarse en estándares internacionales (**ISO 9241-210** para Diseño Centrado en el Usuario e **ISO 9241-11** para Usabilidad) y aplicar de forma rigurosa la regla cromática 60-30-10 y componentes atómicos reutilizables:
 1. **Reduce el tiempo de aprendizaje:** Los usuarios tutores y médicos reconocen patrones interactivos consistentes en cualquier pantalla.
 2. **Minimiza errores médicos:** La jerarquía tipográfica y el código de colores previenen confusiones en dosis de medicamentos o estados de urgencia.
-3. **Agiliza el desarrollo:** Los agentes autónomos (como Google Jules) cuentan con especificaciones inequívocas de estilos, espaciados y contratos visuales para proveer scaffolding y contratos, mientras el equipo humano plasma fielmente el diseño de Figma en React 19 y Expo SDK 54.
+3. **Agiliza el desarrollo:** Los agentes autónomos (como Google Jules) cuentan con especificaciones inequívocas de estilos, espaciados y contratos visuales para proveer scaffolding y contratos, mientras el equipo humano y los agentes plasman fielmente el catálogo en React 18.3.1 LTS y Expo SDK 54.
 
 ---
 *Documento de Sistema de Diseño elaborado bajo estándares FAANG/ISO — Grupo Pinnacle 2026.*

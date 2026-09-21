@@ -13,7 +13,7 @@ flowchart TD
     end
 
     subgraph WebHosting["Capa Frontend Web"]
-        Vercel["⚡ Vercel (Oficial Definitivo - ADR-022)\n• Dominio: app.vetconnect.com\n• SPA React 19 + Vite\n• CDN Global & SSL Automático\n(Hostinger: Contingencia Manual)"]
+        Vercel["⚡ Vercel (Oficial Definitivo - ADR-022)\n• Dominio: app.vetconnect.com\n• SPA React 18.3.1 (LTS) + Vite\n• CDN Global & SSL Automático\n(Hostinger: Contingencia Manual)"]
     end
 
     subgraph CoolifyVPS["Capa Backend (Coolify en VPS Propio)"]

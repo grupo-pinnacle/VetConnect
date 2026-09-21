@@ -14,6 +14,7 @@ export const ConsultationRoom: React.FC = () => {
   const { user } = useAuth();
 
   const [livekitToken, setLivekitToken] = useState<string | null>(null);
+  const [livekitWsUrl, setLivekitWsUrl] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +22,20 @@ export const ConsultationRoom: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState<boolean>(false);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Close Lightbox on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && zoomImage) {
+        setZoomImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [zoomImage]);
 
   // 1. Emit page:ready handshake for mobile WebView wrapper
   useEffect(() => {
@@ -29,7 +44,7 @@ export const ConsultationRoom: React.FC = () => {
     }
   }, []);
 
-  // 2. Fetch real LiveKit JWT token from backend
+  // 2. Fetch real LiveKit JWT token and dynamic wsUrl from backend
   useEffect(() => {
     let isMounted = true;
 
@@ -42,6 +57,9 @@ export const ConsultationRoom: React.FC = () => {
         if (res.data.success && res.data.data?.token) {
           if (isMounted) {
             setLivekitToken(res.data.data.token);
+            if (res.data.data.wsUrl) {
+              setLivekitWsUrl(res.data.data.wsUrl);
+            }
           }
         } else {
           throw new Error(res.data.error?.message || 'No se pudo obtener el token WebRTC');
@@ -122,6 +140,53 @@ export const ConsultationRoom: React.FC = () => {
     setInputMessage('');
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !consultationId || !socket) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      alert('Solo se admiten imágenes en formato JPEG, PNG o WebP');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('La imagen no puede superar 10 MB');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('consultationId', consultationId);
+
+    try {
+      setUploadingPhoto(true);
+      const res = await api.post<ApiResponse<{ id: string; fileName: string }>>('/api/media', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.data.success && res.data.data?.id) {
+        const mediaId = res.data.data.id;
+        const attachmentUrl = `/api/media/${mediaId}`;
+        const clientMsgId = `web-media-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+        socket.emit('message:send', {
+          consultationId,
+          content: inputMessage.trim() || `📷 ${file.name}`,
+          attachmentUrl,
+          clientMsgId,
+        });
+        setInputMessage('');
+      }
+    } catch (err: any) {
+      console.error('Error subiendo imagen clínica:', err);
+      alert(err.response?.data?.error?.message || 'Error al subir la imagen clínica');
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full h-screen bg-slate-900 text-white flex items-center justify-center">
@@ -146,7 +211,7 @@ export const ConsultationRoom: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-screen bg-slate-950 flex flex-col lg:flex-row overflow-hidden">
+    <div className="w-full h-screen bg-slate-950 flex flex-col lg:flex-row overflow-hidden relative">
       {/* Main Video Call Area */}
       <div className="flex-1 h-2/3 lg:h-full relative">
         <header className="absolute top-0 left-0 right-0 bg-slate-900/80 backdrop-blur-sm text-white p-4 flex justify-between items-center z-20">
@@ -161,6 +226,7 @@ export const ConsultationRoom: React.FC = () => {
 
         <CallRoom
           token={livekitToken}
+          serverUrl={livekitWsUrl}
           onDisconnected={() => {
             if (typeof window !== 'undefined' && (window as any).ReactNativeWebView) {
               (window as any).ReactNativeWebView.postMessage(
@@ -174,13 +240,20 @@ export const ConsultationRoom: React.FC = () => {
 
       {/* Live Chat Side Panel */}
       <div className="w-full lg:w-80 h-1/3 lg:h-full bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col">
-        <div className="p-3 border-b border-slate-800 bg-slate-900/90 text-white font-semibold text-sm">
-          Chat Clínico en Vivo
+        <div className="p-3 border-b border-slate-800 bg-slate-900/90 text-white font-semibold text-sm flex justify-between items-center">
+          <span>Chat Clínico en Vivo</span>
+          {uploadingPhoto && <span className="text-xs text-sky-400 animate-pulse">Subiendo foto...</span>}
         </div>
 
         <div className="flex-1 p-3 overflow-y-auto space-y-2">
           {messages.map((msg) => {
             const isMine = msg.senderId === user?.id;
+            const fullAttachmentUrl = msg.attachmentUrl
+              ? msg.attachmentUrl.startsWith('http')
+                ? msg.attachmentUrl
+                : `${api.defaults.baseURL || ''}${msg.attachmentUrl}`
+              : null;
+
             return (
               <div
                 key={msg.id || msg.clientMsgId}
@@ -195,28 +268,85 @@ export const ConsultationRoom: React.FC = () => {
                   }`}
                 >
                   {msg.content}
+
+                  {fullAttachmentUrl && (
+                    <div className="mt-1.5 cursor-pointer overflow-hidden rounded border border-slate-700 hover:opacity-90 transition-opacity">
+                      <img
+                        src={fullAttachmentUrl}
+                        alt="Fotografía clínica"
+                        className="max-h-36 max-w-full object-cover rounded"
+                        onClick={() => setZoomImage(fullAttachmentUrl)}
+                      />
+                      <span className="text-[10px] text-slate-300 block px-1 py-0.5 bg-black/40 text-center">
+                        🔍 Clic para ampliar
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
 
-        <form onSubmit={handleSendMessage} className="p-2 border-t border-slate-800 flex gap-2">
+        <form onSubmit={handleSendMessage} className="p-2 border-t border-slate-800 flex items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingPhoto}
+            title="Adjuntar macro-fotografía clínica"
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded border border-slate-700 disabled:opacity-50 transition-colors"
+          >
+            {uploadingPhoto ? '⏳' : '📎'}
+          </button>
           <input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Escriba un mensaje..."
+            placeholder={uploadingPhoto ? 'Subiendo imagen...' : 'Escriba un mensaje...'}
+            disabled={uploadingPhoto}
             className="flex-1 bg-slate-800 text-white text-xs px-3 py-2 rounded border border-slate-700 focus:outline-none focus:border-sky-500"
           />
           <button
             type="submit"
-            className="bg-sky-600 hover:bg-sky-500 text-white px-3 py-2 rounded text-xs font-semibold"
+            disabled={uploadingPhoto || !inputMessage.trim()}
+            className="bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white px-3 py-2 rounded text-xs font-semibold"
           >
             Enviar
           </button>
         </form>
       </div>
+
+      {/* Lightbox Modal for Clinical Images */}
+      {zoomImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+          onClick={() => setZoomImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setZoomImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-red-400 font-bold text-sm bg-slate-800/80 px-3 py-1 rounded-full"
+            >
+              Cerrar (Esc) ✕
+            </button>
+            <img
+              src={zoomImage}
+              alt="Foto macroscópica ampliada"
+              className="max-h-[80vh] max-w-full rounded-lg shadow-2xl object-contain border border-slate-700"
+            />
+            <p className="text-xs text-slate-400 mt-2 text-center">
+              Inspección Macroscópica de Lesión Clínica — Presione Escape para salir
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

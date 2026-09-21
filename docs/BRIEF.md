@@ -81,7 +81,7 @@ El producto opera como un **ecosistema tripartito** sincronizado:
 flowchart TD
     subgraph FrontendClients["Capa de Experiencia de Usuario"]
         Mobile["📱 Mobile App (React Native / Expo 54)<br/>• Optimizado para Tutores<br/>• Notificaciones Push (Expo Push)<br/>• LiveKit Video WebView"]
-        WebPro["💻 Web Pro Portal (React 19 / Vite)<br/>• Optimizado para Veterinarios<br/>• Diagnóstico telemático y LiveKit SDK<br/>• Emisión de Recetas Digitales"]
+        WebPro["💻 Web Pro Portal (React 18.3.1 LTS / Vite)<br/>• Optimizado para Veterinarios<br/>• Diagnóstico telemático y LiveKit SDK<br/>• Emisión de Recetas Digitales"]
         WebAdmin["🛡️ Web Admin Portal<br/>• Sala de Espera SENASA<br/>• Métricas de Guardia y AuditLog"]
     end
 

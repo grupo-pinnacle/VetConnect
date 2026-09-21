@@ -34,16 +34,16 @@ vetconnect/
 ├── web/                            # Frontend Web (Veterinarios, Admins y Tutores)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── call/               # GlobalCallListener, CallButton, VideoRoom
-│   │   │   ├── dashboard/          # HomeSection, PetsSection, MessagesSection
-│   │   │   │   └── vet/            # VetHomeSection, PatientsSection, VetMessagesSection
-│   │   │   └── ui/                 # Componentes base (Button, Input, Card, Modal)
-│   │   ├── pages/                  # Landing, Login, Register, Dashboard, AdminDashboard
-│   │   ├── hooks/                  # useAuth, useConsultations, useChatSocket
-│   │   ├── services/               # Axios endpoints, socket.io client, chatStore
-│   │   └── types/                  # Tipos TypeScript
-│   ├── tailwind.config.js          # Sistema de diseño, sombras por capas y easing
-│   └── vite.config.ts
+│   │   │   ├── call/               # CallRoom, PreJoinModal (LiveKit WebRTC + Handshake)
+│   │   │   ├── common/             # ErrorBoundary, Global Fallbacks
+│   │   │   └── ui/                 # Componentes base y catálogo Storybook (Button, Input, Badge, etc.)
+│   │   ├── context/                # AuthContext (Almacenamiento de token y Axios interceptor)
+│   │   ├── pages/                  # Landing, Login, Register, DashboardClient, DashboardVet, ConsultationRoom, PrescriptionView, AdminVets, NotFound
+│   │   ├── routes/                 # ProtectedRoute, enrutamiento condicional por rol
+│   │   ├── services/               # api.ts (Instancia Axios centralizada y contratos REST)
+│   │   └── types/                  # Interfaces TypeScript nativas sincronizadas con backend DTOs
+│   ├── tailwind.config.js          # Sistema de diseño, tokens clínicos y responsive breakpoints
+│   └── vite.config.ts              # Configuración de Vite, code-splitting y proxies
 │
 ├── mobile/                         # Aplicación Nativa Mobile (React Native / Expo)
 │   ├── app/                        # File-based routing (Expo Router)

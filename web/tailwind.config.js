@@ -17,6 +17,10 @@ export default {
           600: '#0d9488', // Brand Secondary
         },
       },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+      },
     },
   },
   plugins: [],

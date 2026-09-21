@@ -31,7 +31,7 @@ La mayoría de las aplicaciones web modernas se organizan en componentes altamen
 
 ```mermaid
 graph TD
-    A["💻 FRONTEND\n(Presentación, Interfaz & UX)\nReact 19 SPA + Mobile Expo SDK 54"] <-->|"APIs REST (JSON) + WebSockets (Socket.io)"| B["⚙️ BACKEND\n(Lógica de Negocio & Coordinación)\nNode.js 20 + Express 5 + Zod"]
+    A["💻 FRONTEND\n(Presentación, Interfaz & UX)\nReact 18.3.1 LTS SPA + Mobile Expo SDK 54"] <-->|"APIs REST (JSON) + WebSockets (Socket.io)"| B["⚙️ BACKEND\n(Lógica de Negocio & Coordinación)\nNode.js 20 + Express 5 + Zod"]
     B <-->|"Prisma ORM 6 (Type-Safe SQL)"| C["🐘 BASE DE DATOS\n(Persistencia Permanente)\nPostgreSQL 16 (Supabase / Docker)"]
 ```
 
@@ -39,7 +39,7 @@ graph TD
 - **Definición:** Corresponde a la parte visible del sistema con la que interactúan directamente los usuarios (tutores de mascotas, veterinarios y administradores).
 - **Función:** Presentar información clínica, renderizar formularios reactivos, menús de navegación, salas de videollamada y paneles interactivos. La experiencia de uso (UX), la accesibilidad (a11y) y la fluidez visual residen en esta capa.
 - **Implementación en VetConnect:** Doble cliente omnicanal:
-  - **Web SPA:** Desarrollada con **React 19**, **Vite**, **Tailwind CSS** y **TanStack Query v5**.
+  - **Web SPA:** Desarrollada con **React 18.3.1 (LTS / React 19 Ready)**, **Vite**, **Tailwind CSS** y **TanStack Query v5** *(versión 18.3.1 fijada por compatibilidad estricta de peer-dependencies con LiveKit WebRTC y Testing Library)*.
   - **Mobile App:** Desarrollada con **React Native**, **Expo SDK 54**, **Expo Router** y **NativeWind**.
 
 ### 2.2 Backend (Capa Interna & Lógica de Negocio)
@@ -155,7 +155,7 @@ Cada componente de la arquitectura cuenta con una tecnología adoptada y justifi
 +-----------------------+-------------------------------+-----------------------------------+-----------------------------------+
 | Componente            | Rol Arquitectónico            | Tecnología Seleccionada           | Justificación Técnica             |
 +-----------------------+-------------------------------+-----------------------------------+-----------------------------------+
-| Frontend Web          | Presentación / Portal Pro     | React 19 + Vite + Tailwind CSS    | Concurrencia moderna, rendering   |
+| Frontend Web          | Presentación / Portal Pro     | React 18.3.1 (LTS) + Vite + Tailwind CSS | Concurrencia moderna, rendering   |
 |                       | (Veterinarios y Admins)       | + TanStack Query v5               | ultrarrápido y componentes LiveKit|
 +-----------------------+-------------------------------+-----------------------------------+-----------------------------------+
 | Frontend Mobile       | Presentación / App Tutores    | React Native + Expo SDK 54        | Desarrollo multiplataforma nativo,|
@@ -192,7 +192,7 @@ El siguiente diagrama detalla la arquitectura completa de VetConnect, ilustrando
 ```mermaid
 graph TB
     subgraph CapaPresentacion["📱 1. CAPA DE PRESENTACIÓN (CLIENTES HETEROGÉNEOS)"]
-        Web["💻 Portal Web Profesional & Admin\nReact 19 + Vite + Tailwind CSS\nTanStack Query v5 + LiveKit Components"]
+        Web["💻 Portal Web Profesional & Admin\nReact 18.3.1 LTS + Vite + Tailwind CSS\nTanStack Query v5 + LiveKit Components"]
         Mob["📱 App Móvil Tutores (Android / iOS)\nReact Native + Expo SDK 54 + NativeWind\nExpo Router + WebView Bridge"]
     end
 
@@ -300,7 +300,7 @@ La arquitectura define la **organización y relaciones** del sistema; las tecnol
 
 | Componente Arquitectónico | Posibles Tecnologías de la Industria | Tecnología Adoptada en VetConnect | Fundamentación Técnica |
 |---|---|---|---|
-| **Frontend Web** | React, Vue.js, Angular, Svelte | **React 19 + Vite + Tailwind CSS** | Máxima velocidad de renderizado, amplio ecosistema de componentes WebRTC (LiveKit) y tipado estricto. |
+| **Frontend Web** | React, Vue.js, Angular, Svelte | **React 18.3.1 (LTS) + Vite + Tailwind CSS** | Máxima velocidad de renderizado, compatibilidad estable con componentes WebRTC (LiveKit) y tipado estricto. |
 | **Frontend Mobile** | Flutter, React Native, Swift nativo, Kotlin | **React Native + Expo SDK 54** | Código unificado TypeScript, acceso a periféricos de cámara/micrófono y navegación nativa con Expo Router. |
 | **Backend Runtime** | Node.js, Python (FastAPI), Go, Java Spring | **Node.js 20 LTS + Express 5** | Arquitectura orientada a eventos no bloqueante, óptima para E/S intensiva de WebSockets y APIs. |
 | **Capa de Persistencia** | PostgreSQL, MySQL, MongoDB, DynamoDB | **PostgreSQL 16 (Supabase / Docker)** | Integridad transaccional ACID, soporte relacional robusto, claves foráneas e índices compuestos de alto rendimiento. |

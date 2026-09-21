@@ -4,23 +4,35 @@ import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import { io } from '../../realtime/socket.server';
 
-const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || 'devkey';
-const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || 'secret';
-const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://vetconnect-dev.livekit.cloud';
+const getLiveKitConfig = () => {
+  const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
+  const apiSecret = process.env.LIVEKIT_API_SECRET || 'secret';
+  const rawUrl = (process.env.LIVEKIT_URL || process.env.LIVEKIT_HOST || 'wss://vetconnect-dev.livekit.cloud').trim();
+
+  // Format httpUrl for RoomServiceClient HTTP API
+  const httpUrl = rawUrl.startsWith('http')
+    ? rawUrl
+    : rawUrl.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
+
+  // Format wsUrl for frontend LiveKitRoom WebSockets
+  const wsUrl = rawUrl.startsWith('ws')
+    ? rawUrl
+    : rawUrl.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+
+  return { apiKey, apiSecret, rawUrl, httpUrl, wsUrl };
+};
 
 export class CallsService {
-  private roomService: RoomServiceClient;
-
-  constructor() {
-    // Convert wss:// or ws:// URL to http:// or https:// for LiveKit HTTP API Client
-    const httpUrl = LIVEKIT_URL.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
-    this.roomService = new RoomServiceClient(httpUrl, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
+  private getRoomService(): RoomServiceClient {
+    const { httpUrl, apiKey, apiSecret } = getLiveKitConfig();
+    return new RoomServiceClient(httpUrl, apiKey, apiSecret);
   }
 
   public async deleteLiveKitRoom(roomName: string): Promise<void> {
     try {
       if (!roomName) return;
-      await this.roomService.deleteRoom(roomName);
+      const roomService = this.getRoomService();
+      await roomService.deleteRoom(roomName);
     } catch (err) {
       // Gracefully handle room already closed or connection error
       console.warn(`[LiveKit Teardown] Room ${roomName} teardown notice:`, err);
@@ -48,8 +60,10 @@ export class CallsService {
       throw new AppError('Solo se pueden generar tokens para consultas activas', 400, 'INVALID_CONSULTATION_STATE');
     }
 
+    const { apiKey, apiSecret, wsUrl } = getLiveKitConfig();
+
     // Zero PII guardrail: identity is user.id, name is user.firstName (NO email or phone)
-    const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
+    const at = new AccessToken(apiKey, apiSecret, {
       identity: user.id,
       name: user.firstName,
       ttl: '1h',
@@ -66,7 +80,7 @@ export class CallsService {
 
     return {
       token,
-      wsUrl: LIVEKIT_URL,
+      wsUrl,
       roomName: consultationId,
     };
   }

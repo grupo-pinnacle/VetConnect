@@ -6,14 +6,21 @@ import { AuthenticatedRequest } from './auth.middleware';
 const authService = new AuthService();
 
 const isProduction = process.env.NODE_ENV === 'production';
+const cookieSecure = process.env.COOKIE_SECURE !== undefined
+  ? process.env.COOKIE_SECURE === 'true'
+  : isProduction;
+const cookieSameSite = (process.env.COOKIE_SAME_SITE as 'none' | 'lax' | 'strict') ||
+  (isProduction ? 'none' : 'lax');
+const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 
 const setRefreshCookie = (res: Response, refreshToken: string) => {
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
+    secure: cookieSecure,
+    sameSite: cookieSameSite,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/api/auth',
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
   });
 };
 
@@ -99,8 +106,9 @@ export class AuthController {
       res.clearCookie('refreshToken', {
         path: '/api/auth',
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
+        secure: cookieSecure,
+        sameSite: cookieSameSite,
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
       });
       res.status(200).json({
         success: true,

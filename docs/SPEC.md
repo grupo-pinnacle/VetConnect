@@ -29,7 +29,7 @@ El backend se estructura bajo el patrón **Modular Monolith (Domain-Driven Desig
 flowchart TB
     subgraph Clients["Perímetro de Clientes (Frontend)"]
         Mobile["📱 Mobile App (React Native / Expo 54)<br/>• Socket.io Client & Zustand Store<br/>• LiveKit Video WebView Bridge<br/>• SecureStore para Tokens"]
-        WebPro["💻 Web Pro Portal (React 19 / Vite)<br/>• TanStack React Query v5<br/>• LiveKit Components React<br/>• Tailwind CSS v3 Craft Tokens"]
+        WebPro["💻 Web Pro Portal (React 18.3.1 LTS / Vite)<br/>• TanStack React Query v5<br/>• LiveKit Components React<br/>• Tailwind CSS v3 Craft Tokens"]
         WebAdmin["🛡️ Web Admin Portal<br/>• Sala de Espera SENASA<br/>• AuditLog Explorer"]
     end
 

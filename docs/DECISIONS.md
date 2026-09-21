@@ -122,7 +122,7 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 
 ### ADR-015: TanStack React Query v5 para Caché y Sincronización Web
 - **Contexto:** La interfaz web de veterinarios y administradores requiere consultar continuamente el estado de consultas, mensajes y pacientes, evitando llamadas REST redundantes y gestionando estados asíncronos complejos (carga, error, reconexión, datos obsoletos).
-- **Decisión:** Adoptar **TanStack React Query v5** como la capa estándar de gestión de estado del servidor en la aplicación Web SPA (React 19).
+- **Decisión:** Adoptar **TanStack React Query v5** como la capa estándar de gestión de estado del servidor en la aplicación Web SPA (React 18.3.1 LTS). El provider global (`QueryClientProvider`) se inicializa en `web/src/App.tsx`, y la migración desde `useEffect` hacia hooks declarativos (`useQuery`/`useMutation`) se ejecuta de manera progresiva durante la elevación de componentes en Storybook.
 - **Consecuencias:** Caché inteligente en memoria con deduplicación de peticiones en vuelo, invalidación reactiva de queries ante eventos Socket.io (`queryClient.invalidateQueries({ queryKey: ['consultations'] })`), actualizaciones optimistas en la UI y sincronización automática en segundo plano al recuperar el foco de la ventana.
 
 ### ADR-016: Conexión Mobile USB Directa con ADB Reverse para Redes Corporativas
@@ -159,7 +159,7 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 - **Consecuencias:** Reducción drástica de superficie de ataque en el servidor y garantía empírica de 0 regresiones en despliegues.
 
 ### ADR-022: Plataforma Definitiva de Despliegue Web (Vercel Edge vs Hostinger Contingencia)
-- **Contexto:** Se requería definir sin ambigüedades la plataforma de hosting para el Frontend Web SPA (React 19 + Vite) y la integración continua en CI/CD.
+- **Contexto:** Se requería definir sin ambigüedades la plataforma de hosting para el Frontend Web SPA (React 18.3.1 LTS + Vite) y la integración continua en CI/CD.
 - **Decisión:** Adoptar **Vercel** como la plataforma oficial, definitiva y automatizada para producción conectada a GitHub Actions. Se descarta cualquier flujo de despliegue automatizado hacia Hostinger; este último queda documentado exclusivamente como **alternativa de contingencia manual** (subida de artefactos estáticos `web/dist/` a `public_html/` ante indisponibilidad severa de Vercel).
 - **Consecuencias:** Despliegues atómicos automáticos con preview URLs en cada PR, CDN global Edge de latencia ultra-baja y SSL automático, manteniendo una contingencia manual documentada para emergencias operativas.
 

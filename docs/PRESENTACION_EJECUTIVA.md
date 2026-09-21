@@ -191,7 +191,7 @@ graph TD
 | 2. Modelos: Comparación Cliente-Servidor, 3 Capas, Monolito Modular vs Microservicios (Descartado)|
 | 3. Decisión: Monolito Modular en 3 Capas (DDD) + Servicios Especializados de Tiempo Real (SFU).    |
 | 4. Justificación: Consistencia ACID estricta, cero latencia inter-módulos y TypeScript compartido.|
-| 5. Tecnologías: React 19, Expo SDK 54, Node 20/Express 5, Prisma 6, Postgres 16, LiveKit & Redis 7|
+| 5. Tecnologías: React 18.3.1 LTS, Expo SDK 54, Node 20/Express 5, Prisma 6, Postgres 16, LiveKit & Redis 7|
 | 6. Gráfico: Arquitectura desacoplada con protocolos REST/HTTPS, WebSockets WSS y WebRTC UDP.      |
 +---------------------------------------------------------------------------------------------------+
 ```
@@ -199,7 +199,7 @@ graph TD
 ```mermaid
 graph TB
     subgraph Clientes["Capas de Presentación (Clientes Heterogéneos)"]
-        W["💻 Web Pro Portal\nReact 19 + Vite + Tailwind"]
+        W["💻 Web Pro Portal\nReact 18.3.1 LTS + Vite + Tailwind"]
         M["📱 Mobile App Tutores\nExpo SDK 54 + NativeWind"]
     end
 
@@ -297,7 +297,7 @@ graph LR
 | Integrante        | Rol Especializado Principal       | Estrategia de Rotación Activa         |
 +-------------------+-----------------------------------+---------------------------------------+
 | Tobias Vera       | Tech Lead & Solutions Architect   | Facilitador Ágil (S1-S2); CI Mentor.  |
-| Damian Orellana   | Frontend Web Lead (React 19)      | Facilitador Ágil (S3-S4); Cross-Test. |
+| Damian Orellana   | Frontend Web Lead (React 18.3.1)   | Facilitador Ágil (S3-S4); Cross-Test. |
 | Juan Mendoza      | Mobile App Lead (Expo SDK 54)     | Facilitador Ágil (S5-S6); Cross-Test. |
 | Ezequiel Charca   | QA Automation & Security Lead     | Facilitador Ágil (S7-S8); Security PR.|
 +-------------------+-----------------------------------+---------------------------------------+
@@ -405,7 +405,7 @@ gantt
 +---------------------------------------------------------------------------------------------------+
 | RESUMEN DE RESPONSABILIDADES RACI:                                                                |
 | • Arquitectura & Backend Core: Tobias Vera (A/R) | Damian (C) | Juan (C) | Ezequiel (C)           |
-| • Experiencia Web Pro (React 19): Damian Orellana (A/R) | Tobias (A) | Ezequiel (C)               |
+| • Experiencia Web Pro (React 18.3.1 LTS): Damian Orellana (A/R) | Tobias (A) | Ezequiel (C)         |
 | • App Móvil Tutores (Expo SDK 54): Juan Mendoza (A/R) | Tobias (A) | Ezequiel (C)                 |
 | • Testing Automatizado & Seguridad: Ezequiel Charca (A/R) | Tobias (A) | Damian (C) | Juan (C)    |
 | • Auditoría Legal & Aprobación SENASA: Lara / Sponsor (A/R) | Tobias (C)                          |
