@@ -106,6 +106,7 @@ vetconnect/
 
 ### 4.3 Frontend Web & Mobile App (React 18.3.1 LTS & Expo SDK 54)
 > *Nota técnica:* El frontend web emplea **React 18.3.1 (LTS)** para compatibilidad estricta de peer-dependencies con `@livekit/components-react` y `@testing-library/react`. La migración a React 19 está programada post-soporte oficial upstream.
+- **Guardarraíl de Selección de Testing (`data-testid`):** Todo componente UI nuevo o refactorizado en `web/src/components/ui/` DEBE recibir y transferir la propiedad `data-testid`. Al refactorizar páginas existentes en `web/src/pages/`, queda terminantemente prohibido eliminar o renombrar cualquier `data-testid` preexistente, ya que blindan los 29 tests unitarios de Vitest.
 - **Cero `any`:** Prohibido el uso de `any` explícito o implícito. Utilizar interfaces TypeScript estrictas.
 - **Minimización de PII:** En listas de veterinarios y directorios públicos, redactar `email` y `phone`. Solo exponerlos al veterinario asignado durante una consulta activa.
 - **Resiliencia de UI:** Todo componente asíncrono debe manejar estados de: `cargando`, `error`, `vacío (empty state)` y `reconectando`.

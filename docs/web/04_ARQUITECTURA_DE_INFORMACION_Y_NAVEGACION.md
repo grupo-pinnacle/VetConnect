@@ -62,7 +62,8 @@ El sistema de menús se compone de un **Header Global de Navegación Superior** 
 #### Reglas de Distribución e Implementación SPA:
 1. **Elementos en Barra Superior (Menú Global Fijo en Landing):**
    - **Isotipo & Nombre:** Enlace directo a la raíz (`/`).
-   - **Enlaces Principales (Anclas Internas de la Landing):** *Servicios* (`#servicios` con dropdown o scroll suave), *Directorio Médico* (`#directorio`), *Marco Legal SENASA* (`#marco-legal`) y *Ayuda* (`#ayuda`). En la SPA React, estos elementos operan como **anclas de desplazamiento y modales informativos dentro de la Landing Page**, no como rutas separadas de React Router, garantizando que no se disparen errores de `NotFound.tsx`.
+   - **Enlaces Principales (Anclas Internas de la Landing Page):** *Servicios* (`#servicios` con dropdown o scroll suave), *Directorio Médico* (`#directorio`), *Marco Legal SENASA* (`#marco-legal`) y *Ayuda* (`#ayuda`). En la SPA React, estos elementos operan como **anclas de desplazamiento y modales informativos dentro de la Landing Page (`/`)**, no como rutas separadas de React Router.
+     > 🛑 **Directiva de Enrutamiento para Agentes de IA:** Los ítems del Header público ("Servicios", "Directorio Médico", "Marco Legal", "Ayuda") son ANCLAS de desplazamiento (`#servicios`, `#directorio`, `#marco-legal`, `#ayuda`) dentro de la Landing Page (`/`) y NO rutas separadas de React Router. Queda terminantemente prohibido crear rutas como `/servicios` o `/directorio`, ya que dispararían la pantalla de 404 (`NotFound.tsx`).
    - **Zona de Acción Rápida (Derecha):** Botón secundario `[Iniciar Sesión]` (navega a `/login`) y botón primario de alto contraste `[🚨 Auxilio Médico / Solicitar Guardia]` (navega a `/login` o modal de triage en `/client/dashboard`).
 2. **Elementos en Dropdown Desplegable (*Servicios*):**
    - *Telemedicina de Urgencia (Triage en 60 seg)* (`#como-funciona`)

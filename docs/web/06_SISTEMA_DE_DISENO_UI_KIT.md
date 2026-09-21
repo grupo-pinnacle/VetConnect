@@ -3,7 +3,7 @@
 > **Documento:** `docs/web/06_SISTEMA_DE_DISENO_UI_KIT.md`  
 > **Marco Metodológico:** Incorpora formalmente la **Actividad 26 – Definición del Sistema de Diseño del Producto**  
 > **Área:** Sistema de Diseño (Design System), UI Kit Web, Tokens Tailwind CSS & Component-Driven Development (Storybook)  
-> 🏛️ **Fuente Única de Verdad (Single Source of Truth - SSOT):** La definición canónica e inmutable de los tokens cromáticos (HEX), tipografía y personalidad de marca reside en [`docs/SISTEMA_DE_DISENO.md`](../SISTEMA_DE_DISENO.md). El presente documento especializa su **implementación técnica en React 18.3.1 LTS + Tailwind CSS, catálogo de Storybook y contratos de props**.  
+> 🏛️ **Fuente Única de Verdad (Single Source of Truth - SSOT):** La definición canónica e inmutable de los tokens cromáticos (HEX), tipografía y personalidad de marca reside en [`docs/SISTEMA_DE_DISENO.md`](../SISTEMA_DE_DISENO.md). Este documento se especializa estrictamente en la implementación técnica de componentes React + Tailwind CSS.
 > **Proyecto:** VetConnect — Telemedicina Veterinaria & Gestión Clínica
 
 ---
@@ -141,8 +141,8 @@ flowchart TD
 3. **Control Total del Código:** Los componentes no son una "caja negra" de dependencias externas; el código reside en el repositorio, permitiendo estilizar y auditar cada prop médica directamente en Storybook (`http://localhost:6006`).
 4. **Accesibilidad Nivel Oro Integrada:** Cada componente atómico se valida en Storybook con el addon de accesibilidad `@storybook/addon-a11y` (Axe Core), garantizando contraste cromático $\ge 4.5:1$ y atributos semánticos ARIA (`aria-label`, `aria-expanded`, `aria-current`). Si un organismo complejo (ej. `Dialog` accesible o `Tooltip`) requiere primitivas headless como `@radix-ui/react-dialog`, se instalará puntualmente en el workspace web.
 
-> 🛑 **Guardarraíl Imperativo para Agentes de IA (shadcn CLI Prohibido):**  
-> Queda terminantemente prohibido ejecutar `npx shadcn@latest init` o `npx shadcn add`. La ejecución del CLI externo sobreescribiría `tailwind.config.js`, alteraría el lockfile con dependencias incompatibles y degradaría la versión de React 18.3.1 LTS. Los componentes atómicos se programan en `web/src/components/ui/` utilizando exclusivamente **Tailwind CSS nativo y TypeScript estricto** siguiendo la arquitectura desacoplada de `Button.tsx`.
+> 🛑 **Guardarraíl Imperativo para Agentes de IA (Filosofía shadcn/ui sin CLI Externa):**
+> VetConnect aplica la filosofía arquitectónica de shadcn/ui: código abierto que vive dentro de tu propio repositorio en `web/src/components/ui/`, sin dependencias empaquetadas opacas. Los componentes se programan exclusivamente con Tailwind CSS nativo y TypeScript estricto. Queda prohibido ejecutar `npx shadcn@latest init` o instalar dependencias de React 19 / Tailwind v4.
 
 ---
 

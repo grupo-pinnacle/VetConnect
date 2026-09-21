@@ -38,7 +38,7 @@ El proceso de desarrollo web profesional se traduce en 10 acciones concretas dis
 | **4** | **Elegir la plataforma** | Arquitectura SPA React 18.3.1 (LTS/Stable) + Vite + Tailwind CSS sobre Express 5 API | 1 día | Arquitecto de Software |
 | **5** | **Crear el mapa del sitio** | Elaborar árbol web, jerarquía de 3 niveles, menús y breadcrumbs | 2-4 horas | Diseñador UX/UI |
 | **6** | **Diseñar la identidad visual** | Definir tokens, paleta 60-30-10, tipografía y mockups en Figma | 3-7 días | Diseñador UI (Figma Lead) |
-| **7** | **Desarrollar el sitio** | Codificar la SPA en React 18.3.1 con soporte para LiveKit y WebSockets | 5-20 días | Desarrolladores Frontend |
+| **7** | **Desarrollar el sitio** | Base de Aplicación SPA Implementada (Nivel 4.5 Pre-Gold Master, 29 tests pasando). Fase activa: Refactorización atómica en Storybook (`components/ui/`) y ensamblado de alta fidelidad | 5-20 días | Desarrolladores Frontend |
 | **8** | **Cargar el contenido** | Redactar textos clínicos claros, guías de triage y optimizar imágenes | 2-5 días | Copywriter / Especialista Veterinario |
 | **9** | **Hacer pruebas (QA)** | Auditoría de usabilidad (Nielsen), accesibilidad WCAG y cross-browser | 2-3 días | QA Engineer / Equipo UX |
 | **10** | **Publicar y medir** | Despliegue en producción con SSL, Google Analytics y Search Console | 1 día | DevOps / Tech Lead |
@@ -133,7 +133,7 @@ mindmap
 6. **Conexión (Vínculos y Navegación):**  
    Arquitectura de navegación con jerarquía en 3 niveles, enlaces breadcrumbs en cada sección clínica y conexión directa con servicios de soporte y emergencias físicas presenciales.
 7. **Comercio (Modelo Operativo y Transacciones):**  
-   Conforme al documento de alcance formal [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), **la pasarela de pagos es un Non-Goal / ScopeOut para la versión v2.0**. En el lanzamiento inicial (MVP), el sistema opera bajo un modelo de guardia telemédica institucional/gratuita donde el tutor accede directamente a la sala de espera sin fricción de cobro. La integración transaccional formal (Mercado Pago Checkout Pro / Split Payments) queda formalmente diferida como módulo comercial para la fase de expansión v2.1+.
+   Pasarela de pagos formalmente ScopeOut en v2.0 (modelo de guardia institucional gratuita). Ver [`docs/web/03_REQUERIMIENTOS_Y_PMV.md`](./03_REQUERIMIENTOS_Y_PMV.md).
 
 ---
 
