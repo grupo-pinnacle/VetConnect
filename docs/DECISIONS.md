@@ -31,7 +31,6 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 | **ADR-021** | Hardening de Contenedores y Pipeline de Integración Continua FAANG | Aprobado | DevOps / Seguridad |
 | **ADR-022** | Plataforma Definitiva de Despliegue Web (Vercel Edge vs Hostinger Contingencia) | Aprobado | Infraestructura / Web |
 | **ADR-023** | Escala Unificada de Calificación Profesional (1 a 5 Estrellas) | Aprobado | UX / Base de Datos |
-| [ADR-024](#adr-024) | Máquina de Estados Finita (FSM) en Consultas, Timeout de Triage (15 min) y Ventana de Reconexión WebRTC (3 min) | Aprobado | 2026-09-14 |
 
 ---
 

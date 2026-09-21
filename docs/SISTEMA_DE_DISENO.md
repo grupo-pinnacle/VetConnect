@@ -105,13 +105,12 @@ graph TD
         W1["📊 Tablero de Guardia\n(Switch isOnline, cola de pacientes)"]
         W2["🩺 Consulta Médica Activa\n(Video 720p, chat, notas de evolución)"]
         W3["📋 Generador de Recetas\n(Fármacos, dosis, firma, código QR)"]
-        W4["📁 Bóveda del Tutor\n(Gestión personal de mascotas del cliente)"]
+        W4["📁 Bóveda de Pacientes\n(Búsqueda por tutor, mascota, historial)"]
         W5["⚖️ Panel /admin\n(Aprobación SENASA, AuditLogs inmutables)"]
     end
 ```
 
 #### Criterios de Organización de la Información:
-- **Nota de Seguridad Legal & Privacidad Médico-Paciente:** En cumplimiento de la Ley 25.326 y el secreto médico, se descarta cualquier buscador o listado global de pacientes (`/patients`) para veterinarios. El profesional accede a los datos de la mascota exclusivamente dentro de una consulta activa asignada.
 - **Jerarquía Visual Clara:** En la aplicación móvil, el botón de **Solicitar Atención** domina el tercio superior de la pantalla principal (*Thumb Zone* ergonómica).
 - **Proximidad Contextual & Multicanal Sincrónico (ADR-012):**
   - **Portal Web (Veterinario):** Layout de pantalla dividida con área de Video HD 720p central del paciente, ficha clínica de la mascota y panel de **Chat en Vivo** acoplado en el lateral derecho con soporte para recepción de fotografías en alta resolución y visor Lightbox con zoom 100% (para inspección macroscópica de lesiones, mucosas o vómitos).
@@ -168,7 +167,8 @@ La paleta se rige por la **regla clásica de armonía cromática 60-30-10**, com
 |                   | Bordes/Líneas | #E2E8F0           | Slate 200 | Separadores y bordes sutiles de tarjetas. |
 +-------------------+---------------+-------------------+-----------+-------------------------------------------+
 | 10% Acento        | Acción / CTA  | #2563EB           | Med Blue  | Botones principales de auxilio y llamada. |
-|                   | Éxito / Salud | #059669           | Teal Clin | Recetas válidas, vet online y éxito.      |
+|                   | Acción Marca  | #0D9488           | Teal 600  | Acción secundaria de salud y marca (Button.tsx). |
+|                   | Éxito / Triage| #059669           | Emerald 600| Estado de triage GREEN, vet online y éxito. |
 +-------------------+---------------+-------------------+-----------+-------------------------------------------+
 | Estados Clínicos  | Alerta Crítica| #DC2626           | Red Alert | Triage Rojo (Emergencia vital inmediata). |
 | (Funcionales)     | Alerta Media  | #D97706           | Amber Med | Triage Amarillo (Urgencia moderada).      |

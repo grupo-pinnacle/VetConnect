@@ -2,7 +2,7 @@
 
 > **Destinatarios:** Agentes autónomos de IA (**Google Jules**, Antigravity, Claude Code, Cursor) y desarrolladores del equipo.
 > **Enfoque:** Construcción desde cero (**Greenfield**) del monorepo VetConnect, sin deuda técnica heredada y con arquitectura FAANG.
-> **Naturaleza del Documento:** Backlog maestro de especificación y **Guía Preventiva de Antipatrones de Diseño**. El repositorio se encuentra en **Nivel 4.5: Pre-Gold Master** con las Fases 0 a 5 completadas y verificadas (123 tests pasando). El foco activo es la elevación atómica de componentes en Storybook (`components/ui/`), QA y hardening final.
+> **Naturaleza del Documento:** Backlog maestro de especificación para la construcción desde cero y **Guía Preventiva de Antipatrones de Diseño**. No constituye un conjunto de parches sobre código previo (el repositorio es pre-código y parte de cero absoluto).
 > **Estructura:** Dividido en **Task Packets** atómicos y autocontenidos. Cada tarea puede ser copiada directamente como un Issue de GitHub o prompt operativo para Google Jules.
 
 ---

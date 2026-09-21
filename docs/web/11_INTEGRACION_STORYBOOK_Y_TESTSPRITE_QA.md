@@ -56,177 +56,21 @@ Storybook opera como el **taller de desarrollo aislado** del equipo de frontend.
   - `@storybook/addon-a11y`: Motor de pruebas de accesibilidad basado en **Axe Core**, que evalúa contraste de color, roles ARIA y accesibilidad por teclado.
   - `@storybook/addon-interactions`: Simulación de eventos y clics dentro de las historias.
 
-### 2.3 Estado de Componentes: Hoja de Ruta de Extracción y Creación en Storybook
+### 2.3 Taxonomía de Componentes a Desarrollar en Storybook
 
-| Nivel Atómico | Componente | Ubicación en Código | Estado | Estados / Variantes Requeridas |
-|---|---|---|---|---|
-| **Átomo** | `Button` | `web/src/components/ui/Button.tsx` | `[x]` Creado y testeado | `primary`, `secondary`, `outline`, `danger`, `ghost`, `sm`, `md`, `lg`, `isLoading`, `disabled` |
-| **Átomo** | `Badge` (Triage) | `web/src/components/ui/Badge.tsx` | `[ ]` Pendiente de extracción | `green` (No urgente), `yellow` (Urgencia moderada), `red` (Emergencia crítica), `online`, `offline` |
-| **Átomo** | `Input` | `web/src/components/ui/Input.tsx` | `[ ]` Pendiente de extracción | `default`, `focused`, `error` (mensaje de validación Zod), `disabled`, con icono prefijo |
-| **Átomo** | `Avatar` | `web/src/components/ui/Avatar.tsx` | `[ ]` Pendiente de extracción | Especie animal (perro, gato), foto de perfil tutor, avatar veterinario con badge online |
-| **Molécula** | `PetCard` | `web/src/components/ui/PetCard.tsx` | `[ ]` Pendiente de extracción | Nombre, especie, raza, peso, microchip ISO 11784/11785, botón de solicitar consulta |
-| **Molécula** | `TriageSelector` | `web/src/components/ui/TriageSelector.tsx` | `[ ]` Pendiente de extracción | Selección de síntomas (dificultad respiratoria, trauma, vómitos) y cálculo visual de severidad |
-| **Molécula** | `ChatMessage` | `web/src/components/ui/ChatMessage.tsx` | `[ ]` Pendiente de extracción | Mensaje entrante / saliente, texto, foto clínica adjunta con apertura modal Lightbox, timestamp |
-| **Molécula** | `CallControls` | `web/src/components/ui/CallControls.tsx` | `[ ]` Pendiente de extracción | Micrófono on/off, cámara on/off, colgar llamada, indicador de calidad WebRTC |
-| **Molécula** | `Breadcrumbs` | `web/src/components/ui/Breadcrumbs.tsx` | `[ ]` Pendiente de extracción | Rutas jerárquicas (items: label, href, active), separador Chevron accesible, roles ARIA `nav` y `aria-label="Breadcrumb"` |
-| **Organismo** | `PrescriptionModal` | `web/src/components/ui/PrescriptionModal.tsx` | `[ ]` Pendiente de extracción | Formulario veterinario oficial para emitir receta con diagnóstico, fármaco, dosis y matrícula |
-| **Organismo** | `PrescriptionDoc` | `web/src/components/ui/PrescriptionDoc.tsx` | `[ ]` Pendiente de extracción | Formato A4 oficial SENASA con código QR dinámico y estilos para `@media print` |
-
-#### Specifications & Formal TypeScript Interfaces for Storybook Components:
-
-```typescript
-export interface BaseComponentProps {
-  className?: string;
-  'data-testid'?: string; // MANDATORIO: Para no romper los 29 tests de Vitest
-}
-
-// 1. ButtonProps
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, BaseComponentProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  isLoading?: boolean;
-  disabled?: boolean;
-  children: React.ReactNode;
-}
-
-// 2. BadgeProps
-export interface BadgeProps extends BaseComponentProps {
-  variant: 'green' | 'yellow' | 'red' | 'online' | 'offline' | 'gray';
-  children?: React.ReactNode;
-  label?: string;
-}
-
-// 3. InputProps
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, BaseComponentProps {
-  state?: 'default' | 'focused' | 'error' | 'disabled';
-  label?: string;
-  error?: string;
-  helperText?: string;
-  icon?: React.ReactNode;
-}
-
-// 4. AvatarProps
-export interface AvatarProps extends BaseComponentProps {
-  type: 'pet' | 'vet' | 'client';
-  src?: string;
-  name: string;
-  species?: 'DOG' | 'CAT' | string;
-  isOnline?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-}
-
-// 5. PetCardProps
-export interface PetCardProps extends BaseComponentProps {
-  pet: {
-    id: string;
-    name: string;
-    species: string;
-    breed?: string | null;
-    birthDate?: string | Date | null;
-    weightKg?: number | null;
-    microchipNumber?: string | null;
-  };
-  onRequestConsultation?: (petId: string) => void;
-  onSelectConsultation?: (petId: string) => void;
-  onEdit?: (petId: string) => void;
-}
-
-// 6. TriageSelectorProps
-export interface TriageSelectorProps extends BaseComponentProps {
-  selectedSymptoms: string[];
-  calculatedSeverity: 'GREEN' | 'YELLOW' | 'RED';
-  onSelectSymptom: (symptom: string) => void;
-  onSubmitTriage: () => void;
-  isLoading?: boolean;
-}
-
-// 7. ChatMessageProps
-export interface ChatMessageProps extends BaseComponentProps {
-  id: string;
-  senderRole: 'CLIENT' | 'VET' | 'ADMIN';
-  senderName: string;
-  content: string;
-  attachmentUrl?: string | null;
-  timestamp: string;
-  isOwnMessage: boolean;
-  isSelf?: boolean;
-  onImageClick?: (url: string) => void;
-}
-
-// 8. CallControlsProps
-export interface CallControlsProps extends BaseComponentProps {
-  isAudioEnabled: boolean;
-  isVideoEnabled: boolean;
-  isAudioMuted?: boolean;
-  isVideoMuted?: boolean;
-  networkQuality?: 'excellent' | 'good' | 'poor';
-  onToggleAudio: () => void;
-  onToggleVideo: () => void;
-  onEndCall: () => void;
-  onHangUp?: () => void;
-}
-
-// 9. BreadcrumbsProps
-export interface BreadcrumbItem {
-  label: string;
-  href?: string;
-  active?: boolean;
-}
-
-export interface BreadcrumbsProps extends BaseComponentProps {
-  items: BreadcrumbItem[];
-}
-
-// 10. PrescriptionModalProps
-export interface PrescriptionModalProps extends BaseComponentProps {
-  isOpen: boolean;
-  consultationId: string;
-  petName: string;
-  clientName: string;
-  onClose: () => void;
-  onSubmit: (data: {
-    medication: string;
-    dosage: string;
-    frequency: string;
-    durationDays: number;
-    indications?: string;
-  }) => Promise<void>;
-  isLoading?: boolean;
-}
-
-// 11. PrescriptionDocProps
-export interface PrescriptionDocProps extends BaseComponentProps {
-  prescription: {
-    id: string;
-    medication: string;
-    dosage: string;
-    frequency: string;
-    durationDays: number;
-    indications?: string | null;
-    createdAt: string | Date;
-    qrCodeDataUrl?: string;
-    verifyUrl?: string;
-    vet: {
-      firstName: string;
-      lastName: string;
-      licenseNumber?: string | null;
-    };
-    consultation: {
-      pet: {
-        name: string;
-        species: string;
-        breed?: string | null;
-        microchipNumber?: string | null;
-      };
-      client?: {
-        firstName: string;
-        lastName: string;
-      };
-    };
-  };
-  isPrintMode?: boolean;
-}
-```
+| Nivel Atómico | Componente | Ubicación en Código | Estados / Variantes Requeridas |
+|---|---|---|---|
+| **Átomo** | `Button` | `web/src/components/ui/Button.tsx` | `primary`, `secondary`, `outline`, `danger`, `ghost`, `sm`, `md`, `lg`, `isLoading`, `disabled` |
+| **Átomo** | `Badge` (Triage) | `web/src/components/ui/Badge.tsx` | `green` (No urgente), `yellow` (Urgencia moderada), `red` (Emergencia crítica), `online`, `offline` |
+| **Átomo** | `Input` | `web/src/components/ui/Input.tsx` | `default`, `focused`, `error` (mensaje de validación Zod), `disabled`, con icono prefijo |
+| **Átomo** | `Avatar` | `web/src/components/ui/Avatar.tsx` | Especie animal (perro, gato), foto de perfil tutor, avatar veterinario con badge online |
+| **Molécula** | `PetCard` | `web/src/components/ui/PetCard.tsx` | Nombre, especie, raza, peso, microchip ISO 11784/11785, botón de solicitar consulta |
+| **Molécula** | `TriageSelector` | `web/src/components/ui/TriageSelector.tsx` | Selección de síntomas (dificultad respiratoria, trauma, vómitos) y cálculo visual de severidad |
+| **Molécula** | `ChatMessage` | `web/src/components/ui/ChatMessage.tsx` | Mensaje entrante / saliente, texto, foto clínica adjunta con apertura modal Lightbox, timestamp |
+| **Molécula** | `CallControls` | `web/src/components/ui/CallControls.tsx` | Micrófono on/off, cámara on/off, colgar llamada, indicador de calidad WebRTC |
+| **Molécula** | `Breadcrumbs` | `web/src/components/ui/Breadcrumbs.tsx` | Rutas jerárquicas (items: label, href, active), separador Chevron accesible, roles ARIA `nav` y `aria-label="Breadcrumb"` |
+| **Organismo** | `PrescriptionModal` | `web/src/components/ui/PrescriptionModal.tsx` | Formulario veterinario oficial para emitir receta con diagnóstico, fármaco, dosis y matrícula |
+| **Organismo** | `PrescriptionDoc` | `web/src/components/ui/PrescriptionDoc.tsx` | Formato A4 oficial SENASA con código QR dinámico y estilos para `@media print` |
 
 ### 2.4 Estrategia de Refactorización Progresiva (De Páginas Monolíticas a Componentes Atómicos)
 Las pantallas en `web/src/pages/` operan actualmente como prototipos de alta madurez funcional (Nivel 4.5). Para evitar duplicación visual y maximizar la reutilización, la elevación de UI sigue el siguiente protocolo de 3 pasos:

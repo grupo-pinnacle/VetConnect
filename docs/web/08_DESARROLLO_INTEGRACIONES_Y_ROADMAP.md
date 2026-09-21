@@ -263,7 +263,7 @@ El desarrollo del portal web no opera en una isla de 4 sprints aislados, sino qu
 3. **Paso C — Puesta en Producción en Internet:**
    - Conectar Vercel con el repositorio para CI/CD automático del frontend (`https://vet-connect-web.vercel.app`).
    - Desplegar API en VPS con Coolify + Traefik TLS 1.3 conforme a [`docs/DEPLOY.md`](../DEPLOY.md).
-   - Compilar y publicar el APK piloto en `/downloads/vetconnect-preview.apk`.
+   - Compilar y publicar el APK piloto en `vetconnect.com.ar/descargar-app.apk`.
 
 ---
 *Documento de Desarrollo, Integraciones y Roadmap Web — VetConnect 2026.*

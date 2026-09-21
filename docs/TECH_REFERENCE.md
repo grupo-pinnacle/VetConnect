@@ -14,22 +14,23 @@ vetconnect/
 │   │   └── seed.js                 # Semilla de datos de prueba
 │   ├── src/
 │   │   ├── modules/
-│   │   │   ├── admin/              # Fiscalización SENASA, aprobación de veterinarios y AuditLogs
-│   │   │   ├── auth/               # Registro, Login, Refresh JWT, Verificación Email, GET /me
-│   │   │   ├── users/              # Perfil de usuario, estado isOnline, especialidad
+│   │   │   ├── auth/               # Registro, Login, Refresh JWT, Verificación Email
+│   │   │   ├── users/              # Perfil de usuario, veterinarios, aprobación SENASA
 │   │   │   ├── pets/               # CRUD de mascotas, especies, fichas clínicas
 │   │   │   ├── consultations/      # Triage, colas, asignación, estados, notas
 │   │   │   ├── calls/              # Señalización WebRTC y tokens LiveKit
-│   │   │   ├── prescriptions/      # Emisión y verificación pública de recetas digitales SENASA
 │   │   │   ├── media/              # Subida de adjuntos (S3 / Local), magic bytes
 │   │   │   └── notifications/      # Push Expo API y bandeja in-app
-│   │   ├── shared/
-│   │   │   ├── middlewares/        # Auth, Role Guard, Rate Limit, Error Handler
-│   │   │   ├── prisma.ts           # Cliente Prisma singleton
-│   │   │   ├── redis.ts            # Cliente ioredis & socket.io adapter
-│   │   │   └── types/              # Contratos y tipos compartidos
-│   │   ├── app.ts                  # Configuración de Express & Middlewares
-│   │   └── server.ts               # Punto de entrada HTTP y Socket.io
+│   │   ├── config/
+│   │   │   ├── cors.ts             # Política CORS dinámica Express y Socket.io
+│   │   │   └── env.ts              # Validación Zod fail-fast de variables de entorno
+│   │   ├── lib/
+│   │   │   ├── prisma.ts           # Cliente Prisma singleton con connection pooling
+│   │   │   └── redis.ts            # Cliente ioredis y Redis adapter
+│   │   ├── middlewares/            # Auth, requireRole, rateLimiter, errorHandler RFC 7807
+│   │   ├── realtime/               # Gateway de Socket.io y multiplexación de salas
+│   │   ├── app.ts                  # Configuración de Express, Helmet & Middlewares
+│   │   └── server.ts               # Punto de entrada HTTP, Socket.io y Graceful Shutdown
 │   ├── jest.config.js              # Configuración de pruebas automatizadas
 │   └── package.json
 │
@@ -104,13 +105,13 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `POST` | `/api/auth/login` | Inicio de sesión. Web: Refresh Token en cookie `HttpOnly`. Mobile (`X-Client-Platform: mobile`): Refresh Token en JSON body para `expo-secure-store` | Público |
 | `POST` | `/api/auth/refresh` | Renovación de access token. Web: lee cookie `HttpOnly`. Mobile: lee payload `{ refreshToken }` | Público |
 | `POST` | `/api/auth/logout` | Cierre de sesión, incrementa `tokenVersion` e invalida cookies | Autenticado |
-| `GET`  | `/api/auth/me`     | Obtener el usuario autenticado activo | Autenticado |
+| `GET`  | `/api/auth/me`     | Rehidratación del perfil de usuario autenticado activo en `AuthContext.tsx` | Autenticado |
 
 ### 2.2 Usuarios & Perfil (`/api/users`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `GET`  | `/api/users/profile` | Obtener perfil completo del usuario autenticado | Autenticado |
-| `PATCH`| `/api/users/profile` | Conmutación reactiva de guardia (`isOnline: boolean`), edición de especialidad, bio y teléfono | Autenticado |
+| `PATCH`| `/api/users/profile` | Conmutación reactiva de guardia (`isOnline: boolean`), edición de `bio`, `licenseNumber` y `photoUrl` | Autenticado |
 
 ### 2.3 Mascotas (`/api/pets`)
 | Método | Endpoint | Descripción | Acceso |
@@ -120,6 +121,21 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `GET` | `/api/pets/:id` | Obtener detalle e historial clínico de una mascota | Dueño / Vet asignado / ADMIN |
 | `PATCH`| `/api/pets/:id` | Modificar datos de la mascota | Dueño / ADMIN |
 | `DELETE`| `/api/pets/:id` | Soft-delete de mascota (`deletedAt`) | Dueño / ADMIN |
+
+### 2.3 Consultas & Telemedicina (`/api/consultations`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min). Convención UI: la prioridad elegida (`GREEN`\|`YELLOW`\|`RED`) se antepone en `notes` como `[Prioridad: ${priority}] ${notes}` | CLIENT |
+| `GET`  | `/api/consultations/mine`| Listar consultas activas/pendientes del usuario autenticado | Autenticado |
+| `GET`  | `/api/consultations`     | Listar consultas en cola filtradas por estado (ej. `?status=WAITING`) | VET / ADMIN |
+| `GET` | `/api/consultations/:id`| Obtener detalle completo de consulta e historial | Participantes / ADMIN |
+| `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o auto-asignación FIFO | VET (Approved) / ADMIN |
+| `PATCH`| `/api/consultations/:id/cancel` | Cancelar consulta telemática (transición a `CANCELLED`) | Participantes / ADMIN |
+| `PATCH`| `/api/consultations/:id/complete` | Cerrar consulta registrando evolución (`diagnosisNotes`) | VET asignado |
+| `POST` | `/api/consultations/:id/prescriptions` | Emitir receta digital oficial con QR y firma | VET asignado |
+| `GET`  | `/api/consultations/:id/messages` | Listar mensajes de chat o sincronización incremental (`?after={ISO_TIMESTAMP}`) | Participantes |
+| `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico (idempotente con `clientMsgId`) | Participantes |
+| `POST` | `/api/consultations/:id/review` | Calificar atención médica (1 a 5 estrellas, ADR-023) | CLIENT asignado |
 
 ### 2.4 Administración & Fiscalización SENASA (`/api/admin`)
 | Método | Endpoint | Descripción | Acceso |
@@ -134,34 +150,20 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `GET`  | `/api/prescriptions/:id` | Verificación pública no confidencial de receta digital oficial escaneada vía QR | Público |
 | `POST` | `/api/consultations/:id/prescriptions` | Emisión de receta digital oficial con firma y código QR | VET asignado |
 
-### 2.6 Consultas & Telemedicina (`/api/consultations`)
-| Método | Endpoint | Descripción | Acceso |
-|---|---|---|---|
-| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min) | CLIENT |
-| `GET` | `/api/consultations/mine`| Listar consultas activas/pendientes del usuario | Autenticado |
-| `GET` | `/api/consultations/:id`| Obtener detalle completo de consulta e historial | Participantes / ADMIN |
-| `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o auto-asignación FIFO | VET (Approved) / ADMIN |
-| `PATCH`| `/api/consultations/:id/cancel` | Cancelar consulta telemática (transición a `CANCELLED`) | Participantes / ADMIN |
-| `PATCH`| `/api/consultations/:id/complete` | Cerrar consulta registrando evolución (`diagnosisNotes`) | VET asignado |
-| `POST` | `/api/consultations/:id/prescriptions` | Emitir receta digital oficial con QR y firma | VET asignado |
-| `GET`  | `/api/consultations/:id/messages` | Listar mensajes de chat o sincronización incremental (`?after={ISO_TIMESTAMP}`) | Participantes |
-| `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico (idempotente con `clientMsgId`) | Participantes |
-| `POST` | `/api/consultations/:id/review` | Calificar atención médica (1 a 5 estrellas, ADR-023) | CLIENT asignado |
-
-### 2.7 Videollamadas (`/api/calls`)
+### 2.6 Videollamadas (`/api/calls`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/calls/:consultationId/token` | Generar token de acceso LiveKit para una consulta (sin PII) | Participantes de la consulta |
 | `POST` | `/api/calls/:consultationId/ring` | Disparar notificación de timbrado global al par (emite `call:incoming` con Cero PII y fallback Push Expo). Requiere consulta en estado `ACTIVE`. Errores: `400 INVALID_STATE`, `403 FORBIDDEN` | Participantes de la consulta |
 
-### 2.8 Notificaciones Push & In-App (`/api/notifications`)
+### 2.5 Notificaciones Push & In-App (`/api/notifications`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/notifications/register-token` | Registrar o actualizar token Expo Push (`ExponentPushToken[...]`) idempotentemente | Autenticado |
 | `GET`  | `/api/notifications` | Listar notificaciones in-app del usuario autenticado (`take`, `skip`) | Autenticado |
 | `PATCH`| `/api/notifications/:id/read` | Marcar notificación específica como leída (`isRead: true`, `readAt`) | Autenticado |
 
-### 2.9 Archivos Médicos & Adjuntos (`/api/media`)
+### 2.6 Archivos Médicos & Adjuntos (`/api/media`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/media` | Subida multipart con validación binaria de Magic Bytes (JPEG, PNG, PDF). Límite individual de 10 MB/archivo y cuota agregada de 50 MB/día por usuario (RNF-06). Persiste metadatos en `MediaFile` y consumo en `DailyUploadCounter`. Retorna `413 FILE_TOO_LARGE` si archivo > 10 MB o `429 UPLOAD_QUOTA_EXCEEDED` si supera 50 MB/día | Autenticado |
@@ -173,7 +175,7 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 
 | Evento | Payload | Emisor | Receptor | Descripción |
 |---|---|---|---|---|
-| `join:consultation` | `consultationId: string` | Cliente / Vet | Servidor | Une el socket a la sala de chat de la consulta |
+| `join:consultation` | `{ consultationId: string }` | Cliente / Vet | Servidor | Une el socket a la sala de chat de la consulta |
 | `message:send` | `{ consultationId, content, clientMsgId, attachmentUrl }` | Cliente / Vet | Servidor | Envía un nuevo mensaje de chat con deduplicación idempotente por clientMsgId |
 | `message:new` | `Message` object | Servidor | Sala de Consulta | Broadcast del mensaje a ambos participantes |
 | `call:incoming` | `{ consultationId, callerName, roomName }` | Servidor | Usuario llamado | Dispara la alerta de llamada entrante en Web y Mobile |

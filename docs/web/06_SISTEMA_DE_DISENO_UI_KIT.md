@@ -3,7 +3,7 @@
 > **Documento:** `docs/web/06_SISTEMA_DE_DISENO_UI_KIT.md`  
 > **Marco Metodológico:** Incorpora formalmente la **Actividad 26 – Definición del Sistema de Diseño del Producto**  
 > **Área:** Sistema de Diseño (Design System), UI Kit Web, Tokens Tailwind CSS & Component-Driven Development (Storybook)  
-> 🏛️ **Fuente Única de Verdad (Single Source of Truth - SSOT):** La definición canónica e inmutable de los tokens cromáticos (HEX), tipografía y personalidad de marca reside en [`docs/SISTEMA_DE_DISENO.md`](../SISTEMA_DE_DISENO.md). Este documento se especializa estrictamente en la implementación técnica de componentes React + Tailwind CSS.
+> 🏛️ **Fuente Única de Verdad (Single Source of Truth - SSOT):** La definición canónica e inmutable de los tokens cromáticos (HEX), tipografía y personalidad de marca reside en [`docs/SISTEMA_DE_DISENO.md`](../SISTEMA_DE_DISENO.md). El presente documento especializa su **implementación técnica en React 18.3.1 LTS + Tailwind CSS, catálogo de Storybook y contratos de props**.
 > **Proyecto:** VetConnect — Telemedicina Veterinaria & Gestión Clínica
 
 ---
@@ -141,8 +141,8 @@ flowchart TD
 3. **Control Total del Código:** Los componentes no son una "caja negra" de dependencias externas; el código reside en el repositorio, permitiendo estilizar y auditar cada prop médica directamente en Storybook (`http://localhost:6006`).
 4. **Accesibilidad Nivel Oro Integrada:** Cada componente atómico se valida en Storybook con el addon de accesibilidad `@storybook/addon-a11y` (Axe Core), garantizando contraste cromático $\ge 4.5:1$ y atributos semánticos ARIA (`aria-label`, `aria-expanded`, `aria-current`). Si un organismo complejo (ej. `Dialog` accesible o `Tooltip`) requiere primitivas headless como `@radix-ui/react-dialog`, se instalará puntualmente en el workspace web.
 
-> 🛑 **Guardarraíl Imperativo para Agentes de IA (Filosofía shadcn/ui sin CLI Externa):**
-> VetConnect aplica la filosofía arquitectónica de shadcn/ui: código abierto que vive dentro de tu propio repositorio en `web/src/components/ui/`, sin dependencias empaquetadas opacas. Los componentes se programan exclusivamente con Tailwind CSS nativo y TypeScript estricto. Queda prohibido ejecutar `npx shadcn@latest init` o instalar dependencias de React 19 / Tailwind v4.
+> 🛑 **Guardarraíl Imperativo para Agentes de IA (shadcn CLI Prohibido):**
+> Queda terminantemente prohibido ejecutar `npx shadcn@latest init` o `npx shadcn add`. La ejecución del CLI externo sobreescribiría `tailwind.config.js`, alteraría el lockfile con dependencias incompatibles y degradaría la versión de React 18.3.1 LTS. Los componentes atómicos se programan en `web/src/components/ui/` utilizando exclusivamente **Tailwind CSS nativo y TypeScript estricto** siguiendo la arquitectura desacoplada de `Button.tsx`.
 
 ---
 
@@ -224,6 +224,117 @@ flowchart LR
 | **Validación a11y Automatizada** | ❌ Manual y subjetiva | ⚠️ Requiere tests E2E | 🏆 **Integrada con Axe Core (`@storybook/addon-a11y`)** |
 | **Validación de WebRTC y Sockets**| ❌ Imposible en Figma | ✅ Real en código | 🏆 **Verificada en vivo y sincronizada a Figma** |
 | **Sincronización Diseño-Código** | ❌ Desfase progresivo inevitable | ❌ Sin documentación visual | 🏆 **Automática y continua vía `html.to.design`** |
+
+---
+
+## 8. Contratos Canónicos de Props de UI & Estados Resilientes (Storybook Roadmap)
+
+> ℹ️ **Nota de Implementación Real:**
+> Actualmente en `web/src/components/ui/` el componente base **`Button.tsx`** y su historia **`Button.stories.tsx`** están 100% implementados y testeados. Los demás componentes de esta taxonomía forman parte de la hoja de ruta de extracción progresiva desde `web/src/pages/` hacia Storybook.
+
+### 8.1 Interfaces TypeScript de Props (Extienden `BaseComponentProps`)
+
+```typescript
+export interface BaseComponentProps {
+  className?: string;
+  'data-testid'?: string; // MANDATORIO: Preserva selectores Vitest
+}
+
+// 1. Badge
+export interface BadgeProps extends BaseComponentProps {
+  variant: 'green' | 'yellow' | 'red' | 'online' | 'offline' | 'neutral';
+  size?: 'sm' | 'md';
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+}
+
+// 2. Input
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, BaseComponentProps {
+  label: string;
+  error?: string;
+  helperText?: string;
+}
+
+// 3. Avatar
+export interface AvatarProps extends BaseComponentProps {
+  src?: string | null;
+  alt: string;
+  size?: 'sm' | 'md' | 'lg';
+  status?: 'online' | 'busy' | 'offline';
+}
+
+// 4. PetCard
+export interface PetCardProps extends BaseComponentProps {
+  pet: Pet;
+  onSelect?: (pet: Pet) => void;
+  onRequestConsultation?: (pet: Pet) => void;
+  selected?: boolean;
+}
+
+// 5. TriageSelector
+export interface TriageSelectorProps extends BaseComponentProps {
+  value: 'GREEN' | 'YELLOW' | 'RED';
+  onChange: (value: 'GREEN' | 'YELLOW' | 'RED') => void;
+  disabled?: boolean;
+}
+
+// 6. ChatMessage
+export interface ChatMessageProps extends BaseComponentProps {
+  message: Message;
+  isOwn: boolean;
+  onImageClick?: (url: string) => void;
+}
+
+// 7. CallControls
+export interface CallControlsProps extends BaseComponentProps {
+  isMuted: boolean;
+  isVideoOff: boolean;
+  onToggleAudio: () => void;
+  onToggleVideo: () => void;
+  onHangUp: () => void;
+  connectionState: 'connected' | 'reconnecting' | 'disconnected';
+}
+
+// 8. Breadcrumbs
+export interface BreadcrumbItem {
+  label: string;
+  path?: string;
+}
+
+export interface BreadcrumbsProps extends BaseComponentProps {
+  items: BreadcrumbItem[];
+}
+
+// 9. PrescriptionDoc
+export interface PrescriptionDocProps extends BaseComponentProps {
+  prescription: Prescription;
+  qrUrl: string;
+  onPrint?: () => void;
+}
+
+// 10. PrescriptionModal
+export interface PrescriptionModalProps extends BaseComponentProps {
+  isOpen: boolean;
+  consultationId: string;
+  onClose: () => void;
+  onSuccess: (prescription: Prescription) => void;
+}
+
+// 11. ReviewModal (Post-consulta)
+export interface ReviewModalProps extends BaseComponentProps {
+  isOpen: boolean;
+  consultationId: string;
+  onClose: () => void;
+  onSubmit: (rating: number, comment?: string) => Promise<void>;
+}
+```
+
+### 8.2 Gestión de Estados Resilientes de UI
+Todo componente interactivo o contenedor asíncrono debe contemplar explícitamente los 4 estados canónicos de experiencia de usuario:
+1. **`loading` (Cargando):** Renderizado de Skeleton loaders animados con Tailwind (`animate-pulse bg-slate-200 rounded-lg`).
+2. **`error` (Fallo de Red / API):** Mensaje accesible con formato RFC 7807 y botón de reintento (`Retry`).
+3. **`empty` (Estado Vacío):** Ilustración amigable desaturada con llamada a la acción clara (`CTA`).
+4. **`reconnecting` (Reconexión de Socket/LiveKit):** Banner superior no intrusivo con spinner avisando restablecimiento de enlace en tiempo real.
 
 ---
 *Documento de Sistema de Diseño Web y UI Kit — VetConnect 2026.*

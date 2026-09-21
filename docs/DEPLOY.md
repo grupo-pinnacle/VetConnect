@@ -13,7 +13,7 @@ flowchart TD
     end
 
     subgraph WebHosting["Capa Frontend Web"]
-        Vercel["⚡ Vercel (Oficial Definitivo - ADR-022)\n• Dominio: app.vetconnect.com.ar\n• SPA React 18.3.1 (LTS) + Vite\n• CDN Global & SSL Automático\n(Hostinger: Contingencia Manual)"]
+        Vercel["⚡ Vercel (Oficial Definitivo - ADR-022)\n• Dominio: app.vetconnect.com\n• SPA React 18.3.1 (LTS) + Vite\n• CDN Global & SSL Automático\n(Hostinger: Contingencia Manual)"]
     end
 
     subgraph CoolifyVPS["Capa Backend (Coolify en VPS Propio)"]
@@ -55,7 +55,7 @@ flowchart TD
 1. **Crear Nuevo Recurso:** En el panel de Coolify, añade una nueva aplicación seleccionando tu repositorio de GitHub (`grupo-pinnacle/VetConnect`).
 2. **Directorio Base:** Configura el *Base Directory* en `/backend`.
 3. **Build Pack:** Selecciona `Dockerfile` (o `Nixpacks / Node.js`).
-4. **Dominio Público:** Asigna tu subdominio (ej: `https://api.vetconnect.com.ar`). Coolify y Traefik generarán automáticamente el certificado SSL (HTTPS/WSS).
+4. **Dominio Público:** Asigna tu subdominio (ej: `https://api.vetconnect.com`). Coolify y Traefik generarán automáticamente el certificado SSL (HTTPS/WSS).
 5. **Variables de Entorno en Coolify:**
    ```env
    PORT=3001
@@ -65,7 +65,7 @@ flowchart TD
    JWT_SECRET="genera_un_secreto_seguro_de_64_caracteres_con_openssl"
    JWT_REFRESH_SECRET="genera_otro_secreto_seguro_para_refresh"
    REDIS_URL="redis://default:password@coolify-redis-service:6379"
-   FRONTEND_URL="https://app.vetconnect.com.ar"
+   FRONTEND_URL="https://app.vetconnect.com"
    LIVEKIT_API_KEY="APxxxxxxxxxxxx"
    LIVEKIT_API_SECRET="secretxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
    LIVEKIT_HOST="https://vetconnect.livekit.cloud"
@@ -87,8 +87,8 @@ flowchart TD
 3. **Framework Preset:** `Vite`.
 4. **Variables de Entorno en Vercel:**
    ```env
-   VITE_API_URL="https://api.vetconnect.com.ar"
-   VITE_SOCKET_URL="https://api.vetconnect.com.ar"
+   VITE_API_URL="https://api.vetconnect.com"
+   VITE_SOCKET_URL="https://api.vetconnect.com"
    VITE_LIVEKIT_HOST="https://vetconnect.livekit.cloud"
    ```
 5. **Automatización:** Cada push a `main` dispara un despliegue de producción con CDN global Edge, compresión Brotli y SSL automático. Cada Pull Request genera una URL de previsualización (Preview Deployment) para QA.
@@ -140,7 +140,7 @@ Para la aplicación móvil de Android, existen **3 caminos posibles** según el 
   # En mobile/eas.json configura "buildType": "apk" en el perfil preview
   eas build --platform android --profile preview
   ```
-- **Distribución:** Se sube el archivo `.apk` a tu propio servidor o landing page en Hostinger (`https://app.vetconnect.com.ar/descargar-app.apk`). Los tutores lo descargan e instalan directamente en su celular Android activando "Permitir orígenes desconocidos".
+- **Distribución:** Se sube el archivo `.apk` a tu propio servidor o landing page en Hostinger (`https://vetconnect.com/descargar-app.apk`). Los tutores lo descargan e instalan directamente en su celular Android activando "Permitir orígenes desconocidos".
 - **Ventaja:** Cero costo de Play Store, despliegue inmediato sin tiempos de revisión de Google (ideal para validar el MVP y hacer pruebas piloto con clínicas reales).
 
 ### 🛣️ Camino 3: Compilación Local de APK con Android SDK (Sin usar EAS Cloud)

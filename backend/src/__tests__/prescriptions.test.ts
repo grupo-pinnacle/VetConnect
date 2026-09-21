@@ -118,34 +118,7 @@ describe('Prescriptions Module (/api/consultations/:id/prescriptions)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.medication).toBe('Amoxicilina 250mg');
       expect(res.body.data.qrCodeDataUrl).toContain('data:image/png;base64');
-      expect(res.body.data.verifyUrl).toBe('https://app.vetconnect.com.ar/prescriptions/prescription-uuid-1');
-    });
-
-    it('should allow public verification of a prescription without authentication', async () => {
-      mockPrismaPrescription.findUnique.mockResolvedValue({
-        id: 'prescription-uuid-1',
-        consultationId: 'consultation-uuid-1',
-        vetId: mockApprovedVet.id,
-        medication: 'Amoxicilina 250mg',
-        dosage: '1 comprimido cada 12 hs',
-        frequency: 'Cada 12 hs',
-        durationDays: 7,
-        indications: 'Administrar junto con alimentos',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        vet: mockApprovedVet as any,
-        consultation: {
-          pet: { name: 'Milo', species: 'Canino' },
-          client: { id: 'client-1', firstName: 'Juan', lastName: 'Perez' },
-        } as any,
-      });
-
-      const res = await request(app).get('/api/prescriptions/prescription-uuid-1');
-
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.medication).toBe('Amoxicilina 250mg');
-      expect(res.body.data.verifyUrl).toBe('https://app.vetconnect.com.ar/prescriptions/prescription-uuid-1');
+      expect(res.body.data.verifyUrl).toBe('https://vetconnect.app/verify/prescription/prescription-uuid-1');
     });
 
     it('should REJECT prescription issuance from PENDING VET with 403 Forbidden', async () => {

@@ -29,6 +29,7 @@ export interface Pet {
   name: string;
   species: string;
   breed: string;
+  birthDate?: string | null;
   weightKg?: number | null;
   sex?: string | null;
   microchip?: string | null;

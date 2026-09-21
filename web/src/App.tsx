@@ -27,9 +27,7 @@ const PageLoader: React.FC = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutos de validez para datos estables
-      gcTime: 10 * 60 * 1000,    // 10 minutos de permanencia en memoria caché
-      refetchOnWindowFocus: false, // Evita refetches molestos al cambiar de pestaña
+      staleTime: 5 * 60 * 1000,
       retry: 1,
     },
   },

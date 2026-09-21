@@ -29,7 +29,7 @@ Antes de permitir que la IA proponga o escriba código, debemos definir formalme
    * **Nombre y sección:** `FEATURE-02: Notificación y Registro de Recetas Médicas en PDF`, `seccion: Consultas / Media`.
    * **Descripción:** Al finalizar una consulta, el sistema debe generar una receta firmada en PDF, notificar al cliente y permitir su descarga desde el historial.
    * **Escenario Gherkin/BDD:**
-     * **Given:** El veterinario ha completado los campos de diagnóstico en una consulta con estado `IN_PROGRESS`.
+     * **Given:** El veterinario ha completado los campos de diagnóstico en una consulta con estado `ACTIVE`.
      * **When:** El veterinario presiona el botón "Finalizar y Emitir Receta".
      * **Then:** El sistema genera el archivo PDF, actualiza la consulta a estado `COMPLETED`, emite una notificación al cliente y el PDF queda disponible para descarga bajo "Mis Recetas".
    * **Causas / Capas Involucradas:** Capa UI (Botón y Modal), Capa de Hooks/Estado, Capa de Red/API (Endpoint POST), Capa de Servicio (Generador PDF) y Base de Datos (Persistencia y `AuditLog`).
