@@ -53,11 +53,7 @@ Antes de trazar interfaces en Figma o escribir código en React, se definen los 
 VetConnect Web busca brindar atención clínica en tiempo real y gestión documental veterinaria. No es un blog pasivo ni una tienda genérica de alimentos para mascotas: es un **sistema telemédico interactivo de misión crítica**.
 
 ### 3.2 Contenido Básico Preparado
-- **Textos Institucionales:** Misión, visión médica, marco de respaldo SENASA y leyes de ejercicio profesional veterinario.
-- **Catálogo de Servicios:** Teleconsulta inmediata de guardia, consultas programadas, fichas clínicas digitales y emisión de recetas oficiales.
-- **Acceso Multicanal & Descarga Móvil:** Enlace y banner en la landing page para descarga directa del instalador Android `.apk` de la app móvil en fase piloto (`/downloads/vetconnect-preview.apk`), facilitando la adopción a costo cero antes de la publicación en Google Play Console (conforme a [`docs/DEPLOY.md`](../DEPLOY.md)).
-- **Identidad Corporativa:** Logotipo oficial en formato vectorial SVG (fusión de cruz médica, huella animal y ondas de conectividad).
-- **Recursos Fotográficos:** Banco de imágenes de alta resolución de profesionales reales con vestimenta clínica y animales de compañía en ambientes hogareños confortables.
+> 📌 Ver arquetipos de usuario e investigación DCU en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-y-contexto-real-de-uso).
 
 ### 3.3 Dominio Oficial
 - **Nombre de Dominio:** `vetconnect.com.ar` (y alternativa regional `vetconnect.lat`).

@@ -76,8 +76,8 @@ const queryClient = new QueryClient({
 
 En el ámbito de la salud y la telemedicina, la accesibilidad es un imperativo ético y legal (Ley N° 26.653 de Accesibilidad de la Información en las Páginas Web).
 
-### 3.1 Integración de Primitivas Radix UI (shadcn/ui)
-La arquitectura de componentes se apoya en **Radix UI Primitives** (que se incorporan modularmente en Storybook para el catálogo atómico shadcn/ui; actualmente la SPA implementa la accesibilidad base mediante listeners de `Escape`, trampas de foco y atributos WAI-ARIA nativos):
+### 3.1 Componentes Accesibles Native-First (HTML5 + WAI-ARIA + Tailwind)
+Queda terminantemente prohibido instalar Radix UI (`@radix-ui/*`) o inicializar CLIs de shadcn. Todos los componentes de `web/src/components/ui/` se construyen con HTML5 semántico nativo, accesibilidad WAI-ARIA nativa, iconos de Lucide React y clases puras de Tailwind CSS, siguiendo la arquitectura desacoplada y liviana de `Button.tsx`:
 1. **Trampas de Foco (*Focus Trapping*):**  
    Al abrir un modal (como el cuestionario de triage reactivo o la confirmación de receta), el foco del teclado queda confinado dentro del modal. El usuario no puede presionar `Tab` y perderse en elementos ocultos del fondo.
 2. **Cierre Universal con `Escape`:**  
@@ -105,11 +105,7 @@ Soporte validado para **NVDA** y **JAWS** (Windows), **VoiceOver** (macOS e iOS)
      `<div aria-live="polite" role="status" className="sr-only">Tu estado ahora es: Veterinario de guardia disponible en línea.</div>`
 
 ### 3.3 Jerarquía de Contrastes Visuales (WCAG 2.1)
-- **Texto Normal:** Contraste mínimo de **14.2:1** sobre fondo blanco (`#0F172A` sobre `#FFFFFF`), superando holgadamente el requisito AAA de 7.0:1.
-- **Texto Secundario:** Contraste de **9.5:1** (`#334155` sobre `#FFFFFF`).
-- **Botones Interactivos Primarios:** Contraste de **4.6:1** (`#FFFFFF` sobre `#2563EB`).
-- **Anillos de Foco Visibles:**  
-  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2` garantizando que cualquier persona que navegue mediante teclado sepa exactamente qué elemento está activo.
+> 📌 Ver especificación canónica de tokens de color y contraste en [docs/SISTEMA_DE_DISENO.md](../../SISTEMA_DE_DISENO.md).
 
 ---
 

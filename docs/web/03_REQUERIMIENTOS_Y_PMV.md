@@ -144,7 +144,7 @@ Para garantizar que cualquier agente de IA o desarrollador cuente con el contrat
 
 | Módulo Backend | Método | Ruta del Endpoint | Uso en Frontend Web (`web/src/`) | Contrato de Request / Response | Esquema Zod Backend (SSOT) |
 |---|---|---|---|---|---|
-| **`auth`** | `POST` | `/api/auth/register` | `pages/Register.tsx` | Body: `{ email, password, firstName, lastName, role, licenseNumber?, speciality? }` → `{ success: true, data: { accessToken, user } }` | `modules/auth/auth.schemas.ts` |
+| **`auth`** | `POST` | `/api/auth/register` | `pages/Register.tsx` | Body: `{ email, password, firstName, lastName, role, licenseNumber?, bio? }` → `{ success: true, data: { accessToken, user } }` | `modules/auth/auth.schemas.ts` |
 | **`auth`** | `POST` | `/api/auth/login` | `pages/Login.tsx` | Body: `{ email, password }` → `{ success: true, data: { accessToken, user } }` (Cookie: `refreshToken`) | `modules/auth/auth.schemas.ts` |
 | **`auth`** | `POST` | `/api/auth/refresh` | `services/api.ts` | Cookie `refreshToken` → `{ success: true, data: { accessToken } }` | `modules/auth/auth.schemas.ts` |
 | **`auth`** | `POST` | `/api/auth/logout` | `context/AuthContext.tsx` | Invalida cookie `refreshToken` → `{ success: true, message: "Logged out" }` | `modules/auth/auth.schemas.ts` |
@@ -152,16 +152,16 @@ Para garantizar que cualquier agente de IA o desarrollador cuente con el contrat
 | **`users`** | `GET` | `/api/users/profile` | `context/AuthContext.tsx` | Header `Bearer ${token}` → `{ success: true, data: UserProfile }` | `modules/users/users.schemas.ts` |
 | **`users`** | `PATCH` | `/api/users/profile` | `pages/DashboardVet.tsx` | Body: `{ isOnline?: boolean, speciality?: string, bio?: string }` → `{ success: true, data: UserProfile }` | `modules/users/users.schemas.ts` |
 | **`pets`** | `GET` | `/api/pets` | `pages/DashboardClient.tsx` | Header `Bearer ${token}` → `{ success: true, data: Pet[] }` | `modules/pets/pets.schemas.ts` |
-| **`pets`** | `POST` | `/api/pets` | `pages/DashboardClient.tsx` | Body: `{ name, species, breed?, birthDate?, weight?, microchipNumber? }` → `{ success: true, data: Pet }` | `modules/pets/pets.schemas.ts` |
+| **`pets`** | `POST` | `/api/pets` | `pages/DashboardClient.tsx` | Body: `{ name, species, breed, weightKg?, microchip? }` (`breed` min 1 char) → `{ success: true, data: Pet }` | `modules/pets/pets.schemas.ts` |
 | **`pets`** | `GET` | `/api/pets/:id` | `pages/DashboardClient.tsx` | Param: `id` (UUID v4) → `{ success: true, data: Pet }` | `modules/pets/pets.schemas.ts` |
 | **`pets`** | `PATCH` | `/api/pets/:id` | `pages/DashboardClient.tsx` | Param: `id`, Body: `Partial<PetInput>` → `{ success: true, data: Pet }` | `modules/pets/pets.schemas.ts` |
 | **`pets`** | `DELETE` | `/api/pets/:id` | `pages/DashboardClient.tsx` | Param: `id` → Soft-delete (`deletedAt = now`) | `modules/pets/pets.schemas.ts` |
-| **`consultations`**| `GET` | `/api/consultations/mine` | `pages/DashboardClient.tsx`, `pages/DashboardVet.tsx` | Query: `?status=ACTIVE` o `status=WAITING` → `{ success: true, data: Consultation[] }` | `modules/consultations/consultations.schemas.ts` |
-| **`consultations`**| `POST` | `/api/consultations` | `pages/DashboardClient.tsx` (Triage) | Body: `{ petId, reason, priority: 'GREEN'\|'YELLOW'\|'RED' }` → `{ success: true, data: Consultation }` | `modules/consultations/consultations.schemas.ts` |
+| **`consultations`**| `GET` | `/api/consultations/mine` | `pages/DashboardClient.tsx`, `pages/DashboardVet.tsx` | Retorna consultas asignadas + sala de espera (WAITING). No requiere ni filtra query params. | `modules/consultations/consultations.schemas.ts` |
+| **`consultations`**| `POST` | `/api/consultations` | `pages/DashboardClient.tsx` (Triage) | Body: `{ petId, notes }` (La prioridad visual 'GREEN'\|'YELLOW'\|'RED' se antepone en notes como `[Prioridad: ${priority}] ${notes}`) → `{ success: true, data: Consultation }` | `modules/consultations/consultations.schemas.ts` |
 | **`consultations`**| `GET` | `/api/consultations/:id` | `pages/ConsultationRoom.tsx` | Param: `id` (UUID v4) → `{ success: true, data: Consultation & { pet, client, vet } }` | `modules/consultations/consultations.schemas.ts` |
 | **`calls`** | `POST` | `/api/calls/:id/token` | `pages/ConsultationRoom.tsx` | Param: `id` (Consultation UUID) → `{ success: true, data: { token: string, wsUrl: string } }` (Zero PII) | `modules/calls/calls.schemas.ts` |
 | **`prescriptions`**| `GET` | `/api/prescriptions/:id` | `pages/PrescriptionView.tsx` | Param: `id` (UUID v4) → `{ success: true, data: Prescription & { vet, consultation: { pet } } }` | `modules/prescriptions/prescriptions.schemas.ts` |
-| **`prescriptions`**| `POST` | `/api/consultations/:id/prescriptions` | `pages/ConsultationRoom.tsx` | Body: `{ medication, dosage, frequency, durationDays, indications? }` → `{ success: true, data: Prescription }` | `modules/prescriptions/prescriptions.schemas.ts` |
+| **`prescriptions`**| `POST` | `/api/consultations/:id/prescriptions` | `pages/ConsultationRoom.tsx` | Body: `{ medication, dosage, frequency, durationDays, indications }` (`indications` obligatorio min 5 chars) → `{ success: true, data: Prescription }` | `modules/prescriptions/prescriptions.schemas.ts` |
 | **`admin`** | `GET` | `/api/admin/vets/pending` | `pages/AdminVets.tsx` | Header `Bearer ${token}` (Role `ADMIN`) → `{ success: true, data: PendingVet[] }` | `modules/admin/admin.schemas.ts` |
 | **`admin`** | `PATCH` | `/api/admin/vets/:id/approve`| `pages/AdminVets.tsx` | Param: `id` (Vet UUID) → `{ success: true, data: { id, vetStatus: 'APPROVED' } }` | `modules/admin/admin.schemas.ts` |
 | **`admin`** | `PATCH` | `/api/admin/vets/:id/reject` | `pages/AdminVets.tsx` | Param: `id`, Body: `{ reason: string }` → `{ success: true, data: { id, vetStatus: 'REJECTED' } }` | `modules/admin/admin.schemas.ts` |

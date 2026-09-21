@@ -3,6 +3,21 @@ export type VetStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type ConsultationStatus = 'WAITING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 export type CallStatus = 'INITIATED' | 'ACTIVE' | 'ENDED';
 
+export type TriagePriority = 'GREEN' | 'YELLOW' | 'RED';
+export type TriagePriorityES = 'VERDE' | 'AMARILLO' | 'ROJO';
+
+export const TRIAGE_EN_TO_ES: Record<TriagePriority, TriagePriorityES> = {
+  GREEN: 'VERDE',
+  YELLOW: 'AMARILLO',
+  RED: 'ROJO',
+};
+
+export const TRIAGE_ES_TO_EN: Record<TriagePriorityES, TriagePriority> = {
+  VERDE: 'GREEN',
+  AMARILLO: 'YELLOW',
+  ROJO: 'RED',
+};
+
 export interface User {
   id: string;
   email: string;
