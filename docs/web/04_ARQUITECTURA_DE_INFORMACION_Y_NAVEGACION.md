@@ -42,7 +42,7 @@ El mapa del sitio web se divide en tres dominios principales: **Portal Público 
    └── [Nivel 2] Historial de Consultas Atendidas (/vet/dashboard#historial)
 
 [Nivel 1] Panel de Administración SENASA (/admin/vets y /admin/dashboard)
-   └── [Nivel 2] Fiscalización de Matrículas Pendientes & AuditLogs
+   └── [Nivel 2] Fiscalización de Matrículas Pendientes & AuditLogs (Mapea a AdminVets.tsx)
 
 > 🔒 **Aislamiento de Pacientes & Protección PII (Ley 25.326):**  
 > Se descarta formalmente cualquier ruta de "bóveda global de pacientes" abierta (`/patients`). El médico veterinario accede a los datos clínicos del paciente exclusivamente dentro del contexto de una consulta activa asignada, garantizando el secreto médico y la minimización de datos personales.

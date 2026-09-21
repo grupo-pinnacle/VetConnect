@@ -113,7 +113,7 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `GET`  | `/api/users/profile` | Obtener perfil completo del usuario autenticado | Autenticado |
-| `PATCH`| `/api/users/profile` | Conmutación reactiva de guardia (`isOnline: boolean`), edición de `bio`, `licenseNumber` y `photoUrl` | Autenticado |
+| `PATCH`| `/api/users/profile` | Conmutación reactiva de guardia (`isOnline: boolean`), edición de `speciality`, `bio`, `licenseNumber` y `photoUrl` | Autenticado |
 
 ### 2.3 Mascotas (`/api/pets`)
 | Método | Endpoint | Descripción | Acceso |

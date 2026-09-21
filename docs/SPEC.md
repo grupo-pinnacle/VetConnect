@@ -45,7 +45,7 @@ flowchart TB
             ConsultMod["🩺 consultations/ (Triage y State Machine)"]
             CallMod["🎥 calls/ (LiveKit Token Grants)"]
             MediaMod["📦 media/ (Magic Bytes Inspector)"]
-            AuditMod["📜 audit/ (Immutable AuditLog)"]
+            AdminMod["📜 admin/ (Fiscalización SENASA & AuditLog)"]
         end
         SocketGateway["⚡ Clustered Socket.io Gateway<br/>• Room Multiplexing<br/>• Deduplication Engine"]
     end
@@ -68,7 +68,7 @@ flowchart TB
     UserMod --> Postgres
     PetMod --> Postgres
     ConsultMod --> Postgres
-    AuditMod --> Postgres
+    AdminMod --> Postgres
 
     MediaMod --> S3Storage
 
