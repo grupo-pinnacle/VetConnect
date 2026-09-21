@@ -72,7 +72,7 @@ VetConnect es una solución telemédica multiplataforma (Web SPA y Mobile App na
 
 ### 1.4 Objetivos Generales y Específicos
 - **Objetivo General:**  
-  Diseñar, desarrollar y desplegar una plataforma omnicanal (Web React 18.3.1 LTS y Mobile Expo SDK 54) con backend modular escalable (Node.js, Express 5, PostgreSQL y Prisma ORM 6) que brinde atención veterinaria primaria a distancia, resguarde la seguridad del paciente y garantice trazabilidad legal e inmutabilidad clínica.
+  Diseñar, desarrollar y desplegar una plataforma omnicanal (Web React 18.3.1 LTS / React 19 Ready y Mobile Expo SDK 54) con backend modular escalable (Node.js, Express 5, PostgreSQL y Prisma ORM 6) que brinde atención veterinaria primaria a distancia, resguarde la seguridad del paciente y garantice trazabilidad legal e inmutabilidad clínica.
 - **Objetivos Específicos:**
   1. Reducir el tiempo $P_{95}$ de espera en la cola de triage médico a menos de 5 minutos.
   2. Implementar canales de comunicación sincrónicos de grado médico: mensajería en tiempo real con latencia menor a 80 ms y videollamadas WebRTC (720p) con conexión inicial menor a 1500 ms.

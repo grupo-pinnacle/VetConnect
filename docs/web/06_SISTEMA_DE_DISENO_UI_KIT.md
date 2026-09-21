@@ -337,34 +337,4 @@ Todo componente interactivo o contenedor asíncrono debe contemplar explícitame
 4. **`reconnecting` (Reconexión de Socket/LiveKit):** Banner superior no intrusivo con spinner avisando restablecimiento de enlace en tiempo real.
 
 ---
-
-## 9. Directrices Operativas para Agentes de IA en la Capa Web
-
-### 9.1 Estándar de Formularios
-- Mantener la arquitectura liviana actual: formularios controlados con `useState` estándar y validaciones visuales directas. No añadir librerías pesadas externas (`react-hook-form` / formik) a menos que un requerimiento explícito de ADR lo justifique.
-
-### 9.2 Matriz de Contratos Congelados de Selectores (Anti-Regresión Vitest)
-Los 29 tests automatizados en `web/src/__tests__/` auditan cadenas literales exactas. Al diseñar o refactorizar pantallas, es imperativo preservar estos selectores y etiquetas:
-- **`Login.test.tsx`:**
-  - Input Email: `placeholder="ejemplo@vetconnect.com"`
-  - Input Password: `placeholder="********"`
-  - Submit Button: `text="Iniciar Sesión"`
-- **`Register.test.tsx`:**
-  - Selector de Rol: Botones con texto exacto `"Soy Tutor de Mascotas"` y `"Soy Veterinario"`.
-  - Input Matrícula (solo visible en rol Vet): `placeholder="MP-12345"` o label `"Matrícula Profesional"`.
-- **`DashboardClient.test.tsx`:**
-  - Títulos de sección: `"Mis Mascotas"`, `"Solicitar Consulta de Guardia"`.
-  - Botón de Triage: `"Solicitar Consulta de Guardia"`.
-- **`DashboardVet.test.tsx`:**
-  - Switch de Guardia: `"Disponible para Guardia"` / `"En Guardia"`.
-  - Tablas/Cards: `"Sala de Espera"`, `"Atender Siguiente"`.
-
-### 9.3 La Regla de Oro de la Refactorización Progresiva
-Toda refactorización de componentes debe seguir estrictamente este algoritmo de 4 pasos:
-1. **EXTRAER:** Crear el componente atómico en `web/src/components/ui/<Componente>.tsx` respetando las interfaces de `docs/web/06` §8.
-2. **AISLAR:** Crear su historia en `web/src/components/ui/<Componente>.stories.tsx` y verificar accesibilidad.
-3. **SUSTITUIR:** Reemplazar el bloque monolítico en la página destino (`DashboardClient`, `DashboardVet`, etc.) usando el nuevo componente.
-4. **VALIDAR:** Ejecutar `npm test -w web`. Si los 29 tests siguen verdes al 100%, continuar con el siguiente átomo. Si falla un test, corregir la prop o el selector sin alterar la lógica de negocio.
-
----
 *Documento de Sistema de Diseño Web y UI Kit — VetConnect 2026.*

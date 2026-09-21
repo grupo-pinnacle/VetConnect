@@ -32,7 +32,7 @@ El mapa del sitio web se divide en tres dominios principales: **Portal Público 
    └── [Nivel 2] Receta Digital Oficial SENASA (/prescriptions/:id)
         └── [Página Final] Vista Imprimible A4 & Verificador QR
 
-### 2.1 Árbol Web del Portal Profesional de Guardia (`VET`)
+### 2.1 Árbol Web del Portal Profesional de Guardia (`VET`) & Panel Admin (`ADMIN`)
 
 ```
 [Nivel 1] Tablero de Guardia (/vet/dashboard)
@@ -40,6 +40,9 @@ El mapa del sitio web se divide en tres dominios principales: **Portal Público 
    ├── [Nivel 2] Atención de Consulta (/call/:id)
    │    └── [Modal Clínico] Emisión de Receta Oficial SENASA con QR
    └── [Nivel 2] Historial de Consultas Atendidas (/vet/dashboard#historial)
+
+[Nivel 1] Panel de Administración SENASA (/admin/vets y /admin/dashboard)
+   └── [Nivel 2] Fiscalización de Matrículas Pendientes & AuditLogs
 
 > 🔒 **Aislamiento de Pacientes & Protección PII (Ley 25.326):**  
 > Se descarta formalmente cualquier ruta de "bóveda global de pacientes" abierta (`/patients`). El médico veterinario accede a los datos clínicos del paciente exclusivamente dentro del contexto de una consulta activa asignada, garantizando el secreto médico y la minimización de datos personales.
@@ -107,6 +110,12 @@ Inicio > Panel Veterinario (/vet/dashboard) > Consulta #3492 (/call/:id [UUID v4
 ```
 Inicio > Panel del Tutor (/client/dashboard) > Receta Oficial (/prescriptions/:id [UUID v4])
  [🔗]                     [🔗]                                                 [Texto Plano]
+```
+
+#### Ejemplo D: Administrador Auditando Matrículas Pendientes
+```
+Inicio > Panel de Administración (/admin/dashboard) > Fiscalización SENASA (/admin/vets)
+ [🔗]                     [🔗]                                       [Texto Plano]
 ```
 *(Nota de Implementación: Todos los parámetros de ruta `:id` corresponden a identificadores canónicos UUID v4 de PostgreSQL/Prisma; los códigos visuales como `#3492` o `RC-2026` son etiquetas amigables renderizadas en la interfaz).*
 

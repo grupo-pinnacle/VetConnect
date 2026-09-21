@@ -1,9 +1,5 @@
 # 📋 PLAN DE ACCIÓN GREENFIELD — BACKLOG DE TAREAS PARA AGENTES AUTÓNOMOS (VetConnect)
 
-> 🛑 **AVISO SUPREMO PARA AGENTES DE IA (NIVEL 4.5 PRE-GOLD MASTER):**
-> Las Fases 0 a 4 (Scaffolding, Backend Core, Auth, Consultas, Sockets, LiveKit, Recetas y Tests) **están 100% COMPLETADAS** con 124 tests pasando en verde.
-> **Queda terminantemente prohibido ejecutar scaffolding inicial (`npm create vite`, `npm init`, re-crear carpetas o borrar código preexistente)**. El trabajo actual del repositorio es exclusivamente de **Fase 5: Component-Driven Development (CDD) en Storybook y Refactorización Atómica Progresiva**.
-
 > **Destinatarios:** Agentes autónomos de IA (**Google Jules**, Antigravity, Claude Code, Cursor) y desarrolladores del equipo.
 > **Enfoque:** Construcción desde cero (**Greenfield**) del monorepo VetConnect, sin deuda técnica heredada y con arquitectura FAANG.
 > **Naturaleza del Documento:** Backlog maestro de especificación para la construcción desde cero y **Guía Preventiva de Antipatrones de Diseño**. No constituye un conjunto de parches sobre código previo (el repositorio es pre-código y parte de cero absoluto).

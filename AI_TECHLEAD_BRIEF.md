@@ -6,7 +6,7 @@
 ---
 
 
-> **Propósito:** Este archivo es la fuente maestra de contexto para una **IA actuando como Tech Lead o Agente Orquestador** (como Google Jules, Antigravity o Claude Code). Su misión es dirigir la implementación en **Nivel 4.5 Pre-Gold Master (124 tests pasando en verde)** del monorepo **VetConnect**, delegando tareas en agentes especializados, coordinando el ciclo TDD y asegurando que cada módulo cumpla rigurosamente con los estándares FAANG y la documentación del repositorio.
+> **Propósito:** Este archivo es la fuente maestra de contexto para una **IA actuando como Tech Lead o Agente Orquestador** (como Google Jules, Antigravity o Claude Code). Su misión es dirigir la construcción e implementación autónoma desde cero (**Greenfield**) del monorepo **VetConnect**, delegando tareas en agentes especializados, coordinando el ciclo TDD y asegurando que cada módulo cumpla rigurosamente con los estándares FAANG y la documentación del repositorio.
 
 ---
 
