@@ -40,7 +40,7 @@ graph TD
 
     subgraph Track_Web["Track Visual & Web (Técnico Multimedial + Equipo)"]
         F1_Des["Diseño UI/UX en Figma\n(Damian Orellana - Técnico Multimedial)"] --> F2_App["Aprobación de Prototipos\n& Design Tokens"]
-        F2_App --> F3_Code["Codificación Frontend Web React 19\n(Equipo Humano + Damian)"]
+        F2_App --> F3_Code["Codificación Frontend Web React 18.3.1 LTS\n(Equipo Humano + Damian)"]
     end
 
     J0 -.->|"Provee Scaffolding Técnico Web (TASK-5.1)"| F3_Code
@@ -51,11 +51,11 @@ graph TD
 1. **Diseño Visual & UI/UX en Figma (Técnico Multimedial — Damian Orellana):**
    - Diseña en **Figma** toda la arquitectura de interfaces, wireframes, componentes interactivos y layouts finales de alta fidelidad del Portal Web Pro, respetando el sistema de diseño (`docs/SISTEMA_DE_DISENO.md`).
 2. **Implementación de Código Web ("Luego nosotros haremos el código"):**
-   - El equipo de desarrollo humano codifica el Frontend Web (`web/` en React 19 + Tailwind CSS) tomando los diseños de Figma aprobados como fuente visual de verdad.
+   - El equipo de desarrollo humano codifica el Frontend Web (`web/` en React 18.3.1 LTS + Tailwind CSS) tomando los diseños de Figma aprobados como fuente visual de verdad.
 3. **Avance Continuo de Jules ("Mientras tanto que trabaje Jules"):**
    - Jules **NUNCA** se detiene ni se bloquea esperando pantallas de Figma.
    - Jules avanza a máxima velocidad en **Fase 0, Fase 1, Fase 2, Fase 3, Fase 4, Fase 6 y Fase 7**.
-   - En la **Fase 5 (Web)**, Jules solo ejecuta la plomería técnica inicial (Vite, React 19 setup, cliente Axios, TanStack Query y sincronización de contratos DTOs en TASK-5.1). Jules **NO inventa diseños de pantalla arbitrarios**; la UI final la ensambla el equipo a partir de Figma.
+   - En la **Fase 5 (Web)**, Jules solo ejecuta la plomería técnica inicial (Vite, React 18.3.1 LTS setup, cliente Axios, TanStack Query y sincronización de contratos DTOs en TASK-5.1). Jules **NO inventa diseños de pantalla arbitrarios**; la UI final la ensambla el equipo a partir de Figma.
 
 ---
 

@@ -75,7 +75,7 @@ Los agentes autónomos deben invocar las herramientas indicadas según la natura
 | `api-design-principles` | Al estructurar nuevos controladores o rutas para asegurar contratos REST limpios. |
 | `error-handling-patterns` | Para garantizar códigos HTTP exactos y respuestas uniformes RFC 7807. |
 | `systematic-debugging` | Para reproducir, aislar y corregir fallos en tests o problemas de concurrencia. |
-| `frontend-design` | Al diseñar interfaces en React 19 o NativeWind garantizando accesibilidad y responsive design. |
+| `frontend-design` | Al diseñar interfaces en React 18.3.1 (LTS) o NativeWind garantizando accesibilidad y responsive design. |
 
 ---
 
@@ -98,7 +98,7 @@ El Tech Lead supervisa la ejecución secuencial de las 8 fases detalladas en [`P
 - **Fase 2 — Core Backend REST API:** Express 5, autenticación JWT con `tokenVersion`, validadores Zod, CRUDs base.
 - **Fase 3 — Motor en Tiempo Real & Chat:** Socket.io, Redis Adapter, presencia, idempotencia con `clientMsgId`.
 - **Fase 4 — Telemedicina LiveKit & Media Segura:** Tokens SFU, validación binaria de Magic Bytes, subida local/S3.
-- **Fase 5 — Frontend Web SPA:** Handoff de Figma del Técnico Multimedial + Scaffolding base de React 19, Vite, TanStack Query y codificación por el equipo humano.
+- **Fase 5 — Frontend Web SPA:** Handoff de Figma del Técnico Multimedial + Scaffolding base de React 18.3.1 (LTS), Vite, TanStack Query y codificación por el equipo humano.
 - **Fase 6 — Aplicación Mobile:** Expo SDK 54, Expo Router, NativeWind, push notifications, bridge WebView.
 - **Fase 7 — QA Automatizado & CI/CD:** Suite de 120+ tests en Jest/Vitest, pipeline GitHub Actions y Dockerfile.
 
