@@ -205,8 +205,7 @@ Cuando un agente Tech Lead o el desarrollador delega trabajo en subagentes o ses
 | **QA & Verification Agent** | Testing E2E & Seguridad | Jest 120+ tests, Playwright, CI audit | `npm test --workspaces && npm run typecheck` |
 | **Debugger Agent** | Regresiones & Fallos | Análisis de diff, aislamiento de fallos, Self-Correction Loop | `npm test -- --verbose` |
 
-> 🎨 **Directiva de Trabajo para la Capa Web (Storybook + Figma Colaborativo):**
-> El diseño visual, pantallas y experiencia de usuario (UI/UX) del Frontend Web son ideados y dirigidos en **Figma por el Técnico Multimedial (Damian Orellana)**. El equipo de desarrollo construye y verifica los componentes atómicos y accesibilidad en **Storybook** utilizando tokens Tailwind sincronizados, y exporta vistas interactivas a Figma mediante `html.to.design`. Los agentes autónomos de IA avanzan de forma continua en Backend, Prisma, Sockets, Media, Mobile, contratos tipados y catálogo de Storybook, manteniendo alineación total con las directivas de arte sin bloqueos operativos.
+> 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./docs/web/06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 ---
 

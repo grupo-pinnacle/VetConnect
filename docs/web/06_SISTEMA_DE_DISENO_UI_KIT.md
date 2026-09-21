@@ -229,8 +229,7 @@ flowchart LR
 
 ## 8. Contratos Canónicos de Props de UI & Estados Resilientes (Storybook Roadmap)
 
-> ℹ️ **Nota de Implementación Real:**
-> Actualmente en `web/src/components/ui/` el componente base **`Button.tsx`** y su historia **`Button.stories.tsx`** están 100% implementados y testeados. Los demás componentes de esta taxonomía forman parte de la hoja de ruta de extracción progresiva desde `web/src/pages/` hacia Storybook.
+> 🛑 **ESTADO ACTUAL DEL CÓDIGO:** En `web/src/components/ui/` únicamente existen `Button.tsx` y `Button.stories.tsx`. Los restantes componentes (`Badge`, `Input`, `Avatar`, `PetCard`, etc.) están embebidos monolíticamente en las páginas (`DashboardClient.tsx`, `DashboardVet.tsx`, etc.). La tarea de desarrollo consiste en la extracción progresiva átomo por átomo hacia `components/ui/` con su correspondiente historia de Storybook, sustituyendo el bloque en la página viva y validando que los 29 tests de Vitest se mantengan en verde.
 
 ### 8.1 Interfaces TypeScript de Props (Extienden `BaseComponentProps`)
 

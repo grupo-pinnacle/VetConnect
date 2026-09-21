@@ -6,7 +6,7 @@
 ---
 
 
-> **Propósito:** Este archivo es la fuente maestra de contexto para una **IA actuando como Tech Lead o Agente Orquestador** (como Google Jules, Antigravity o Claude Code). Su misión es dirigir la construcción e implementación autónoma desde cero (**Greenfield**) del monorepo **VetConnect**, delegando tareas en agentes especializados, coordinando el ciclo TDD y asegurando que cada módulo cumpla rigurosamente con los estándares FAANG y la documentación del repositorio.
+> **Propósito:** Este archivo es la fuente maestra de contexto para una **IA actuando como Tech Lead o Agente Orquestador** (como Google Jules, Antigravity o Claude Code). Su misión es dirigir la construcción e implementación autónoma del monorepo **VetConnect** en estado **Nivel 4.5: Pre-Gold Master**, delegando tareas en agentes especializados, coordinando el ciclo TDD y asegurando que cada módulo cumpla rigurosamente con los estándares FAANG y la documentación del repositorio.
 
 ---
 
@@ -75,20 +75,13 @@ Los agentes autónomos deben invocar las herramientas indicadas según la natura
 | `api-design-principles` | Al estructurar nuevos controladores o rutas para asegurar contratos REST limpios. |
 | `error-handling-patterns` | Para garantizar códigos HTTP exactos y respuestas uniformes RFC 7807. |
 | `systematic-debugging` | Para reproducir, aislar y corregir fallos en tests o problemas de concurrencia. |
-| `frontend-design` | Al diseñar interfaces en React 19 o NativeWind garantizando accesibilidad y responsive design. |
+| `frontend-design` | Al diseñar interfaces en React 18.3.1 (LTS) o NativeWind garantizando accesibilidad y responsive design. |
 
 ---
 
 ## 5. Hoja de Ruta Greenfield & Modelo Operativo Híbrido
 
-### 5.1 Protocolo de Trabajo: Storybook + Dirección de Arte en Figma + Jules 24/7
-Para maximizar la fidelidad estética y acelerar la entrega técnica sin cuellos de botella:
-1. **Dirección Visual & UI/UX en Figma (Técnico Multimedial — Damian Orellana):**
-   El Técnico Multimedial diseña integralmente en **Figma** los flujos de navegación, wireframes, componentes interactivos y pantallas de alta fidelidad del Portal Web Pro (tutores, veterinarios y administradores), anclándose a [`docs/SISTEMA_DE_DISENO.md`](docs/SISTEMA_DE_DISENO.md).
-2. **Implementación de Código Web & Catálogo en Storybook (Equipo + Agentes):**
-   El equipo y los agentes desarrollan los componentes atómicos en **Storybook 8** (`web/src/components/ui/`) con tokens Tailwind CSS y React 18.3.1 (LTS) verificado con tests unitarios. Las vistas interactivas vivas se sincronizan con Figma mediante `html.to.design` para refinamiento estético sin retrabajos.
-3. **Avance Continuo de Jules en Backend & Core (Sin Bloqueos):**
-   Mientras el diseño en Figma y los componentes en Storybook se desarrollan, **Google Jules y los subagentes de IA avanzan de forma continua y 100% autónoma** en la construcción de los cimientos, base de datos, APIs REST, mensajería en tiempo real, LiveKit backend, aplicación mobile y suite de tests.
+> 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./docs/web/06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 ### 5.2 Fases de Ejecución (F0 a F7)
 El Tech Lead supervisa la ejecución secuencial de las 8 fases detalladas en [`PLAN_ACCION_VETCONNECT.md`](PLAN_ACCION_VETCONNECT.md):
@@ -98,7 +91,7 @@ El Tech Lead supervisa la ejecución secuencial de las 8 fases detalladas en [`P
 - **Fase 2 — Core Backend REST API:** Express 5, autenticación JWT con `tokenVersion`, validadores Zod, CRUDs base.
 - **Fase 3 — Motor en Tiempo Real & Chat:** Socket.io, Redis Adapter, presencia, idempotencia con `clientMsgId`.
 - **Fase 4 — Telemedicina LiveKit & Media Segura:** Tokens SFU, validación binaria de Magic Bytes, subida local/S3.
-- **Fase 5 — Frontend Web SPA:** Handoff de Figma del Técnico Multimedial + Scaffolding base de React 19, Vite, TanStack Query y codificación por el equipo humano.
+- **Fase 5 — Frontend Web SPA:** Extracción Atómica de Componentes en Storybook (CDD), TanStack Query, Vite y Refactorización Progresiva de Pantallas.
 - **Fase 6 — Aplicación Mobile:** Expo SDK 54, Expo Router, NativeWind, push notifications, bridge WebView.
 - **Fase 7 — QA Automatizado & CI/CD:** Suite de 120+ tests en Jest/Vitest, pipeline GitHub Actions y Dockerfile.
 

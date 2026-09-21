@@ -31,7 +31,23 @@ export class PrescriptionsController {
       const prescriptionId = getParamId(req.params.id);
       const prescription = await prescriptionsService.getPrescriptionById(
         prescriptionId,
-        req.user!
+        req.user
+      );
+      res.status(200).json({
+        success: true,
+        data: prescription,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getByIdPublic = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const prescriptionId = getParamId(req.params.id);
+      const prescription = await prescriptionsService.getPrescriptionById(
+        prescriptionId,
+        req.user
       );
       res.status(200).json({
         success: true,

@@ -2,7 +2,7 @@
 
 > **Destinatario Principal:** Google Jules (IA autónoma 24/7) y cualquier agente de IA orquestador.  
 > **Propósito:** Documento operativo supremo para la construcción autónoma completa del monorepo VetConnect desde cero (Greenfield), usando el **Método del Quirófano de Código** adaptado a una arquitectura de agentes especializados.  
-> **Estado:** 🟢 APROBADO — Listo para ejecución autónoma desde el 01-Oct-2026 (Hito M0).
+> **Estado:** 🟢 APROBADO — Nivel 4.5: Pre-Gold Master (124 tests pasando).
 
 ---
 
@@ -40,7 +40,7 @@ graph TD
 
     subgraph Track_Web["Track Visual & Web (Técnico Multimedial + Equipo)"]
         F1_Des["Diseño UI/UX en Figma\n(Damian Orellana - Técnico Multimedial)"] --> F2_App["Aprobación de Prototipos\n& Design Tokens"]
-        F2_App --> F3_Code["Codificación Frontend Web React 19\n(Equipo Humano + Damian)"]
+        F2_App --> F3_Code["Codificación Frontend Web React 18.3.1 LTS\n(Equipo Humano + Damian)"]
     end
 
     J0 -.->|"Provee Scaffolding Técnico Web (TASK-5.1)"| F3_Code
@@ -265,7 +265,7 @@ Se activa cuando un agente reporta tests rojos insolubles, CI falla, o hay regre
     Agente: Media & Video | Rama: feat/task-4.2-media-secure
     Criterio: .exe rechazado 400; >10MB 413; >50MB 429; dueño 200; tercero 403
 
-#14 [TASK-5.1] Web: Scaffolding React 19 + Vite + TanStack Query + routing
+#14 [TASK-5.1] Web: Extracción Atómica de Componentes en Storybook (CDD) y Refactorización Progresiva de Pantallas
     Agente: Web Frontend (Jules / Scaffolding Técnico) | Rama: feat/task-5.1-web-scaffold
     Criterio: Build Vite exitoso y Axios client tipado con contratos de backend
 

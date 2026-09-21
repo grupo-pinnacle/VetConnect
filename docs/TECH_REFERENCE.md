@@ -14,10 +14,12 @@ vetconnect/
 │   │   └── seed.js                 # Semilla de datos de prueba
 │   ├── src/
 │   │   ├── modules/
+│   │   │   ├── admin/              # Fiscalización SENASA, aprobación/rechazo de veterinarios, AuditLogs
 │   │   │   ├── auth/               # Registro, Login, Refresh JWT, Verificación Email
-│   │   │   ├── users/              # Perfil de usuario, veterinarios, aprobación SENASA
+│   │   │   ├── users/              # Perfil de usuario, conmutación isOnline, bio
 │   │   │   ├── pets/               # CRUD de mascotas, especies, fichas clínicas
 │   │   │   ├── consultations/      # Triage, colas, asignación, estados, notas
+│   │   │   ├── prescriptions/      # Emisión y verificación QR de recetas oficiales SENASA
 │   │   │   ├── calls/              # Señalización WebRTC y tokens LiveKit
 │   │   │   ├── media/              # Subida de adjuntos (S3 / Local), magic bytes
 │   │   │   └── notifications/      # Push Expo API y bandeja in-app
@@ -140,14 +142,14 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 ### 2.4 Administración & Fiscalización SENASA (`/api/admin`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `GET`  | `/api/admin/vets/pending` | Listar veterinarios pendientes de validación de matrícula SENASA (`vetStatus = PENDING`) | ADMIN |
+| `GET`  | `/api/admin/vets/pending` | Listar veterinarios pendientes de validación de matrícula SENASA (`vetStatus = PENDING`). Requiere rol `ADMIN` | ADMIN |
 | `PATCH`| `/api/admin/vets/:id/approve` | Aprobar matrícula profesional (`vetStatus = APPROVED`) y registrar auditoría inmutable en `AuditLog` | ADMIN |
-| `PATCH`| `/api/admin/vets/:id/reject` | Rechazar solicitud profesional con motivo obligatorio (`{ reason }`), pasa a `REJECTED` y audita | ADMIN |
+| `PATCH`| `/api/admin/vets/:id/reject` | Rechazar solicitud profesional con motivo obligatorio (`{ reason: string }`), pasa a `REJECTED` y audita | ADMIN |
 
 ### 2.5 Recetas Digitales SENASA (`/api/prescriptions`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `GET`  | `/api/prescriptions/:id` | Verificación pública no confidencial de receta digital oficial escaneada vía QR | Público |
+| `GET`  | `/api/prescriptions/:id` | Consulta y verificación pública no confidencial de receta médica oficial escaneada vía QR (medicamento, dosis, matrícula, fecha, mascota) | Público |
 | `POST` | `/api/consultations/:id/prescriptions` | Emisión de receta digital oficial con firma y código QR | VET asignado |
 
 ### 2.6 Videollamadas (`/api/calls`)

@@ -27,7 +27,7 @@ flowchart LR
 - **Gestión de Sesión & Estado:** **React Context (`AuthContext`)** con almacenamiento del `accessToken` estrictamente en memoria de JS y refresco silencioso mediante cookies `HttpOnly` contra `/api/auth/refresh`. Integra un patrón de cola en Axios (`failedQueue`) para mitigar condiciones de carrera ante múltiples llamadas simultáneas con token vencido. *(Nota: Zustand se reserva para la persistencia nativa en la app móvil en `mobile/src/lib/authStore.ts`)*.
 - **WebRTC & Video:** **LiveKit Components React** (`@livekit/components-react`), implementando la sala sin duplicar audio renderers (cero eco WebRTC).
 - **WebSockets:** **Socket.io Client** con reconexión automática y canal bidireccional por consulta.
-- **Taller de Componentes & a11y (CDD):** **Storybook 8** (`@storybook/react-vite`) con motor de accesibilidad Axe Core (`@storybook/addon-a11y`) para desarrollo atómico desacoplado (conforme a [`11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md`](./11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md)).
+- **Taller de Componentes & a11y (CDD):** > 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 - **QA Autónomo E2E:** **TestSprite MCP** para exploración y verificación autónoma de flujos de caja negra con IA sobre Vercel.
 
 ---
@@ -155,53 +155,7 @@ La suite completa del monorepo cuenta con **36 suites / 123 tests automatizados 
 
 ## 4. Los 5 Gaps Críticos de Frontend Hardening (Ruta al Nivel 5: Gold Master)
 
-Conforme a la auditoría técnica FAANG ([`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md`](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md)), se definieron las 5 acciones indispensables para llevar la web de **Release Candidate Funcional (Nivel 3.5)** a **Gold Master de Producción (Nivel 5)**. El estado actual de implementación es el siguiente:
-
-```mermaid
-flowchart TD
-    G1["1. Code-Splitting (React.lazy)\n✅ IMPLEMENTADO (Bundle: 20 kB)"] --> G2["2. Inyección Dinámica wsUrl\n✅ IMPLEMENTADO (serverUrl prop)"]
-    G2 --> G3["3. Subida de Fotos en Chat\n✅ IMPLEMENTADO (/api/media + Lightbox)"]
-    G3 --> G4["4. Jobs de Tests en CI\n✅ IMPLEMENTADO (ci.yml: web + mobile)"]
-    G4 --> G5["5. Telemetría Sentry & Cookies SSL\n✅ IMPLEMENTADO (Nivel 5: Gold Master)"]
-```
-
-### 4.1 Brecha 1: Code-Splitting con `React.lazy()` en `App.tsx` (Crítico para LCP / SEO)
-- **Estado:** ✅ **COMPLETADO & VERIFICADO AL 100% EN CÓDIGO**
-- **Diagnóstico previo:** El paquete `@livekit/components-react` pesaba **691.12 kB minificado** (`vendor-livekit-CKh43kX8.js`) y se importaba estáticamente, penalizando el LCP de la Landing.
-- **Acción Implementada:** Se refactorizó [`web/src/App.tsx`](../../web/src/App.tsx) encapsulando `ConsultationRoom`, `DashboardClient`, `DashboardVet`, `AdminVets` y `PrescriptionView` en `React.lazy()` y `<React.Suspense fallback={<PageLoader />}>`.
-- **Métricas Empíricas Logradas:**
-  - Bundle de entrada (`dist/assets/index-*.js`): Reducido de 97.88 kB a **20.38 kB** (gzip: **6.09 kB**).
-  - LiveKit aislado en chunk dinámico de 691.12 kB que solo se descarga al ingresar a la sala de llamada.
-  - En [`web/vite.config.ts`](../../web/vite.config.ts) se configuró `chunkSizeWarningLimit: 750` para el vendor chunk aislado: **Vite compila en 3.58s con 0 warnings**.
-
-### 4.2 Brecha 2: Inyección Dinámica de `wsUrl` en `ConsultationRoom`
-- **Estado:** ✅ **COMPLETADO & VERIFICADO AL 100% EN CÓDIGO**
-- **Diagnóstico previo:** `POST /api/calls/:id/token` retornaba `{ token, wsUrl }`, pero no se pasaba a `<CallRoom />`, forzando a un fallback estático.
-- **Acción Implementada:** En [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx), el hook `joinCall` extrae `res.data.data.wsUrl`, almacena el valor en `livekitWsUrl` y lo inyecta como prop `serverUrl={livekitWsUrl}` a `<CallRoom />`. Cero dependencia de URLs fijas.
-
-### 4.3 Brecha 3: Selector de Macro-Fotografías Clínicas en Chat Web
-- **Estado:** ✅ **COMPLETADO & VERIFICADO AL 100% EN CÓDIGO**
-- **Diagnóstico previo:** Chat web exclusivamente de texto sin capacidad de adjuntar fotos de lesiones.
-- **Acción Implementada:** En [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx):
-  - Input oculto de archivos con validación estricta de extensiones (`image/jpeg,image/png,image/webp`) y límite de 10 MB.
-  - Botón interactivo de clip 📎 con indicador visual de subida (`isUploading`).
-  - Subida asíncrona mediante `POST /api/media` (respaldado por validación de *Magic Bytes* en backend).
-  - Emisión del mensaje por Socket.io (`message:send`) incluyendo `attachmentUrl`.
-  - Renderizado de imagen miniatura en la burbuja del chat con visualizador modal (*Lightbox*) en pantalla completa y cierre con tecla `Escape`.
-
-### 4.4 Brecha 4: Integrar Pruebas Web en el Pipeline de CI (`.github/workflows/ci.yml`)
-- **Estado:** ✅ **COMPLETADO & VERIFICADO AL 100% EN CÓDIGO**
-- **Diagnóstico previo:** El archivo CI solo ejecutaba `backend-tests`.
-- **Acción Implementada:** En [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), se incorporaron los jobs independientes `web-tests` (`npm test -w web`) y `mobile-tests` (`npm test -w mobile`). La suite completa de **123 tests automatizados** queda blindada ante cualquier regresión.
-
-### 4.5 Brecha 5: Observabilidad (Sentry), Cookies Cross-Domain & Seguridad Reverse Proxy
-- **Estado:** ✅ **COMPLETADO & VERIFICADO AL 100% EN CÓDIGO (Nivel 5: Gold Master)**
-- **Acción Implementada:**
-  - **Sentry en Web:** Se instaló `@sentry/react` en `web/`, configurando `web/src/lib/sentry.ts` con `browserTracingIntegration`, `replayIntegration` y captura de `VITE_SENTRY_DSN`. En [`web/src/main.tsx`](../../web/src/main.tsx), la aplicación está encapsulada en `<Sentry.ErrorBoundary>` con pantalla de recuperación y reintento amigable. Validado con suite de pruebas unitarias (`web/src/__tests__/sentry.test.ts`).
-  - **Reverse Proxy Support:** Se añadió `app.set('trust proxy', 1)` en [`backend/src/app.ts`](../../backend/src/app.ts), garantizando que Express reconozca conexiones seguras HTTPS terminadas en Nginx/Coolify/Traefik/ALB, y que `express-rate-limit` identifique la IP real del cliente.
-  - **Cookies Cross-Domain:** [`backend/src/modules/auth/auth.controller.ts`](../../backend/src/modules/auth/auth.controller.ts) emite cookies de refresco con `secure: true`, `sameSite: 'none'`, `httpOnly: true`, `path: '/api/auth'`, soportando variables de configuración (`COOKIE_DOMAIN`, `COOKIE_SECURE`, `COOKIE_SAME_SITE`) para despliegues entre `vet-connect-web.vercel.app`, `app.vetconnect.com.ar` y `api.vetconnect.com.ar`. El endpoint `logout` destruye la cookie con los mismos parámetros exactos.
-  - **CORS Dinámico:** En [`backend/src/config/cors.ts`](../../backend/src/config/cors.ts), se unificó la política CORS para Express y Socket.io, permitiendo orígenes de desarrollo, producción y previews automáticos de Vercel (`*.vercel.app`) con cabeceras `sentry-trace` y `baggage` permitidas para trazabilidad distribuida.
-  - **LiveKit Cloud:** [`backend/src/modules/calls/calls.service.ts`](../../backend/src/modules/calls/calls.service.ts) normaliza dinámicamente URLs WebSocket (`wss://`) y HTTP (`https://`), leyendo `LIVEKIT_URL` o `LIVEKIT_HOST` y manteniendo el guardarraíl Zero PII.
+> 📌 Ver estado detallado y métricas de resolución de los 5 gaps de hardening en [00_AUDITORIA_INTEGRAL_ESTADO_REAL.md (§4)](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#4-contraste-empírico-planificación-vs-código-real).
 
 ---
 

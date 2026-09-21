@@ -30,20 +30,10 @@ En una plataforma de emergencias veterinarias, **cada segundo de demora genera a
 - **INP (*Interaction to Next Paint*):** $< 50\text{ ms}$ (Respuesta táctil instantánea).
 - **TTFB (*Time to First Byte*):** $< 200\text{ ms}$ (Acelerado por la red Edge de Vercel).
 
-### 2.2 Auto-alojamiento de Fuentes Web (WOFF2 Local con `@fontsource`)
-- **Problema de CDNs externos:** Cargar fuentes desde `fonts.googleapis.com` requiere abrir 2 conexiones TLS/DNS externas adicionales, bloqueando el renderizado inicial y aumentando el LCP en ~200 ms.
-- **Solución Planificada (A incorporar durante el setup atómico de Storybook):**
-  - Auto-alojar los archivos binarios WOFF2 de las familias tipográficas oficiales en el bundle local mediante los paquetes:
-    - `@fontsource/plus-jakarta-sans` (Encabezados H1-H3).
-    - `@fontsource/inter` (Cuerpo de datos clínicos, tablas y chat).
-    *(Actualmente el sistema utiliza tipografías de sistema/CDN con fallback de cero bloqueo mientras se incorporan los binarios WOFF2 locales).*
-  - Configurar en CSS la regla de renderizado no bloqueante:
-    ```css
-    @font-face {
-      font-family: 'Plus Jakarta Sans';
-      font-display: swap; /* Muestra texto inmediatamente con fuente fallback del sistema y permuta en milisegundos */
-    }
-    ```
+### 2.2 Fuentes Web y Optimización
+- **Estado Actual:** En el estado actual las fuentes Inter y Plus Jakarta Sans se consumen vía Google Fonts en `web/index.html` con preconnect DNS.
+- **Optimización Futura Planificada (Hito de Optimización Extrema):**
+  - La instalación e importación de binarios WOFF2 locales mediante `@fontsource/inter` y `@fontsource/plus-jakarta-sans` queda programada para la fase final de optimización extrema de LCP.
 
 ### 2.3 Pipeline de Optimización de Imágenes y Assets
 1. **Formatos Modernos (WebP / AVIF):**

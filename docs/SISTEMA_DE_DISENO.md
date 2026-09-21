@@ -105,7 +105,7 @@ graph TD
         W1["📊 Tablero de Guardia\n(Switch isOnline, cola de pacientes)"]
         W2["🩺 Consulta Médica Activa\n(Video 720p, chat, notas de evolución)"]
         W3["📋 Generador de Recetas\n(Fármacos, dosis, firma, código QR)"]
-        W4["📁 Bóveda de Pacientes\n(Búsqueda por tutor, mascota, historial)"]
+        W4["📁 Bóveda del Tutor\n(Gestión personal de mascotas del cliente)"]
         W5["⚖️ Panel /admin\n(Aprobación SENASA, AuditLogs inmutables)"]
     end
 ```
@@ -116,6 +116,8 @@ graph TD
   - **Portal Web (Veterinario):** Layout de pantalla dividida con área de Video HD 720p central del paciente, ficha clínica de la mascota y panel de **Chat en Vivo** acoplado en el lateral derecho con soporte para recepción de fotografías en alta resolución y visor Lightbox con zoom 100% (para inspección macroscópica de lesiones, mucosas o vómitos).
   - **Mobile App (Tutor):** Video 720p a pantalla completa optimizado para dispositivos de gama baja (bitrate adaptativo 1.2 Mbps a 24fps con prioridad ininterrumpida de audio). Botón táctil prominente de **Conmutación de Cámara (Frontal / Trasera)** con autoenfoque activo para examinar al paciente sin posturas forzadas. Botón flotante de **Chat / Macro-Fotos** que despliega un panel inferior (*Bottom Sheet*) no bloqueante o modo Picture-in-Picture (PiP) para escribir o capturar y adjuntar imágenes vía `POST /api/media` sin pausar la videollamada ni el audio.
 - **Historial Cronológico Inmutable:** Las consultas pasadas y recetas se presentan ordenadas temporalmente en orden descendente con indicadores de estado claros (`Completada`, `Urgencia Derivada`, `En Tratamiento`).
+
+> 🛑 **Nota de Seguridad & Cumplimiento Ley 25.326:** En cumplimiento de la Ley 25.326 y el secreto médico, se descarta cualquier buscador o listado global de pacientes (`/patients`) para veterinarios. El profesional accede a los datos de la mascota exclusivamente dentro de una consulta activa asignada.
 
 ---
 

@@ -66,12 +66,7 @@ VetConnect Web busca brindar atención clínica en tiempo real y gestión docume
 - **Justificación:** Otorga validación de identidad geográfica, confianza a los usuarios locales y mejor posicionamiento SEO en el mercado argentino.
 
 ### 3.4 Infraestructura & Hosting (Alineado con DEPLOY.md)
-- **Frontend Web SPA:** Alojado oficialmente en CDN edge de alto rendimiento (**Vercel** / Coolify en VPS) con rewrites automáticos en [`web/vercel.json`](../../web/vercel.json).
-- **Backend API & WebSockets:** Servidor Node.js 20 con Express 5 administrado mediante **Coolify en VPS Hetzner** dedicado con terminación Traefik TLS 1.3 y certificados Let's Encrypt para HTTPS y WSS.
-- **Base de Datos & Cache:** PostgreSQL administrado (Supabase / Postgres 16) y Redis 7 para colas y pub/sub de sockets.
-- **Servidor de Medios WebRTC:** LiveKit Cloud SFU para videollamadas 720p sin sobrecarga de CPU en el servidor principal.
-- **Distribución Móvil:** Compilaciones con EAS Build (Expo): instalador `.apk` directo en la web para la fase piloto y paquete `.aab` para el lanzamiento comercial en Google Play Store.
-- **Costo Mensual Estimado de Infraestructura:** Entre $18.000 y $35.000 ARS mensuales para el entorno inicial de producción (servidor VPS base + Redis + Postgres gestionado).
+> 📌 Ver arquitectura de despliegue en producción en [docs/DEPLOY.md](../../docs/DEPLOY.md).
 
 ### 3.5 Presupuesto y Estimación 2026
 El presupuesto de diseño y puesta en marcha se alinea con la escala de un desarrollo a medida (Custom Web Application con WebRTC y WebSockets), garantizando una inversión eficiente sin costos ocultos de licencias propietarias recurrentes.

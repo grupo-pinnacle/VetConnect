@@ -36,7 +36,7 @@ flowchart LR
 ## 🎨 2. Catálogo de Pantallas en Alta Fidelidad (Especificación Detallada)
 
 > 📐 **Relación con Wireframes Estructurales (Fase 2):**  
-> La disposición funcional en bloques de cada pantalla se encuentra diagramada en [`05_WIREFRAMING_Y_PROTOTIPADO_BAJA_FIDELIDAD.md`](./05_WIREFRAMING_Y_PROTOTIPADO_BAJA_FIDELIDAD.md). El presente catálogo detalla las clases atómicas de Tailwind CSS, jerarquía DOM y microinteracciones pixel-perfect.
+> La disposición funcional en bloques de cada pantalla se encuentra diagramada en [05_WIREFRAMING_Y_PROTOTIPADO_BAJA_FIDELIDAD.md](./05_WIREFRAMING_Y_PROTOTIPADO_BAJA_FIDELIDAD.md). El presente catálogo detalla las clases atómicas de Tailwind CSS, jerarquía DOM y microinteracciones.
 
 > 🤖 **Directiva Imperativa para Agentes de IA:**  
 > Toda nueva vista o refactorización de pantallas en `web/src/pages/` DEBE estructurarse consumiendo los componentes atómicos y moleculares reutilizables de `web/src/components/ui/` (`<Button>`, `<Input>`, `<Badge>`, etc.) en lugar de escribir elementos HTML nativos con clases Tailwind duplicadas en línea.  

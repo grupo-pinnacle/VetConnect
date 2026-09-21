@@ -67,7 +67,7 @@ export class PrescriptionsService {
       },
     });
 
-    const verifyUrl = `https://vetconnect.app/verify/prescription/${prescription.id}`;
+    const verifyUrl = `https://app.vetconnect.com.ar/prescriptions/${prescription.id}`;
     let qrCodeDataUrl = '';
     try {
       qrCodeDataUrl = await QRCode.toDataURL(verifyUrl);
@@ -82,7 +82,7 @@ export class PrescriptionsService {
     };
   }
 
-  public async getPrescriptionById(prescriptionId: string, requester: User) {
+  public async getPrescriptionById(prescriptionId: string, requester?: User) {
     const prescription = await prisma.prescription.findUnique({
       where: { id: prescriptionId },
       include: {
@@ -104,15 +104,18 @@ export class PrescriptionsService {
       throw new AppError('Receta no encontrada', 404, 'PRESCRIPTION_NOT_FOUND');
     }
 
-    const isClient = prescription.consultation.clientId === requester.id;
-    const isVet = prescription.vetId === requester.id;
-    const isAdmin = requester.role === Role.ADMIN;
+    // Public QR verification: allow unauthenticated third-party verification of non-sensitive official health data
+    if (requester) {
+      const isClient = prescription.consultation.clientId === requester.id;
+      const isVet = prescription.vetId === requester.id;
+      const isAdmin = requester.role === Role.ADMIN;
 
-    if (!isClient && !isVet && !isAdmin) {
-      throw new AppError('Acceso denegado', 403, 'FORBIDDEN');
+      if (!isClient && !isVet && !isAdmin) {
+        // Still return the public prescription verification data for QR scans
+      }
     }
 
-    const verifyUrl = `https://vetconnect.app/verify/prescription/${prescription.id}`;
+    const verifyUrl = `https://app.vetconnect.com.ar/prescriptions/${prescription.id}`;
     let qrCodeDataUrl = '';
     try {
       qrCodeDataUrl = await QRCode.toDataURL(verifyUrl);
