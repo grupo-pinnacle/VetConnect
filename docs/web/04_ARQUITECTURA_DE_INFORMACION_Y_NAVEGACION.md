@@ -72,14 +72,9 @@ El sistema de menús se compone de un **Header Global de Navegación Superior** 
    - *Ficha Médica Digital & Carnet de Vacunas* (`#ficha-medica`)
    - *Validador de Recetas Oficiales SENASA* (`#recetas-senasa`)
 
-### 3.2 Menú Contextual del Portal Veterinario (Sidebar Fijo)
+### 3.2 Consola Unificada de Guardia Médica (Portal VET)
 
-Para maximizar el espacio útil durante la consulta médica en pantallas de escritorio, el médico veterinario cuenta con una barra lateral izquierda compacta y colapsable:
-- 📊 **Guardia Activa** (con switch en tiempo real `Online / Offline` y contador de pacientes en espera).
-- 🩺 **Consulta en Curso** (acceso instantáneo a la sala activa `/call/:id` si está en llamada).
-- 🐾 **Historial Clínico Asignado** (consultas previas finalizadas por el profesional, sin buscador global de pacientes ajenos).
-- 📋 **Recetas SENASA** (historial de prescripciones emitidas y firmas).
-- ⚙️ **Ajustes de Perfil** (datos de matrícula habilitante SENASA y configuración de firma profesional).
+El Portal del Veterinario opera bajo una Consola de Trabajo Unificada en Panel Completo (*Full-Width Clinic Console*): Barra superior con switch de presencia ("En Guardia" / "Fuera de Guardia"), KPIs de atención rápida, lista priorizada de pacientes en espera con llamada directa (CTA), y modal flotante de prescripción médica SENASA, optimizada para resolución clínica sin navegación lateral dispersa.
 
 ---
 

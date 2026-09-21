@@ -103,7 +103,8 @@ El sistema tipográfico combina la precisión técnica de una fuente para pantal
 - **Variante `primary` (CTA / Auxilio Médico):** `bg-blue-600 hover:bg-blue-700 text-white shadow-sm focus:ring-blue-500`
 - **Variante `secondary` (Acción Secundaria de Salud / Marca):** `bg-teal-600 hover:bg-teal-700 text-white shadow-sm focus:ring-teal-500`
 - **Variante `outline` (Superficie Blanca con Borde):** `border border-slate-300 text-slate-700 hover:bg-slate-50 bg-white`
-- **Variante `danger` (Finalizar / Cancelación):** `bg-rose-600 hover:bg-rose-700 text-white shadow-sm focus:ring-rose-500`
+- **Variante `danger` (Acción Destructiva / Botones):** `bg-rose-600 hover:bg-rose-700 text-white shadow-sm focus:ring-rose-500` (coincidente con `Button.tsx`).
+- **Triage Crítico / Alerta Médica (Badges/Indicadores):** `bg-red-600` (`#DC2626`) en indicadores clínicos y alertas de riesgo vital (coincidente con `SISTEMA_DE_DISENO.md`).
 - **Radio de Curvatura Estándar:** `rounded-lg` (8px) como estándar base en botones e inputs, coincidente con `Button.tsx`.
 - **Variante `ghost` (Acción Sutil sin Contenedor):** `text-slate-600 hover:bg-slate-100 hover:text-slate-900`
 - **Tamaños Estándar:** `sm` (`px-2.5 py-1.5 text-xs`), `md` (`px-4 py-2 text-sm`), `lg` (`px-5 py-2.5 text-base`).
@@ -279,8 +280,8 @@ export interface PetCardProps extends BaseComponentProps {
 
 // 5. TriageSelector
 export interface TriageSelectorProps extends BaseComponentProps {
-  value: 'GREEN' | 'YELLOW' | 'RED';
-  onChange: (value: 'GREEN' | 'YELLOW' | 'RED') => void;
+  value: TriagePriority; // 'GREEN' | 'YELLOW' | 'RED' (SSOT)
+  onChange: (value: TriagePriority) => void;
   disabled?: boolean;
 }
 
@@ -338,7 +339,27 @@ export interface ReviewModalProps extends BaseComponentProps {
 ### 8.2 Directiva de Integración de TanStack React Query v5 en Extracción Atómica
 Al extraer un componente atómico o sección hacia Storybook, la gestión de datos remotos debe implementarse mediante hooks de TanStack Query (`useQuery` / `useMutation`), reemplazando ordenadamente los bloques tradicionales de `useState` + `useEffect` de las páginas sin alterar la lógica de negocio ni romper los tests de Vitest.
 
-### 8.3 Gestión de Estados Resilientes de UI
+### 8.3 Estandarización de Clases CSS (Helper `cn`)
+Para resolver colisiones de clases en componentes atómicos de `web/src/components/ui/`, se utiliza una función utilitaria liviana `cn(...inputs: (string | undefined | null | false)[]) => string` basada en concatenación y filtrado condicional limpio (`inputs.filter(Boolean).join(' ')`), sin añadir dependencias externas pesadas.
+
+## 9. Inventario Canónico de `data-testid` (Contrato Anti-Regresión Vitest)
+Para preservar la estabilidad de los 29 tests de Vitest durante la extracción atómica de componentes, ninguna IA debe modificar los siguientes selectores y textos clave:
+
+| Componente / Pantalla | Selector Requerido (`data-testid` o texto exacto) | Archivo de Test Vinculante |
+|---|---|---|
+| Formulario Login | `placeholder="ejemplo@vetconnect.com"`, `placeholder="********"`, Botón `"Iniciar Sesión"` | `Login.test.tsx` |
+| Formulario Register | Botones con texto exacto `"Soy Tutor de Mascotas"` y `"Soy Veterinario"` | `Register.test.tsx` |
+| Dashboard Tutor | Textos de cabecera `"Mis Mascotas"`, `"Solicitar Consulta de Guardia"` | `DashboardClient.test.tsx` |
+| Dashboard Vet | Switch con texto `"Disponible para Guardia"`, cabecera `"Sala de Espera"` | `DashboardVet.test.tsx` |
+| Sala de Llamada | Botón `"Finalizar Consulta"` / `"Colgar"` | `CallRoom.test.tsx` |
+
+## 10. Secuencia Obligatoria de Extracción Atómica (CDD Roadmap)
+El orden de implementación atómica de componentes debe respetar la jerarquía de dependencias:
+1. **Fase 1 (Átomos Básicos):** `Badge.tsx`, `Input.tsx`, `Avatar.tsx`
+2. **Fase 2 (Moléculas Clínicas):** `PetCard.tsx`, `TriageSelector.tsx`, `Breadcrumbs.tsx`, `ChatMessage.tsx`
+3. **Fase 3 (Organismos y Controles Complejos):** `CallControls.tsx`, `PrescriptionDoc.tsx`, `PrescriptionModal.tsx`
+
+### 8.4 Gestión de Estados Resilientes de UI
 Todo componente interactivo o contenedor asíncrono debe contemplar explícitamente los 4 estados canónicos de experiencia de usuario:
 1. **`loading` (Cargando):** Renderizado de Skeleton loaders animados con Tailwind (`animate-pulse bg-slate-200 rounded-lg`).
 2. **`error` (Fallo de Red / API):** Mensaje accesible con formato RFC 7807 y botón de reintento (`Retry`).

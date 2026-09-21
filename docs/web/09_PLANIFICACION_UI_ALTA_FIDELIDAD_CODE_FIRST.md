@@ -180,7 +180,7 @@ A continuación se detalla la especificación visual, la disposición de element
        - Botón Microfono: Alterna entre `Mic` y `MicOff` (`bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-full`).
        - Botón Cámara: Alterna entre `Video` y `VideoOff`.
        - Botón Pantalla Completa: Icono `Maximize2`.
-       - Botón Destructivo: `[ Finalizar Consulta ]` (`bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-full font-semibold`).
+       - Botón Destructivo: `[ Finalizar Consulta ]` (`bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-full font-semibold`).
 2. **Lado Derecho: Panel Clínico Multitarea (35% del ancho):**
    - Sistema de 2 pestañas superiores:
      - `Pestaña 1: Chat Sincrónico & Fotos` (Icono `MessageSquare`).
