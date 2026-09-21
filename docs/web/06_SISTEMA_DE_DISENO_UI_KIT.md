@@ -110,10 +110,15 @@ El sistema tipográfico combina la precisión técnica de una fuente para pantal
 - **Tamaños Estándar:** `sm` (`px-2.5 py-1.5 text-xs`), `md` (`px-4 py-2 text-sm`), `lg` (`px-5 py-2.5 text-base`).
 - **Estado `isLoading`:** Spinner SVG animado integrado con `aria-hidden="true"` y texto dinámico.
 
-### 5.2 Badges Semánticos de Triage Clínico
-- **Triage Verde (Leve):** `bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold`
-- **Triage Amarillo (Moderado):** `bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full text-xs font-semibold`
-- **Triage Rojo (Urgencia Vital):** `bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full text-xs font-semibold animate-pulse`
+### 5.2 Badges Semánticos de Triage Clínico & Normalización Bilingüe
+- **Triage Verde (`success` / `green`):** `bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold`
+- **Triage Amarillo (`warning` / `yellow`):** `bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 rounded-full text-xs font-semibold`
+- **Triage Rojo (`danger` / `red`):** `bg-rose-100 text-rose-800 border border-rose-200 px-3 py-1 rounded-full text-xs font-semibold animate-pulse`
+- **Estado Online (`online`):** `bg-teal-100 text-teal-800 border border-teal-200 px-3 py-1 rounded-full text-xs font-semibold`
+- **Estado Offline / Neutro (`offline` / `neutral`):** `bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-semibold`
+
+> 🩺 **Regla de Negocio Crítica de Triage Bilingüe:**
+> En el código del frontend (`DashboardClient.tsx`), el estado visual y la concatenación en `notes` se maneja con la convención oficial `[Prioridad: VERDE|AMARILLO|ROJO]`. En el componente `TriageSelector`, el selector acepta tanto la clave en inglés (`GREEN`) como en español (`VERDE`), normalizando internamente mediante `TRIAGE_EN_TO_ES` / `TRIAGE_ES_TO_EN` exportados en `web/src/types/index.ts` para que `DashboardVet.tsx` y la suite de pruebas `DashboardVet.test.tsx` (que esperan `data-testid="badge-priority-amarillo"`, etc.) funcionen al 100% sin romper tests.
 
 ### 5.3 Tarjeta Clínica de Paciente (Pet Card)
 - **Contenedor:** Fondo blanco, borde `slate-200`, radio `rounded-xl`, sombra `shadow-sm`.
@@ -131,7 +136,7 @@ Para evitar la deuda técnica de construir componentes interactivos complejos de
 
 ```mermaid
 flowchart TD
-    Radix["♿ 1. Patrón Headless / ARIA\nLógica WAI-ARIA, Trampa de Foco, Accesibilidad"] --> Core["🧩 Componente Atómico (web/src/components/ui/)"]
+    Native["♿ 1. Patrón Semántico Nativo / WAI-ARIA (HTML5 + Tailwind puro)"] --> Core["🧩 Componente Atómico (web/src/components/ui/)"]
     Tailwind["🎨 2. Tailwind CSS Puro\nTokens 60-30-10, Plus Jakarta Sans, Inter"] --> Core
     Lucide["✨ 3. Lucide React\nIconografía Clínica Coherente"] --> Core
     Core --> Screen["💻 Pantallas SPA (Landing, Triage, Telemedicina, Recetas)"]
@@ -141,10 +146,10 @@ flowchart TD
 1. **Estado Actual:** El componente base [`Button.tsx`](../../web/src/components/ui/Button.tsx) y su historia [`Button.stories.tsx`](../../web/src/components/ui/Button.stories.tsx) están implementados con **Tailwind CSS nativo y TypeScript estricto**, con cero dependencias pesadas en runtime.
 2. **Convención PascalCase:** Todos los componentes UI residen directamente en `web/src/components/ui/` bajo convención **PascalCase** estricta (`Button.tsx`, `Badge.tsx`, `Input.tsx`, `PetCard.tsx`, etc.), garantizando compatibilidad con sistemas Linux y pipelines de CI.
 3. **Control Total del Código:** Los componentes no son una "caja negra" de dependencias externas; el código reside en el repositorio, permitiendo estilizar y auditar cada prop médica directamente en Storybook (`http://localhost:6006`).
-4. **Accesibilidad Nivel Oro Integrada:** Cada componente atómico se valida en Storybook con el addon de accesibilidad `@storybook/addon-a11y` (Axe Core), garantizando contraste cromático $\ge 4.5:1$ y atributos semánticos ARIA (`aria-label`, `aria-expanded`, `aria-current`). Si un organismo complejo (ej. `Dialog` accesible o `Tooltip`) requiere primitivas headless como `@radix-ui/react-dialog`, se instalará puntualmente en el workspace web.
+4. **Accesibilidad Nivel Oro Integrada:** Cada componente atómico se valida en Storybook con el addon de accesibilidad `@storybook/addon-a11y` (Axe Core), garantizando contraste cromático $\ge 4.5:1$ y atributos semánticos ARIA (`aria-label`, `aria-expanded`, `aria-current`).
 
-> 🛑 **Guardarraíl Imperativo para Agentes de IA (shadcn CLI Prohibido):**
-> Queda terminantemente prohibido ejecutar `npx shadcn@latest init` o `npx shadcn add`. La ejecución del CLI externo sobreescribiría `tailwind.config.js`, alteraría el lockfile con dependencias incompatibles y degradaría la versión de React 18.3.1 LTS. Los componentes atómicos se programan en `web/src/components/ui/` utilizando exclusivamente **Tailwind CSS nativo y TypeScript estricto** siguiendo la arquitectura desacoplada de `Button.tsx`.
+> 🛑 **Guardarraíl Imperativo para Agentes de IA (Erradicación Definitiva de Radix UI & shadcn CLI Prohibido):**
+> Queda terminantemente prohibido instalar Radix UI (`@radix-ui/*`) o inicializar CLIs externas de shadcn (`npx shadcn@latest init` / `npx shadcn add`). Todos los componentes (incluyendo modales como `PrescriptionModal` y diálogos) se programan con HTML5 semántico nativo (`<dialog>`, roles ARIA `role="dialog"`, `aria-modal="true"`), foco atrapado nativo y Tailwind CSS puro, siguiendo la arquitectura desacoplada y liviana de `Button.tsx`.
 
 ---
 
@@ -249,7 +254,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 // 1. Badge
 export interface BadgeProps extends BaseComponentProps {
-  variant: 'green' | 'yellow' | 'red' | 'online' | 'offline' | 'neutral';
+  variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'online' | 'offline' | 'green' | 'yellow' | 'red';
   size?: 'sm' | 'md';
   children: React.ReactNode;
   icon?: React.ReactNode;
@@ -280,7 +285,7 @@ export interface PetCardProps extends BaseComponentProps {
 
 // 5. TriageSelector
 export interface TriageSelectorProps extends BaseComponentProps {
-  value: TriagePriority; // 'GREEN' | 'YELLOW' | 'RED' (SSOT)
+  value: TriagePriority | TriagePriorityES;
   onChange: (value: TriagePriority) => void;
   disabled?: boolean;
 }
@@ -336,8 +341,12 @@ export interface ReviewModalProps extends BaseComponentProps {
 }
 ```
 
-### 8.2 Directiva de Integración de TanStack React Query v5 en Extracción Atómica
-Al extraer un componente atómico o sección hacia Storybook, la gestión de datos remotos debe implementarse mediante hooks de TanStack Query (`useQuery` / `useMutation`), reemplazando ordenadamente los bloques tradicionales de `useState` + `useEffect` de las páginas sin alterar la lógica de negocio ni romper los tests de Vitest.
+### 8.2 Directiva de Componentes Atómicos de Presentación (Dumb Components) & Anti-Rotura Vitest
+- **Regla de Oro de los Componentes Atómicos (Dumb Components):**
+  Los componentes atómicos de `web/src/components/ui/` (`Badge`, `Input`, `Avatar`, `PetCard`, `ChatMessage`, `CallControls`, `PrescriptionDoc`, etc.) son COMPONENTES DE PRESENTACIÓN PUROS (Dumb Components). Queda terminantemente prohibido invocar hooks de TanStack Query (`useQuery`, `useMutation`) adentro de `components/ui/`. Todo componente UI recibe sus datos y sus callbacks mediante `props` puras.
+
+- **Regla para Páginas Contenedoras y Tests:**
+  Las páginas existentes (`DashboardClient.tsx`, `DashboardVet.tsx`) actualmente se testean mediante mocks directos de `api.get` y `api.post` sin `QueryClientProvider`. Queda terminantemente prohibido sustituir los bloques `useEffect` por `useQuery` en las páginas hasta que no se configure el helper de test `renderWithClient` en `web/src/__tests__/test-utils.tsx`. La prioridad número 1 es mantener los 29 tests de Vitest en verde.
 
 ### 8.3 Estandarización de Clases CSS (Helper `cn`)
 Para resolver colisiones de clases en componentes atómicos de `web/src/components/ui/`, se utiliza una función utilitaria liviana `cn(...inputs: (string | undefined | null | false)[]) => string` basada en concatenación y filtrado condicional limpio (`inputs.filter(Boolean).join(' ')`), sin añadir dependencias externas pesadas.

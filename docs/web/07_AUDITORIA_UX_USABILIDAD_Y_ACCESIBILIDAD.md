@@ -19,7 +19,7 @@ Esta auditoría somete la interfaz web de **VetConnect** a una lista de chequeo 
 ---
 
 ## 2. Las 6 Dimensiones de Evaluación Heurística
-> 📌 Ver arquetipos de usuario e investigación DCU en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-y-contexto-real-de-uso).
+> 📌 Ver arquetipos de usuario canónicos y mapas de empatía en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-proto-personas).
 
 ```mermaid
 graph TD
@@ -84,7 +84,7 @@ A partir de la evaluación práctica de los flujos de la plataforma web y la aud
 
 > 🚀 **Hardening Técnico y DevOps (Gaps de Producción):**  
 > Para la auditoría y estado de resolución de los 5 gaps técnicos de arquitectura, rendimiento (LCP bundle 20 kB), WebRTC dinámico, selector de fotos, CI y observabilidad Sentry, consultar el documento canónico de ingeniería:  
-> 👉 [**`08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md#4-los-5-gaps-críticos-de-frontend-hardening-ruta-al-nivel-5-gold-master`**](./08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md#4-los-5-gaps-críticos-de-frontend-hardening-ruta-al-nivel-5-gold-master).
+> 👉 [**`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md (§4)`**](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#4-contraste-empírico-planificación-vs-código-real).
 
 ---
 *Documento de Auditoría de Usabilidad y Accesibilidad — VetConnect 2026.*

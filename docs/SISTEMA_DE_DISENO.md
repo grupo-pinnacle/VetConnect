@@ -34,12 +34,7 @@
 
 El sistema está diseñado para resolver las metas esenciales de cada arquetipo de usuario sin fricciones cognitivas:
 
-- **Tutor de Mascota (`CLIENT`):**
-  - *Meta Principal:* Obtener orientación médica calificada e inmediata para su mascota enferma o accidentada en menos de 5 minutos, mediante un proceso de triage guiado y una videoconsulta telemédica en vivo, recibiendo una receta médica digital oficial y descargable sin tener que trasladar al animal.
-- **Médico Veterinario (`VET`):**
-  - *Meta Principal:* Gestionar su guardia telemédica de forma organizada, acceder al historial clínico y antecedentes de la mascota antes de iniciar la llamada, realizar la evaluación visual por videollamada en alta definición y emitir recetas estructuradas inmutables con respaldo legal ante SENASA.
-- **Administrador / Regulador (`ADMIN`):**
-  - *Meta Principal:* Fiscalizar y validar las matrículas profesionales de los veterinarios registrados en la plataforma, supervisar el flujo operativo de atenciones y consultar registros de auditoría inmutables (`AuditLog`).
+> 📌 Ver arquetipos de usuario canónicos y mapas de empatía en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./web/02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-proto-personas).
 
 ---
 

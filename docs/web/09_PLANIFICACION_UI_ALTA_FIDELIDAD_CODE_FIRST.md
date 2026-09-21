@@ -11,25 +11,7 @@
 
 ## 🧭 1. Fundamentación Estratégica: Modelo Híbrido Virtuoso (Storybook + Figma)
 
-Para construir la interfaz de usuario definitiva de **VetConnect Web**, se adopta un **modelo colaborativo de ingeniería y diseño de alto rendimiento (FAANG Tier)**:
-
-```mermaid
-flowchart LR
-    A["1. Dirección de Arte & Figma\n(Damian Orellana)"] <--> B["2. Tokens & UI Atómica\n(Storybook + Tailwind)"]
-    B --> C["3. Web SPA React 18\n(web/src/pages)"]
-    C --> D["4. html.to.design\n(Sincronización Bidireccional)"]
-    D --> A
-```
-
-### 1.1 Colaboración de Alta Eficiencia entre Diseño y Desarrollo
-1. **Damian Orellana (Técnico Multimedial) como Director Visual:**  
-   Damian es el custodio de la identidad gráfica, el sistema de espaciados, las ilustraciones institucionales, los estados vacíos (*Empty States*) y la armonía visual de la marca en Figma.
-2. **Desarrollo Basado en Componentes en Storybook (CDD):**  
-   El equipo de desarrollo construye los átomos y moléculas de interfaz en [`web/src/components/ui/`](../../web/src/components/ui/) aislados dentro de Storybook (`http://localhost:6006`), probando props, variantes y accesibilidad (WCAG 2.1 AA) sin depender del backend.
-3. **Validación de Estados Dinámicos y WebRTC en Código Vivo:**  
-   Aspectos como el feed de video a 720p en LiveKit, la latencia de WebSockets en el chat clínico, o la expiración de tokens JWT se prueban empíricamente en la aplicación viva desplegada en Vercel.
-4. **Sincronización Bidireccional hacia Figma (`html.to.design`):**  
-   Los estados dinámicos del código vivo se capturan con `html.to.design` y se importan directamente a Figma en segundos, dotando a Damian del archivo vectorial maestro con Auto-Layouts nativos para su refinamiento estético sin retrabajos manuales redundantes.
+> 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 ---
 
