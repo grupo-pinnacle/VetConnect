@@ -139,26 +139,26 @@ A continuación se detallan las pantallas esenciales del ecosistema web de VetCo
 
 ```
 +-------------------------------------------------------------------------------------------------------------+
-| [LOGO Vet]  [Inicio] [Pacientes] [Recetas]         [ Switch: ● ESTOY ONLINE ]    [Dr. Mendoza ▾] [Salir]    |
+| [LOGO VetConnect Pro]   [ 🟢 Guardia: ACTIVA ]   [ Switch: ● DISPONIBLE EN GUARDIA (isOnline) ] [Dr. Mendoza ▾]|
 +-------------------------------------------------------------------------------------------------------------+
 | Breadcrumbs: Inicio > Tablero de Guardia Profesional                                                        |
 +-------------------------------------------------------------------------------------------------------------+
-| RESUMEN DEL TURNO                                                                                           |
-| [ 🕒 Pacientes Atendidos Hoy: 8 ]   [ ⏱️ Espera Promedio: 2.4 min ]   [ ⭐ Calificación: 4.95 / 5 ]         |
+| RESUMEN DE GUARDIA Y SALA ACTIVA                                                                            |
+| [ ⏳ En Cola WAITING_ROOM: 3 ]   [ 🎥 Sala Activa: Consulta #3492 ]   [ 📜 Historial / Bóveda Atenciones ]   |
 +-------------------------------------------------------------------------------------------------------------+
-| COLA DE PACIENTES EN ESPERA (Actualización en tiempo real vía Socket.io)                                    |
+| COLA DE PACIENTES EN ESPERA (WAITING_ROOM - Sincronización Socket.io en tiempo real)                       |
 | +---------------------------------------------------------------------------------------------------------+ |
 | | PACIENTE           | MOTIVO / SÍNTOMAS        | URGENCIA       | ESPERA  | ACCIÓN                       | |
 | +--------------------+--------------------------+----------------+---------+------------------------------+ |
-| | 🐶 Milo (Caniche)  | Vómitos recurrentes (4x) | [🔴 ROJO/ALTA] | 01:12 m | [ 📞 INICIAR CONSULTA AHORA ]| |
-| | 🐱 Luna (Siamés)   | Claudicación pata trasera| [🟡 AMARILLO]  | 03:45 m | [ Ver Antecedentes ]         | |
-| | 🐶 Thor (Bulldog)  | Consulta por dermatitis  | [🟢 VERDE/BAJA]| 05:20 m | [ Ver Antecedentes ]         | |
+| | 🐶 Milo (Caniche)  | Vómitos recurrentes (4x) | [🔴 ROJO/ALTA] | 01:12 m | [ 📞 ATENDER CONSULTA AHORA ]| |
+| | 🐱 Luna (Siamés)   | Claudicación pata trasera| [🟡 AMARILLO]  | 03:45 m | [ Ver Ficha / Antecedentes ] | |
+| | 🐶 Thor (Bulldog)  | Consulta por dermatitis  | [🟢 VERDE/BAJA]| 05:20 m | [ Ver Ficha / Antecedentes ] | |
 | +--------------------+--------------------------+----------------+---------+------------------------------+ |
 +-------------------------------------------------------------------------------------------------------------+
 ```
 
-- **Información que contiene:** Estado de presencia (`isOnline`), métricas del turno de guardia, cola dinámica de pacientes con priorización por triage y tiempos de espera.
-- **Acciones disponibles:** Conmutar estado de guardia (Online/Offline), atender paciente prioritario, revisar antecedentes clínicos previos y acceder al historial de consultas finalizadas.
+- **Información que contiene:** Header con switch reactivo de guardia (`isOnline`), contador de consultas en cola `WAITING_ROOM`, acceso a sala activa y al historial de atenciones, métricas del turno y cola dinámica de pacientes con priorización por triage.
+- **Acciones disponibles:** Conmutar estado de guardia (`isOnline`), acceder a sala activa, atender paciente prioritario en cola `WAITING_ROOM`, revisar antecedentes clínicos y consultar historial.
 
 ---
 

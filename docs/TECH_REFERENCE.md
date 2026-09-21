@@ -14,11 +14,13 @@ vetconnect/
 │   │   └── seed.js                 # Semilla de datos de prueba
 │   ├── src/
 │   │   ├── modules/
-│   │   │   ├── auth/               # Registro, Login, Refresh JWT, Verificación Email
-│   │   │   ├── users/              # Perfil de usuario, veterinarios, aprobación SENASA
+│   │   │   ├── admin/              # Fiscalización SENASA, aprobación de veterinarios y AuditLogs
+│   │   │   ├── auth/               # Registro, Login, Refresh JWT, Verificación Email, GET /me
+│   │   │   ├── users/              # Perfil de usuario, estado isOnline, especialidad
 │   │   │   ├── pets/               # CRUD de mascotas, especies, fichas clínicas
 │   │   │   ├── consultations/      # Triage, colas, asignación, estados, notas
 │   │   │   ├── calls/              # Señalización WebRTC y tokens LiveKit
+│   │   │   ├── prescriptions/      # Emisión y verificación pública de recetas digitales SENASA
 │   │   │   ├── media/              # Subida de adjuntos (S3 / Local), magic bytes
 │   │   │   └── notifications/      # Push Expo API y bandeja in-app
 │   │   ├── shared/
@@ -72,7 +74,7 @@ vetconnect/
     └── RECONCILIACION_ARQUITECTURA_Y_DISCREPANCIAS.md # Registro Oficial de Reconciliación de Arquitectura
 ```
 
-> ℹ️ **Nota de Diseño sobre `packages/shared` (ADR-008):**  
+> ℹ️ **Nota de Diseño sobre `packages/shared` (ADR-008):**
 > Para maximizar la velocidad de desarrollo y evitar la sobrecarga de tooling complejo de monorepos (Nx, Turborepo o transpiladores cruzados), la arquitectura descarta formalmente un workspace `packages/shared`. Los contratos y esquemas Zod se definen con rigor en el Backend (`backend/src/contracts/` y DTOs por módulo) y se sincronizan como interfaces TypeScript nativas en los clientes `web` y `mobile`.
 
 ---
@@ -102,8 +104,15 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `POST` | `/api/auth/login` | Inicio de sesión. Web: Refresh Token en cookie `HttpOnly`. Mobile (`X-Client-Platform: mobile`): Refresh Token en JSON body para `expo-secure-store` | Público |
 | `POST` | `/api/auth/refresh` | Renovación de access token. Web: lee cookie `HttpOnly`. Mobile: lee payload `{ refreshToken }` | Público |
 | `POST` | `/api/auth/logout` | Cierre de sesión, incrementa `tokenVersion` e invalida cookies | Autenticado |
+| `GET`  | `/api/auth/me`     | Obtener el usuario autenticado activo | Autenticado |
 
-### 2.2 Mascotas (`/api/pets`)
+### 2.2 Usuarios & Perfil (`/api/users`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `GET`  | `/api/users/profile` | Obtener perfil completo del usuario autenticado | Autenticado |
+| `PATCH`| `/api/users/profile` | Conmutación reactiva de guardia (`isOnline: boolean`), edición de especialidad, bio y teléfono | Autenticado |
+
+### 2.3 Mascotas (`/api/pets`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `GET` | `/api/pets` | Listar mascotas del usuario autenticado | CLIENT / ADMIN |
@@ -112,7 +121,20 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `PATCH`| `/api/pets/:id` | Modificar datos de la mascota | Dueño / ADMIN |
 | `DELETE`| `/api/pets/:id` | Soft-delete de mascota (`deletedAt`) | Dueño / ADMIN |
 
-### 2.3 Consultas & Telemedicina (`/api/consultations`)
+### 2.4 Administración & Fiscalización SENASA (`/api/admin`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `GET`  | `/api/admin/vets/pending` | Listar veterinarios pendientes de validación de matrícula SENASA (`vetStatus = PENDING`) | ADMIN |
+| `PATCH`| `/api/admin/vets/:id/approve` | Aprobar matrícula profesional (`vetStatus = APPROVED`) y registrar auditoría inmutable en `AuditLog` | ADMIN |
+| `PATCH`| `/api/admin/vets/:id/reject` | Rechazar solicitud profesional con motivo obligatorio (`{ reason }`), pasa a `REJECTED` y audita | ADMIN |
+
+### 2.5 Recetas Digitales SENASA (`/api/prescriptions`)
+| Método | Endpoint | Descripción | Acceso |
+|---|---|---|---|
+| `GET`  | `/api/prescriptions/:id` | Verificación pública no confidencial de receta digital oficial escaneada vía QR | Público |
+| `POST` | `/api/consultations/:id/prescriptions` | Emisión de receta digital oficial con firma y código QR | VET asignado |
+
+### 2.6 Consultas & Telemedicina (`/api/consultations`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min) | CLIENT |
@@ -126,20 +148,20 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico (idempotente con `clientMsgId`) | Participantes |
 | `POST` | `/api/consultations/:id/review` | Calificar atención médica (1 a 5 estrellas, ADR-023) | CLIENT asignado |
 
-### 2.4 Videollamadas (`/api/calls`)
+### 2.7 Videollamadas (`/api/calls`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/calls/:consultationId/token` | Generar token de acceso LiveKit para una consulta (sin PII) | Participantes de la consulta |
 | `POST` | `/api/calls/:consultationId/ring` | Disparar notificación de timbrado global al par (emite `call:incoming` con Cero PII y fallback Push Expo). Requiere consulta en estado `ACTIVE`. Errores: `400 INVALID_STATE`, `403 FORBIDDEN` | Participantes de la consulta |
 
-### 2.5 Notificaciones Push & In-App (`/api/notifications`)
+### 2.8 Notificaciones Push & In-App (`/api/notifications`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/notifications/register-token` | Registrar o actualizar token Expo Push (`ExponentPushToken[...]`) idempotentemente | Autenticado |
 | `GET`  | `/api/notifications` | Listar notificaciones in-app del usuario autenticado (`take`, `skip`) | Autenticado |
 | `PATCH`| `/api/notifications/:id/read` | Marcar notificación específica como leída (`isRead: true`, `readAt`) | Autenticado |
 
-### 2.6 Archivos Médicos & Adjuntos (`/api/media`)
+### 2.9 Archivos Médicos & Adjuntos (`/api/media`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `POST` | `/api/media` | Subida multipart con validación binaria de Magic Bytes (JPEG, PNG, PDF). Límite individual de 10 MB/archivo y cuota agregada de 50 MB/día por usuario (RNF-06). Persiste metadatos en `MediaFile` y consumo en `DailyUploadCounter`. Retorna `413 FILE_TOO_LARGE` si archivo > 10 MB o `429 UPLOAD_QUOTA_EXCEEDED` si supera 50 MB/día | Autenticado |

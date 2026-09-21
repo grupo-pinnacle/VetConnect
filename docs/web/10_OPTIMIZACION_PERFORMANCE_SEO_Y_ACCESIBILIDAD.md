@@ -59,10 +59,10 @@ En una plataforma de emergencias veterinarias, **cada segundo de demora genera a
    - Esto reserva el espacio exacto en el viewport antes de que la imagen termine de descargarse, impidiendo que el contenido "salte".
 
 ### 2.4 Estrategia de Caché en Memoria con TanStack Query v5
-Para evitar peticiones redundantes a la API de Express y conseguir transiciones instantáneas:
+La instancia global de `QueryClient` está instanciada y configurada en el punto de entrada principal de la SPA web (`web/src/App.tsx`), envolviendo la jerarquía con `<QueryClientProvider client={queryClient}>` para evitar peticiones redundantes a la API de Express y conseguir transiciones instantáneas:
 ```typescript
-// web/src/services/api.ts
-export const queryClient = new QueryClient({
+// web/src/App.tsx
+const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutos de validez para datos estables (perfil, lista de mascotas)

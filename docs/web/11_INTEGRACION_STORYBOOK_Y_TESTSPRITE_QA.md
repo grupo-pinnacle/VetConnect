@@ -72,6 +72,152 @@ Storybook opera como el **taller de desarrollo aislado** del equipo de frontend.
 | **Organismo** | `PrescriptionModal` | `web/src/components/ui/PrescriptionModal.tsx` | Formulario veterinario oficial para emitir receta con diagnóstico, fármaco, dosis y matrícula |
 | **Organismo** | `PrescriptionDoc` | `web/src/components/ui/PrescriptionDoc.tsx` | Formato A4 oficial SENASA con código QR dinámico y estilos para `@media print` |
 
+#### Specifications & Formal TypeScript Interfaces for Storybook Components:
+
+```typescript
+// 1. ButtonProps
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  isLoading?: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+}
+
+// 2. BadgeProps
+export interface BadgeProps {
+  variant: 'green' | 'yellow' | 'red' | 'online' | 'offline';
+  label?: string;
+  className?: string;
+}
+
+// 3. InputProps
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  state?: 'default' | 'focused' | 'error' | 'disabled';
+  label?: string;
+  error?: string;
+  helperText?: string;
+  icon?: React.ReactNode;
+}
+
+// 4. AvatarProps
+export interface AvatarProps {
+  type: 'pet' | 'vet' | 'client';
+  src?: string;
+  name: string;
+  species?: 'DOG' | 'CAT' | string;
+  isOnline?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+// 5. PetCardProps
+export interface PetCardProps {
+  pet: {
+    id: string;
+    name: string;
+    species: string;
+    breed?: string | null;
+    birthDate?: string | Date | null;
+    weightKg?: number | null;
+    microchipNumber?: string | null;
+  };
+  onRequestConsultation?: (petId: string) => void;
+  onEdit?: (petId: string) => void;
+}
+
+// 6. TriageSelectorProps
+export interface TriageSelectorProps {
+  selectedSymptoms: string[];
+  calculatedSeverity: 'GREEN' | 'YELLOW' | 'RED';
+  onSelectSymptom: (symptom: string) => void;
+  onSubmitTriage: () => void;
+  isLoading?: boolean;
+}
+
+// 7. ChatMessageProps
+export interface ChatMessageProps {
+  id: string;
+  senderRole: 'CLIENT' | 'VET' | 'ADMIN';
+  senderName: string;
+  content: string;
+  attachmentUrl?: string | null;
+  timestamp: string;
+  isOwnMessage: boolean;
+  onImageClick?: (url: string) => void;
+}
+
+// 8. CallControlsProps
+export interface CallControlsProps {
+  isAudioEnabled: boolean;
+  isVideoEnabled: boolean;
+  networkQuality?: 'excellent' | 'good' | 'poor';
+  onToggleAudio: () => void;
+  onToggleVideo: () => void;
+  onEndCall: () => void;
+}
+
+// 9. BreadcrumbsProps
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  active?: boolean;
+}
+
+export interface BreadcrumbsProps {
+  items: BreadcrumbItem[];
+}
+
+// 10. PrescriptionModalProps
+export interface PrescriptionModalProps {
+  isOpen: boolean;
+  consultationId: string;
+  petName: string;
+  clientName: string;
+  onClose: () => void;
+  onSubmit: (data: {
+    medication: string;
+    dosage: string;
+    frequency: string;
+    durationDays: number;
+    indications?: string;
+  }) => Promise<void>;
+  isLoading?: boolean;
+}
+
+// 11. PrescriptionDocProps
+export interface PrescriptionDocProps {
+  prescription: {
+    id: string;
+    medication: string;
+    dosage: string;
+    frequency: string;
+    durationDays: number;
+    indications?: string | null;
+    createdAt: string | Date;
+    qrCodeDataUrl?: string;
+    verifyUrl?: string;
+    vet: {
+      firstName: string;
+      lastName: string;
+      licenseNumber?: string | null;
+    };
+    consultation: {
+      pet: {
+        name: string;
+        species: string;
+        breed?: string | null;
+        microchipNumber?: string | null;
+      };
+      client?: {
+        firstName: string;
+        lastName: string;
+      };
+    };
+  };
+  isPrintMode?: boolean;
+}
+```
+
 ### 2.4 Estrategia de Refactorización Progresiva (De Páginas Monolíticas a Componentes Atómicos)
 Las pantallas en `web/src/pages/` operan actualmente como prototipos de alta madurez funcional (Nivel 4.5). Para evitar duplicación visual y maximizar la reutilización, la elevación de UI sigue el siguiente protocolo de 3 pasos:
 1. **Paso A — Extracción Atómica:** Se extraen los bloques JSX embebidos en `pages/` (`DashboardClient.tsx`, `DashboardVet.tsx`, `ConsultationRoom.tsx`) hacia componentes aislados y estrictamente tipados en `web/src/components/ui/`.

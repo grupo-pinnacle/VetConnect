@@ -31,6 +31,7 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 | **ADR-021** | Hardening de Contenedores y Pipeline de Integración Continua FAANG | Aprobado | DevOps / Seguridad |
 | **ADR-022** | Plataforma Definitiva de Despliegue Web (Vercel Edge vs Hostinger Contingencia) | Aprobado | Infraestructura / Web |
 | **ADR-023** | Escala Unificada de Calificación Profesional (1 a 5 Estrellas) | Aprobado | UX / Base de Datos |
+| [ADR-024](#adr-024) | Máquina de Estados Finita (FSM) en Consultas, Timeout de Triage (15 min) y Ventana de Reconexión WebRTC (3 min) | Aprobado | 2026-09-14 |
 
 ---
 
@@ -180,5 +181,3 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
   4. **Ventana de Gracia por Desconexión (ACTIVE → CANCELLED o WAITING):** Si el veterinario pierde la conexión socket durante una consulta `ACTIVE`, se abre una ventana de gracia de **3 minutos** controlada por heartbeat y presencia Redis. Si reconecta dentro del intervalo, la sesión continúa sin interrupción. Si la ventana expira, la consulta transiciona a `CANCELLED` (`VET_DISCONNECTED_TIMEOUT`) con opción de reencolado prioritario en `WAITING` para el tutor.
   5. **Cancelaciones voluntarias:** Antes o durante la atención, cualquier participante puede cancelar hacia `CANCELLED` (código `VOLUNTARY_CANCELLATION`).
 - **Consecuencias:** Eliminación total de condiciones de carrera por oferta simultánea en WebSockets; comportamiento predecible y auditado ante los 5 escenarios posibles de la FSM; auditoría inequívoca de tiempos de espera ($P_{50} < 3\text{ min}$, $P_{95} < 5\text{ min}$); y experiencia de usuario resiliente ante cortes de red transitorios sin pérdida de la consulta.
-
-

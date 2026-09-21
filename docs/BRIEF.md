@@ -1,11 +1,11 @@
 # 📄 PRODUCT & PROJECT BRIEF
 ## Proyecto: VetConnect — Ecosistema Digital de Telemedicina Veterinaria
-**Document ID:** `BRIEF-VETCONNECT-2026-V2`  
-**Autor:** Senior / Staff Systems Architect (FAANG Tier Standards)  
-**Organización:** Grupo Pinnacle / VetConnect Team  
-**Fecha de Emisión:** Septiembre 2026  
-**Audiencia:** Comité Ejecutivo, Stakeholders, Engineering Leads & Product Directorate  
-**Estado:** `APPROVED (EXECUTIVE BASELINE)`  
+**Document ID:** `BRIEF-VETCONNECT-2026-V2`
+**Autor:** Senior / Staff Systems Architect (FAANG Tier Standards)
+**Organización:** Grupo Pinnacle / VetConnect Team
+**Fecha de Emisión:** Septiembre 2026
+**Audiencia:** Comité Ejecutivo, Stakeholders, Engineering Leads & Product Directorate
+**Estado:** `APPROVED (EXECUTIVE BASELINE)`
 
 ---
 

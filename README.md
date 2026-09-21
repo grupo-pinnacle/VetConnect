@@ -6,7 +6,7 @@
 
 [![Node.js](https://img.shields.io/badge/Node.js-20.x_LTS-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![React](https://img.shields.io/badge/React-18.3.1_LTS-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![React Native / Expo](https://img.shields.io/badge/Expo-SDK_54-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev)
 [![Prisma ORM](https://img.shields.io/badge/Prisma-6.x-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
 [![LiveKit](https://img.shields.io/badge/LiveKit-WebRTC_SFU-00D1B2?style=for-the-badge&logo=webrtc&logoColor=white)](https://livekit.io)
@@ -19,7 +19,7 @@
 
 ## 📖 Índice General de Documentación & Sistema de Agentes
 
-> **Enfoque Greenfield, Agent-First & Modelo Híbrido:** Este repositorio está estructurado bajo un **modelo de ingeniería híbrido**: el diseño de la plataforma Web (UI/UX) es prototipado integralmente en **Figma por el Técnico Multimedial (Damian Orellana)** y codificado en React 19 por el equipo de desarrollo, mientras agentes de IA autónomos (**Google Jules**, Antigravity, Claude Code) construyen de forma continua y 24/7 la infraestructura de Backend, Prisma ORM, WebSockets, Media Segura, Mobile y la suite de tests mediante paquetes de tareas atómicas (*Task Packets*).
+> **Estatus del Monorepo — Nivel 4.5: Pre-Gold Master (36 suites / 123 tests pasando al 100%):** Este repositorio cuenta con una arquitectura de ingeniería de alta disponibilidad en **React 18.3.1 (LTS)** para la web, **Node.js / Express 5** para el backend y **React Native / Expo SDK 54** para el entorno móvil. El diseño es prototipado en **Figma por el Técnico Multimedial (Damian Orellana)** y auditado en **Storybook**, mientras agentes de IA autónomos (**Google Jules**, Antigravity, Claude Code) sincronizan contratos, Prisma ORM, WebSockets y la suite completa de pruebas.
 
 Toda la documentación técnica, operativa y de agentes de VetConnect se encuentra organizada en los siguientes documentos maestros:
 
@@ -73,7 +73,7 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 flowchart TB
     subgraph Frontend["Capas de Cliente (Monorepo Workspaces)"]
         Mobile["📱 Mobile App (React Native + Expo 54)\n• NativeWind Tailwind\n• SecureStore\n• TanStack Query"]
-        WebClient["💻 Web App & Pro Dashboard (React 19 + Vite)\n• Layered Shadows Craft\n• GlobalCallListener\n• LiveKit Components"]
+        WebClient["💻 Web App & Pro Dashboard (React 18.3.1 LTS + Vite)\n• Layered Shadows Craft\n• GlobalCallListener\n• LiveKit Components"]
     end
 
     subgraph Backend["Cerebro Backend (Node.js + Express 5 + TypeScript)"]

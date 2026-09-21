@@ -31,7 +31,7 @@ export class PrescriptionsController {
       const prescriptionId = getParamId(req.params.id);
       const prescription = await prescriptionsService.getPrescriptionById(
         prescriptionId,
-        req.user!
+        req.user
       );
       res.status(200).json({
         success: true,
