@@ -41,7 +41,7 @@ El mapa del sitio web se divide en tres dominios principales: **Portal Público 
    └── [Nivel 2] Historial de Consultas Atendidas (/vet/dashboard#historial)
 
 [Nivel 1] Panel de Administración SENASA (/admin/vets y /admin/dashboard - Alias equivalentes)
-   └── [Nivel 2] Fiscalización de Matrículas Pendientes & AuditLogs (Mapean a AdminVets.tsx)
+   └── [Nivel 2] Fiscalización de Matrículas Pendientes (Mapea a AdminVets.tsx; AuditLog se registra en backend sin visor en v2.0)
 
 > 🔒 **Aislamiento de Pacientes & Protección PII (Ley 25.326):**  
 > Se descarta formalmente cualquier ruta de "bóveda global de pacientes" abierta (`/patients`). El médico veterinario accede a los datos clínicos del paciente exclusivamente dentro del contexto de una consulta activa asignada, garantizando el secreto médico y la minimización de datos personales.
@@ -154,9 +154,12 @@ flowchart TD
 > ⚠️ **Contrato Formal de Navegación y Flujo de Sala de Espera (`ConsultationRoom.tsx`)**
 >
 > 1. **Al montar `/call/:id`:** Invocar inmediatamente `GET /api/consultations/:id`.
-> 2. **Si `status === 'WAITING'`:** Mostrar la interfaz de **"Sala de Espera: Aguardando asignación de veterinario de guardia..."** y activar polling cada 5s a `GET /api/consultations/:id` (o escuchar el evento correspondiente en Socket.io). **NO invocar `POST /api/calls/:id/token`** (de lo contrario el backend retornará `400 INVALID_CONSULTATION_STATE` dado que en `calls.service.ts` se exige `consultation.status === 'ACTIVE'`).
+> 2. **Si `status === 'WAITING'`:** Mostrar la interfaz de **"Sala de Espera: Aguardando asignación de veterinario de guardia..."** y activar polling cada 5s a `GET /api/consultations/:id`. **NO invocar `POST /api/calls/:id/token`** (de lo contrario el backend retornará `400 INVALID_CONSULTATION_STATE` dado que en `calls.service.ts` se exige `consultation.status === 'ACTIVE'`).
 > 3. **Cuando el estado cambie a `ACTIVE`:** Cancelar el polling de espera, solicitar el token LiveKit invocando `POST /api/calls/:id/token` y renderizar `<CallRoom>`.
 > 4. **Al presionar "Finalizar Consulta":** El médico debe ejecutar `PATCH /api/consultations/:id/complete` con `{ diagnosisNotes }` antes de redirigir o salir de la sala.
+>
+> ⚠️ **Sincronización Canónica de Transición WAITING → ACTIVE:**
+> En v2.0, el backend NO emite eventos de Socket.io para la asignación de consultas (`consultation:assigned` no existe en `socket.types.ts`). Por lo tanto, el cliente debe usar exclusivamente polling HTTP cada 5 segundos invocando `GET /api/consultations/:id` mientras el estado sea `WAITING`. Queda terminantemente prohibido registrar listeners socket ficticios.
 
 > ℹ️ **Nota de Alcance (v2.0 vs. v2.1+):** Conforme a [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), la pasarela arancelaria se encuentra formalmente excluida (ScopeOut) del MVP v2.0, garantizando auxilio médico inmediato sin barreras de cobro. La integración de pasarela transaccional se incorporará en el flujo comercial de la versión v2.1+.
 

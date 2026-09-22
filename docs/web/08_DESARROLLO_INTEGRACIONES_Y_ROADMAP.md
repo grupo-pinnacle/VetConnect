@@ -73,9 +73,11 @@ flowchart TB
 ### 2.1 Integración 1: Videollamadas HD con LiveKit Cloud SFU & Contrato de Sala de Espera
 - **Contrato de Navegación y Máquina de Estados (`ConsultationRoom.tsx`):**
   1. Al montar `/call/:id`: Invocar `GET /api/consultations/:id`.
-  2. Si `status === 'WAITING'`: Mostrar la UI de **"Sala de Espera: Aguardando asignación de veterinario de guardia..."** y activar polling cada 5s a `GET /api/consultations/:id` (o escuchar eventos Socket.io). **NO invocar `POST /api/calls/:id/token`** (en `backend/src/modules/calls/calls.service.ts:59`, solicitar token con estado no `ACTIVE` arroja `400 INVALID_CONSULTATION_STATE`).
+  2. Si `status === 'WAITING'`: Mostrar la UI de **"Sala de Espera: Aguardando asignación de veterinario de guardia..."** y activar polling cada 5s a `GET /api/consultations/:id`. **NO invocar `POST /api/calls/:id/token`** (en `backend/src/modules/calls/calls.service.ts:59`, solicitar token con estado no `ACTIVE` arroja `400 INVALID_CONSULTATION_STATE`).
   3. Cuando el estado transicione a `ACTIVE`: Cancelar el polling, solicitar el token LiveKit con `POST /api/calls/:id/token` y renderizar `<CallRoom>`.
   4. Al presionar "Finalizar Consulta": El médico debe ejecutar `PATCH /api/consultations/:id/complete` `{ diagnosisNotes }` antes de redirigir.
+- ⚠️ **Sincronización Canónica de Transición WAITING → ACTIVE:**
+  En v2.0, el backend NO emite eventos de Socket.io para la asignación de consultas (`consultation:assigned` no existe en `socket.types.ts`). Por lo tanto, el cliente debe usar exclusivamente polling HTTP cada 5 segundos invocando `GET /api/consultations/:id` mientras el estado sea `WAITING`. Queda terminantemente prohibido registrar listeners socket ficticios.
 - El backend responde al token request con el contrato `{ success: true, data: { token, wsUrl } }`.
 - El token se genera con identidad opaca (`user.id`) y nombre de pila del médico/tutor, **sin incluir correos ni datos personales (PII)** según las directivas de seguridad de [`AGENTS.md`](../../AGENTS.md) y Ley N° 25.326.
 - La sala se monta utilizando `<LiveKitRoom>` configurado en resolución 720p a 24fps con simulcast adaptativo y audio WebRTC sin duplicación de renderers (`<RoomAudioRenderer>` no debe duplicarse si se usa `<VideoConference />`).
@@ -115,7 +117,10 @@ flowchart TB
 - **Requisito Crítico en Internet:** Cuando el portal web se aloja en `app.vetconnect.com.ar` y la API en `api.vetconnect.com.ar`, Chromium y Safari exigen obligatoriamente HTTPS con certificados TLS válidos en ambos extremos; de lo contrario, los navegadores descartan silenciosamente las cookies marcadas con `SameSite=None` si no viajan bajo `Secure: true`.
 - **CORS Restrictivo en Backend:** En el entorno de producción, la variable `CLIENT_URL` en el `.env` del backend debe configurarse de forma estricta con el dominio público del frontend (`https://app.vetconnect.com.ar`), prohibiendo comodines permisivos (`*`) o referencias a `localhost`.
 
-### 2.7 Flujo de Cierre de Consulta y Calificación Post-Atención
+### 2.6 Integración 6: Flujo de Cierre de Consulta y Calificación Post-Atención
+
+**Protocolo de Cierre y Reseña Médica:**
+Cuando el veterinario finaliza la consulta (`PATCH /api/consultations/:id/complete`), el estado pasa a `COMPLETED`. En el tutor, al detectar `status === 'COMPLETED'` (vía polling o evento `call:ended`), `ConsultationRoom.tsx` desmonta `<CallRoom>` y despliega en la misma pantalla el `ReviewModal` como overlay de cierre. Una vez que el tutor envía la calificación (`POST /api/consultations/:id/review`) o presiona "Omitir", la aplicación ejecuta `navigate('/client/dashboard')`.
 
 El ciclo de vida completo de una consulta médica desde el punto de vista del frontend web es:
 
@@ -141,7 +146,7 @@ flowchart LR
 
 4. **AuditLog (ADMIN):** Las operaciones de aprobación/rechazo de veterinarios generan registros en `audit_logs` de forma automática en el backend. **No existe un endpoint `GET` de AuditLogs en v2.0** — el visor de auditoría es una característica de reportería administrativa planificada para v2.1+. `AdminVets.tsx` NO debe implementar un componente de AuditLog viewer en v2.0.
 
-### 2.6 Integración 6: Módulos de Administración, Prescripciones Oficiales y Perfil de Guardia
+### 2.7 Integración 7: Módulos de Administración y Fiscalización SENASA
 - **Visualización de Receta Digital SENASA (`GET /api/prescriptions/:id`):**
   - La página [`PrescriptionView.tsx`](../../web/src/pages/PrescriptionView.tsx) consulta este endpoint al montar la vista o cuando un tercero escanea el código QR de la receta.
   - El backend valida la existencia de la receta y retorna la entidad poblada con los datos del profesional emisor (`vet: { firstName, lastName, licenseNumber }`) y el paciente vinculado a la consulta.
@@ -224,7 +229,7 @@ El desarrollo del portal web no opera en una isla de 4 sprints aislados, sino qu
 |---|---|---|---|
 | **Sprint 1 & 2** | PB-01, PB-05, PB-08 | Setup de Monorepo, contratos tipados en Axios (`api.ts`), integración de autenticación JWT y cookies `HttpOnly` con cola `failedQueue`. | ✅ **Completado** |
 | **Sprint 3** | PB-09, PB-10, PB-11 | Landing Page institucional responsive, Navbar, layout base multi-rol y enrutamiento protegido en `App.tsx`. | ✅ **Completado** |
-| **Sprint 4** | PB-12, PB-14 | Tablero de fiscalización administrativa (`/admin/vets`) para validación SENASA y visor inmutable de `AuditLog`. | ✅ **Completado** |
+| **Sprint 4** | PB-12, PB-14 | Tablero de fiscalización administrativa (`/admin/vets`) para validación SENASA (el backend persiste AuditLogs de forma inmutable; el visor UI queda como ScopeOut para v2.1+). | ✅ **Completado** |
 | **Sprint 5** | PB-17 | Formulario de alta y gestión de mascotas (`/client/dashboard`) con validación opcional de microchip ISO de 15 dígitos. | ✅ **Completado** |
 | **Sprint 6** | PB-20, PB-23 | Modal de triage clínico en 3 pasos con cálculo automático de urgencia y formulario de soporte. | ✅ **Completado** |
 | **Sprint 7** | PB-26, PB-28 | Chat médico bidireccional Socket.io con idempotencia (`clientMsgId`), subida de fotos macroscópicas a `/api/media` y visualizador modal *Lightbox*. | ✅ **Completado** |
@@ -243,7 +248,7 @@ El desarrollo del portal web no opera en una isla de 4 sprints aislados, sino qu
 2. **Paso B — Elevación Visual en Código Vivo (Component-Driven Development con Storybook) y QA Autónomo con TestSprite:**
    - **Taller de Componentes Aislados en Storybook:** Conforme a [`11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md`](./11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md), los componentes de interfaz (Botones, Badges de Triaje, Cards de Mascotas, Recetas SENASA) se construyen y auditan de forma atómica en Storybook (`http://localhost:6006`) con el addon `@storybook/addon-a11y` garantizando cumplimiento de WCAG 2.1 AA antes de ser ensamblados en las pantallas principales.
    - **QA E2E Autónomo con TestSprite (MCP):** Una vez desplegada la web en Vercel, el agente de IA de TestSprite ejecuta autónomamente los escenarios clínicos de caja negra (TS-E2E-01 a TS-E2E-08), detectando cualquier regresión o anomalía en producción con grabaciones de video y análisis de causa raíz.
-   - **Exportación Automática a Figma en 10 Segundos (`html.to.design`):** Con la interfaz probada en Storybook y Vercel, Damian Orellana importa la URL a Figma obteniendo el archivo editable con Auto-Layouts y capas vectoriales nativas al instante.
+   > 📌 Ver protocolo de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 3. **Paso C — Puesta en Producción en Internet:**
    - Conectar Vercel con el repositorio para CI/CD automático del frontend (`https://vet-connect-web.vercel.app`).
    - Desplegar API en VPS con Coolify + Traefik TLS 1.3 conforme a [`docs/DEPLOY.md`](../DEPLOY.md).

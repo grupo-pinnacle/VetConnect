@@ -180,7 +180,28 @@ A continuación se detalla la especificación visual, la disposición de element
 
 ---
 
-### 📄 Pantalla 6: Receta Médica Digital Oficial SENASA (`/prescriptions/:id`)
+### 🖥️ Pantalla 6A: Modal Clínico de Emisión de Receta Oficial (PrescriptionModal)
+- **Componente:** `web/src/components/ui/PrescriptionModal.tsx` (invocado en `ConsultationRoom.tsx` y `DashboardVet.tsx`).
+- **Rol:** Veterinario autenticado (`VET` con `vetStatus: APPROVED`).
+- **Contrato REST:** `POST /api/consultations/:id/prescriptions` con payload `{ medication, dosage, frequency, durationDays, indications }`.
+
+#### 📐 Especificación Visual y Clases Tailwind:
+1. **Contenedor Modal Overlay (`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4`):**
+   - Diálogo centrado accesible (`role="dialog"` con soporte de tecla `Escape`).
+2. **Tarjeta de Diálogo (`bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-xl w-full p-6 sm:p-8 animate-in fade-in zoom-in-95`):**
+   - **Header:** Icono `FileSignature` en azul (`text-blue-600 bg-blue-50 p-2.5 rounded-xl`), Título *Plus Jakarta Sans Bold* `text-slate-900 text-xl` y botón de cierre `[✕]`.
+   - **Campos del Formulario (Grid a 2 columnas en posología):**
+     - Medicamento: `<Input>` con `data-testid="input-prescription-medication"` (`focus:ring-2 focus:ring-blue-500 rounded-lg`).
+     - Dosis y Frecuencia: `<Input>` con `data-testid="input-prescription-dosage"` y `data-testid="input-prescription-frequency"`.
+     - Duración (días): `<Input type="number">` con `data-testid="input-prescription-duration"`.
+     - Indicaciones Médicas: `<textarea>` con `data-testid="input-prescription-indications"` (`min-h-[90px] rounded-lg border-slate-300 text-sm`).
+   - **Footer de Acciones:**
+     - Botón Secundario `[ Cancelar ]` (`border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2.5`).
+     - Botón Primario `[ Emitir y Firmar Receta ]` con `data-testid="save-prescription-button"` (`bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-5 py-2.5 shadow-sm active:scale-95`).
+
+---
+
+### 🖥️ Pantalla 6B: Vista Pública de Verificación QR de Receta (`/prescriptions/:id`)
 - **Archivo Fuente:** [`web/src/pages/PrescriptionView.tsx`](../../web/src/pages/PrescriptionView.tsx)
 - **Rol de Usuario:** Tutor imprimiendo la receta o farmacéutico escaneando el código QR.
 
