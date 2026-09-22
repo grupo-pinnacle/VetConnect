@@ -1,0 +1,307 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "project": "VetConnect — Telemedicina Veterinaria & Gestión Clínica",
+  "framework": "TestSprite MCP",
+  "environment": "staging",
+  "metadata": {
+    "author": "QA Automation & Software Reliability Engineering",
+    "compliance": ["SENASA Res. 1442/2021", "Ley 25.326", "Ley 25.506", "ADR-023", "ADR-024"],
+    "created": "2026-09-22T18:35:00.000Z"
+  },
+  "scenarios": [
+    {
+      "id": "tutor-urgency-triage",
+      "name": "Registro de Tutor, Alta de Paciente y Triage Vital Rojo",
+      "priority": "P0",
+      "role": "CLIENT",
+      "description": "Flujo crítico donde un tutor registra una cuenta nueva, añade una mascota con datos biométricos y solicita atención de guardia inmediata con prioridad Código Rojo (emergencia vital).",
+      "preconditions": [
+        "Backend Express 5 y base de datos PostgreSQL operativas",
+        "Servicio de autenticación JWT y registro de clientes activo"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Navegar a la página de registro",
+          "route": "/register",
+          "selector": "data-testid=register-page"
+        },
+        {
+          "step": 2,
+          "action": "Completar formulario de registro de tutor",
+          "endpoint": "POST /api/auth/register",
+          "payload": {
+            "email": "tutor.emergencia@vetconnect.test",
+            "password": "Password123!",
+            "firstName": "Lucas",
+            "lastName": "Gómez",
+            "role": "CLIENT"
+          }
+        },
+        {
+          "step": 3,
+          "action": "Dar de alta nueva mascota en el panel de cliente",
+          "route": "/client",
+          "endpoint": "POST /api/pets",
+          "payload": {
+            "name": "Milo",
+            "species": "Canino",
+            "breed": "Golden Retriever",
+            "weightKg": 32,
+            "microchip": "032-984-721-001-AR"
+          },
+          "assertion": "Verificar renderizado de PetCard con data-testid='pet-card-milo'"
+        },
+        {
+          "step": 4,
+          "action": "Solicitar triaje de emergencia Código Rojo",
+          "endpoint": "POST /api/consultations",
+          "payload": {
+            "petId": "$petId",
+            "notes": "[Prioridad: ROJO] Dificultad respiratoria severa y letargo agudo"
+          }
+        },
+        {
+          "step": 5,
+          "action": "Verificar estado en sala de espera",
+          "route": "/consultations/$consultationId",
+          "assertion": "Consulta en estado WAITING con indicador visual de prioridad ROJO"
+        }
+      ],
+      "expectedOutcome": {
+        "status": "WAITING",
+        "triagePriority": "ROJO",
+        "responseTimeSeconds": "<180"
+      }
+    },
+    {
+      "id": "vet-queue-fifo-assign",
+      "name": "Guardia Activa, Cola FIFO y Asignación de Consulta",
+      "priority": "P0",
+      "role": "VET",
+      "description": "El médico veterinario acreditado se conecta a la guardia telemática (isOnline=true), inspecciona la cola ordenada por prioridad de triage (FIFO clínico) y toma el caso en espera.",
+      "preconditions": [
+        "Usuario VET registrado con vetStatus='APPROVED'",
+        "Existe al menos una consulta WAITING con prioridad ROJO creada previamente"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Iniciar sesión como médico veterinario",
+          "route": "/login",
+          "endpoint": "POST /api/auth/login",
+          "credentials": {
+            "email": "dra.valenzuela@vetconnect.test",
+            "password": "VetPassword123!"
+          }
+        },
+        {
+          "step": 2,
+          "action": "Activar presencia médica de guardia",
+          "endpoint": "PATCH /api/users/profile",
+          "payload": {
+            "isOnline": true
+          },
+          "assertion": "Verificar badge 'En Guardia' en data-testid='vet-presence-indicator'"
+        },
+        {
+          "step": 3,
+          "action": "Inspeccionar cola de pacientes en espera",
+          "route": "/vet",
+          "selector": "data-testid=waiting-queue-section",
+          "assertion": "El caso Código Rojo encabeza la cola FIFO"
+        },
+        {
+          "step": 4,
+          "action": "Asignarse la consulta de urgencia",
+          "endpoint": "PATCH /api/consultations/:id/assign",
+          "assertion": "La consulta transiciona de WAITING a ACTIVE con vetId asignado"
+        },
+        {
+          "step": 5,
+          "action": "Navegar a la sala clínica de videoconsulta",
+          "route": "/call/$consultationId",
+          "selector": "data-testid=consultation-room-container"
+        }
+      ],
+      "expectedOutcome": {
+        "status": "ACTIVE",
+        "assignedVetId": "$vetId",
+        "roomJoined": true
+      }
+    },
+    {
+      "id": "webrtc-call-chat-prescription",
+      "name": "Videoconsulta WebRTC, Chat Clínico y Emisión de Receta Oficial SENASA",
+      "priority": "P0",
+      "role": "VET_AND_CLIENT",
+      "description": "Simulación interactiva de la videollamada HD, intercambio de mensajes idempotentes en el chat clínico, y emisión formal de la receta electrónica con código QR oficial.",
+      "preconditions": [
+        "Consulta en estado ACTIVE con tokens LiveKit válidos para ambos participantes",
+        "Canal Socket.io para señalización y chat clínico activo"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Conexión a la sala WebRTC LiveKit",
+          "route": "/call/:id",
+          "assertion": "Verificar publicación de tracks de audio y video sin controles duplicados"
+        },
+        {
+          "step": 2,
+          "action": "Envío de mensaje de chat clínico idempotente",
+          "socketEvent": "message:send",
+          "payload": {
+            "consultationId": "$consultationId",
+            "clientMsgId": "msg-uuid-99421",
+            "content": "El paciente presenta mucosa pálida y disnea inspiratoria."
+          },
+          "assertion": "Mensaje recibido y renderizado sin duplicados (idempotencia P2002)"
+        },
+        {
+          "step": 3,
+          "action": "Apertura del modal de prescripción oficial",
+          "selector": "data-testid=emit-prescription-button-$consultationId",
+          "assertion": "Modal abierto con data-testid='prescription-modal' y rol dialog accesible"
+        },
+        {
+          "step": 4,
+          "action": "Completar y enviar prescripción médica",
+          "endpoint": "POST /api/consultations/:id/prescriptions",
+          "payload": {
+            "medication": "Metronidazol 250mg",
+            "dosage": "1 comprimido y medio",
+            "frequency": "Cada 12 hs",
+            "durationDays": 7,
+            "indications": "Administrar con alimento. Mantener hidratación oral continua."
+          }
+        },
+        {
+          "step": 5,
+          "action": "Verificar generación de código QR SENASA",
+          "selector": "data-testid=prescription-success-container",
+          "assertion": "Imagen QR oficial visible con data-testid='prescription-qr-image'"
+        },
+        {
+          "step": 6,
+          "action": "Finalizar consulta médica telemática",
+          "endpoint": "PATCH /api/consultations/:id/complete",
+          "assertion": "Consulta transiciona a status COMPLETED"
+        }
+      ],
+      "expectedOutcome": {
+        "status": "COMPLETED",
+        "prescriptionCreated": true,
+        "qrCodeValid": true
+      }
+    },
+    {
+      "id": "public-prescription-verification",
+      "name": "Verificación Pública y Farmacéutica de Receta Digital QR",
+      "priority": "P1",
+      "role": "PUBLIC",
+      "description": "Acceso libre de farmacéutico o tutor sin sesión a la URL pública de la receta médica oficial para verificar matrícula profesional, firma electrónica y posología.",
+      "preconditions": [
+        "Receta médica previamente emitida en el sistema con ID conocido"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Acceso anónimo a la URL de verificación de receta",
+          "route": "/prescriptions/:id",
+          "endpoint": "GET /api/prescriptions/:id"
+        },
+        {
+          "step": 2,
+          "action": "Verificar membrete institucional y firma digital",
+          "selector": "data-testid=prescription-header-title",
+          "assertion": "Texto 'RECETA MÉDICA VETERINARIA DIGITAL' y badge de documento oficial firmado"
+        },
+        {
+          "step": 3,
+          "action": "Verificar datos del profesional prescriptor",
+          "selector": "data-testid=prescription-vet-name",
+          "assertion": "Nombre del médico veterinario y matrícula provincial/nacional visible"
+        },
+        {
+          "step": 4,
+          "action": "Verificar detalle farmacológico Rp/",
+          "selectors": [
+            "data-testid=rx-medication",
+            "data-testid=rx-dosage-frequency",
+            "data-testid=rx-duration",
+            "data-testid=rx-indications"
+          ],
+          "assertion": "Fármaco, posología e indicaciones coinciden con el registro inmutable"
+        },
+        {
+          "step": 5,
+          "action": "Verificar código QR y botón de impresión física",
+          "selectors": [
+            "data-testid=prescription-qr-code",
+            "data-testid=print-prescription-button"
+          ],
+          "assertion": "Código QR escaneable presente y botón de impresión listo con print:hidden"
+        }
+      ],
+      "expectedOutcome": {
+        "verified": true,
+        "authentic": true,
+        "signatureValid": true
+      }
+    },
+    {
+      "id": "admin-vet-audit",
+      "name": "Auditoría y Aprobación de Matrícula Veterinaria por Administrador",
+      "priority": "P1",
+      "role": "ADMIN",
+      "description": "El administrador del sistema ingresa al panel de fiscalización, audita la documentación y matrícula de un veterinario postulante y aprueba su habilitación legal.",
+      "preconditions": [
+        "Usuario ADMIN autenticado en el sistema",
+        "Existe al menos un profesional con vetStatus='PENDING' y licenseNumber informado"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Iniciar sesión como Administrador",
+          "route": "/login",
+          "endpoint": "POST /api/auth/login",
+          "credentials": {
+            "email": "admin@vetconnect.test",
+            "password": "AdminPassword123!"
+          }
+        },
+        {
+          "step": 2,
+          "action": "Navegar a la consola de fiscalización de matrículas",
+          "route": "/admin/vets",
+          "selector": "data-testid=admin-vets-page"
+        },
+        {
+          "step": 3,
+          "action": "Inspeccionar ficha del postulante en estado pendiente",
+          "selector": "data-testid=vet-row-:id",
+          "assertion": "Matrícula visible y badge en estado PENDING"
+        },
+        {
+          "step": 4,
+          "action": "Aprobar matrícula profesional",
+          "selector": "data-testid=approve-vet-:id-button",
+          "endpoint": "PATCH /api/admin/vets/:id/approve",
+          "assertion": "Llamada HTTP exitosa con código 200"
+        },
+        {
+          "step": 5,
+          "action": "Verificar actualización de estado",
+          "assertion": "El estado del veterinario transiciona a APPROVED y se registra AuditLog"
+        }
+      ],
+      "expectedOutcome": {
+        "vetStatus": "APPROVED",
+        "auditLogged": true,
+        "emailNotificationSent": true
+      }
+    }
+  ]
+}
