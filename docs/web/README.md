@@ -100,6 +100,7 @@ flowchart LR
 
 ## ⚡ 5. Cómo Utilizar esta Documentación
 
+- **Para Agentes de IA Autónomos (Google Jules, Antigravity, Claude Code):** Consultar en primera instancia [`docs/web/AGENT_CODING_SPEC.md`](./AGENT_CODING_SPEC.md) y [`docs/TECH_REFERENCE.md`](../TECH_REFERENCE.md) conforme al **ADR-025 (Jerarquía Inmutable de Verdad - SSOT)** antes de procesar wireframes descriptivos. Si existe cualquier disparidad entre un wireframe narrativo y el esquema Prisma o endpoints REST reales, los contratos de `TECH_REFERENCE.md` y `AGENT_CODING_SPEC.md` tienen precedencia absoluta al 100%.
 - **Para Diseñadores UI/UX:** Consultar `06_SISTEMA_DE_DISENO_UI_KIT.md`, `09_PLANIFICACION_UI_ALTA_FIDELIDAD_CODE_FIRST.md` y `11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md` para explorar los componentes aislados en Storybook (`http://localhost:6006`), auditar estados de UI y sincronizar con Figma vía `html.to.design`.
 - **Para Desarrolladores Frontend:** Consultar `06_SISTEMA_DE_DISENO_UI_KIT.md`, `08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md`, `10_OPTIMIZACION_PERFORMANCE_SEO_Y_ACCESIBILIDAD.md` y `11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md` para el desarrollo de componentes en Storybook, integración en pantallas de React 18, accesibilidad WCAG y ejecución de TestSprite.
 - **Para Auditores y Líderes de Proyecto:** Utilizar `07_AUDITORIA_UX_USABILIDAD_Y_ACCESIBILIDAD.md`, `10_OPTIMIZACION_PERFORMANCE_SEO_Y_ACCESIBILIDAD.md` y `11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md` como lista de chequeo indispensable y matriz de escenarios E2E.

@@ -48,6 +48,8 @@ El mapa del sitio web se divide en tres dominios principales: **Portal Público 
 
 > 📌 **Aclaración de Arquitectura de Navegación SPA (React Router):**
 > Vistas como "Ficha de Mascota", "Historial Clínico" o "Cuestionario de Triage" no son páginas separadas con rutas dedicadas en React Router. Se implementan como **estados internos, paneles tabulados o modales interactivos** dentro de las páginas contenedoras `DashboardClient.tsx` y `DashboardVet.tsx`. Las únicas rutas canónicas de navegación SPA registradas en `App.tsx` son: `/`, `/login`, `/register`, `/client/dashboard`, `/vet/dashboard`, `/call/:id`, `/prescriptions/:id`, `/admin/vets` y `/admin/dashboard`.
+
+> 📌 **Fuente Única de Verdad (SSOT):** La tabla exhaustiva de rutas, roles requeridos y componentes asociados se encuentra formalmente congelada en [`docs/web/AGENT_CODING_SPEC.md (§1)`](./AGENT_CODING_SPEC.md#1-rutas-canónicas-react-router).
 ```
 
 ---
