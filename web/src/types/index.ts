@@ -38,12 +38,16 @@ export interface User {
   updatedAt: string;
 }
 
-export interface BadgeProps {
+export interface BaseComponentProps {
+  className?: string;
+  'data-testid'?: string;
+}
+
+export interface BadgeProps extends BaseComponentProps {
   variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'online' | 'offline' | 'green' | 'yellow' | 'red' | 'rojo' | 'amarillo' | 'verde';
   size?: 'sm' | 'md';
   children: React.ReactNode;
   icon?: React.ReactNode;
-  className?: string;
 }
 
 export interface Pet {

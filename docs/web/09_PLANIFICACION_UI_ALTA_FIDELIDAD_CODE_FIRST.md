@@ -22,7 +22,7 @@
 
 > 🤖 **Directiva Imperativa para Agentes de IA:**  
 > Toda nueva vista o refactorización de pantallas en `web/src/pages/` DEBE estructurarse consumiendo los componentes atómicos y moleculares reutilizables de `web/src/components/ui/` (`<Button>`, `<Input>`, `<Badge>`, etc.) en lugar de escribir elementos HTML nativos con clases Tailwind duplicadas en línea.  
-> ⚠️ **Protocolo No Destructivo:** Las pantallas funcionales actuales (Nivel 4.5) no deben borrarse ni reescribirse masivamente de golpe. Se debe seguir la **Estrategia de Refactorización Progresiva** ([`11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md#24-estrategia-de-refactorización-progresiva-de-páginas-monolíticas-a-componentes-atómicos`](./11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md#24-estrategia-de-refactorización-progresiva-de-páginas-monolíticas-a-componentes-atómicos)), extrayendo cada componente a `components/ui/`, probándolo en Storybook (`.stories.tsx`), y luego reemplazándolo limpiamente en la página preservando en todo momento los 29 tests web en verde.
+> ⚠️ **Protocolo No Destructivo:** Las pantallas funcionales actuales (Nivel 4.5) no deben borrarse ni reescribirse masivamente de golpe. Se debe seguir la **Estrategia de Refactorización Progresiva** ([`11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md#24-estrategia-de-refactorización-progresiva-de-páginas-monolíticas-a-componentes-atómicos`](./11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md#24-estrategia-de-refactorización-progresiva-de-páginas-monolíticas-a-componentes-atómicos)), extrayendo cada componente a `components/ui/`, probándolo en Storybook (`.stories.tsx`), y luego reemplazándolo limpiamente en la página preservando en todo momento la suite completa de pruebas automatizadas en verde (123 tests).
 
 A continuación se detalla la especificación visual, la disposición de elementos, las clases de Tailwind CSS, los estados interactivos y la accesibilidad para las 7 pantallas clave de VetConnect Web.
 
@@ -244,11 +244,11 @@ A continuación se detalla la especificación visual, la disposición de element
 2. **Alertas y Notificaciones Contextuales:**
    - Banner de confirmación Toast (`admin-toast-notification`) para decisiones procesadas exitosamente o mensajes de error.
 3. **Tabla de Verificación Profesional:**
-   - Columnas: `Nombre Profesional`, `Email`, `Matrícula` (destacada en tipografía monoespaciada), `Especialidad`, `Fecha Registro`, `Acciones de Auditoría`.
+   - Columnas: `Nombre Profesional`, `Email`, `Matrícula` (destacada en tipografía monoespaciada), `Especialidad` (el selector `data-testid="vet-speciality-{id}"` muestra la información profesional contenida en `bio` o presentación en UI, ya que en el modelo relacional la persistencia reside en el campo `bio`), `Fecha Registro`, `Acciones de Auditoría`.
    - Estado vacío (*Empty State*): *"Sin registros de veterinarios pendientes de aprobación"* cuando la cola está al día.
 4. **Modales y Acciones de Decisión:**
    - **Aprobación Directa:** Habilita el estado `APPROVED` (`vetStatus: 'APPROVED'`) notificando inmediatamente al profesional para iniciar guardias activas.
-   - **Modal de Rechazo Motivado:** Requiere justificación formal del rechazo (`vetStatus: 'REJECTED'`), registrando la auditoría y aplicando soft-delete si corresponde.
+   - **Modal de Rechazo Motivado:** Cada acción genera un registro inmutable en `audit_logs` con `admin_id`, `action` (`'APPROVE_VET'` | `'REJECT_VET'`), `target_id` (ID del veterinario), `ip_address` y `details` (`{ reason }`). El rechazo actualiza `vetStatus` a `'REJECTED'` sin aplicar soft-delete.
 
 ---
 

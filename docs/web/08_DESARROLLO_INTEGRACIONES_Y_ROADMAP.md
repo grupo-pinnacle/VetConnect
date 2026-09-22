@@ -154,8 +154,7 @@ flowchart LR
 - **Fiscalización de Matrículas Veterinarias (`/api/admin/vets/*`):**
   - La consola [`AdminVets.tsx`](../../web/src/pages/AdminVets.tsx) interactúa con el módulo `admin` mediante:
     - `GET /api/admin/vets/pending`: Retorna la lista de profesionales con `vetStatus: 'PENDING'`.
-    - `PATCH /api/admin/vets/:id/approve`: Transiciona la cuenta a `vetStatus: 'APPROVED'` y genera un registro en `AuditLog` (`action: 'USER_VERIFIED'`).
-    - `PATCH /api/admin/vets/:id/reject`: Requiere cuerpo `{ reason: string }`, transiciona la cuenta a `vetStatus: 'REJECTED'` y genera un registro en `AuditLog` (`action: 'USER_REJECTED'`).
+    - Cada acción genera un registro inmutable en `audit_logs` con `admin_id`, `action` (`'APPROVE_VET'` | `'REJECT_VET'`), `target_id` (ID del veterinario), `ip_address` y `details` (`{ reason }`). El rechazo actualiza `vetStatus` a `'REJECTED'` sin aplicar soft-delete.
 - **Conmutación de Guardia y Perfil (`PATCH /api/users/profile` & `GET /api/auth/me`):**
   - El switch interactivo de guardia en [`DashboardVet.tsx`](../../web/src/pages/DashboardVet.tsx) emite ráfagas `PATCH /api/users/profile` con `{ isOnline: true | false }` para unirse o salir de la cola en vivo de atención.
   - [`AuthContext.tsx`](../../web/src/context/AuthContext.tsx) consume `GET /api/auth/me` con el token de memoria para rehidratar el estado de autenticación tras una recarga de página (*F5*).
@@ -181,7 +180,7 @@ Antes de cualquier despliegue a producción, la plataforma web atraviesa un plan
 
 ### 3.3 Testing Automatizado & Verificación Empírica Realizada
 
-La suite completa del monorepo cuenta con **36 suites / 123 tests automatizados (100% pasando, 0 fallos)**, cubriendo contratos, autenticación JWT, sockets clínicos, WebRTC LiveKit, navegación y telemetría Sentry en los 3 workspaces (`backend`, `web`, `mobile`).
+El monorepo cuenta con la suite completa de pruebas automatizadas en verde (123 tests), cubriendo contratos, autenticación JWT, sockets clínicos, WebRTC LiveKit, navegación y telemetría Sentry en los 3 workspaces (`backend`, `web`, `mobile`).
 
 > 📖 **Registro Canónico de Resultados de Consola:**  
 > Para consultar la tabla detallada de tiempos de ejecución por suite, comandos de verificación y métricas de bundle por capa, remitirse al documento canónico:  

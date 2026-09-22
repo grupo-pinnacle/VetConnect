@@ -279,8 +279,7 @@ Si el tutor presiona `[ CANCELAR SOLICITUD ]`, ejecuta `PATCH /api/consultations
 | +----------------------+--------------------+------------+------------------+----------------+----------------+ |
 +-------------------------------------------------------------------------------------------------------------+
 | TRAZABILIDAD Y AUDITORÍA INMUTABLE (AuditLog Backend - ADR-014):                                             |
-| Cada acción de aprobación o rechazo genera automáticamente un registro inmutable en PostgreSQL (tabla      |
-| audit_logs) con user_id, action (USER_VERIFIED / USER_REJECTED), target_id, IP y User-Agent.                 |
+Cada acción genera un registro inmutable en audit_logs con admin_id, action ('APPROVE_VET' | 'REJECT_VET'), target_id (ID del veterinario), ip_address y details ({ reason }). El rechazo actualiza vetStatus a 'REJECTED' sin aplicar soft-delete. |
 +-------------------------------------------------------------------------------------------------------------+
 ```
 
