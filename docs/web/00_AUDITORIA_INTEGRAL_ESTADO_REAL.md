@@ -107,57 +107,7 @@ Para desplegar este sistema en internet real (no `localhost`), los siguientes re
 
 ## 🚀 6. Estrategia Concreta de Despliegue a Internet
 
-Siguiendo la guía oficial en [`docs/DEPLOY.md`](../DEPLOY.md):
-
-```mermaid
-flowchart TD
-    subgraph Usuarios["Internet Público"]
-        Tutor["📱 App Android (Tutor)"]
-        Vet["💻 Web SPA (Veterinario / Admin)"]
-    end
-
-    subgraph Edge["Vercel Edge Network (ADR-022)"]
-        Vercel["⚡ Web SPA React 18 + Vite\napp.vetconnect.com.ar\n(vercel.json SPA rewrite)"]
-    end
-
-    subgraph BackendHost["VPS Propio / Coolify (ADR-017)"]
-        Traefik["🛡️ Traefik Reverse Proxy (SSL Automático)"]
-        DockerAPI["⚙️ Backend Express 5 (Docker non-root)\napi.vetconnect.com.ar"]
-        RedisServ[("🔴 Redis 7 (Sockets & Cache)")]
-        PostgresDB[("🐘 PostgreSQL 16")]
-    end
-
-    subgraph CloudSFU["LiveKit Cloud"]
-        SFU["🎥 LiveKit WebRTC SFU (720p)"]
-    end
-
-    Vet -->|HTTPS| Vercel
-    Vet -->|WSS / HTTPS| Traefik
-    Tutor -->|WSS / HTTPS| Traefik
-    Traefik --> DockerAPI
-    DockerAPI --> RedisServ
-    DockerAPI --> PostgresDB
-    DockerAPI -.->|Token Grant| SFU
-    Vet ==>|Media RTP| SFU
-    Tutor ==>|Media RTP| SFU
-```
-
-### 1. Frontend Web (Vercel):
-- Conectar el repositorio GitHub en Vercel.
-- **Root Directory:** `web`.
-- **Framework Preset:** `Vite`.
-- **Variables de Entorno:**
-  - `VITE_API_URL=https://api.vetconnect.com.ar`
-  - `VITE_WS_URL=https://api.vetconnect.com.ar`
-- El archivo [`web/vercel.json`](../../web/vercel.json) ya configurado garantiza que las rutas internas de React Router no devuelvan error 404 al recargar.
-
-### 2. Backend & Base de Datos (Coolify en VPS):
-- En un VPS con Ubuntu 22.04 / 24.04 (Hetzner, DigitalOcean o Hostinger VPS), instalar Coolify con un solo comando.
-- Desplegar el backend apuntando al Dockerfile existente ([`backend/Dockerfile`](../../backend/Dockerfile)), el cual ejecuta un contenedor multi-stage seguro bajo usuario no privilegiado `node`.
-
-### 3. Aplicación Móvil (React Native / Expo SDK 54):
-- **Para fase piloto / pruebas clínicas inmediatas:** Compilar el archivo instalable directo `.apk` con EAS (`npx eas-cli build --platform android --profile preview`) y publicarlo para descarga directa en la web. No requiere pago de licencias a Google.
-- **Para publicación comercial masiva:** Generar el paquete `.aab` (`--profile production`) y publicarlo en Google Play Store (pago único de $25 USD).
+> 📌 Para la topología de red detallada, configuración SSL y variables de producción, consultar [docs/DEPLOY.md](../../docs/DEPLOY.md) y [docs/web/08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md (§5.1)](./08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md#51-topología-de-despliegue-en-producción-vercel--coolify).
 
 ---
 

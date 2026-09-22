@@ -24,6 +24,7 @@ flowchart LR
 - **Empaquetador y Build Tool:** **Vite 6** con soporte de Hot Module Replacement (HMR) sub-milisegundo y optimización de assets con Rollup.
 - **Estilizado & Tokens:** **Tailwind CSS v3** mapeando con exactitud la paleta 60-30-10 (`#F8FAFC`, `#0F172A`, `#2563EB`, etc.) y las sombras por capas (*layered shadows*).
 - **Consumo de Datos & Cache:** **useState + useEffect llamando directamente a api.ts** en las páginas vivas actuales (`DashboardClient.tsx`, `DashboardVet.tsx`, `AdminVets.tsx`). `QueryClientProvider` está configurado en `App.tsx` para adopción futura en componentes atómicos.
+  > ⚠️ **Directiva de Integridad para Tests:** Las páginas actuales (`DashboardClient`, `DashboardVet`) operan de forma blindada mediante `useState` + `useEffect` consumiendo la instancia Axios centralizada (`services/api.ts`). Queda terminantemente prohibido reemplazarlos por hooks de `useQuery` hasta que se configure el helper `renderWithClient` en `__tests__/test-utils.tsx`. TanStack Query v5 se reserva exclusivamente para nuevos componentes atómicos aislados y cache modular futuro.
 - **Gestión de Sesión & Estado:** **React Context (`AuthContext`)** con almacenamiento del `accessToken` estrictamente en memoria de JS y refresco silencioso mediante cookies `HttpOnly` contra `/api/auth/refresh`. Integra un patrón de cola en Axios (`failedQueue`) para mitigar condiciones de carrera ante múltiples llamadas simultáneas con token vencido. *(Nota: Zustand se reserva para la persistencia nativa en la app móvil en `mobile/src/lib/authStore.ts`)*.
 - **WebRTC & Video:** **LiveKit Components React** (`@livekit/components-react`), implementando la sala sin duplicar audio renderers (cero eco WebRTC).
 - **WebSockets:** **Socket.io Client** con reconexión automática y canal bidireccional por consulta.
@@ -120,7 +121,7 @@ flowchart TB
 ### 2.6 Integración 6: Flujo de Cierre de Consulta y Calificación Post-Atención
 
 **Protocolo de Cierre y Reseña Médica:**
-Cuando el veterinario finaliza la consulta (`PATCH /api/consultations/:id/complete`), el estado pasa a `COMPLETED`. En el tutor, al detectar `status === 'COMPLETED'` (vía polling o evento `call:ended`), `ConsultationRoom.tsx` desmonta `<CallRoom>` y despliega en la misma pantalla el `ReviewModal` como overlay de cierre. Una vez que el tutor envía la calificación (`POST /api/consultations/:id/review`) o presiona "Omitir", la aplicación ejecuta `navigate('/client/dashboard')`.
+Cuando el veterinario finaliza la consulta (`PATCH /api/consultations/:id/complete`), el estado pasa a `COMPLETED`. En el tutor, al detectar `status === 'COMPLETED'` (vía polling HTTP cada 5s a `GET /api/consultations/:id` o captura del evento de desconexión WebRTC de LiveKit `RoomEvent.Disconnected`), `ConsultationRoom.tsx` desmonta `<CallRoom>` y despliega en la misma pantalla el `ReviewModal` como overlay de cierre. Una vez que el tutor envía la calificación (`POST /api/consultations/:id/review`) o presiona "Omitir", la aplicación ejecuta `navigate('/client/dashboard')`. *(Nota: En v2.0 queda prohibido registrar listeners socket no tipados en el backend)*.
 
 El ciclo de vida completo de una consulta médica desde el punto de vista del frontend web es:
 
@@ -129,18 +130,18 @@ flowchart LR
     A["ConsultationRoom\n(status: ACTIVE)"] --> B["Vet presiona\n'Finalizar Consulta'"]
     B --> C["PATCH /api/consultations/:id/complete\n{ diagnosisNotes: string }"]
     C --> D["Consulta → status: COMPLETED"]
-    D --> E["navigate(-1) a DashboardVet"]
-    D --> F["Cliente recibe notificación\n(Socket.io o polling)"]
-    F --> G["ReviewModal abre en\nDashboardClient"]
-    G --> H["POST /api/consultations/:id/review\n{ rating: 1-5, comment?: string }"]
-    H --> I["Calificación guardada\n(ADR-023)"]
+    D --> E["Vet: navigate(-1)\na DashboardVet"]
+    D --> F["Cliente detecta COMPLETED\n(Polling 5s / Disconnected)"]
+    F --> G["ConsultationRoom desmonta CallRoom\ny despliega ReviewModal (Overlay)"]
+    G --> H["Cliente califica o salta\n(POST /api/consultations/:id/review)"]
+    H --> I["navigate('/client/dashboard')\ncon Feedback Confirmado"]
 ```
 
 **Notas de implementación para el agente de IA que construya el frontend:**
 
 1. **Hang-up (VET):** El botón "Finalizar Consulta" en `ConsultationRoom.tsx` debe llamar `PATCH /api/consultations/:id/complete` con `{ diagnosisNotes }` ANTES de navegar. El `navigate(-1)` actual (sin llamar al endpoint) es un gap conocido del MVP v2.0 que debe corregirse en la fase de desarrollo.
 
-2. **Review Modal (CLIENT):** Tras detectar `consultation.status === 'COMPLETED'` (via polling o Socket.io), `DashboardClient.tsx` debe mostrar un `ReviewModal` con un selector de 1 a 5 estrellas y un textarea opcional, ejecutando `POST /api/consultations/:id/review`.
+2. **Review Modal (CLIENT):** Tras detectar `consultation.status === 'COMPLETED'`, `ConsultationRoom.tsx` desmonta el contenedor de llamada y presenta en la misma pantalla el `ReviewModal` como pantalla final de cierre. Una vez enviada la reseña (`POST /api/consultations/:id/review`) o presionado el botón "Omitir", la aplicación redirige al tutor a `/client/dashboard`.
 
 3. **Cancel Flow:** `PATCH /api/consultations/:id/cancel` está disponible para CLIENT y ADMIN. Debe ofrecerse como opción si el tiempo de espera en sala supera un umbral o el tutor decide abandonar.
 
@@ -184,7 +185,7 @@ La suite completa del monorepo cuenta con **36 suites / 123 tests automatizados 
 
 > 📖 **Registro Canónico de Resultados de Consola:**  
 > Para consultar la tabla detallada de tiempos de ejecución por suite, comandos de verificación y métricas de bundle por capa, remitirse al documento canónico:  
-> 👉 [**`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#2-métricas-clave-y-verificación-empírica-en-vivo`**](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#2-métricas-clave-y-verificación-empírica-en-vivo).
+> 👉 [**`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#2-definición-del-nivel-de-madurez-actual-nivel-45--5-pre-gold-master--staging-ready`**](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#2-definición-del-nivel-de-madurez-actual-nivel-45--5-pre-gold-master--staging-ready).
 
 ---
 

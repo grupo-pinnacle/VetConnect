@@ -171,7 +171,7 @@ Las decisiones visuales de VetConnect Web se sustentan en principios científico
 
 ---
 
-## 7. Metodología de Sincronización Diseño-Código: Flujo Híbrido Virtuoso (Storybook + Figma + html.to.design)
+## 7. Metodología Híbrida Storybook + Figma
 
 En el desarrollo de software médico de alta fidelidad, la colaboración entre diseño y desarrollo suele verse ralentizada por la desconexión entre herramientas estáticas de prototipado y el código interactivo en producción.
 

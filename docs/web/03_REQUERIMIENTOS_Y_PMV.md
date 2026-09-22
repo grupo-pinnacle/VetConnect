@@ -9,7 +9,7 @@
 
 ## 1. Usuario, Necesidad y Solución Web
 
-> 📌 Ver arquetipos de usuario canónicos y mapas de empatía en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-proto-personas).
+> 📌 Ver arquetipos de usuario canónicos y mapas de empatía en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-y-contexto-real-de-uso).
 
 Todo sistema digital nace a partir de una necesidad insatisfecha. En VetConnect, la necesidad primaria es conectar en tiempo real a tutores de animales en situaciones de duda o urgencia clínica con médicos veterinarios matriculados, eliminando barreras geográficas y reduciendo la incertidumbre médica mediante herramientas telemédicas seguras.
 
