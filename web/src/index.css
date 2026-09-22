@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Modern Web Guidance: Defer rendering of off-screen content to accelerate LCP */
+.section-deferred {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 600px;
+}

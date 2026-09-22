@@ -380,7 +380,7 @@ export const Landing: React.FC = () => {
           <section
             id="app-mobile"
             data-testid="apk-download-banner"
-            className="w-full max-w-4xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 sm:p-10 shadow-xl mb-16 flex flex-col md:flex-row items-center justify-between gap-8 text-left relative overflow-hidden"
+            className="w-full max-w-4xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 sm:p-10 shadow-xl mb-16 flex flex-col md:flex-row items-center justify-between gap-8 text-left relative overflow-hidden section-deferred"
           >
             {/* Decoración luminosa de fondo */}
             <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -423,7 +423,7 @@ export const Landing: React.FC = () => {
           </section>
 
           {/* 6. Respaldo Legal, Ética Médica & Seguridad */}
-          <section id="marco-legal" className="w-full max-w-5xl mb-16 text-left" data-testid="features-section">
+          <section id="marco-legal" className="w-full max-w-5xl mb-16 text-left section-deferred" data-testid="features-section">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 mb-2">
                 Seguridad Jurídica y Rigor Clínico
@@ -493,7 +493,7 @@ export const Landing: React.FC = () => {
       </main>
 
       {/* 7. Footer Institucional */}
-      <footer id="ayuda" className="bg-white border-t border-slate-200 py-10 px-6 text-center text-xs text-slate-500" data-testid="landing-footer">
+      <footer id="ayuda" className="bg-white border-t border-slate-200 py-10 px-6 text-center text-xs text-slate-500 section-deferred" data-testid="landing-footer">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">

@@ -8,7 +8,12 @@
     <meta name="description" content="Conectate en menos de 5 minutos con médicos veterinarios matriculados por videollamada HD. Recibí tu receta oficial SENASA con código QR." />
     <link rel="canonical" href="https://app.vetconnect.com.ar/" />
 
-    <!-- Google Fonts Preconnect & Optimized Loading -->
+    <!-- PWA & Mobile Navigation Meta Tags -->
+    <meta name="theme-color" content="#2563EB" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Google Fonts Preconnect & Optimized Loading with display=swap -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -28,51 +33,107 @@
     <meta name="twitter:description" content="Atención médica veterinaria inmediata por videoconsulta HD y recetas digitales con QR." />
     <meta name="twitter:image" content="https://app.vetconnect.com.ar/assets/og-banner.jpg" />
 
-    <!-- Schema.org JSON-LD -->
+    <!-- Schema.org JSON-LD Enriquecido (Google Rich Results Graph) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "VeterinaryCare",
-      "@id": "https://app.vetconnect.com.ar/#organization",
-      "name": "VetConnect — Telemedicina Veterinaria Oficial",
-      "url": "https://app.vetconnect.com.ar",
-      "logo": "https://app.vetconnect.com.ar/assets/logo-vetconnect.png",
-      "image": "https://app.vetconnect.com.ar/assets/og-banner.jpg",
-      "description": "Plataforma oficial de telemedicina veterinaria de guardia 24 horas en Argentina. Videoconsultas en tiempo real con médicos matriculados y recetas digitales SENASA con QR.",
-      "telephone": "+54-11-5555-VET",
-      "priceRange": "$$",
-      "openingHoursSpecification": [
+      "@graph": [
         {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": [
-            "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+          "@type": "VeterinaryCare",
+          "@id": "https://app.vetconnect.com.ar/#veterinary-care",
+          "name": "VetConnect — Guardia Veterinaria Oficial 24/7",
+          "url": "https://app.vetconnect.com.ar",
+          "logo": "https://app.vetconnect.com.ar/assets/logo-vetconnect.png",
+          "image": "https://app.vetconnect.com.ar/assets/og-banner.jpg",
+          "description": "Plataforma oficial de telemedicina veterinaria y guardia 24 horas en Argentina. Videoconsultas en tiempo real con médicos veterinarios matriculados y emisión de recetas digitales homologadas bajo normativa SENASA Res. 1442/2021.",
+          "telephone": "+54-11-5555-VET",
+          "priceRange": "$$",
+          "areaServed": "AR",
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+              ],
+              "opens": "00:00",
+              "closes": "23:59"
+            }
           ],
-          "opens": "00:00",
-          "closes": "23:59"
-        }
-      ],
-      "availableService": [
-        {
-          "@type": "MedicalService",
-          "name": "Videoconsulta Veterinaria de Urgencia",
-          "serviceType": "Telemedicine",
-          "availableChannel": {
-            "@type": "ServiceChannel",
-            "serviceUrl": "https://app.vetconnect.com.ar"
+          "availableService": [
+            {
+              "@type": "MedicalService",
+              "name": "Videoconsulta Veterinaria de Urgencia 24/7",
+              "serviceType": "Telemedicine",
+              "availableChannel": {
+                "@type": "ServiceChannel",
+                "serviceUrl": "https://app.vetconnect.com.ar"
+              }
+            },
+            {
+              "@type": "MedicalService",
+              "name": "Emisión de Receta Digital Oficial SENASA",
+              "serviceType": "DigitalPrescription"
+            }
+          ],
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "15420",
+            "bestRating": "5"
           }
         },
         {
-          "@type": "MedicalService",
-          "name": "Emisión de Receta Digital Oficial SENASA",
-          "serviceType": "DigitalPrescription"
+          "@type": "MedicalOrganization",
+          "@id": "https://app.vetconnect.com.ar/#medical-organization",
+          "name": "Cuerpo Médico Veterinario & Directores Técnicos VetConnect",
+          "url": "https://app.vetconnect.com.ar",
+          "medicalSpecialty": "Veterinary",
+          "description": "Red de directores técnicos y profesionales médicos veterinarios matriculados ante colegios oficiales (CVPBA y afines) bajo estricto cumplimiento de la Ley 25.326 de Protección de Datos Personales y protocolos Zero PII."
+        },
+        {
+          "@type": "EducationalOrganization",
+          "@id": "https://app.vetconnect.com.ar/#educational-origin",
+          "name": "Polo Educativo de Mataderos — Escuela Técnica N° 20 D.E. 20 'Carolina Muzilli'",
+          "url": "https://app.vetconnect.com.ar",
+          "description": "Institución educativa pública técnica de origen del proyecto telemédico de impacto social VetConnect (Proyectos Integrados III, Especialidad Computación)."
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://app.vetconnect.com.ar/#breadcrumbs",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://app.vetconnect.com.ar/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Iniciar Sesión",
+              "item": "https://app.vetconnect.com.ar/login"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Registro",
+              "item": "https://app.vetconnect.com.ar/register"
+            },
+            {
+              "@type": "ListItem",
+              "position": 4,
+              "name": "Recetas Oficiales SENASA",
+              "item": "https://app.vetconnect.com.ar/prescriptions"
+            }
+          ]
         }
-      ],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "reviewCount": "15420",
-        "bestRating": "5"
-      }
+      ]
     }
     </script>
   </head>
