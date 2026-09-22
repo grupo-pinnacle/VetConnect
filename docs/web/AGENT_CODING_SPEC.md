@@ -39,7 +39,7 @@
 | `/register` | `pages/Register.tsx` | Público |
 | `/client/dashboard` | `pages/DashboardClient.tsx` | `CLIENT` |
 | `/vet/dashboard` | `pages/DashboardVet.tsx` | `VET` |
-| `/call/:id` | `pages/ConsultationRoom.tsx` | `CLIENT` + `VET` |
+| `/call/:id` | `pages/ConsultationRoom.tsx` | `CLIENT, VET, ADMIN` |
 | `/prescriptions/:id` | `pages/PrescriptionView.tsx` | **Público** ⚠️ Sin ProtectedRoute — farmacias y SENASA escanean QR sin cuenta |
 | `/admin/vets` | `pages/AdminVets.tsx` | `ADMIN` |
 | `/admin/dashboard` | `pages/AdminVets.tsx` | `ADMIN` (alias — mismo componente, NO existe AdminDashboard.tsx) |
@@ -233,6 +233,7 @@ export function cn(...inputs: (string | undefined | null | false)[]): string {
 - `HangUpButton.tsx` — props: `HangUpButtonProps` — NO duplicar controles de `<VideoConference />`
 - `PrescriptionDoc.tsx` — props: `PrescriptionDocProps`
 - `PrescriptionModal.tsx` — props: `PrescriptionModalProps` (modal HTML5 nativo, sin Radix)
+  > 💡 **Nota de Ubicación de PrescriptionModal:** En el código vivo de v2.0, el formulario y modal de prescripción reside embebido en `web/src/pages/DashboardVet.tsx`. Durante la extracción atómica de Fase 3, debe modularizarse en `web/src/components/ui/PrescriptionModal.tsx` para ser consumido tanto por el dashboard como por `ConsultationRoom.tsx`.
 - `ReviewModal.tsx` — props: `ReviewModalProps` — renderizado por ConsultationRoom cuando `phase === 'completed'`
 
 **Regla para extracción atómica (anti-rotura de tests):**

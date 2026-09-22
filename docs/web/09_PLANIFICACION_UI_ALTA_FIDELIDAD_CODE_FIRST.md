@@ -78,6 +78,7 @@ A continuación se detalla la especificación visual, la disposición de element
    - `flex bg-slate-100 p-1 rounded-xl mb-6`:
      - Pestaña `[ 🐾 Tutor ]`: `w-1/2 py-2 text-center text-sm font-semibold rounded-lg transition-all` (`bg-white text-slate-900 shadow-sm` cuando está activo).
      - Pestaña `[ 🩺 Veterinario ]`: `w-1/2 py-2 text-center text-sm font-semibold rounded-lg transition-all`.
+   > ⚠️ **Nota Canónica:** El selector de rol por pestañas aplica **exclusivamente a `Register.tsx`**. La pantalla de `Login.tsx` es un formulario unificado por email y contraseña sin selección de rol, donde el backend resuelve el perfil del usuario.
 4. **Campos de Formulario:**
    - Label flotante o superior: `text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5`.
    - Input de correo: `w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-colors text-slate-900`.
