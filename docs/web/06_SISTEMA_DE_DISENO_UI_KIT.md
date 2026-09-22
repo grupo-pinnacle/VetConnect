@@ -32,8 +32,7 @@ El portal web adopta el estilo **Clean Clinical Modernism (Modernismo Clínico L
 - **Bordes Amigables:** Curvaturas redondeadas (`rounded-xl` / 12px en tarjetas e inputs, `rounded-full` en badges y avatares) que suavizan la tensión visual.
 - **Elevación por Capas Sutiles:** Sombras difusas (`shadow-sm`, `shadow-md`) que generan profundidad tridimensional sin bordes duros artificiales.
 
-> 🎨 **Directiva de Gobernanza Visual & Sincronización con Figma (Damian Orellana):**  
-> El UI Kit y los tokens Tailwind documentados en este archivo representan el sistema de especificaciones acordado con el equipo de diseño y maquetado de UI/UX. Conforme a las directivas de [`AGENTS.md`](../../AGENTS.md) y la metodología de ingeniería colaborativa híbrida detallada en la [Sección 7](#7-metodología-de-sincronización-diseño-código-flujo-híbrido-virtuoso-storybook--figma--htmltodesign), Damian Orellana lidera el diseño visual en Figma mientras los desarrolladores construyen componentes atómicos en Storybook y sincronizan estados en vivo hacia Figma mediante `html.to.design` para la creación del archivo maestro, enriquecimiento estético, empty states e ilustraciones personalizadas sin fricción ni deuda de diseño.
+> 📌 Ver protocolo metodológico completo en la Sección 7 de este documento.
 
 ---
 
@@ -220,7 +219,7 @@ flowchart LR
      - Microinteracciones, refinamientos de espaciado y variantes estéticas.
      - Material gráfico promocional e isotipos institucionales.
 5. **Incorporación Limpia al Repositorio:**
-   - Los assets SVG y micro-ajustes de estilo identificados por Damian se trasladan directamente a los tokens de Tailwind CSS y Storybook, preservando la estabilidad de los 123 tests automatizados del monorepo.
+   - Los assets SVG y micro-ajustes de estilo identificados por Damian se trasladan directamente a los tokens de Tailwind CSS y Storybook, preservando la estabilidad de la suite completa de pruebas automatizadas en verde (123 tests).
 
 ### 7.3 Matriz Comparativa del Modelo Híbrido:
 
@@ -350,7 +349,14 @@ export interface ReviewModalProps extends BaseComponentProps {
   Las páginas existentes (`DashboardClient.tsx`, `DashboardVet.tsx`) actualmente se testean mediante mocks directos de `api.get` y `api.post` sin `QueryClientProvider`. Queda terminantemente prohibido sustituir los bloques `useEffect` por `useQuery` en las páginas hasta que no se configure el helper de test `renderWithClient` en `web/src/__tests__/test-utils.tsx`. La prioridad número 1 es mantener los 29 tests de Vitest en verde.
 
 ### 8.3 Estandarización de Clases CSS (Helper `cn`)
-Para resolver colisiones de clases en componentes atómicos de `web/src/components/ui/`, se utiliza una función utilitaria liviana `cn(...inputs: (string | undefined | null | false)[]) => string` basada en concatenación y filtrado condicional limpio (`inputs.filter(Boolean).join(' ')`), sin añadir dependencias externas pesadas.
+Para resolver colisiones de clases en componentes atómicos de `web/src/components/ui/`, se establece formalmente que la función utilitaria liviana `cn` residirá en `web/src/lib/utils.ts`, basada en concatenación y filtrado condicional limpio sin añadir dependencias externas pesadas:
+
+```typescript
+// web/src/lib/utils.ts
+export function cn(...inputs: (string | undefined | null | false)[]): string {
+  return inputs.filter(Boolean).join(' ');
+}
+```
 
 ### 8.4 Gestión de Estados Resilientes de UI
 Todo componente interactivo o contenedor asíncrono debe contemplar explícitamente los 4 estados canónicos de experiencia de usuario:
@@ -371,7 +377,7 @@ Para preservar la estabilidad de los 29 tests de Vitest durante la extracción a
 | **Dashboard Vet** | `data-testid="badge-priority-rojo"`, `data-testid="badge-priority-amarillo"`, `data-testid="badge-priority-verde"`, `data-testid="emit-prescription-button-{id}"`, `data-testid="input-prescription-medication"`, `data-testid="input-prescription-dosage"`, `data-testid="input-prescription-frequency"`, `data-testid="input-prescription-duration"`, `data-testid="input-prescription-indications"`, `data-testid="save-prescription-button"`, `data-testid="prescription-qr-image"` | `DashboardVet.test.tsx` |
 | **Sala de Llamada (PreJoinModal)** | Heading `"Verificacion Previa de Camara y Microfono"`, Botón `"Ingresar a la Consulta"` | `CallRoom.test.tsx` |
 | **Vista de Receta** | `data-testid="prescription-header-title"`, `data-testid="rx-medication"`, `data-testid="prescription-qr-code"`, `data-testid="print-prescription-button"` | `PrescriptionView.test.tsx` |
-| **Panel Admin Vets** | `data-testid="admin-title"`, `data-testid="vet-row-{id}"`, `data-testid="vet-speciality-{id}"`, `data-testid="approve-vet-button-{id}"`, `data-testid="reject-vet-button-{id}"`, `data-testid="input-reject-reason-{id}"` | `AdminVets.test.tsx` |
+| **Panel Admin Vets** | `data-testid="admin-title"`, `data-testid="vet-row-{id}"`, `data-testid="vet-speciality-{id}"` *(muestra información profesional contenida en `bio` o presentación en UI, ya que en el modelo relacional la persistencia reside en el campo `bio`)*, `data-testid="approve-vet-button-{id}"`, `data-testid="reject-vet-button-{id}"`, `data-testid="input-reject-reason-{id}"` | `AdminVets.test.tsx` |
 | **Modal Admin & Toast UX** | `data-testid="admin-toast-notification"` (text: 'Matrícula aprobada exitosamente' / 'Matrícula rechazada'), `data-testid="input-reject-reason-{id}"`, `data-testid="empty-pending-vets"`, `data-testid="admin-error-alert"` | `AdminVetsModal.test.tsx` |
 | **Página 404** | `data-testid="not-found-code"`, `data-testid="not-found-title"`, `data-testid="not-found-home-button"` | `NotFound.test.tsx` |
 
@@ -379,7 +385,7 @@ Para preservar la estabilidad de los 29 tests de Vitest durante la extracción a
 El orden de implementación atómica de componentes debe respetar la jerarquía de dependencias:
 1. **Fase 1 (Átomos Básicos):** `Badge.tsx`, `Input.tsx`, `Avatar.tsx`
 2. **Fase 2 (Moléculas Clínicas):** `PetCard.tsx`, `TriageSelector.tsx`, `Breadcrumbs.tsx`, `ChatMessage.tsx`
-3. **Fase 3 (Organismos y Controles Complejos):** `CallControls.tsx`, `PrescriptionDoc.tsx`, `PrescriptionModal.tsx`, `ReviewModal.tsx`
+3. **Fase 3 (Organismos y Controles Complejos):** `CallControls.tsx`, `PrescriptionDoc.tsx`, `PrescriptionModal.tsx`, `ReviewModal.tsx` *(entregable atómico nuevo a crear en `web/src/components/ui/ReviewModal.tsx`)*
 
 ---
 *Documento de Sistema de Diseño Web y UI Kit — VetConnect 2026.*

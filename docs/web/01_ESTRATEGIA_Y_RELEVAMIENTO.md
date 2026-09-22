@@ -38,7 +38,7 @@ El proceso de desarrollo web profesional se traduce en 10 acciones concretas dis
 | **4** | **Elegir la plataforma** | Arquitectura SPA React 18.3.1 (LTS/Stable) + Vite + Tailwind CSS sobre Express 5 API | 1 día | Arquitecto de Software |
 | **5** | **Crear el mapa del sitio** | Elaborar árbol web, jerarquía de 3 niveles, menús y breadcrumbs | 2-4 horas | Diseñador UX/UI |
 | **6** | **Diseñar la identidad visual** | Definir tokens, paleta 60-30-10, tipografía y mockups en Figma | 3-7 días | Diseñador UI (Figma Lead) |
-| **7** | **Desarrollar el sitio** | Refactorización Atómica Progresiva en Storybook y Endurecimiento Visual de la SPA — Estado: En Curso (Nivel 4.5 Pre-Gold Master, 123 tests verdes, SPA viva y funcional) | En Curso | Desarrolladores Frontend |
+| **7** | **Desarrollar el sitio** | Refactorización Atómica Progresiva en Storybook y Endurecimiento Visual de la SPA — Estado: En Curso (Nivel 4.5 Pre-Gold Master, suite completa de pruebas automatizadas en verde (123 tests), SPA viva y funcional) | En Curso | Desarrolladores Frontend |
 | **8** | **Cargar el contenido** | Redactar textos clínicos claros, guías de triage y optimizar imágenes | 2-5 días | Copywriter / Especialista Veterinario |
 | **9** | **Hacer pruebas (QA)** | Auditoría de usabilidad (Nielsen), accesibilidad WCAG y cross-browser | 2-3 días | QA Engineer / Equipo UX |
 | **10** | **Publicar y medir** | Despliegue en producción con SSL, Google Analytics y Search Console | 1 día | DevOps / Tech Lead |
@@ -94,7 +94,7 @@ mindmap
       Calificaciones de 1 a 5 estrellas
       Consejos de prevención sanitaria
     Customización
-      Portal adaptativo según rol y preferencias clínicas (Modo Nocturno / Dark Mode diferido como ScopeOut para v2.1+)
+      Portal adaptativo según rol y preferencias clínicas
     Comunicación
       Videoconsulta WebRTC LiveKit
       Chat en vivo con fotos macro
@@ -105,7 +105,6 @@ mindmap
       Soporte directo WhatsApp
     Comercio
       Modelo Guardia Institucional v2.0
-      Pagos / Split ScopeOut v2.1+
 ```
 
 ### Detalle Operativo de las 7 C:
@@ -123,7 +122,7 @@ mindmap
 6. **Conexión (Vínculos y Navegación):**  
    Arquitectura de navegación con jerarquía en 3 niveles, enlaces breadcrumbs en cada sección clínica y conexión directa con servicios de soporte y emergencias físicas presenciales.
 7. **Comercio (Modelo Operativo y Transacciones):**  
-   Conforme al documento de alcance formal [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), **la pasarela de pagos es un Non-Goal / ScopeOut para la versión v2.0**. En el lanzamiento inicial (MVP), el sistema opera bajo un modelo de guardia telemédica institucional/gratuita donde el tutor accede directamente a la sala de espera sin fricción de cobro. La integración transaccional formal (Mercado Pago Checkout Pro / Split Payments) queda formalmente diferida como módulo comercial para la fase de expansión v2.1+.
+   *(v2.0: Guardia Médica Institucional / Pasarela de Pagos ScopeOut para v2.1+)*
 
 ---
 

@@ -143,8 +143,8 @@ graph LR
 
 ### 🔹 Fase 2: Ensamblado y Refactor Visual de las Pantallas Web
 1. Reemplazar los elementos HTML crudos de las páginas actuales (`Landing.tsx`, `DashboardClient.tsx`, `DashboardVet.tsx`, `ConsultationRoom.tsx`, `AdminVets.tsx`, `PrescriptionView.tsx`) por los componentes atómicos probados en Storybook.
-2. Garantizar que la lógica de negocio, hooks de TanStack Query, llamadas Axios y Socket.io permanezcan intactos.
-3. Verificar que la suite de pruebas unitarias (`npm test -w web`) mantenga sus **29 tests en verde**.
+2. Garantizar que la lógica de negocio, llamadas Axios centralizadas (services/api.ts), estado local (useState, useEffect) y Socket.io permanezcan intactos. Queda prohibido introducir hooks useQuery de TanStack en las páginas vivas actuales para no romper los mocks de los 29 tests de Vitest.
+3. Verificar que la suite completa de pruebas automatizadas en verde (123 tests) se mantenga al 100%.
 
 ### 🔹 Fase 3: Despliegue en Vercel & Auditoría Autónoma con TestSprite
 1. Desplegar los cambios a Vercel con `git push`.
@@ -164,7 +164,7 @@ Para considerar concluida la integración de estas herramientas en la siguiente 
 * [ ] **Accesibilidad:** Cero alertas críticas de contraste o atributos ARIA en el panel de `@storybook/addon-a11y`.
 * [ ] **Compilación:** `npm run build-storybook -w web` compila limpiamente en menos de 10 segundos.
 * [ ] **TestSprite:** Ejecución exitosa de los flujos nucleares de tutor, veterinario y administrador sobre Vercel sin excepciones no controladas.
-* [ ] **Cero Regresiones:** Los **123 tests automatizados** del monorepo continúan pasando al 100% y el bundle inicial de la Landing se mantiene en **~20 kB**.
+* [ ] **Cero Regresiones:** La suite completa de pruebas automatizadas en verde (123 tests) continúa pasando al 100% y el bundle inicial de la Landing se mantiene en **~20 kB**.
 
 ---
 *Documento Canónico de Integración Storybook & TestSprite — VetConnect 2026.*

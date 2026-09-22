@@ -151,7 +151,7 @@ Para garantizar que cualquier agente de IA o desarrollador cuente con el contrat
 | **`auth`** | `POST` | `/api/auth/refresh` | `services/api.ts` | Cookie `refreshToken` → `{ success: true, data: { accessToken } }` | `modules/auth/auth.schemas.ts` |
 | **`auth`** | `POST` | `/api/auth/logout` | `context/AuthContext.tsx` | Invalida cookie `refreshToken` → `{ success: true, message: "Logged out" }` | `modules/auth/auth.schemas.ts` |
 | **`auth`** | `GET` | `/api/auth/me` | `context/AuthContext.tsx` | Header `Bearer ${token}` → `{ success: true, data: { user: UserProfile } }` | `modules/auth/auth.schemas.ts` |
-| **`users`** | `PATCH` | `/api/users/profile` | `pages/DashboardVet.tsx` | Body: `{ isOnline?: boolean, speciality?: string, bio?: string }` → `{ success: true, data: UserProfile }` | `modules/users/users.schemas.ts` |
+| **`users`** | `PATCH` | `/api/users/profile` | `pages/DashboardVet.tsx` | Body: `{ isOnline?: boolean, bio?: string, photoUrl?: string }` → `{ success: true, data: UserProfile }` | `users.controller.ts (Validación directa en controlador)` |
 | **`pets`** | `GET` | `/api/pets` | `pages/DashboardClient.tsx` | Header `Bearer ${token}` → `{ success: true, data: Pet[] }` | `modules/pets/pets.schemas.ts` |
 | **`pets`** | `POST` | `/api/pets` | `pages/DashboardClient.tsx` | Body: `{ name, species, breed, weightKg?, microchip? }` (`breed` min 1 char) → `{ success: true, data: Pet }` | `modules/pets/pets.schemas.ts` |
 | **`pets`** | `GET` | `/api/pets/:id` | `pages/DashboardClient.tsx` | Param: `id` (UUID v4) → `{ success: true, data: Pet }` | `modules/pets/pets.schemas.ts` |
@@ -165,15 +165,15 @@ Para garantizar que cualquier agente de IA o desarrollador cuente con el contrat
 | **`consultations`**| `PATCH` | `/api/consultations/:id/complete` | `pages/ConsultationRoom.tsx` | Body: `{ diagnosisNotes: string }` → Cierra la consulta (`COMPLETED`). Solo VET asignado. | `modules/consultations/consultations.schemas.ts` |
 | **`consultations`**| `GET` | `/api/consultations/:id/messages` | `pages/ConsultationRoom.tsx` | Param: `id` (Consultation UUID), Query opcional: `?after={ISO}` → `{ success: true, data: Message[] }` (Carga del historial inicial de chat). | `modules/consultations/consultations.schemas.ts` |
 | **`consultations`**| `POST` | `/api/consultations/:id/review` | `pages/DashboardClient.tsx` (post-consulta) | Body: `{ rating: number (1-5), comment?: string }` → Calificación médica. Solo CLIENT asignado. ADR-023. | `modules/consultations/consultations.schemas.ts` |
-| **`calls`** | `POST` | `/api/calls/:id/token` | `pages/ConsultationRoom.tsx` | Param: `id` (Consultation UUID) → `{ success: true, data: { token: string, wsUrl: string } }` (Zero PII) | `modules/calls/calls.schemas.ts` |
-| **`calls`** | `POST` | `/api/calls/:id/ring` | `pages/ConsultationRoom.tsx` | Param: `id` → Dispara timbrado al par emitiendo `call:incoming` con Cero PII. Requiere consulta en estado `ACTIVE`. | `modules/calls/calls.schemas.ts` |
+| **`calls`** | `POST` | `/api/calls/:consultationId/token` | `pages/ConsultationRoom.tsx` | Param: `consultationId` (Consultation UUID) → `{ success: true, data: { token: string, wsUrl: string } }` (Zero PII) | `modules/calls/calls.schemas.ts` |
+| **`calls`** | `POST` | `/api/calls/:consultationId/ring` | `pages/ConsultationRoom.tsx` | Param: `consultationId` → Dispara timbrado al par emitiendo `call:incoming` con Cero PII. Requiere consulta en estado `ACTIVE`. | `modules/calls/calls.schemas.ts` |
 | **`prescriptions`**| `GET` | `/api/prescriptions/:id` | `pages/PrescriptionView.tsx` | Param: `id` (UUID v4) → `{ success: true, data: Prescription & { vet, consultation: { pet } } }` | `modules/prescriptions/prescriptions.schemas.ts` |
 | **`prescriptions`**| `POST` | `/api/consultations/:id/prescriptions` | `pages/ConsultationRoom.tsx` | Body: `{ medication, dosage, frequency, durationDays, indications }` (`indications` obligatorio min 5 chars) → `{ success: true, data: Prescription }` | `modules/prescriptions/prescriptions.schemas.ts` |
 | **`admin`** | `GET` | `/api/admin/vets/pending` | `pages/AdminVets.tsx` | Header `Bearer ${token}` (Role `ADMIN`) → `{ success: true, data: PendingVet[] }` | `modules/admin/admin.schemas.ts` |
 | **`admin`** | `PATCH` | `/api/admin/vets/:id/approve`| `pages/AdminVets.tsx` | Param: `id` (Vet UUID) → `{ success: true, data: { id, vetStatus: 'APPROVED' } }` | `modules/admin/admin.schemas.ts` |
 | **`admin`** | `PATCH` | `/api/admin/vets/:id/reject` | `pages/AdminVets.tsx` | Param: `id`, Body: `{ reason: string }` → `{ success: true, data: { id, vetStatus: 'REJECTED' } }` | `modules/admin/admin.schemas.ts` |
-| **`media`** | `POST` | `/api/media` | `pages/ConsultationRoom.tsx` | `multipart/form-data` (archivo imagen, validación Magic Bytes, cuota diaria) → `{ success: true, data: { id, url, mimeType } }` | `modules/media/media.schemas.ts` |
-| **`media`** | `GET` | `/api/media/:id` | `pages/ConsultationRoom.tsx` (Lightbox) | Param: `id` (UUID v4) protegido con control de acceso clínico (Tutor / Veterinario / Admin) | `modules/media/media.schemas.ts` |
+| **`media`** | `POST` | `/api/media` | `pages/ConsultationRoom.tsx` | `multipart/form-data` (archivo imagen, validación Magic Bytes, cuota diaria) → `{ success: true, data: { id, url, mimeType } }` | `middlewares/media.middleware.ts (Multer + Magic Bytes binarios)` |
+| **`media`** | `GET` | `/api/media/:id` | `pages/ConsultationRoom.tsx` (Lightbox) | Param: `id` (UUID v4) protegido con control de acceso clínico (Tutor / Veterinario / Admin) | `middlewares/media.middleware.ts (Multer + Magic Bytes binarios)` |
 
 ---
 *Documento de Requerimientos y PMV Web — VetConnect 2026.*

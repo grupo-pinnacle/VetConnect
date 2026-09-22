@@ -111,9 +111,10 @@ Inicio > Panel del Tutor (/client/dashboard) > Receta Oficial (/prescriptions/:i
 
 #### Ejemplo D: Administrador Auditando Matrículas Pendientes
 ```
-Inicio > Panel de Administración (/admin/dashboard) > Fiscalización SENASA (/admin/vets)
- [🔗]                     [🔗]                                       [Texto Plano]
+Inicio > Fiscalización SENASA (/admin/vets)
+ [🔗]                     [Texto Plano]
 ```
+*(/admin/dashboard opera como alias directo hacia la misma consola de fiscalización).*
 *(Nota de Implementación: Todos los parámetros de ruta `:id` corresponden a identificadores canónicos UUID v4 de PostgreSQL/Prisma; los códigos visuales como `#3492` o `RC-2026` son etiquetas amigables renderizadas en la interfaz).*
 
 ### 4.3 Reglas de Interacción & Usabilidad de Breadcrumbs:
@@ -153,13 +154,8 @@ flowchart TD
 
 > ⚠️ **Contrato Formal de Navegación y Flujo de Sala de Espera (`ConsultationRoom.tsx`)**
 >
-> 1. **Al montar `/call/:id`:** Invocar inmediatamente `GET /api/consultations/:id`.
-> 2. **Si `status === 'WAITING'`:** Mostrar la interfaz de **"Sala de Espera: Aguardando asignación de veterinario de guardia..."** y activar polling cada 5s a `GET /api/consultations/:id`. **NO invocar `POST /api/calls/:id/token`** (de lo contrario el backend retornará `400 INVALID_CONSULTATION_STATE` dado que en `calls.service.ts` se exige `consultation.status === 'ACTIVE'`).
-> 3. **Cuando el estado cambie a `ACTIVE`:** Cancelar el polling de espera, solicitar el token LiveKit invocando `POST /api/calls/:id/token` y renderizar `<CallRoom>`.
-> 4. **Al presionar "Finalizar Consulta":** El médico debe ejecutar `PATCH /api/consultations/:id/complete` con `{ diagnosisNotes }` antes de redirigir o salir de la sala.
->
-> ⚠️ **Sincronización Canónica de Transición WAITING → ACTIVE:**
-> En v2.0, el backend NO emite eventos de Socket.io para la asignación de consultas (`consultation:assigned` no existe en `socket.types.ts`). Por lo tanto, el cliente debe usar exclusivamente polling HTTP cada 5 segundos invocando `GET /api/consultations/:id` mientras el estado sea `WAITING`. Queda terminantemente prohibido registrar listeners socket ficticios.
+> Al ingresar a la consulta, si `status === 'WAITING'`, el tutor permanece en la sala de espera interactiva aguardando la asignación de un veterinario de guardia hasta que el estado transicione a `ACTIVE`.
+> 📌 *Ver detalles técnicos de las llamadas REST, polling HTTP cada 5s e inyección de token en [08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md (§2.1)](./08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md#21-integración-1-videollamadas-hd-con-livekit-cloud-sfu--contrato-de-sala-de-espera).*
 
 > ℹ️ **Nota de Alcance (v2.0 vs. v2.1+):** Conforme a [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), la pasarela arancelaria se encuentra formalmente excluida (ScopeOut) del MVP v2.0, garantizando auxilio médico inmediato sin barreras de cobro. La integración de pasarela transaccional se incorporará en el flujo comercial de la versión v2.1+.
 
