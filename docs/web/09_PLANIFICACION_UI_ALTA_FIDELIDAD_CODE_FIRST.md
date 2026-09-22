@@ -82,7 +82,7 @@ A continuación se detalla la especificación visual, la disposición de element
    - Label flotante o superior: `text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5`.
    - Input de correo: `w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-colors text-slate-900`.
    - Input de contraseña con botón para alternar visibilidad (icono `Eye` / `EyeOff` de Lucide).
-   - En registro de Veterinario: Campo condicional de `Matrícula Profesional` y `Provincia de Colegiación`.
+   - En registro de Veterinario: Campo condicional de `Matrícula Profesional` (`licenseNumber`) y `Biografía/Resumen profesional` (`bio`), respetando el esquema Prisma de User.
 5. **Manejo de Errores RFC 7807:**
    - Contenedor de error reactivo: `bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-4 flex items-center gap-2`.
 6. **Botón de Envío Primario:**
@@ -212,7 +212,7 @@ A continuación se detalla la especificación visual, la disposición de element
    - Isotipo VetConnect y leyenda oficial: *"Sistema Oficial de Prescripción Veterinaria Digital"*.
    - Cumplimiento normativo SENASA y Ley 25.326.
 3. **Datos del Profesional Emisor:**
-   - Nombre completo del veterinario, Matrícula Provincial (ej. MP 8492) y Matrícula Nacional (MN).
+   - Nombre completo del veterinario, `licenseNumber` (Matrícula Profesional registrada en el Colegio de Veterinarios).
    - Fecha y hora exacta de emisión.
 4. **Datos del Paciente y Tutor:**
    - Nombre de la mascota, especie, raza, peso y microchip ISO.
