@@ -80,6 +80,15 @@ flowchart TB
     WebPro -.->|RTP Media Traffic| LiveKitServer
 ```
 
+### 2.3 Especificación del Cliente Frontend Web SPA (React 18.3.1 LTS + Vite)
+El cliente web se estructura como una Single Page Application (SPA) desacoplada con las siguientes especificaciones técnicas de ingeniería:
+- **Framework & Core Runtime:** React 18.3.1 (LTS / React 19 Ready) montado con Vite 6 en modo ESM nativo.
+- **Gestión de Estado Asíncrono (Server State):** TanStack Query v5 con políticas estrictas de invalidación determinista por `queryKey` (`['pets']`, `['consultations', 'mine']`, `['vets', 'pending']`), `staleTime: 5 min` y recolección de basura `gcTime: 10 min`.
+- **Gestión de Sesión & Identidad (Auth State):** `AuthContext` en React con `accessToken` almacenado **estrictamente en memoria RAM** y `refreshToken` transmitido en cookie segura `HttpOnly`, eliminando vectores de ataque XSS.
+- **Canal de Tiempo Real (Socket.io Client):** Conexión WSS persistente con reconexión exponencial automática, sincronización incremental `?after={timestamp}` y deduplicación de chat por `clientMsgId`.
+- **Motor Multimedia WebRTC (LiveKit Client):** Integración con LiveKit Cloud SFU mediante `@livekit/components-react` y `livekit-client`, configurando `<LiveKitRoom>` y `<VideoConference>` sin duplicación de `<RoomAudioRenderer>` (mitigando eco acústico), e inyección dinámica de `wsUrl`.
+- **Code-Splitting & Rendimiento:** Carga diferida con `React.lazy()` para todas las rutas autenticadas (`ConsultationRoom`, `DashboardClient`, `DashboardVet`, `AdminVets`, `PrescriptionView`), logrando un peso de bundle inicial de 20.38 kB gzip y LCP < 1.2s.
+
 ---
 
 ## 3. Modelo de Datos, Esquema Prisma & Máquinas de Estado
@@ -367,6 +376,11 @@ Cuando se solicita la baja de una cuenta:
 - Se establece `deletedAt = now()`.
 - **Historias clínicas y consultas permanecen intactas**, asociadas al ID persistido para cumplir con el plazo legal de conservación médica sin exponer datos personales del tutor.
 
+### 5.4 Políticas de Seguridad en el Navegador Web & Mitigación XSS (ADR-004)
+1. **Tokens en Memoria RAM Exclusiva:** El `accessToken` reside únicamente en memoria volátil de JavaScript (`currentAccessToken` en `api.ts`), impidiendo el robo por scripts maliciosos inyectados en el DOM.
+2. **Cookies de Sesión Cross-Domain:** El `refreshToken` se envía en cookie `HttpOnly; Secure; SameSite=None` (en producción), restringiendo su acceso al motor HTTP del navegador entre `app.vetconnect.com` y `api.vetconnect.com`.
+3. **Content Security Policy (CSP) & Cabeceras:** Vercel y Traefik fuerzan cabeceras `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block` y directivas CSP que autorizan conexiones WebSocket seguras (`wss:`) y tráfico WebRTC hacia `*.livekit.cloud`.
+
 ---
 
 ## 6. Requerimientos No Funcionales (NFRs) & Service Level Objectives (SLOs)
@@ -395,6 +409,28 @@ Cuando se solicita la baja de una cuenta:
   - PDF: `25 50 44 46`
   Extensiones disfrazadas o payloads maliciosos son rechazados con `HTTP 400 Bad Request` (`INVALID_FILE_TYPE`).
 - **Control de Acceso Estricto (ADR-010 & ADR-020):** Prohibido el uso de `express.static()` para archivos clínicos. Las descargas se realizan exclusivamente por `GET /api/media/:id`, validando que el solicitante sea dueño de la mascota, veterinario asignado o administrador. En AWS S3 se generan presigned URLs con TTL de 300 segundos (5 minutos); en almacenamiento local se transmiten por streaming protegido.
+
+### 6.2 Máquinas de Estado en UI y Ciclos de Vida del Cliente Web
+El frontend web modela formalmente los 4 ciclos clínicos críticos de la aplicación:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle: Usuario autenticado
+    Idle --> TriageIniciado: Tutor selecciona mascota y redacta síntomas
+    TriageIniciado --> EsperandoGuardia: Envío exitoso POST /api/consultations (Prioridad ROJO/AMARILLO/VERDE)
+    EsperandoGuardia --> Asignado: Veterinario reclama caso en FIFO (PATCH /assign)
+    EsperandoGuardia --> Cancelado: TTL 15 min expirado o cancelación del tutor
+    Asignado --> EnConsultaWebRTC: Handshake LiveKit SFU completado en /call/:id
+    EnConsultaWebRTC --> RecetaEmitida: Veterinario emite prescripción con QR
+    RecetaEmitida --> Completado: Cierre clínico con evolución médica (PATCH /complete)
+    Completado --> ReseñaPendiente: Tutor califica atención (1 a 5 estrellas)
+    ReseñaPendiente --> [*]
+```
+
+1. **Ciclo de Triage (Tutor):** Selección de mascota $\to$ Formulario de síntomas $\to$ Asignación de prioridad $\to$ Cola de espera con temporizador de 15 minutos.
+2. **Cola de Guardia FIFO (Veterinario):** Lista en vivo ordenada por hora de ingreso y prioridad cromática $\to$ Reclamo atómico (`PATCH /api/consultations/:id/assign`) $\to$ Redirección inmediata a `/call/:id`.
+3. **Sala de Consulta Híbrida (`ConsultationRoom`):** PreJoin de periféricos $\to$ Montaje WebRTC sin duplicar audio $\to$ Chat sincronizado por WebSockets $\to$ PostMessage `page:ready` si corre en WebView móvil.
+4. **Emisión de Receta Oficial:** Redacción estructurada $\to$ Envío `POST /prescriptions` $\to$ Generación de QR en Base64 $\to$ Impresión formateada vía `@media print`.
 
 ---
 

@@ -82,19 +82,67 @@ flowchart TD
 ### 3.1 Plataforma Oficial Definitiva: Vercel (ADR-022)
 **Vercel** es la plataforma oficial y estandarizada para el Frontend Web (`web/`). Se encuentra plenamente integrada con el pipeline de GitHub Actions (`.github/workflows/ci.yml`).
 
+#### 1. Configuración del Proyecto en Vercel:
 1. Conecta tu repositorio de GitHub a [Vercel](https://vercel.com).
 2. **Root Directory:** Selecciona `web`.
 3. **Framework Preset:** `Vite`.
-4. **Variables de Entorno en Vercel:**
-   ```env
-   VITE_API_URL="https://api.vetconnect.com"
-   VITE_SOCKET_URL="https://api.vetconnect.com"
-   VITE_LIVEKIT_HOST="https://vetconnect.livekit.cloud"
-   ```
-5. **Automatización:** Cada push a `main` dispara un despliegue de producción con CDN global Edge, compresión Brotli y SSL automático. Cada Pull Request genera una URL de previsualización (Preview Deployment) para QA.
+4. **Build Command:** `npm run build` (ejecuta `tsc && vite build`).
+5. **Output Directory:** `dist`.
+6. **Install Command:** `npm install`.
+
+#### 2. Archivo de Configuración `web/vercel.json`:
+Para soportar el enrutamiento del lado del cliente (React Router) y garantizar cabeceras de seguridad de nivel bancario, la raíz de `web/` incluye el siguiente `vercel.json`:
+
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}
+```
+
+#### 3. Variables de Entorno en Vercel:
+Configurar en **Project Settings -> Environment Variables**:
+| Variable | Entorno | Valor de Producción | Descripción |
+|---|---|---|---|
+| `VITE_API_URL` | Production / Preview | `https://api.vetconnect.com` | URL base del Backend REST en Coolify |
+| `VITE_SOCKET_URL`| Production / Preview | `https://api.vetconnect.com` | URL del servidor de WebSockets (WSS) |
+| `VITE_LIVEKIT_HOST`| Production / Preview | `https://vetconnect.livekit.cloud` | Endpoint de LiveKit Cloud SFU |
+
+#### 4. Dominio Personalizado & SSL:
+- En Vercel, vincular el dominio oficial: `app.vetconnect.com`.
+- Añadir registro CNAME en tu proveedor DNS (Cloudflare / Hostinger):
+  `CNAME app.vetconnect.com -> cname.vercel-dns.com`
+- Vercel emite y renueva automáticamente certificados Let's Encrypt TLS 1.3.
+
+#### 5. Cookies de Sesión Cross-Domain (Vercel Web ↔ Coolify Backend):
+Dado que la web se hospeda en `app.vetconnect.com` y el backend en `api.vetconnect.com`:
+- Las cookies `refreshToken` se emiten con `SameSite: 'none'`, `Secure: true` y `Domain: '.vetconnect.com'` (o sin dominio explícito pero con `credentials: 'include'`).
+- El cliente Axios (`api.ts`) opera con `withCredentials: true`, permitiendo el flujo de refresco transparente sin almacenamiento en `localStorage`.
+
+#### 6. Pipeline Automatizado de CI/CD:
+- **Push a `main`:** Despliegue inmediato a Producción con Edge CDN global y compresión Brotli.
+- **Pull Requests:** Despliegue automático de un entorno efímero de previsualización (*Preview Deployment*) para pruebas de QA.
 
 ### 3.2 Alternativa de Contingencia Manual: Hostinger (Sin CI/CD)
-> ⚠️ **Nota de Contingencia:** Hostinger **no** forma parte del pipeline de integración continua y se documenta exclusivamente como plan de contingencia manual ante contingencias de red, caídas de Vercel o restricciones administrativas de cuenta.
+> ⚠️ **Nota de Contingencia:** Hostinger **no** forma parte del pipeline de integración continua y se documenta exclusivamente como plan de contingencia manual ante caídas globales de Vercel o restricciones administrativas.
 
 1. Compila el proyecto manualmente en local:
    ```bash

@@ -170,6 +170,42 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `POST` | `/api/media` | Subida multipart con validación binaria de Magic Bytes (JPEG, PNG, PDF). Límite individual de 10 MB/archivo y cuota agregada de 50 MB/día por usuario (RNF-06). Persiste metadatos en `MediaFile` y consumo en `DailyUploadCounter`. Retorna `413 FILE_TOO_LARGE` si archivo > 10 MB o `429 UPLOAD_QUOTA_EXCEEDED` si supera 50 MB/día | Autenticado |
 | `GET`  | `/api/media/:id` | Descarga/streaming seguro de archivo clínico (prohibido acceso estático público ADR-010; valida que solicitante sea dueño, vet asignado o ADMIN). En S3 retorna URL presignada con TTL 300s; en local sirve vía stream seguro | Participantes / ADMIN |
 
+### 2.9 Contratos de Consumo Frontend Web & Matriz de Query Keys (TanStack Query v5)
+
+El cliente web gestiona el estado asíncrono del servidor mediante **TanStack Query v5**, organizando las consultas y mutaciones bajo una matriz determinista de *Query Keys*:
+
+| Query Key | Hook / Consumo | Endpoint Backend | StaleTime | Invalidado Tras Mutación |
+|---|---|---|---|---|
+| `['pets']` | Listado de mascotas del tutor | `GET /api/pets` | 5 min | Alta de mascota (`POST /api/pets`), baja (`DELETE /api/pets/:id`) |
+| `['pet', petId]` | Detalle e historial de mascota | `GET /api/pets/:id` | 5 min | Edición de mascota (`PATCH /api/pets/:id`) |
+| `['consultations', 'mine']` | Consultas del usuario autenticado | `GET /api/consultations/mine` | 30 seg | Solicitud de triage (`POST /api/consultations`), asignación (`PATCH /.../assign`) |
+| `['consultation', id]` | Ficha clínica de la consulta activa | `GET /api/consultations/:id` | 10 seg | Cierre con evolución (`PATCH /.../complete`), receta emitida |
+| `['vets', 'pending']` | Cola de fiscalización SENASA | `GET /api/admin/vets/pending` | 1 min | Aprobación (`PATCH /.../approve`), rechazo (`PATCH /.../reject`) |
+| `['prescriptions', id]` | Verificación de receta pública | `GET /api/prescriptions/:id` | 15 min | Inmutable tras emisión |
+
+#### Interceptor de Autenticación & Cola Concurrente de Refresco:
+- Instancia centralizada: `web/src/services/api.ts`
+- Token en memoria: `currentAccessToken` (volátil, cero persistencia en `localStorage` contra XSS).
+- Cola `failedQueue`: Si múltiples llamadas concurrentes reciben HTTP 401, se pausan en cola mientras se despacha un único `POST /api/auth/refresh` con cookie `HttpOnly`. Al renovarse el token, toda la cola se reintenta automáticamente con el nuevo `Authorization: Bearer <token>`.
+
+---
+
+### 2.10 Especificación Técnica de Vistas y Páginas Web
+
+Cada página del frontend web implementa una interfaz formal tipada, gestionando los 4 estados canónicos (`loading`, `error`, `empty`, `success`):
+
+| Página / Archivo | Ruta Web | Acceso / Rol | Endpoints REST Consumidos | Eventos Sockets / WebRTC |
+|---|---|---|---|---|
+| **Landing** (`Landing.tsx`) | `/` | Público | `GET /` (Assets estáticos) | N/A |
+| **Login** (`Login.tsx`) | `/login` | Público | `POST /api/auth/login` | N/A |
+| **Register** (`Register.tsx`) | `/register` | Público | `POST /api/auth/register` | N/A |
+| **DashboardClient** (`DashboardClient.tsx`) | `/client/dashboard` | `CLIENT` | `GET /api/pets`, `POST /api/pets`, `POST /api/consultations`, `GET /api/consultations/mine` | `call:incoming`, `consultation:status` |
+| **DashboardVet** (`DashboardVet.tsx`) | `/vet/dashboard` | `VET` | `PATCH /api/users/profile`, `GET /api/consultations/mine`, `PATCH /api/consultations/:id/assign`, `POST /api/consultations/:id/prescriptions` | `vet:status:changed`, `call:incoming` |
+| **ConsultationRoom** (`ConsultationRoom.tsx`) | `/call/:id` | `CLIENT`, `VET`, `ADMIN` | `POST /api/calls/:id/token`, `GET /api/consultations/:id/messages` | `join:consultation`, `message:send`, `message:new`, LiveKit WebRTC SFU |
+| **PrescriptionView** (`PrescriptionView.tsx`) | `/prescriptions/:id` | Público | `GET /api/prescriptions/:id` | N/A (Vista optimizada para impresión y farmacia) |
+| **AdminVets** (`AdminVets.tsx`) | `/admin/vets` | `ADMIN` | `GET /api/admin/vets/pending`, `PATCH /api/admin/vets/:id/approve`, `PATCH /api/admin/vets/:id/reject` | N/A |
+| **NotFound** (`NotFound.tsx`) | `*` (Catch-all) | Público | N/A | N/A (Redirección segura al home) |
+
 ---
 
 ## 3. Matriz de Eventos en Tiempo Real (Socket.io)
@@ -182,20 +218,57 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `call:incoming` | `{ consultationId, callerName, roomName }` | Servidor | Usuario llamado | Dispara la alerta de llamada entrante en Web y Mobile |
 | `call:answered` | `{ consultationId }` | Usuario llamado | Servidor | Notifica que la videollamada fue atendida |
 | `call:rejected` | `{ consultationId, reason }` | Usuario llamado | Servidor | Cancela el timbrado en el dispositivo emisor |
-| `prescription:new` | `Prescription` object | Servidor | Tutor / Sala | Notificación en tiempo real de nueva receta emitida |
+| `prescription:new` | `Prescription` object | Servidor | Tutor / Sala | ⚠️ **TIPADO PERO NO EMITIDO — Pendiente de implementación:** El evento está declarado en `socket.types.ts` (ServerToClientEvents) pero `prescriptions.service.ts` no emite este evento actualmente. Para completarlo, `prescriptions.service.ts` debe emitir este evento a la sala `consultation:${consultationId}` después de crear la prescripción exitosamente. |
+
+### 3.1 Protocolo WebRTC & Handshake de Videollamada (LiveKit Web Client)
+- **Cero PII en Token JWT:** `identity: user.id`, `name: user.firstName`. Correos y teléfonos redactados.
+- **Inyección dinámica de `wsUrl`:** Se toma del payload de `POST /api/calls/:id/token`.
+- **Handshake WebView para Apps Móviles:**
+  Al montar la sala en navegadores embebidos, se emite el evento:
+  ```javascript
+  window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'page:ready' }));
+  ```
+  Esto permite a la app nativa desmontar el spinner de carga inicial sin parpadeos.
+- **Prevención de Eco Acústico (Antipatrón 3 de AGENTS.md):**
+  Se monta exclusivamente `<VideoConference />` dentro de `<LiveKitRoom />`. Nunca duplicar `<RoomAudioRenderer />`.
 
 ---
 
 ## 4. Guía de Ejecución de Pruebas Automatizadas
 
+### 4.1 Pruebas del Backend (Jest)
 ```bash
-# Ejecutar toda la suite de pruebas del backend (meta: 120+ tests)
-cd backend
-npm test
+# Ejecutar toda la suite de pruebas del backend (Jest)
+cd backend && npm test
 
 # Ejecutar únicamente pruebas unitarias
-npm run test:unit
-
-# Modo observación interactiva de tests (TDD)
-npm run test:watch
+npm run test:unit -w backend
 ```
+
+### 4.2 Pruebas del Frontend Web (Vitest & Testing Library)
+```bash
+# Ejecutar toda la suite de pruebas del frontend web (Vitest)
+npm test -w web
+
+# Ejecutar en modo observador interactivo (TDD)
+cd web && npx vitest
+
+# Cobertura de código del frontend
+cd web && npx vitest run --coverage
+```
+
+### 4.3 Verificación de Integración Continua y Pre-Despliegue
+```bash
+# 1. Verificación semántica y de gobernanza (40 PBs ↔ 20 TASKs ↔ 10 Modelos)
+npm run check:governance
+
+# 2. Typecheck estricto sin emisión en los 3 workspaces
+npm run typecheck
+
+# 3. Suite completa de pruebas en todo el monorepo (meta: 120+ tests)
+npm test
+
+# 4. Compilación de producción (Backend tsc + Web vite build)
+npm run build
+```
+

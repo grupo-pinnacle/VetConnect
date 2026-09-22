@@ -310,6 +310,23 @@ La arquitectura define la **organización y relaciones** del sistema; las tecnol
 
 ---
 
+## 6.1 Arquitectura Detallada del Subsistema Frontend Web (SPA)
+
+> 📖 **Referencia Completa:** Para la especificación técnica exhaustiva de bajo nivel, consultar el documento maestro: [`FRONTEND_ARCHITECTURE.md`](./FRONTEND_ARCHITECTURE.md) y la suite de diseño [`docs/web/`](./web/README.md).
+
+El **Frontend Web de VetConnect** se estructura como una Single Page Application (SPA) desacoplada basada en **React 18.3.1 (LTS)**, **Vite 6** y **Tailwind CSS v3**, complementada por **TanStack Query v5** para la sincronización asíncrona del estado del servidor.
+
+### A. Topología y Desacoplamiento de Estado en 4 Capas:
+1. **Server State (TanStack Query v5):** Caché reactiva desacoplada del ciclo de renderizado de React. Gestiona las entidades remotas (`pets`, `consultations`, `vets/pending`) mediante claves deterministas (`queryKeys`), políticas de frescura (`staleTime: 5 min`) y revalidación en segundo plano.
+2. **Client Auth State (`AuthContext`):** Manejo seguro de la identidad y permisos de usuario. El `accessToken` reside estrictamente en memoria volátil de JavaScript, mientras que el `refreshToken` se preserva en cookie `HttpOnly; Secure; SameSite=None` para prevenir vulnerabilidades XSS.
+3. **Realtime WebSocket State (Socket.io Client):** Conexión bidireccional multiplexada para chat clínico de baja latencia con deduplicación por `clientMsgId`, presencia online y avisos de guardia.
+4. **WebRTC Media State (LiveKit Client SDK):** Gestión de periféricos locales (cámara y micrófono con vista previa en `PreJoinModal`), negociación de pistas de audio/video y adaptación dinámica de bitrate a 720p sin duplicación de `<RoomAudioRenderer />` para erradicar el acople acústico.
+
+### B. Enrutamiento Jerárquico & Code-Splitting:
+La SPA organiza sus vistas bajo React Router con guardias de seguridad (`ProtectedRoute`) que restringen el acceso según el rol del usuario (`CLIENT`, `VET`, `ADMIN`). Para maximizar la velocidad de carga inicial de la Landing Page pública (`Landing.tsx`), todas las consolas clínicas de alta densidad (`DashboardClient`, `DashboardVet`, `ConsultationRoom`, `AdminVets`, `PrescriptionView`) se cargan diferidamente mediante `React.lazy()` y `Suspense`, manteniendo el bundle inicial en apenas 20.38 kB gzip.
+
+---
+
 ## 7. Relación con el Proceso Integral de Planificación de Software
 
 Las decisiones de arquitectura no se toman de manera aislada; se integran orgánicamente dentro de la secuencia completa de planificación del ciclo de vida del software:
