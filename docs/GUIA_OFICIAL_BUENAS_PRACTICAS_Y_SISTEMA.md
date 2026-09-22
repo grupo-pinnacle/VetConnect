@@ -34,7 +34,7 @@ Esta guía establece el marco normativo de ingeniería de software para todo el 
 ### 🟢 Buenas Prácticas Obligatorias
 - **Fijación de Algoritmo JWT:** Verificar firmas JWT especificando explícitamente el algoritmo permitido (`algorithms: ['HS256']`).
 - **Revocación Atómica (`tokenVersion`):** Incrementar el campo entero `tokenVersion` en el modelo `User` ante cambios de contraseña, cierres de sesión globales o baneo administrativo.
-- **Cookies Seguras:** Transmitir refresh tokens únicamente en cookies `HttpOnly`, `Secure` y `SameSite` (`Strict` / `Lax`).
+- **Cookies Seguras:** Transmitir refresh tokens únicamente en cookies `HttpOnly`, `Secure` y `SameSite` (`isProduction ? 'none' : 'lax'`). En producción cross-domain (`app.vetconnect.com.ar` hacia `api.vetconnect.com.ar`), se exige `SameSite=None; Secure` para permitir el envío de cookies entre subdominios bajo HTTPS.
 - **Mensajes de Error Genéricos:** Prevenir la enumeración de usuarios respondiendo `"Credenciales inválidas"` tanto para correos no registrados como para contraseñas incorrectas.
 
 ### ❌ Ejemplos de NO Uso (Antipatrones a Evitar)

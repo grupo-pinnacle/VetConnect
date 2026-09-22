@@ -121,7 +121,7 @@ app.post('/api/auth/login', async (req, res) => {
   return res.json({ accessToken, refreshToken }); // ❌ NUNCA en Web SPA
 });
 
-// GOOD — Web SPA: Transmitir en cookie HttpOnly + Secure
+// GOOD — Web SPA: Transmitir en cookie HttpOnly + Secure (SameSite=None; Secure en producción para comunicación cross-domain entre app.vetconnect.com.ar y api.vetconnect.com.ar)
 res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
 return res.json({ accessToken, user });
 

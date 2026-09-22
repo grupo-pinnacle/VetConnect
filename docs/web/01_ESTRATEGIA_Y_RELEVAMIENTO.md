@@ -38,7 +38,7 @@ El proceso de desarrollo web profesional se traduce en 10 acciones concretas dis
 | **4** | **Elegir la plataforma** | Arquitectura SPA React 18.3.1 (LTS/Stable) + Vite + Tailwind CSS sobre Express 5 API | 1 día | Arquitecto de Software |
 | **5** | **Crear el mapa del sitio** | Elaborar árbol web, jerarquía de 3 niveles, menús y breadcrumbs | 2-4 horas | Diseñador UX/UI |
 | **6** | **Diseñar la identidad visual** | Definir tokens, paleta 60-30-10, tipografía y mockups en Figma | 3-7 días | Diseñador UI (Figma Lead) |
-| **7** | **Desarrollar el sitio** | Refactorización Atómica Progresiva en Storybook y Endurecimiento Visual de la SPA — Estado: En Curso (Nivel 4.5 Pre-Gold Master, 124 tests verdes, SPA viva y funcional) | En Curso | Desarrolladores Frontend |
+| **7** | **Desarrollar el sitio** | Refactorización Atómica Progresiva en Storybook y Endurecimiento Visual de la SPA — Estado: En Curso (Nivel 4.5 Pre-Gold Master, 123 tests verdes, SPA viva y funcional) | En Curso | Desarrolladores Frontend |
 | **8** | **Cargar el contenido** | Redactar textos clínicos claros, guías de triage y optimizar imágenes | 2-5 días | Copywriter / Especialista Veterinario |
 | **9** | **Hacer pruebas (QA)** | Auditoría de usabilidad (Nielsen), accesibilidad WCAG y cross-browser | 2-3 días | QA Engineer / Equipo UX |
 | **10** | **Publicar y medir** | Despliegue en producción con SSL, Google Analytics y Search Console | 1 día | DevOps / Tech Lead |

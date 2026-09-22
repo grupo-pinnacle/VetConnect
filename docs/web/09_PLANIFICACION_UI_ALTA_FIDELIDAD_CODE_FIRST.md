@@ -233,32 +233,7 @@ A continuación se detalla la especificación visual, la disposición de element
 
 ## ⚡ 3. Protocolo de Exportación a Figma vía `html.to.design`
 
-Una vez implementada la alta fidelidad visual en el código de la SPA, el proceso de exportación a Figma se ejecutará mediante el siguiente flujo operativo:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Dev as Antigravity / Dev
-    participant Web as SPA Local / Vercel
-    participant Plugin as html.to.design (Figma)
-    participant Figma as Archivo Figma Maestro
-    participant Designer as Damian Orellana (Diseño)
-
-    Dev->>Web: Estiliza componentes con Tailwind CSS y verifica con npm test
-    Dev->>Web: Levanta servidor en http://localhost:5173
-    Designer->>Plugin: Abre plugin en Figma e introduce URL de cada pantalla
-    Plugin->>Web: Inspecciona el DOM, CSS computado y assets vectoriales
-    Plugin->>Figma: Genera Frames nativos con Auto-Layout y tipografías
-    Designer->>Figma: Diseña ilustraciones personalizadas y empty states
-    Designer->>Dev: Entrega assets SVG refinados para incorporación final
-```
-
-### Pasos Operativos:
-1. **Paso 1:** Abrir Figma con un lienzo nuevo titulado `VetConnect Web — UI Kit & Pantallas Maestras v2.0`.
-2. **Paso 2:** Lanzar el plugin **`html.to.design`** desde el menú de plugins de Figma.
-3. **Paso 3:** Importar secuencialmente las 7 rutas con viewport Desktop (`1440px`) y Mobile (`390px`).
-4. **Paso 4:** El plugin genera automáticamente componentes de Figma con nombres limpios (`Button/Primary`, `PetCard`, `Header/Sticky`, etc.).
-5. **Paso 5:** Guardar el archivo en el espacio de trabajo del equipo de diseño para revisiones de stakeholders y portfolio.
+> 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 ---
 *Documento de Planificación de UI de Alta Fidelidad — VetConnect 2026.*

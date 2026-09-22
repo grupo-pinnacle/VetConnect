@@ -39,7 +39,7 @@ Se ejecutaron todas las suites de validación y compilación en el monorepo con 
 | **Mobile App** | Jest + React Native | **7 suites / 16 tests PASSED** en 0.82s | ✅ 100% Verde |
 | **Typecheck Monorepo** | `tsc --noEmit` | **0 errores en los 3 workspaces** | ✅ TypeScript Estricto (Cero `any`) |
 | **Gobernanza Semántica** | `verify-governance.js` | **40 PBs y 20 Tasks sincronizados** | ✅ Cero desvío de alcance |
-| **Total Tests Monorepo** | Suite Unificada | **36 suites / 124 tests PASSED (0 fallos)** | 🏆 Cobertura Robusta FAANG Tier |
+| **Total Tests Monorepo** | Suite Unificada | **36 suites / 123 tests PASSED (0 fallos)** (Backend: 16 suites / 78 tests; Web: 13 suites / 29 tests; Mobile: 7 suites / 16 tests) | 🏆 Cobertura Robusta FAANG Tier |
 
 ---
 
@@ -75,7 +75,7 @@ Revisando el código fuente en [`web/src/`](../../web/src), la correspondencia c
 | **Performance & Code-Splitting** | ✅ **100% Implementado** | En [`App.tsx`](../../web/src/App.tsx). Carga perezosa con `React.lazy()` y `React.Suspense` para todas las salas pesadas. El bundle inicial es de **20.38 kB** (gzip: **6.09 kB**). El chunk de LiveKit (691 kB) solo se descarga cuando el usuario entra a una llamada. |
 | **Videoconsulta WebRTC HD** | ✅ **100% Implementado** | En [`ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx) y [`CallRoom.tsx`](../../web/src/components/call/CallRoom.tsx). Implementa LiveKit Cloud SFU sin duplicar audio renderers (cero eco acústico), soporte dinámico de `wsUrl`, modal de pre-chequeo de cámara/micrófono ([`PreJoinModal.tsx`](../../web/src/components/call/PreJoinModal.tsx)) y handshake `page:ready` para WebView móvil. |
 | **Chat Clínico con Fotos Macro** | ✅ **100% Implementado** | Socket.io con salas por consulta, subida de fotos a `/api/media` con validación de *Magic Bytes* (solo imágenes reales, no `.exe`), previsualización en chat y Lightbox en pantalla completa. |
-| **Portal Tutor (`CLIENT`)** | ✅ **100% Implementado** | En [`DashboardClient.tsx`](../../web/src/pages/DashboardClient.tsx). CRUD de mascotas con validación de microchip ISO, triaje semántico por color (Verde/Amarillo/Rojo) y sala de espera interactiva. |
+| **Portal Tutor (`CLIENT`)** | ⚠️ **95% Implementado (Gap de Sala de Espera)** | En [`DashboardClient.tsx`](../../web/src/pages/DashboardClient.tsx). CRUD de mascotas con validación de microchip ISO, triaje semántico por color (Verde/Amarillo/Rojo). La "Sala de Espera Interactiva" es un **gap técnico de integración en el frontend actual**, donde se debe implementar la máquina de estados en `ConsultationRoom.tsx` (`WAITING` -> polling/socket -> `ACTIVE`) antes de solicitar el token LiveKit y montar `<CallRoom>`. |
 | **Portal Veterinario (`VET`)** | ✅ **100% Implementado** | En [`DashboardVet.tsx`](../../web/src/pages/DashboardVet.tsx). Switch de guardia en vivo (`isOnline`), cola de atención médica en tiempo real y emisión de recetas. |
 | **Receta Digital Oficial** | ✅ **100% Implementado** | En [`PrescriptionView.tsx`](../../web/src/pages/PrescriptionView.tsx). Estilos CSS `@media print` para hoja A4 médica, validación de matrícula SENASA y código QR de verificación pública. |
 | **Auditoría SENASA (`ADMIN`)** | ✅ **100% Implementado** | En [`AdminVets.tsx`](../../web/src/pages/AdminVets.tsx). Aprobación y rechazo modal de matrículas profesionales con justificación obligatoria. |
