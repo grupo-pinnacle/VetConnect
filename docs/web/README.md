@@ -67,7 +67,8 @@ docs/web/
 ├── 08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md          # Fases 4-7: React 18.3.1 LTS, LiveKit, Express 5, QA y Hardening
 ├── 09_PLANIFICACION_UI_ALTA_FIDELIDAD_CODE_FIRST.md  # Paso 6: Especificación de alta fidelidad, tokens y puente a Figma
 ├── 10_OPTIMIZACION_PERFORMANCE_SEO_Y_ACCESIBILIDAD.md # Fases 6-7: Rendimiento extremo CWV, a11y WCAG AAA y SEO Schema.org
-└── 11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md       # Fases 3-7: Catálogo Storybook aislado, a11y Axe y QA Autónomo con TestSprite MCP
+├── 11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md       # Fases 3-7: Catálogo Storybook aislado, a11y Axe y QA Autónomo con TestSprite MCP
+└── AGENT_CODING_SPEC.md                              # 🤖 Especificación Ejecutiva Canónica para Agentes de IA (Stack, Rutas, DTOs y Guardarraíles)
 ```
 
 ---
