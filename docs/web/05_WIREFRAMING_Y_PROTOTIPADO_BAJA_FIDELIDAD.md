@@ -102,6 +102,8 @@ A continuación se detallan las pantallas esenciales del ecosistema web de VetCo
 *Conexión con el Árbol Web: [Nivel 2] Ficha Médica de la Mascota & Portal Tutor*  
 *Archivo Fuente Real:* [`web/src/pages/DashboardClient.tsx`](../../web/src/pages/DashboardClient.tsx)
 
+> 📌 **Aclaración Arquitectónica (ADR-025):** Los siguientes diagramas ASCII representan exploraciones conceptuales tempranas de media fidelidad. En el código vivo de producción, el diseño real opera bajo una cuadrícula limpia de dos columnas (grid-cols-2: Mascotas a la izquierda, Triage y Consultas a la derecha) en DashboardClient.tsx, y una consola unificada sin navegación fragmentada en DashboardVet.tsx. La IA programadora debe guiarse siempre por el código vivo y docs/web/AGENT_CODING_SPEC.md.
+
 ```
 +-------------------------------------------------------------------------------------------------------------+
 | [LOGO VetConnect]    [Mis Mascotas]    [Historial Clínico]             [ 🚨 SOLICITAR ATENCIÓN ]  [Carlos ▾] |
