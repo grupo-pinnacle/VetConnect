@@ -78,27 +78,22 @@ A continuación se detallan las pantallas esenciales del ecosistema web de VetCo
 |                                      +------------------------------------+                                 |
 |                                      |        INICIAR SESIÓN SEGURA       |                                 |
 |                                      +------------------------------------+                                 |
-|                                      | [ Tab: Tutor ]   [ Tab: Médico ]   |                                 |
-|                                      +------------------------------------+                                 |
 |                                      | Correo Electrónico:                |                                 |
 |                                      | [ input: usuario@ejemplo.com     ] |                                 |
 |                                      |                                    |                                 |
 |                                      | Contraseña:                        |                                 |
 |                                      | [ input: ••••••••••••••          ] |                                 |
 |                                      |                                    |                                 |
-|                                      | [✓] Recordar mi sesión             |                                 |
-|                                      |                                    |                                 |
 |                                      | [ BOTÓN: INGRESAR A LA PLATAFORMA ]|                                 |
 |                                      |                                    |                                 |
-|                                      | ¿Olvidaste tu contraseña?          |                                 |
 |                                      | ¿No tenés cuenta? [Registrate acá] |                                 |
 |                                      +------------------------------------+                                 |
 |                                                                                                             |
 +-------------------------------------------------------------------------------------------------------------+
 ```
 
-- **Información que contiene:** Selector de tipo de cuenta, credenciales de acceso y mensajes de error reactivos RFC 7807 en tiempo real.
-- **Acciones disponibles:** Alternar entre perfil de tutor y veterinario, validar credenciales, solicitar recuperación de clave y navegar hacia el registro.
+- **Información que contiene:** Formulario unificado de acceso por email y contraseña. El backend resuelve el rol del usuario redirigiendo al dashboard correspondiente. Manejo de errores RFC 7807 en tiempo real.
+- **Acciones disponibles:** Validar credenciales de acceso y navegar hacia el registro.
 
 ---
 
