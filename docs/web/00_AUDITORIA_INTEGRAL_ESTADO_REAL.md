@@ -18,6 +18,9 @@
 >
 > 1. **Para salir a internet (Staging / Piloto):** La aplicación web ([`web/`](../../web)) y el backend ([`backend/`](../../backend)) **están 100% endurecidos para despliegue en internet público** (Vercel + Coolify/VPS). Cuentan con arquitectura completa de videollamadas WebRTC (LiveKit Cloud con tokens Zero PII), mensajería en tiempo real (Socket.io), recetas digitales SENASA con QR, cookies `HttpOnly; Secure; SameSite=None` con soporte para reverse proxy (`trust proxy: 1`), telemetría de errores en vivo (**Sentry**) y CORS dinámico para Vercel y dominios personalizados.
 > 2. **Para el Gold Master Comercial Definitivo (Nivel 5):** Se desarrolla el catálogo de componentes atómicos de alta fidelidad en **Storybook** con testing de accesibilidad Axe (`@storybook/addon-a11y`) y auditoría autónoma E2E vía **TestSprite**, integrándose bidireccionalmente con la dirección de arte en **Figma** a cargo de Damian Orellana.
+>
+> 🎯 **Resolución de Discrepancias & Gobernanza IA-First (ADR-025):**
+> Todas las divergencias históricas entre wireframes teóricos y contratos ejecutables (pantalla de login universal sin tabs de rol, ausencia de campos falsos como provincia en veterinarios, flujo de asignación FIFO vía REST `/assign` y catálogo atómico en Storybook) han sido resueltas y consolidadas bajo la **Jerarquía Inmutable de Verdad (ADR-025)**. La suite de pruebas de 123 tests y la gobernanza semántica operan al 100% en verde.
 
 ---
 
