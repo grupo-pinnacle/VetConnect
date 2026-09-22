@@ -46,26 +46,26 @@ El siguiente diagrama representa el recorrido óptimo del tutor de mascotas desd
 sequenceDiagram
     autonumber
     actor Tutor as 🐶 Tutor (App Móvil / Web)
-    participant Triage as ⏱️ Sistema de Triage
-    participant Matcher as 🤖 Auto-Asignador
-    actor Vet as 🩺 Veterinario (Web Pro)
+    participant API as 🌐 API REST (/api/consultations)
+    actor Vet as 🩺 Veterinario de Guardia (Web Pro)
     participant Video as 📹 LiveKit SFU (720p)
     participant Receta as 📋 Motor de Recetas
 
     Tutor->>Tutor: 1. Selecciona Mascota registrada
-    Tutor->>Triage: 2. Completa cuestionario de síntomas (< 60 seg)
-    Triage->>Matcher: 3. Clasifica urgencia (Leve / Moderada / Vital)
-    Matcher->>Vet: 4. Notifica en vivo a veterinario online activo
-    Vet->>Matcher: 5. Acepta la consulta médica
-    Matcher-->>Tutor: 6. Sala lista: inicia videoconsulta WebRTC
+    Tutor->>API: 2. POST /api/consultations (Triage [Prioridad: ROJO|AMARILLO|VERDE])
+    API-->>Tutor: 3. Consulta creada (Status: PENDING)
+    Vet->>API: 4. GET /api/consultations/pending (Cola FIFO de Guardia)
+    Vet->>API: 5. PATCH /api/consultations/:id/assign (Toma el caso médico)
+    API-->>Vet: 6. Status se actualiza a IN_PROGRESS
+    API-->>Tutor: 7. Consulta asignada: ambos ingresan a /call/:id
     par Atención Telemédica Sincrónica
         Tutor->>Video: Transmite audio y video en vivo
         Vet->>Video: Evalúa signos clínicos (mucosas, respiración)
         Tutor->>Vet: Envía fotos complementarias por chat
     end
-    Vet->>Receta: 7. Finaliza llamada y emite receta con firma y QR
-    Receta-->>Tutor: 8. Receta disponible en el historial de la mascota
-    Tutor->>Tutor: 9. Califica la atención recibida (1 a 5 estrellas)
+    Vet->>Receta: 8. Finaliza llamada y emite receta con firma y QR
+    Receta-->>Tutor: 9. Receta disponible en el historial de la mascota
+    Tutor->>Tutor: 10. Califica la atención recibida (1 a 5 estrellas)
 ```
 
 #### Fases Clave del Flujo:
