@@ -58,7 +58,7 @@ Storybook opera como el **taller de desarrollo aislado** del equipo de frontend.
 
 ### 2.3 Taxonomía de Componentes a Desarrollar en Storybook
 
-> 📌 Ver contratos de props canónicos e interfaces TypeScript en [06_SISTEMA_DE_DISENO_UI_KIT.md (§8)](./06_SISTEMA_DE_DISENO_UI_KIT.md#8-contratos-de-props-typescript-para-componentes-atómicos-ssot).
+> 📌 Ver contratos de props canónicos e interfaces TypeScript en [06_SISTEMA_DE_DISENO_UI_KIT.md (§8)](./06_SISTEMA_DE_DISENO_UI_KIT.md#8-contratos-canónicos-de-props-de-ui--estados-resilientes-storybook-roadmap).
 
 ### 2.4 Estrategia de Refactorización Progresiva (De Páginas Monolíticas a Componentes Atómicos)
 Las pantallas en `web/src/pages/` operan actualmente como prototipos de alta madurez funcional (Nivel 4.5). Para evitar duplicación visual y maximizar la reutilización, la elevación de UI sigue el siguiente protocolo de 3 pasos:

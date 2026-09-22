@@ -19,7 +19,7 @@ Esta auditoría somete la interfaz web de **VetConnect** a una lista de chequeo 
 ---
 
 ## 2. Las 6 Dimensiones de Evaluación Heurística
-> 📌 Ver arquetipos de usuario canónicos y mapas de empatía en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-proto-personas).
+> 📌 Ver arquetipos de usuario canónicos y mapas de empatía en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-y-contexto-real-de-uso).
 
 ```mermaid
 graph TD

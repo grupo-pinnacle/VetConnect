@@ -53,7 +53,7 @@ Antes de trazar interfaces en Figma o escribir código en React, se definen los 
 VetConnect Web busca brindar atención clínica en tiempo real y gestión documental veterinaria. No es un blog pasivo ni una tienda genérica de alimentos para mascotas: es un **sistema telemédico interactivo de misión crítica**.
 
 ### 3.2 Contenido Básico Preparado
-> 📌 Ver arquetipos de usuario canónicos y mapas de empatía en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-proto-personas).
+> 📌 Ver arquetipos de usuario canónicos y mapas de empatía en [02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md (§2)](./02_INVESTIGACION_DCU_Y_DESIGN_THINKING.md#2-arquetipos-de-usuario-y-contexto-real-de-uso).
 
 ### 3.3 Dominio Oficial
 - **Nombre de Dominio:** `vetconnect.com.ar` (y alternativa regional `vetconnect.lat`).
@@ -62,7 +62,7 @@ VetConnect Web busca brindar atención clínica en tiempo real y gestión docume
 - **Justificación:** Otorga validación de identidad geográfica, confianza a los usuarios locales y mejor posicionamiento SEO en el mercado argentino.
 
 ### 3.4 Infraestructura & Hosting (Alineado con DEPLOY.md)
-> 📌 Ver arquitectura de despliegue en producción en [docs/DEPLOY.md](../../docs/DEPLOY.md).
+> 📌 Para la topología de red detallada, configuración SSL y variables de producción, consultar [docs/DEPLOY.md](../../docs/DEPLOY.md) y [docs/web/08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md (§5.1)](./08_DESARROLLO_INTEGRACIONES_Y_ROADMAP.md#51-topología-de-despliegue-en-producción-vercel--coolify).
 
 ### 3.5 Presupuesto y Estimación 2026
 El presupuesto de diseño y puesta en marcha se alinea con la escala de un desarrollo a medida (Custom Web Application con WebRTC y WebSockets), garantizando una inversión eficiente sin costos ocultos de licencias propietarias recurrentes.
@@ -94,8 +94,7 @@ mindmap
       Calificaciones de 1 a 5 estrellas
       Consejos de prevención sanitaria
     Customización
-      Portal adaptativo según rol
-      Preferencias y modo nocturno
+      Portal adaptativo según rol y preferencias clínicas (Modo Nocturno / Dark Mode diferido como ScopeOut para v2.1+)
     Comunicación
       Videoconsulta WebRTC LiveKit
       Chat en vivo con fotos macro
