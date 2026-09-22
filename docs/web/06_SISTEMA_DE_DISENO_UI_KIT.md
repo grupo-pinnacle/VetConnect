@@ -374,20 +374,8 @@ Todo componente interactivo o contenedor asíncrono debe contemplar explícitame
 4. **`reconnecting` (Reconexión de Socket/LiveKit):** Banner superior no intrusivo con spinner avisando restablecimiento de enlace en tiempo real.
 
 ## 9. Inventario Canónico de `data-testid` (Contrato Anti-Regresión Vitest)
-Para preservar la estabilidad de los 29 tests de Vitest durante la extracción atómica de componentes, ninguna IA debe modificar los siguientes selectores y textos clave. **Estos valores están verificados contra los archivos de test reales en `web/src/__tests__/`.**
 
-| Componente / Pantalla | Selector Requerido (`data-testid` o texto exacto) | Archivo de Test Vinculante |
-|---|---|---|
-| **Landing Page** | `data-testid="brand-logo"`, `data-testid="trust-badge-senasa"`, `data-testid="hero-title"`, `data-testid="cta-client-portal"`, `data-testid="cta-vet-portal"`, `data-testid="cta-admin-portal"`, `data-testid="download-apk-link"` | `Landing.test.tsx` |
-| **Formulario Login** | `placeholder="ejemplo@vetconnect.com"`, `placeholder="********"`, Botón texto exacto `"Iniciar Sesión"` | `Login.test.tsx` |
-| **Formulario Register** | Heading texto exacto `"Registro en VetConnect"`, Botón texto exacto `"Crear Cuenta"` | `Register.test.tsx` |
-| **Dashboard Tutor** | `data-testid="header-title"`, `data-testid="empty-pets-state"`, `data-testid="empty-consultations-state"`, `data-testid="add-pet-button"`, `data-testid="add-pet-modal"`, `data-testid="input-pet-name"`, `data-testid="input-pet-breed"`, `data-testid="save-pet-button"` | `DashboardClient.test.tsx` |
-| **Dashboard Vet** | `data-testid="badge-priority-rojo"`, `data-testid="badge-priority-amarillo"`, `data-testid="badge-priority-verde"`, `data-testid="emit-prescription-button-{id}"`, `data-testid="input-prescription-medication"`, `data-testid="input-prescription-dosage"`, `data-testid="input-prescription-frequency"`, `data-testid="input-prescription-duration"`, `data-testid="input-prescription-indications"`, `data-testid="save-prescription-button"`, `data-testid="prescription-qr-image"`, `data-testid="header-vet-title"`, `data-testid="vet-license-info"`, `data-testid="presence-toggle-switch"`, `data-testid="waiting-card-{id}"`, `data-testid="assign-patient-button-{id}"`, `data-testid="prescription-modal"` | `DashboardVet.test.tsx` |
-| **Sala de Llamada (PreJoinModal)** | Heading `"Verificacion Previa de Camara y Microfono"`, Botón `"Ingresar a la Consulta"` | `CallRoom.test.tsx` |
-| **Vista de Receta** | `data-testid="prescription-header-title"`, `data-testid="rx-medication"`, `data-testid="prescription-qr-code"`, `data-testid="print-prescription-button"` | `PrescriptionView.test.tsx` |
-| **Panel Admin Vets** | `data-testid="admin-title"`, `data-testid="vet-row-{id}"`, `data-testid="vet-speciality-{id}"` *(muestra información profesional contenida en `bio` o presentación en UI, ya que en el modelo relacional la persistencia reside en el campo `bio`)*, `data-testid="approve-vet-button-{id}"`, `data-testid="reject-vet-button-{id}"`, `data-testid="input-reject-reason-{id}"` | `AdminVets.test.tsx` |
-| **Modal Admin & Toast UX** | `data-testid="admin-toast-notification"` (text: 'Matrícula aprobada exitosamente' / 'Matrícula rechazada'), `data-testid="input-reject-reason-{id}"`, `data-testid="empty-pending-vets"`, `data-testid="admin-error-alert"` | `AdminVetsModal.test.tsx` |
-| **Página 404** | `data-testid="not-found-code"`, `data-testid="not-found-title"`, `data-testid="not-found-home-button"` | `NotFound.test.tsx` |
+> 📌 **Fuente Única de Verdad (SSOT):** El inventario exhaustivo de selectores `data-testid` y textos vinculantes para los 29 tests de Vitest se encuentra formalmente centralizado en [`docs/web/AGENT_CODING_SPEC.md (§7)`](./AGENT_CODING_SPEC.md#7-contrato-de-data-testid-y-selectores-29-tests-de-vitest).
 
 ## 10. Secuencia Obligatoria de Extracción Atómica (CDD Roadmap)
 El orden de implementación atómica de componentes debe respetar la jerarquía de dependencias:

@@ -72,7 +72,7 @@ graph TD
 ```
 
 1. **Página Principal (Landing Page):** Propuesta de valor, acceso rápido al botón de emergencia médica, explicación de cómo funciona en 3 pasos, testimonios de tutores y sellos de habilitación sanitaria.
-2. **Registro e Inicio de Sesión:** Pantallas unificadas con selector de rol (`Tutor` / `Veterinario`), validaciones Zod en tiempo real y flujo de recuperación de contraseña.
+2. **Registro e Inicio de Sesión:** Login universal por email y contraseña; registro con selector de rol (Tutor / Veterinario) y validaciones Zod en tiempo real conforme al alcance v2.0 (recuperación de contraseña diferida a v2.1+).
 3. **Apartado Institucional / Legal:** Misión médica, nómina de directores técnicos veterinarios, términos de servicio y políticas de protección de datos (Ley 25.326).
 4. **Formulario de Contacto y Soporte:** Canal de asistencia técnica directa para problemas de conectividad, acceso a la cuenta o funcionamiento de la videoconsulta, complementado con botón directo de WhatsApp de soporte.
 5. **Operaciones CRUD Universales:** Todas las entidades gestionables (mascotas, consultas, recetas) implementan creación, lectura estructurada, edición controlada y eliminación lógica (*soft-delete* con `deletedAt`).

@@ -161,7 +161,7 @@ flowchart TD
     end
 
     subgraph Layer3["3. REALTIME STATE (Eventos Sincrónicos de Red)"]
-        SC["💬 Socket.io Client Connection<br/>• Mensajes entrantes de chat médica (`message:new`)<br/>• Estado de presencia de guardia (`vet:status:changed`)<br/>• Deduplicación por `clientMsgId`"]
+        SC["💬 Socket.io Client Connection<br/>• Mensajes entrantes de chat médica (`message:new`)<br/>• Alerta de llamada entrante (`call:incoming`)<br/>• Deduplicación por `clientMsgId`"]
     end
 
     subgraph Layer4["4. WEBRTC MEDIA STATE (Audio & Video Streaming)"]
@@ -169,13 +169,15 @@ flowchart TD
     end
 ```
 
+> ⚠️ **Nota Canónica:** En las páginas existentes (`DashboardClient.tsx`, `DashboardVet.tsx`, `AdminVets.tsx`), el data fetching opera mediante `useState + useEffect + api.ts`. TanStack Query v5 está congelado en las páginas vivas y se reserva para nuevos componentes atómicos en Storybook hasta incorporar `renderWithClient` en `test-utils.tsx`.
+
 ### 3.1 Detalle de Capas:
 
 | Capa | Tecnología | Datos Administrados | Persistencia | Mecanismo de Invalidación / Limpieza |
 |---|---|---|---|---|
 | **Server State** | TanStack Query v5 | Mascotas, historias clínicas, cola de espera, recetas, auditoría | Memoria caché de React Query | `queryClient.invalidateQueries({ queryKey })` tras mutaciones exitosas. |
 | **Auth State** | `AuthContext` (React) | `user`, `role`, `accessToken`, `isAuthenticated` | Memoria RAM (Token) + Cookie HttpOnly (Refresh) | Cierre de sesión (`logout()`), rotación de `tokenVersion` en backend. |
-| **Realtime State** | `socket.io-client` v4 | Mensajes de chat, indicador de escritura, presencia de guardia | Memoria de la sesión activa de WebSocket | Desconexión en `useEffect` cleanup (`socket.disconnect()`). |
+| **Realtime State** | `socket.io-client` v4 | Mensajes de chat (`message:new`), alertas de llamada (`call:incoming`) | Memoria de la sesión activa de WebSocket | Desconexión en `useEffect` cleanup (`socket.disconnect()`). |
 | **Media State** | `@livekit/components-react` | Pistas de WebRTC, dispositivos AV seleccionados, sala activa | Memoria del motor WebRTC del navegador | Cierre de sala (`room.disconnect()`) y teardown de pistas. |
 
 ---
