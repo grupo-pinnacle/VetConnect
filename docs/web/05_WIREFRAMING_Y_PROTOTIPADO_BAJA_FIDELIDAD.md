@@ -167,6 +167,29 @@ A continuación se detallan las pantallas esenciales del ecosistema web de VetCo
 *Conexión con el Árbol Web: [Nivel 3] Sala de Atención Médica Activa*  
 *Archivos Fuente Reales:* [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx) y [`web/src/components/call/CallRoom.tsx`](../../web/src/components/call/CallRoom.tsx) (con handshake `ReactNativeWebView.postMessage`)
 
+#### Estado A: Sala de Espera Interactiva (`ConsultationRoom.tsx` cuando `status === 'WAITING'`)
+
+```
++-----------------------------------------------------------------------------+
+| [🐾 VetConnect]                                            Tutor: En Espera |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|                       🔄 CONECTANDO CON LA GUARDIA                          |
+|              Aguardando que un veterinario tome tu consulta...              |
+|                                                                             |
+|       [ Animación de Pulso / Spinner ]   Tiempo transcurrido: 02:45        |
+|                                                                             |
+|       Paciente: Milo (Canino) | Prioridad: [ ROJO - EMERGENCIA VITAL ]      |
+|       Síntomas reportados: Dificultad respiratoria leve observada...        |
+|                                                                             |
+|                   [ ✕ CANCELAR SOLICITUD DE GUARDIA ]                       |
+|                                                                             |
++-----------------------------------------------------------------------------+
+```
+Si el tutor presiona `[ CANCELAR SOLICITUD ]`, ejecuta `PATCH /api/consultations/:id/cancel` y navega a `/client/dashboard`.
+
+#### Estado B: Videoconsulta Activa (`ConsultationRoom.tsx` cuando `status === 'ACTIVE'`)
+
 ```
 +-------------------------------------------------------------------------------------------------------------+
 | Breadcrumbs: Inicio > Tablero de Guardia > Consulta Médica Activa #3492                                     |

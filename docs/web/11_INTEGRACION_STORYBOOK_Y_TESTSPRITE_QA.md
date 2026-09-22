@@ -46,7 +46,7 @@ flowchart TD
 Storybook opera como el **taller de desarrollo aislado** del equipo de frontend. Permite:
 * Diseñar y probar cada botón, tarjeta o modal **sin levantar el servidor backend Express**, sin depender de la base de datos PostgreSQL y sin tener que iniciar sesión manualmente una y otra vez.
 * Proveer al **Técnico Multimedial (Damian Orellana)** de un catálogo visual interactivo de todos los componentes del sistema con sus estados (`default`, `hover`, `active`, `disabled`, `loading`, `error`).
-* Exportar componentes vectoriales directamente a Figma mediante el plugin `html.to.design` con un solo clic.
+> 📌 Ver protocolo de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 ### 2.2 Estructura y Configuración Técnica
 * **Configuración del Servidor:** [`web/.storybook/main.ts`](../../web/.storybook/main.ts) configurado con el framework `@storybook/react-vite` y resolución de módulos compatible con monorepos.
