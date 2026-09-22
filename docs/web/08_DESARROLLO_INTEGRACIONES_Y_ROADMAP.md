@@ -70,9 +70,13 @@ flowchart TB
     REST <--> PostgresDB
 ```
 
-### 2.1 Integración 1: Videollamadas HD con LiveKit Cloud SFU
-- La aplicación web solicita un token efímero de acceso mediante `POST /api/calls/:id/token`.
-- El backend responde con el contrato `{ success: true, data: { token, wsUrl } }`.
+### 2.1 Integración 1: Videollamadas HD con LiveKit Cloud SFU & Contrato de Sala de Espera
+- **Contrato de Navegación y Máquina de Estados (`ConsultationRoom.tsx`):**
+  1. Al montar `/call/:id`: Invocar `GET /api/consultations/:id`.
+  2. Si `status === 'WAITING'`: Mostrar la UI de **"Sala de Espera: Aguardando asignación de veterinario de guardia..."** y activar polling cada 5s a `GET /api/consultations/:id` (o escuchar eventos Socket.io). **NO invocar `POST /api/calls/:id/token`** (en `backend/src/modules/calls/calls.service.ts:59`, solicitar token con estado no `ACTIVE` arroja `400 INVALID_CONSULTATION_STATE`).
+  3. Cuando el estado transicione a `ACTIVE`: Cancelar el polling, solicitar el token LiveKit con `POST /api/calls/:id/token` y renderizar `<CallRoom>`.
+  4. Al presionar "Finalizar Consulta": El médico debe ejecutar `PATCH /api/consultations/:id/complete` `{ diagnosisNotes }` antes de redirigir.
+- El backend responde al token request con el contrato `{ success: true, data: { token, wsUrl } }`.
 - El token se genera con identidad opaca (`user.id`) y nombre de pila del médico/tutor, **sin incluir correos ni datos personales (PII)** según las directivas de seguridad de [`AGENTS.md`](../../AGENTS.md) y Ley N° 25.326.
 - La sala se monta utilizando `<LiveKitRoom>` configurado en resolución 720p a 24fps con simulcast adaptativo y audio WebRTC sin duplicación de renderers (`<RoomAudioRenderer>` no debe duplicarse si se usa `<VideoConference />`).
 - **Requisito de Endurecimiento:** En `ConsultationRoom.tsx`, la URL devuelta en `wsUrl` debe almacenarse y transferirse dinámicamente como prop a `<CallRoom token={livekitToken} serverUrl={livekitWsUrl} />` para evitar fallbacks fijos en caso de migración o balanceo de clusters en LiveKit Cloud.

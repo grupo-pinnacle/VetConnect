@@ -200,7 +200,7 @@ A continuación se detallan las pantallas esenciales del ecosistema web de VetCo
 
 ---
 
-### Pantalla 6A: Modal de Emisión de Receta Oficial (Inline en ConsultationRoom / DashboardVet)
+### Pantalla 6A: Modal Clínico de Emisión de Receta Oficial (`PrescriptionModal`)
 
 *Conexión con el Árbol Web: [Nivel 3] Emisión de Receta (Modal Flotante)*
 *Archivos Fuente Reales:* Modal flotante invocado desde [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx) y [`web/src/pages/DashboardVet.tsx`](../../web/src/pages/DashboardVet.tsx). El modal se activa con el botón `[ CONFECCIONAR RECETA MÉDICA SENASA ]`.

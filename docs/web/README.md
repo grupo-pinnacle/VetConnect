@@ -45,7 +45,7 @@ La suite completa del monorepo cuenta con **36 suites / 123 tests PASSED (0 fall
 El mapeo uno a uno entre especificación planificada y archivos de código fuente (`web/src/pages/`, `context/`, `services/`) está documentado en [**`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#4-contraste-empírico-planificación-vs-código-real`**](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#4-contraste-empírico-planificación-vs-código-real).
 
 > 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
-- **Modelo de Acceso en v2.0 (Sin Pasarela de Pago):** Conforme a [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), la pasarela de pagos es formalmente **ScopeOut para v2.0**, operando bajo modelo de guardia institucional sin barreras arancelarias de entrada en el PMV (pagos diferidos a v2.1+).
+- **Modelo de Acceso en v2.0 (Guardia Institucional):** Conforme a [`docs/PLAN_DE_PROYECTO_Y_GESTION.md:214`](../PLAN_DE_PROYECTO_Y_GESTION.md#L214), la pasarela de pagos es formalmente **(v2.0: Guardia Institucional / Pasarela de Pagos ScopeOut para v2.1+)**, operando bajo modelo de guardia telemédica sin barreras arancelarias de entrada en el PMV.
 
 ---
 

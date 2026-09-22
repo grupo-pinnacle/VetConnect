@@ -152,7 +152,7 @@ graph LR
    > *"TestSprite, ejecuta los escenarios TS-E2E-01 a TS-E2E-08 sobre https://vet-connect-web.vercel.app y genera el informe de hallazgos."*
 3. Analizar los reportes de video y capturas de pantalla de TestSprite; corregir iterativamente cualquier anomalía detectada.
 
-### 🔹 Fase 4: Exportación Vectorial a Figma para el Diseñador Multimedial
+### 🔹 Fase 4: Exportación Vectorial y Sincronización con Figma (Damian Orellana)
 > 📌 Ver protocolo metodológico de diseño colaborativo y exportación en [06_SISTEMA_DE_DISENO_UI_KIT.md (§7)](./06_SISTEMA_DE_DISENO_UI_KIT.md#7-metodología-híbrida-storybook--figma).
 
 ---
