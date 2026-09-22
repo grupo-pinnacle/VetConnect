@@ -288,7 +288,8 @@ export interface HangUpButtonProps extends BaseComponentProps {
 /** PrescriptionDoc — read-only prescription document with QR code (used in PrescriptionView) */
 export interface PrescriptionDocProps extends BaseComponentProps {
   prescription: Prescription;
-  qrUrl: string;
+  qrUrl?: string;
+  pet?: Pet;
   onPrint?: () => void;
 }
 
@@ -302,6 +303,21 @@ export interface PrescriptionModalProps extends BaseComponentProps {
   consultationId: string;
   onClose: () => void;
   onSuccess: (prescription: Prescription) => void;
+  initialValues?: {
+    medication?: string;
+    dosage?: string;
+    frequency?: string;
+    durationDays?: number;
+    indications?: string;
+  };
+  isLoading?: boolean;
+  onSubmit?: (data: {
+    medication: string;
+    dosage: string;
+    frequency: string;
+    durationDays: number;
+    indications: string;
+  }) => Promise<Prescription | void>;
 }
 
 /**
@@ -315,6 +331,10 @@ export interface ReviewModalProps extends BaseComponentProps {
   consultationId: string;
   onClose: () => void;
   onSuccess?: () => void;
+  initialRating?: number;
+  initialComment?: string;
+  isLoading?: boolean;
+  onSubmit?: (data: { rating: number; comment?: string }) => Promise<void>;
 }
 
 /**
