@@ -257,7 +257,26 @@ cd web && npx vitest
 cd web && npx vitest run --coverage
 ```
 
-### 4.3 Verificación de Integración Continua y Pre-Despliegue
+### 4.3 Taller de Componentes Aislados & Accesibilidad (Storybook 8)
+```bash
+# Iniciar servidor interactivo de Storybook (puerto 6006)
+npm run storybook -w web
+
+# Compilación estática de Storybook y verificación de bundles
+npm run build-storybook -w web
+```
+- **Catálogo UI:** Pruebas visuales de átomos, moléculas y organismos en `web/src/components/ui/`.
+- **Addon a11y (Axe Core):** Auditoría en vivo de contraste (4.5:1 mínimo) y roles ARIA.
+- **Sincronización:** Exportación con `html.to.design` para actualización de Figma.
+
+### 4.4 Aseguramiento Autónomo de Calidad E2E con IA (TestSprite MCP)
+- **Servidor MCP:** `@testsprite/testsprite-mcp` (puerto configurable vía `mcpServers.testsprite`).
+- **Target URL:** Despliegue en producción/preview Vercel (`https://vet-connect-web.vercel.app`).
+- **Escenarios Clave:** Ejecución autónoma de los 8 flujos clínicos (TS-E2E-01 al TS-E2E-08) que cubren registro de usuarios, CRUD de mascotas, triage de urgencia, atención veterinaria, videoconsulta WebRTC y validación QR de recetas.
+- **Reportes:** Grabaciones de video, capturas de pantalla, trazas de red y diagnósticos automáticos de causa raíz ante anomalías.
+- **Referencia Canónica:** [`docs/web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md`](web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md).
+
+### 4.5 Verificación de Integración Continua y Pre-Despliegue
 ```bash
 # 1. Verificación semántica y de gobernanza (40 PBs ↔ 20 TASKs ↔ 10 Modelos)
 npm run check:governance

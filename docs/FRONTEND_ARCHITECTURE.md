@@ -466,6 +466,38 @@ cd web && npx vitest
 cd web && npx vitest run --coverage
 ```
 
+### 11.3 Catálogo Aislado & Component-Driven Development (Storybook 8)
+
+El desarrollo visual del frontend se apoya en **Storybook 8** como taller de componentes aislado (`web/.storybook/` con `@storybook/react-vite`):
+- **Desarrollo sin Dependencias Backend:** Permite diseñar, parametrizar e interactuar con cada átomo (`Button`, `Badge`, `Input`, `Avatar`), molécula (`PetCard`, `TriageSelector`, `ChatMessage`) u organismo (`PrescriptionDoc`, `HangUpButton`) sin necesidad de levantar PostgreSQL, Redis ni Express.
+- **Auditoría de Accesibilidad en Vivo (Axe Core):** Integración nativa con `@storybook/addon-a11y`, que audita automáticamente contraste cromático (WCAG 2.1 AA), atributos ARIA y foco por teclado en cada historia (`.stories.tsx`).
+- **Sincronización Bidireccional con Figma:** Permite al equipo de diseño y multimedia exportar componentes vivos hacia Figma mediante herramientas de captura vectorial (`html.to.design`), garantizando que la dirección de arte esté siempre alineada con el código de producción.
+- **Comandos Operativos:**
+  ```bash
+  # Iniciar el servidor local de Storybook (puerto 6006)
+  npm run storybook -w web
+
+  # Compilar Storybook estático para revisión de diseño
+  npm run build-storybook -w web
+  ```
+
+### 11.4 QA Autónomo de Caja Negra con IA (TestSprite MCP)
+
+VetConnect incorpora **TestSprite** como agente de aseguramiento de calidad (QA) autónomo impulsado por IA para pruebas E2E sobre el entorno desplegado en Vercel (`https://vet-connect-web.vercel.app`):
+- **Exploración Agéntica Autónoma:** TestSprite no depende de scripts con selectores frágiles; mediante su servidor MCP (`@testsprite/testsprite-mcp`) analiza el DOM, comprende los flujos clínicos de tutores y veterinarios, y ejecuta de forma autónoma los escenarios críticos de negocio:
+  - `TS-E2E-01`: Navegación y responsividad de la Landing Page.
+  - `TS-E2E-02`: Registro y onboarding de tutor (`CLIENT`).
+  - `TS-E2E-03`: Gestión de mascotas y fichas clínicas.
+  - `TS-E2E-04`: Triage clínico de urgencia y espera en cola FIFO.
+  - `TS-E2E-05`: Conmutación de guardia y recepción veterinaria (`VET`).
+  - `TS-E2E-06`: Videoconsulta WebRTC y chat fotográfico en `/call/:id`.
+  - `TS-E2E-07`: Emisión y validación QR de recetas oficiales SENASA.
+  - `TS-E2E-08`: Fiscalización y aprobación administrativa de matrículas en `/admin/vets`.
+- **Diagnóstico y Auto-Healing:** Ante cualquier anomalía, TestSprite genera un informe forense con grabaciones de video, capturas de pantalla, trazas de red y diagnóstico de causa raíz.
+- **Guardarraíl Operativo:** Si el servidor MCP o `TESTSPRITE_API_KEY` no están presentes en el entorno local, los agentes continúan validando con la suite canónica de Vitest (`npm test -w web`), operando TestSprite como capa de auditoría complementaria en la nube.
+
+> 📌 Ver protocolo completo y matriz de escenarios en [`docs/web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md`](web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md).
+
 ---
 
 ## 12. Alineación con el Monorepo y la Suite `docs/web/`

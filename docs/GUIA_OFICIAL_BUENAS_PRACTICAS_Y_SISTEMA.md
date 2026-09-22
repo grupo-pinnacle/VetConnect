@@ -276,6 +276,8 @@ Para evitar race conditions, la página web emite `page:ready` al estar montada,
 - **Máquina de 4 Estados de UI:** Todo componente asíncrono debe manejar de forma determinista `loading`, `error` (RFC 7807 mapeado), `empty state` afirmativo y `success data`.
 - **Code-Splitting y Optimización de Bundle:** Las rutas clínicas (`ConsultationRoom`, `DashboardClient`, `DashboardVet`, `AdminVets`, `PrescriptionView`) deben cargarse diferidamente mediante `React.lazy()` y `Suspense`, preservando el bundle inicial de la Landing Page por debajo de 50 kB gzip.
 - **Atributos Semánticos de Prueba:** Todo botón, input, formulario y modal debe portar atributos `data-testid` descriptivos para facilitar el testing en Vitest/Testing Library y la accesibilidad con lectores de pantalla.
+- **Taller de Componentes Aislados en Storybook 8:** Desarrollar y auditar todo componente UI atómico (`web/src/components/ui/`) en Storybook de forma aislada antes de integrarlo en las páginas, garantizando cumplimiento de accesibilidad WCAG 2.1 AA con `@storybook/addon-a11y` (Axe Core) y sincronización con Figma.
+- **Aseguramiento Autónomo E2E con TestSprite (MCP):** Auditar los flujos clínicos de usuario final sobre el despliegue público en Vercel (`https://vet-connect-web.vercel.app`) mediante el agente de IA TestSprite, detectando anomalías con videos y diagnósticos de causa raíz sin alterar la suite unitaria local.
 
 ### ❌ Ejemplos de NO Uso (Antipatrones a Evitar en Frontend Web)
 

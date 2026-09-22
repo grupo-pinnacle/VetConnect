@@ -325,6 +325,11 @@ El **Frontend Web de VetConnect** se estructura como una Single Page Application
 ### B. Enrutamiento Jerárquico & Code-Splitting:
 La SPA organiza sus vistas bajo React Router con guardias de seguridad (`ProtectedRoute`) que restringen el acceso según el rol del usuario (`CLIENT`, `VET`, `ADMIN`). Para maximizar la velocidad de carga inicial de la Landing Page pública (`Landing.tsx`), todas las consolas clínicas de alta densidad (`DashboardClient`, `DashboardVet`, `ConsultationRoom`, `AdminVets`, `PrescriptionView`) se cargan diferidamente mediante `React.lazy()` y `Suspense`, manteniendo el bundle inicial en apenas 20.38 kB gzip.
 
+### C. Metodología de Construcción Visual & QA Autónomo con IA:
+1. **Component-Driven Development con Storybook 8 (`web/.storybook/`):** Taller atómico aislado para desarrollar y probar botones, insignias de triaje, tarjetas clínicas y modales sin requerir el backend en ejecución, con auditoría continua de accesibilidad mediante `@storybook/addon-a11y` (Axe Core) y sincronización con Figma (`html.to.design`).
+2. **QA Autónomo de Caja Negra con TestSprite (MCP):** Agente de Inteligencia Artificial que explora de manera autónoma los flujos clínicos completos de tutores, veterinarios y administradores sobre la aplicación desplegada en Vercel (`https://vet-connect-web.vercel.app`), generando diagnósticos de causa raíz y reportes en video ante anomalías.
+   > 📌 Especificación completa en [`docs/web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md`](web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md).
+
 ---
 
 ## 7. Relación con el Proceso Integral de Planificación de Software
