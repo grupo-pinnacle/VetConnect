@@ -71,7 +71,7 @@ sequenceDiagram
 #### Fases Clave del Flujo:
 1. **Acceso Rápido:** Autenticación biométrica o sesión persistente; selección de la mascota con un solo toque.
 2. **Triaje Guiado:** Formulario de preguntas cerradas de alta velocidad que evita la redacción extensa en situaciones de pánico.
-3. **Espera con Retroalimentación en Vivo:** Contador de posición en cola y tiempo estimado para mitigar la ansiedad del tutor.
+3. **Cola de Guardia FIFO:** La consulta queda en estado `PENDING` visible de inmediato para los veterinarios con guardia activa (`isOnline = true`) en su tablero (`GET /api/consultations/pending`). Al ser aceptada (`PATCH /api/consultations/:id/assign`), ambos participantes ingresan automáticamente a la sala `/call/:id`.
 4. **Consulta Multicanal:** Videollamada 720p fluida con chat lateral para intercambio de estudios o fotos con zoom.
 5. **Cierre Formal:** Emisión instantánea de la prescripción electrónica en formato PDF estándar con código QR.
 
@@ -231,6 +231,8 @@ El sistema tipográfico combina neutralidad, alta legibilidad en pantallas de ba
 El sistema de diseño define especificaciones visuales y de interacción para los componentes centrales:
 
 #### A. Botones Interactivos (Buttons)
+> 📌 **Implementación Canónica:** El catálogo atómico de botones (`<Button variant="primary|secondary|outline|danger|ghost">`) y badges (`<Badge>`) está implementado en `web/src/components/ui/` y verificado en Storybook (`npm run storybook -w web`).
+
 - **Botón Primario (CTA / Emergencia):** Fondo `#2563EB`, texto blanco `#FFFFFF`, esquinas `rounded-xl` (12px), altura mínima `48px`, sombra suave. Estado `Hover`: oscurecimiento a `#1D4ED8`. Estado `Active`: escala al 98%.
 - **Botón Secundario (Acción Alternativa):** Fondo `#FFFFFF`, borde `1.5px` sólido `#E2E8F0`, texto `#0F172A`.
 - **Botón Destructivo (Cancelar Atención / Eliminar):** Fondo `#DC2626`, texto blanco, confirmación modal obligatoria.
