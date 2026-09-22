@@ -133,6 +133,7 @@ A continuación se detalla la especificación visual, la disposición de element
        - *Online:* `bg-emerald-600 text-white` con punto pulsante verde (`animate-ping`).
        - *Offline:* `bg-slate-200 text-slate-700`.
 2. **Panel de Métricas del Turno:**
+   *(⚠️ Mockup visual cosmético / ScopeOut para v2.1+. En el MVP v2.0 físico no existen endpoints de cálculo de métricas en vivo en el backend; la IA tiene prohibido inventar endpoints o queries)*
    - 3 tarjetas KPI (`bg-white rounded-xl border border-slate-200 p-4`):
      - `Consultas Realizadas Hoy`: Contador numérico grande (`text-2xl font-bold text-slate-900`).
      - `Tiempo Medio de Consulta`: `14 min`.
@@ -164,6 +165,7 @@ A continuación se detalla la especificación visual, la disposición de element
        - Botón Pantalla Completa: Icono `Maximize2`.
        - Botón Destructivo: `[ Finalizar Consulta ]` (`bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-full font-semibold`).
 2. **Lado Derecho: Panel Clínico Multitarea (35% del ancho):**
+   *(⚠️ Nota de Alcance v2.0: En el código vivo actual de ConsultationRoom.tsx se renderiza el Chat Sincrónico con fotos clínicas; la Pestaña 2 'Ficha Médica & Receta' es un entregable de diseño de la Fase 3 CDD / Gap G-04)*
    - Sistema de 2 pestañas superiores:
      - `Pestaña 1: Chat Sincrónico & Fotos` (Icono `MessageSquare`).
      - `Pestaña 2: Ficha Médica & Receta` (Icono `ClipboardList`).
