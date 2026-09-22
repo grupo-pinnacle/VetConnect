@@ -5,6 +5,7 @@ import api from '../services/api';
 import { Pet, Consultation, ApiResponse } from '../types';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { PetCardSkeleton } from '../components/ui/Skeleton';
+import { Heart, Stethoscope, Plus } from 'lucide-react';
 
 export const DashboardClient: React.FC = () => {
   const { user, logout } = useAuth();
@@ -168,8 +169,27 @@ export const DashboardClient: React.FC = () => {
 
           <div className="space-y-3" data-testid="pets-list">
             {pets.length === 0 ? (
-              <div className="p-8 text-center text-sm text-slate-500 italic bg-slate-50 rounded-lg" data-testid="empty-pets-state">
-                Sin registros de mascotas
+              <div
+                className="p-8 text-center bg-gradient-to-b from-slate-50 to-slate-100/70 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center transition-all"
+                data-testid="empty-pets-state"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 shadow-inner border border-emerald-100/80">
+                  <Heart className="w-7 h-7 text-emerald-600" aria-hidden="true" />
+                </div>
+                <h3 className="font-bold text-slate-800 text-sm sm:text-base mb-1">
+                  Aún no registraste a tus compañeros peludos
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mb-4 leading-relaxed">
+                  Para poder solicitar teleconsultas veterinarias en tiempo real y llevar el historial médico de vacunas y recetas, primero añade los datos de tu mascota.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowPetModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-emerald-600/20 hover:shadow-md transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                  + Registrar a mi primera mascota
+                </button>
               </div>
             ) : (
               pets.map((pet) => (
@@ -262,7 +282,20 @@ export const DashboardClient: React.FC = () => {
             <h3 className="font-semibold text-slate-700 text-sm mb-2">Mis Consultas Recientes</h3>
             <div className="space-y-2">
               {consultations.length === 0 ? (
-                <p className="text-xs text-slate-500 italic" data-testid="empty-consultations-state">Sin registros de consultas</p>
+                <div
+                  className="p-6 text-center bg-gradient-to-b from-slate-50 to-slate-100/70 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center transition-all"
+                  data-testid="empty-consultations-state"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-2.5 shadow-inner border border-sky-100/80">
+                    <Stethoscope className="w-6 h-6 text-sky-600" aria-hidden="true" />
+                  </div>
+                  <h4 className="font-bold text-slate-800 text-xs sm:text-sm mb-1">
+                    No tienes consultas activas ni pendientes
+                  </h4>
+                  <p className="text-[11px] text-slate-500 max-w-xs leading-relaxed">
+                    Si tu mascota presenta síntomas, completa el formulario de solicitud superior para ingresar a la cola de triage clínico con atención inmediata.
+                  </p>
+                </div>
               ) : (
                 consultations.map((c) => (
                   <div
