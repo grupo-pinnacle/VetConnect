@@ -15,7 +15,7 @@ En esta fase el diseño estructural cobra vida como una aplicación web interact
 flowchart LR
     Figma["Diseño en Figma<br/>(UI Kit & Prototipo)"] --> Tailwind["Tokens Tailwind CSS<br/>(Colores 60-30-10, Sombras)"]
     Tailwind --> Components["Componentes React 18.3.1<br/>(TypeScript Estricto, Cero 'any')"]
-    Components --> State["TanStack Query v5 & AuthContext<br/>(Cache & Cola de Concurrencia Axios)"]
+    Components --> State["TanStack Query v5 (INSTALADO, QueryClientProvider en App.tsx)<br/>⚠️ USO CONGELADO en páginas existentes — páginas actuales usan useState+useEffect<br/>Reservado para nuevos componentes atómicos | AuthContext + Axios failedQueue (Sesión)"]
     State --> App["SPA de Producción<br/>(Compilada con Vite)"]
 ```
 
@@ -74,8 +74,8 @@ flowchart TB
 ### 2.1 Integración 1: Videollamadas HD con LiveKit Cloud SFU & Contrato de Sala de Espera
 - **Contrato de Navegación y Máquina de Estados (`ConsultationRoom.tsx`):**
   1. Al montar `/call/:id`: Invocar `GET /api/consultations/:id`.
-  2. Si `status === 'WAITING'`: Mostrar la UI de **"Sala de Espera: Aguardando asignación de veterinario de guardia..."** y activar polling cada 5s a `GET /api/consultations/:id`. **NO invocar `POST /api/calls/:id/token`** (en `backend/src/modules/calls/calls.service.ts:59`, solicitar token con estado no `ACTIVE` arroja `400 INVALID_CONSULTATION_STATE`).
-  3. Cuando el estado transicione a `ACTIVE`: Cancelar el polling, solicitar el token LiveKit con `POST /api/calls/:id/token` y renderizar `<CallRoom>`.
+  2. Si `status === 'WAITING'`: Mostrar la UI de **"Sala de Espera: Aguardando asignación de veterinario de guardia..."** y activar polling cada 5s a `GET /api/consultations/:id`. **NO invocar `POST /api/calls/:consultationId/token`** (en `backend/src/modules/calls/calls.service.ts:59`, solicitar token con estado no `ACTIVE` arroja `400 INVALID_CONSULTATION_STATE`).
+  3. Cuando el estado transicione a `ACTIVE`: Cancelar el polling, solicitar el token LiveKit con `POST /api/calls/:consultationId/token` y renderizar `<CallRoom>`.
   4. Al presionar "Finalizar Consulta": El médico debe ejecutar `PATCH /api/consultations/:id/complete` `{ diagnosisNotes }` antes de redirigir.
 - ⚠️ **Sincronización Canónica de Transición WAITING → ACTIVE:**
   En v2.0, el backend NO emite eventos de Socket.io para la asignación de consultas (`consultation:assigned` no existe en `socket.types.ts`). Por lo tanto, el cliente debe usar exclusivamente polling HTTP cada 5 segundos invocando `GET /api/consultations/:id` mientras el estado sea `WAITING`. Queda terminantemente prohibido registrar listeners socket ficticios.
@@ -84,9 +84,12 @@ flowchart TB
 - La sala se monta utilizando `<LiveKitRoom>` configurado en resolución 720p a 24fps con simulcast adaptativo y audio WebRTC sin duplicación de renderers (`<RoomAudioRenderer>` no debe duplicarse si se usa `<VideoConference />`).
 - **Requisito de Endurecimiento:** En `ConsultationRoom.tsx`, la URL devuelta en `wsUrl` debe almacenarse y transferirse dinámicamente como prop a `<CallRoom token={livekitToken} serverUrl={livekitWsUrl} />` para evitar fallbacks fijos en caso de migración o balanceo de clusters en LiveKit Cloud.
 
+> ⚠️ **Gap Arquitectónico v2.0 — Entrega de `call:incoming` en la Web (H-09):**
+> El backend emite `call:incoming` al room personal `user:${targetUserId}` (cada usuario se une automáticamente a este room al conectarse, según `socket.server.ts:61`). Sin embargo, **en la SPA web, la conexión Socket.io se abre ÚNICAMENTE dentro de `ConsultationRoom.tsx`** — no existe un `SocketContext` o `SocketProvider` global envolviendo `App.tsx`. Por lo tanto, en v2.0 el tutor NO recibirá el evento `call:incoming` si no está dentro de la sala de llamada. Para implementar la recepción global del timbrado en la web (ej. en `DashboardClient.tsx`), se debe crear un `SocketContext` con conexión persistente y autenticada que envuelva el árbol de la aplicación desde `App.tsx`. Este es un **gap arquitectónico conocido para la ruta a v2.1+**.
+
 ### 2.2 Integración 2: Mensajería Sincrónica con Socket.io & Fotos Macro
 - Conexión persistente autenticada contra el gateway de WebSockets.
-- Sala compartida por consulta (`consultation_{id}`).
+- Sala compartida por consulta (`consultation:${id}` — formato con **dos puntos como separador**, confirmado en `backend/src/realtime/gateways/chat.gateway.ts:29`).
 - Subida de macro-fotografías clínicas mediante `POST /api/media` con validación de *Magic Bytes* (solo JPEG, PNG y WebP médicos legítimos).
 - Las fotos se descargan únicamente mediante la ruta autenticada `GET /api/media/:id`, prohibiendo el serving estático público para proteger el secreto médico y la Ley N° 25.326.
 
@@ -142,6 +145,7 @@ flowchart LR
 1. **Hang-up (VET):** El botón "Finalizar Consulta" en `ConsultationRoom.tsx` debe llamar `PATCH /api/consultations/:id/complete` con `{ diagnosisNotes }` ANTES de navegar. El `navigate(-1)` actual (sin llamar al endpoint) es un gap conocido del MVP v2.0 que debe corregirse en la fase de desarrollo.
 
 2. **Review Modal (CLIENT):** Tras detectar `consultation.status === 'COMPLETED'`, `ConsultationRoom.tsx` desmonta el contenedor de llamada y presenta en la misma pantalla el `ReviewModal` como pantalla final de cierre. Una vez enviada la reseña (`POST /api/consultations/:id/review`) o presionado el botón "Omitir", la aplicación redirige al tutor a `/client/dashboard`.
+   > ⚠️ **Estado Real (Componente Pendiente):** `ReviewModal` es un **componente nuevo a crear** en `web/src/components/ui/ReviewModal.tsx`. Su contrato de props (`ReviewModalProps`) ya está definido en [`06_SISTEMA_DE_DISENO_UI_KIT.md §8`](./06_SISTEMA_DE_DISENO_UI_KIT.md#81-interfaces-typescript-de-props-extienden-basecomponentprops) y está incluido en la Fase 3 del CDD Roadmap (`§10` del mismo documento). `ConsultationRoom.tsx` actualmente NO implementa la detección de `COMPLETED` ni el montaje del `ReviewModal`.
 
 3. **Cancel Flow:** `PATCH /api/consultations/:id/cancel` está disponible para CLIENT y ADMIN. Debe ofrecerse como opción si el tiempo de espera en sala supera un umbral o el tutor decide abandonar.
 
@@ -233,7 +237,7 @@ El desarrollo del portal web no opera en una isla de 4 sprints aislados, sino qu
 | **Sprint 5** | PB-17 | Formulario de alta y gestión de mascotas (`/client/dashboard`) con validación opcional de microchip ISO de 15 dígitos. | ✅ **Completado** |
 | **Sprint 6** | PB-20, PB-23 | Modal de triage clínico en 3 pasos con cálculo automático de urgencia y formulario de soporte. | ✅ **Completado** |
 | **Sprint 7** | PB-26, PB-28 | Chat médico bidireccional Socket.io con idempotencia (`clientMsgId`), subida de fotos macroscópicas a `/api/media` y visualizador modal *Lightbox*. | ✅ **Completado** |
-| **Sprint 8** | PB-30 | Sala de telemedicina WebRTC HD 720p en [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx) vía LiveKit SFU dinámico sin audio duplicado. | ✅ **Completado** |
+| **Sprint 8** | PB-30 | Sala de telemedicina WebRTC HD 720p en [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx) vía LiveKit SFU dinámico sin audio duplicado. **⚠️ Gaps pendientes en ConsultationRoom:** (1) Máquina de estados `WAITING → ACTIVE` con polling HTTP cada 5s y UI de sala de espera. (2) Montaje de `PrescriptionModal` (lógica actualmente solo en `DashboardVet.tsx`). (3) Creación de `ReviewModal` y detección de `COMPLETED`. | ⚠️ **Base Completada / Gaps en Desarrollo** |
 | **Sprint 9** | PB-33, PB-34, PB-35 | Vista de prescripción oficial SENASA con código QR de verificación (`/prescriptions/:id`), estilos `@media print` A4 y calificación de consultas. | ✅ **Completado** |
 | **Sprint 10 (Fase Actual)** | PB-37, PB-38, PB-39, PB-40 | **Frontend Hardening & Elevación Visual:** Code-splitting (`React.lazy()`), Sentry SDK, 123 tests pasando en CI, catálogo de componentes atómicos en Storybook 8 con accesibilidad Axe (`@storybook/addon-a11y`), auditoría autónoma TestSprite y despliegue a producción en Vercel. | 🔄 **En Ejecución (Nivel 4.5 ➔ Nivel 5)** |
 

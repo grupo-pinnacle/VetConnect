@@ -112,12 +112,12 @@ El sistema tipográfico combina la precisión técnica de una fuente para pantal
 ### 5.2 Badges Semánticos de Triage Clínico & Normalización Bilingüe
 - **Triage Verde (`success` / `green`):** `bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold`
 - **Triage Amarillo (`warning` / `yellow`):** `bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 rounded-full text-xs font-semibold`
-- **Triage Rojo (`danger` / `red`):** `bg-rose-100 text-rose-800 border border-rose-200 px-3 py-1 rounded-full text-xs font-semibold animate-pulse`
+- **Triage Rojo (`danger` / `red`):** `bg-red-100 text-red-800 border border-red-200 px-3 py-1 rounded-full text-xs font-semibold animate-pulse`
 - **Estado Online (`online`):** `bg-teal-100 text-teal-800 border border-teal-200 px-3 py-1 rounded-full text-xs font-semibold`
 - **Estado Offline / Neutro (`offline` / `neutral`):** `bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-semibold`
 
 > 🩺 **Regla de Negocio Crítica de Triage Bilingüe:**
-> En el código del frontend (`DashboardClient.tsx`), el estado visual y la concatenación en `notes` se maneja con la convención oficial `[Prioridad: VERDE|AMARILLO|ROJO]`. En el componente `TriageSelector`, el selector acepta tanto la clave en inglés (`GREEN`) como en español (`VERDE`), normalizando internamente mediante `TRIAGE_EN_TO_ES` / `TRIAGE_ES_TO_EN` exportados en `web/src/types/index.ts` para que `DashboardVet.tsx` y la suite de pruebas `DashboardVet.test.tsx` (que esperan `data-testid="badge-priority-amarillo"`, etc.) funcionen al 100% sin romper tests.
+> En el código del frontend (`DashboardClient.tsx`), el estado visual y la concatenación en `notes` se maneja con la convención oficial `[Prioridad: VERDE|AMARILLO|ROJO]`. El componente `TriageSelector` acepta **únicamente** valores en español (`'ROJO' | 'AMARILLO' | 'VERDE'` — tipo `TriagePriorityES`). La normalización bilingüe (inglés → español) se realiza **en el componente contenedor** (`DashboardClient.tsx`) mediante `TRIAGE_EN_TO_ES` exportado de `web/src/types/index.ts`, **antes** de pasar el valor al `TriageSelector`. El componente átomo `TriageSelector` no realiza ninguna conversión interna.
 
 ### 5.3 Tarjeta Clínica de Paciente (Pet Card)
 - **Contenedor:** Fondo blanco, borde `slate-200`, radio `rounded-xl`, sombra `shadow-sm`.
@@ -239,6 +239,8 @@ flowchart LR
 
 ### 8.1 Interfaces TypeScript de Props (Extienden `BaseComponentProps`)
 
+> ⚠️ **ESTADO ACTUAL DEL CÓDIGO (H-11):** Las interfaces definidas en este bloque son el **contrato de diseño canónico**. Sin embargo, en `web/src/types/index.ts` **solo están presentes actualmente `BaseComponentProps` y `BadgeProps`**. Las 11 interfaces restantes (`InputProps`, `AvatarProps`, `PetCardProps`, `TriageSelectorProps`, `ChatMessageProps`, `CallControlsProps`, `BreadcrumbItem`, `BreadcrumbsProps`, `PrescriptionDocProps`, `PrescriptionModalProps`, `ReviewModalProps`) **deben crearse en `web/src/types/index.ts`** durante la fase de extracción atómica de componentes (CDD Roadmap §10), antes de implementar cada componente correspondiente.
+
 ```typescript
 export interface BaseComponentProps {
   className?: string;
@@ -283,6 +285,10 @@ export interface PetCardProps extends BaseComponentProps {
 }
 
 // 5. TriageSelector
+// ⚠️ CONTRATO ESTRICTO: `value` acepta ÚNICAMENTE español ('ROJO' | 'AMARILLO' | 'VERDE').
+// La normalización bilingüe (inglés → español) se realiza UPSTREAM en el componente contenedor
+// mediante `TRIAGE_EN_TO_ES` exportado desde `web/src/types/index.ts`,
+// antes de pasar el valor a este componente. TriageSelector NO acepta ni normaliza 'GREEN'/'YELLOW'/'RED'.
 export type TriagePriorityES = 'ROJO' | 'AMARILLO' | 'VERDE';
 export interface TriageSelectorProps extends BaseComponentProps {
   value: TriagePriorityES;
@@ -297,14 +303,14 @@ export interface ChatMessageProps extends BaseComponentProps {
   onImageClick?: (url: string) => void;
 }
 
-// 7. CallControls
-export interface CallControlsProps extends BaseComponentProps {
-  isMuted: boolean;
-  isVideoOff: boolean;
-  onToggleAudio: () => void;
-  onToggleVideo: () => void;
+// 7. HangUpButton (Overlay sobre <VideoConference /> — NO reemplaza sus controles internos)
+// ⚠️ GUARDARRAÍL AGENTS.md §5: <VideoConference /> ya incluye controles de audio/video/pantalla.
+// CallControls.tsx NO puede duplicar esos controles (causaría conflicto de estado LiveKit).
+// La única acción extra permitida es un botón de "Finalizar Consulta" superpuesto externamente
+// que invoque PATCH /api/consultations/:id/complete antes de desmontar <CallRoom />.
+export interface HangUpButtonProps extends BaseComponentProps {
   onHangUp: () => void;
-  connectionState: 'connected' | 'reconnecting' | 'disconnected';
+  isLoading?: boolean;
 }
 
 // 8. Breadcrumbs
@@ -351,6 +357,8 @@ export interface ReviewModalProps extends BaseComponentProps {
 ### 8.3 Estandarización de Clases CSS (Helper `cn`)
 Para resolver colisiones de clases en componentes atómicos de `web/src/components/ui/`, se establece formalmente que la función utilitaria liviana `cn` residirá en `web/src/lib/utils.ts`, basada en concatenación y filtrado condicional limpio sin añadir dependencias externas pesadas:
 
+> ⚠️ **ESTADO ACTUAL DEL CÓDIGO (H-12):** `web/src/lib/utils.ts` **NO EXISTE aún en el repositorio** (solo existe `web/src/lib/sentry.ts`). **Debe crearse como primer paso antes de comenzar la extracción atómica de componentes** en la Fase 1 del CDD Roadmap (§10).
+
 ```typescript
 // web/src/lib/utils.ts
 export function cn(...inputs: (string | undefined | null | false)[]): string {
@@ -374,7 +382,7 @@ Para preservar la estabilidad de los 29 tests de Vitest durante la extracción a
 | **Formulario Login** | `placeholder="ejemplo@vetconnect.com"`, `placeholder="********"`, Botón texto exacto `"Iniciar Sesión"` | `Login.test.tsx` |
 | **Formulario Register** | Heading texto exacto `"Registro en VetConnect"`, Botón texto exacto `"Crear Cuenta"` | `Register.test.tsx` |
 | **Dashboard Tutor** | `data-testid="header-title"`, `data-testid="empty-pets-state"`, `data-testid="empty-consultations-state"`, `data-testid="add-pet-button"`, `data-testid="add-pet-modal"`, `data-testid="input-pet-name"`, `data-testid="input-pet-breed"`, `data-testid="save-pet-button"` | `DashboardClient.test.tsx` |
-| **Dashboard Vet** | `data-testid="badge-priority-rojo"`, `data-testid="badge-priority-amarillo"`, `data-testid="badge-priority-verde"`, `data-testid="emit-prescription-button-{id}"`, `data-testid="input-prescription-medication"`, `data-testid="input-prescription-dosage"`, `data-testid="input-prescription-frequency"`, `data-testid="input-prescription-duration"`, `data-testid="input-prescription-indications"`, `data-testid="save-prescription-button"`, `data-testid="prescription-qr-image"` | `DashboardVet.test.tsx` |
+| **Dashboard Vet** | `data-testid="badge-priority-rojo"`, `data-testid="badge-priority-amarillo"`, `data-testid="badge-priority-verde"`, `data-testid="emit-prescription-button-{id}"`, `data-testid="input-prescription-medication"`, `data-testid="input-prescription-dosage"`, `data-testid="input-prescription-frequency"`, `data-testid="input-prescription-duration"`, `data-testid="input-prescription-indications"`, `data-testid="save-prescription-button"`, `data-testid="prescription-qr-image"`, `data-testid="header-vet-title"`, `data-testid="vet-license-info"`, `data-testid="presence-toggle-switch"`, `data-testid="waiting-card-{id}"`, `data-testid="assign-patient-button-{id}"`, `data-testid="prescription-modal"` | `DashboardVet.test.tsx` |
 | **Sala de Llamada (PreJoinModal)** | Heading `"Verificacion Previa de Camara y Microfono"`, Botón `"Ingresar a la Consulta"` | `CallRoom.test.tsx` |
 | **Vista de Receta** | `data-testid="prescription-header-title"`, `data-testid="rx-medication"`, `data-testid="prescription-qr-code"`, `data-testid="print-prescription-button"` | `PrescriptionView.test.tsx` |
 | **Panel Admin Vets** | `data-testid="admin-title"`, `data-testid="vet-row-{id}"`, `data-testid="vet-speciality-{id}"` *(muestra información profesional contenida en `bio` o presentación en UI, ya que en el modelo relacional la persistencia reside en el campo `bio`)*, `data-testid="approve-vet-button-{id}"`, `data-testid="reject-vet-button-{id}"`, `data-testid="input-reject-reason-{id}"` | `AdminVets.test.tsx` |
@@ -385,7 +393,7 @@ Para preservar la estabilidad de los 29 tests de Vitest durante la extracción a
 El orden de implementación atómica de componentes debe respetar la jerarquía de dependencias:
 1. **Fase 1 (Átomos Básicos):** `Badge.tsx`, `Input.tsx`, `Avatar.tsx`
 2. **Fase 2 (Moléculas Clínicas):** `PetCard.tsx`, `TriageSelector.tsx`, `Breadcrumbs.tsx`, `ChatMessage.tsx`
-3. **Fase 3 (Organismos y Controles Complejos):** `CallControls.tsx`, `PrescriptionDoc.tsx`, `PrescriptionModal.tsx`, `ReviewModal.tsx` *(entregable atómico nuevo a crear en `web/src/components/ui/ReviewModal.tsx`)*
+3. **Fase 3 (Organismos y Controles Complejos):** `HangUpButton.tsx` *(overlay de finalización de consulta — NO duplica controles de `<VideoConference />`)*,  `PrescriptionDoc.tsx`, `PrescriptionModal.tsx`, `ReviewModal.tsx` *(entregable atómico nuevo a crear en `web/src/components/ui/ReviewModal.tsx`)*
 
 ---
 *Documento de Sistema de Diseño Web y UI Kit — VetConnect 2026.*

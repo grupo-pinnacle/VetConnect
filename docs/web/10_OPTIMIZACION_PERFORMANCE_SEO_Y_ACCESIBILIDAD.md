@@ -63,8 +63,9 @@ const queryClient = new QueryClient({
   },
 });
 ```
-> 🛑 **Aclaración Arquitectónica de Consumo de Datos:**
-> Las páginas de la SPA (`DashboardClient.tsx`, `DashboardVet.tsx`, `AdminVets.tsx`) actualmente consumen datos mediante `useState` y `useEffect` con llamadas directas a `api.ts`. Los 29 tests de Vitest se ejecutan mockeando `api.get` / `api.post` sin un `QueryClientProvider`. Por esta razón, las páginas vivas mantienen sus bloques `useEffect` para asegurar 100% de compatibilidad con Vitest.
+> ⚠️ **Aclaración Arquitectónica Canónica (H-13) — Estado Real de TanStack Query v5:**
+> `QueryClient` está **instalado y configurado** en `App.tsx` (ver código arriba), pero **su uso en páginas existentes está CONGELADO**. Las páginas `DashboardClient.tsx`, `DashboardVet.tsx` y `AdminVets.tsx` consumen datos mediante `useState` + `useEffect` con llamadas directas a `api.ts`. Los 29 tests de Vitest mockean `api.get` / `api.post` sin `QueryClientProvider`, por lo que reemplazar `useEffect` por `useQuery` en estas páginas **romperá los tests hasta que se configure `renderWithClient` en `web/src/__tests__/test-utils.tsx`**.
+> **Regla:** TanStack Query se reserva **exclusivamente** para nuevos componentes atómicos y páginas futuras (v2.1+) que sean creados con `renderWithClient` como helper de test desde el inicio.
 
 ### 2.5 Preservación del Code-Splitting de Bundles
 - El bundle inicial de la Landing Page se mantiene blindado en **20.38 kB** (gzip: **6.09 kB**).
@@ -105,7 +106,7 @@ Soporte validado para **NVDA** y **JAWS** (Windows), **VoiceOver** (macOS e iOS)
      `<div aria-live="polite" role="status" className="sr-only">Tu estado ahora es: Veterinario de guardia disponible en línea.</div>`
 
 ### 3.3 Jerarquía de Contrastes Visuales (WCAG 2.1)
-> 📌 Ver especificación canónica de tokens de color y contraste en [docs/SISTEMA_DE_DISENO.md](../../SISTEMA_DE_DISENO.md).
+> 📌 Ver especificación canónica de tokens de color y contraste en [docs/SISTEMA_DE_DISENO.md](../SISTEMA_DE_DISENO.md).
 
 ---
 

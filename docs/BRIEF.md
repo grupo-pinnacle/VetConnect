@@ -109,6 +109,28 @@ flowchart TD
     Realtime --- Redis
 ```
 
+### 5.1 Especificación del Ecosistema Frontend Web (Multi-Portal SPA)
+A diferencia de soluciones genéricas, el Frontend Web de VetConnect se concibe como una **Single Page Application (SPA) multi-rol de alta productividad** desarrollada sobre **React 18.3.1 (LTS)** y **Vite**, que articula cuatro subsistemas de experiencia de usuario:
+
+1. **Portal Clínico Veterinario (`DashboardVet.tsx`):**
+   - Consola ergonómica de telemedicina diseñada para monitores de escritorio.
+   - Conmutador reactivo de guardia online (`isOnline: boolean`).
+   - Sala de espera en tiempo real con ordenamiento FIFO estricto y tags cromáticos de urgencia (`ROJO`, `AMARILLO`, `VERDE`).
+   - Reclamo atómico de pacientes y transición fluida a videoconsulta WebRTC 720p.
+   - Módulo de redacción diagnóstica y emisión de recetas médicas oficiales con firma profesional y código QR único.
+2. **Portal de Autogestión del Tutor (`DashboardClient.tsx`):**
+   - Gestión integral de mascotas: alta, edición y ficha clínica con soporte de validación ISO 11784/11785 de microchip.
+   - Formulario de triage sintomático inteligente para ingreso a guardia telemática con temporizador de 15 minutos.
+   - Historial de consultas y acceso instantáneo con un solo clic a la sala de videollamada activa (`/call/:id`).
+3. **Portal de Fiscalización y Auditoría (`AdminVets.tsx`):**
+   - Interfaz exclusiva para el rol `ADMIN` para validación de habilitaciones sanitarias y matrículas profesionales SENASA.
+   - Acciones transaccionales de aprobación (`APPROVED`) y rechazo con motivo obligatorio (`REJECTED`), con registro forense en `AuditLog`.
+4. **Landing Page Institucional Comercial (`Landing.tsx`):**
+   - Portal público de alta conversión con propuesta de valor para tutores y veterinarios.
+   - Botones de acción directa ("Solicitar Teleconsulta", "Portal Veterinarios").
+   - Sección de descarga directa de la aplicación móvil Android (`.apk`) para clínicas y tutores.
+   - Cumplimiento transparente de Ley 25.326 y avisos regulatorios de telemedicina.
+
 ---
 
 ## 6. Alcance del Proyecto: Límites & Non-Goals

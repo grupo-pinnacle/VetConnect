@@ -226,7 +226,12 @@ Si el tutor presiona `[ CANCELAR SOLICITUD ]`, ejecuta `PATCH /api/consultations
 ### Pantalla 6A: Modal Clínico de Emisión de Receta Oficial (`PrescriptionModal`)
 
 *Conexión con el Árbol Web: [Nivel 3] Emisión de Receta (Modal Flotante)*
-*Archivos Fuente Reales:* Modal flotante invocado desde [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx) y [`web/src/pages/DashboardVet.tsx`](../../web/src/pages/DashboardVet.tsx). El modal se activa con el botón `[ CONFECCIONAR RECETA MÉDICA SENASA ]`.
+*Componente Objetivo:* `web/src/components/ui/PrescriptionModal.tsx` (pendiente de extracción atómica — ver §10 de `06_SISTEMA_DE_DISENO_UI_KIT.md`).
+
+> ⚠️ **Estado Real de Implementación (Gap Conocido):**
+> La lógica de emisión de receta (`PrescriptionModal`) está **actualmente implementada SOLO en [`web/src/pages/DashboardVet.tsx`](../../web/src/pages/DashboardVet.tsx)** (estado `isPrescriptionModalOpen`, handler `handlePrescription`, formulario JSX en líneas ~16-93 y ~322-397).
+> **En [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx) NO existe el modal de receta.** El botón `[ CONFECCIONAR RECETA MÉDICA SENASA ]` mostrado en el wireframe del Estado B es un **gap de implementación pendiente en ConsultationRoom.tsx**.
+> La tarea de desarrollo consiste en extraer la lógica a un componente atómico `PrescriptionModal.tsx` e invocarlo desde ambas pantallas (`ConsultationRoom.tsx` y `DashboardVet.tsx`), según la Fase 3 del CDD Roadmap en `06_SISTEMA_DE_DISENO_UI_KIT.md §10`.
 
 - **Acciones disponibles:** Completar campos de medicamento (`medication`), dosis (`dosage`), frecuencia (`frequency`), duración (`durationDays`) e indicaciones (`indications`, mínimo 5 caracteres). Al confirmar, el frontend ejecuta `POST /api/consultations/:id/prescriptions`.
 
@@ -272,10 +277,10 @@ Si el tutor presiona `[ CANCELAR SOLICITUD ]`, ejecuta `PATCH /api/consultations
 +-------------------------------------------------------------------------------------------------------------+
 | SOLICITUDES DE ALTA PROFESIONAL PENDIENTES DE APROBACIÓN SANITARIA (Filtro: vetStatus = PENDING)           |
 | +---------------------------------------------------------------------------------------------------------+ |
-| | PROFESIONAL          | EMAIL              | MATRÍCULA  | ESPECIALIDAD     | FECHA REGISTRO | AUDITORÍA      | |
-| +----------------------+--------------------+------------+------------------+----------------+----------------+ |
-| | Dr. Martín Palermo   | m.palermo@vet.ar   | MP-55421   | Cirugía          | 20/09/2026     | [APROBAR][RECH]| |
-| | Dra. Elena Russo     | e.russo@vet.ar     | MP-88312   | Clínica General  | 21/09/2026     | [APROBAR][RECH]| |
+| | PROFESIONAL          | EMAIL              | MATRÍCULA  | BIO / ESPECIALIDAD   | FECHA REGISTRO | AUDITORÍA      | |
+| +----------------------+--------------------+------------+----------------------+----------------+----------------+ |
+| | Dr. Martín Palermo   | m.palermo@vet.ar   | MP-55421   | Cirugía              | 20/09/2026     | [APROBAR][RECH]| |
+| | Dra. Elena Russo     | e.russo@vet.ar     | MP-88312   | Clínica General      | 21/09/2026     | [APROBAR][RECH]| |
 | +----------------------+--------------------+------------+------------------+----------------+----------------+ |
 +-------------------------------------------------------------------------------------------------------------+
 | TRAZABILIDAD Y AUDITORÍA INMUTABLE (AuditLog Backend - ADR-014):                                             |

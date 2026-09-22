@@ -30,7 +30,7 @@ describe('AdminVets Page', () => {
             role: 'VET',
             vetStatus: 'PENDING',
             licenseNumber: 'MP-9942',
-            speciality: 'Dermatología',
+            bio: 'Dermatología',
             createdAt: '2026-09-15T00:00:00.000Z',
           },
         ],

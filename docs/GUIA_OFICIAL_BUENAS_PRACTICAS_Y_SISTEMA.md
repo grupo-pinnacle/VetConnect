@@ -267,6 +267,44 @@ Para evitar race conditions, la página web emite `page:ready` al estar montada,
 
 ---
 
+## 10. Módulo 10: Frontend Web SPA, Arquitectura de Componentes, Estado y Resiliencia de UI (React 18.3.1 LTS)
+
+### 🟢 Buenas Prácticas Obligatorias
+- **Tokens Estrictamente en Memoria RAM:** El `accessToken` debe residir únicamente en variables volátiles de JavaScript (`currentAccessToken` en `api.ts`) y en el estado de `AuthContext`. Prohibido persistir credenciales de sesión en `localStorage` o `sessionStorage`.
+- **Server State Gestionado por TanStack Query v5:** Toda consulta y mutación remota debe realizarse mediante `useQuery` y `useMutation` con *Query Keys* tipadas (`['pets']`, `['consultations', 'mine']`, `['vets', 'pending']`), asegurando `staleTime: 5 min` e invalidación determinista tras mutaciones.
+- **Cola Concurrente de Refresco en Axios:** Implementar cola `failedQueue` con bandera `isRefreshing` en el interceptor de Axios para pausar peticiones simultáneas mientras se renueva la sesión mediante la cookie `HttpOnly`.
+- **Máquina de 4 Estados de UI:** Todo componente asíncrono debe manejar de forma determinista `loading`, `error` (RFC 7807 mapeado), `empty state` afirmativo y `success data`.
+- **Code-Splitting y Optimización de Bundle:** Las rutas clínicas (`ConsultationRoom`, `DashboardClient`, `DashboardVet`, `AdminVets`, `PrescriptionView`) deben cargarse diferidamente mediante `React.lazy()` y `Suspense`, preservando el bundle inicial de la Landing Page por debajo de 50 kB gzip.
+- **Atributos Semánticos de Prueba:** Todo botón, input, formulario y modal debe portar atributos `data-testid` descriptivos para facilitar el testing en Vitest/Testing Library y la accesibilidad con lectores de pantalla.
+
+### ❌ Ejemplos de NO Uso (Antipatrones a Evitar en Frontend Web)
+
+```tsx
+// ❌ EJEMPLO DE NO USO 1: Persistir Access Token en localStorage (Vulnerable a XSS)
+const login = async (credentials) => {
+  const { accessToken } = await api.post('/api/auth/login', credentials);
+  localStorage.setItem('token', accessToken); // BAD: Cualquier script malicioso inyectado puede robar la sesión
+};
+
+// ❌ EJEMPLO DE NO USO 2: useEffect manual descontrolado para fetch de datos (Race conditions y Memory Leaks)
+useEffect(() => {
+  api.get('/api/pets').then(res => setPets(res.data)); // BAD: Sin deduplicación, sin revalidación y propenso a desincronización
+}, []);
+
+// ❌ EJEMPLO DE NO USO 3: Duplicar RoomAudioRenderer en LiveKit (Causa Eco y Acople Acústico)
+<LiveKitRoom token={token} serverUrl={wsUrl}>
+  <VideoConference />
+  <RoomAudioRenderer /> {/* BAD: VideoConference ya incluye internamente el renderizador */}
+</LiveKitRoom>
+
+// ❌ EJEMPLO DE NO USO 4: Tragar errores RFC 7807 y mostrar mensajes mudos
+catch (error) {
+  alert("Ocurrió un error"); // BAD: Oculta el código de error RFC 7807 y confunde al usuario clínico
+}
+```
+
+---
+
 ## 11. Matriz Global de Scope (MVP v2.0 vs Post-MVP v2.2+)
 
 ```

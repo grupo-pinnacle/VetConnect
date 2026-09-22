@@ -1,32 +1,164 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CallRoom from '../components/call/CallRoom';
-import { Message, ApiResponse } from '../types';
+import { Message, ApiResponse, Consultation } from '../types';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+const POLLING_INTERVAL_MS = 5000;
+
+// ------------------------------------------------------------
+// State machine for the consultation lifecycle:
+//   LOADING → WAITING → ACTIVE → COMPLETED | CANCELLED | ERROR
+// ------------------------------------------------------------
+type RoomPhase = 'loading' | 'waiting' | 'active' | 'completed' | 'cancelled' | 'error';
 
 export const ConsultationRoom: React.FC = () => {
   const { id: consultationId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // --- State machine ---
+  const [phase, setPhase] = useState<RoomPhase>('loading');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [consultation, setConsultation] = useState<Consultation | null>(null);
+
+  // --- LiveKit credentials (only populated when phase === 'active') ---
   const [livekitToken, setLivekitToken] = useState<string | null>(null);
   const [livekitWsUrl, setLivekitWsUrl] = useState<string | undefined>(undefined);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Live Chat state
+  // --- Live Chat state ---
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const [socket, setSocket] = useState<Socket | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState<boolean>(false);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ----------------------------------------------------------------
+  // Helper: fetch consultation status and drive the state machine
+  // ----------------------------------------------------------------
+  const fetchConsultation = useCallback(async (): Promise<Consultation | null> => {
+    if (!consultationId) return null;
+    try {
+      const res = await api.get<ApiResponse<Consultation>>(`/api/consultations/${consultationId}`);
+      if (res.data.success && res.data.data) {
+        return res.data.data;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, [consultationId]);
+
+  // ----------------------------------------------------------------
+  // Helper: fetch LiveKit token (only call when status === ACTIVE)
+  // ----------------------------------------------------------------
+  const fetchToken = useCallback(async (): Promise<void> => {
+    if (!consultationId) return;
+    try {
+      const res = await api.post<ApiResponse<{ token: string; wsUrl: string }>>(
+        `/api/calls/${consultationId}/token`
+      );
+      if (res.data.success && res.data.data?.token) {
+        setLivekitToken(res.data.data.token);
+        if (res.data.data.wsUrl) {
+          setLivekitWsUrl(res.data.data.wsUrl);
+        }
+        setPhase('active');
+      } else {
+        throw new Error(res.data.error?.message || 'No se pudo obtener el token WebRTC');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error conectando con la videollamada');
+      setPhase('error');
+    }
+  }, [consultationId]);
+
+  // ----------------------------------------------------------------
+  // Stop polling helper
+  // ----------------------------------------------------------------
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  // ----------------------------------------------------------------
+  // Main state machine: on mount, fetch consultation and react
+  // ----------------------------------------------------------------
+  useEffect(() => {
+    if (!consultationId) return;
+
+    let isMounted = true;
+
+    const bootstrap = async () => {
+      const data = await fetchConsultation();
+      if (!isMounted) return;
+
+      if (!data) {
+        setErrorMsg('No se pudo cargar la información de la consulta.');
+        setPhase('error');
+        return;
+      }
+
+      setConsultation(data);
+
+      switch (data.status) {
+        case 'WAITING':
+          setPhase('waiting');
+          // Poll every 5s until status changes — AGENTS.md / 08_DESARROLLO §2.1
+          pollingRef.current = setInterval(async () => {
+            const polled = await fetchConsultation();
+            if (!isMounted || !polled) return;
+            setConsultation(polled);
+
+            if (polled.status === 'ACTIVE') {
+              stopPolling();
+              await fetchToken();
+            } else if (polled.status === 'CANCELLED') {
+              stopPolling();
+              if (isMounted) setPhase('cancelled');
+            } else if (polled.status === 'COMPLETED') {
+              stopPolling();
+              if (isMounted) setPhase('completed');
+            }
+          }, POLLING_INTERVAL_MS);
+          break;
+
+        case 'ACTIVE':
+          await fetchToken();
+          break;
+
+        case 'COMPLETED':
+          setPhase('completed');
+          break;
+
+        case 'CANCELLED':
+          setPhase('cancelled');
+          break;
+
+        default:
+          setErrorMsg(`Estado de consulta desconocido: ${data.status}`);
+          setPhase('error');
+      }
+    };
+
+    bootstrap();
+
+    return () => {
+      isMounted = false;
+      stopPolling();
+    };
+  }, [consultationId, fetchConsultation, fetchToken, stopPolling]);
+
+  // ----------------------------------------------------------------
   // Close Lightbox on Escape key
+  // ----------------------------------------------------------------
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && zoomImage) {
@@ -37,56 +169,20 @@ export const ConsultationRoom: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [zoomImage]);
 
-  // 1. Emit page:ready handshake for mobile WebView wrapper
+  // ----------------------------------------------------------------
+  // Emit page:ready handshake for mobile WebView wrapper
+  // ----------------------------------------------------------------
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).ReactNativeWebView) {
       (window as any).ReactNativeWebView.postMessage(JSON.stringify({ type: 'page:ready' }));
     }
   }, []);
 
-  // 2. Fetch real LiveKit JWT token and dynamic wsUrl from backend
+  // ----------------------------------------------------------------
+  // Connect Socket.io for Realtime Chat — only while ACTIVE
+  // ----------------------------------------------------------------
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchToken = async () => {
-      try {
-        const res = await api.post<ApiResponse<{ token: string; wsUrl: string }>>(
-          `/api/calls/${consultationId}/token`
-        );
-
-        if (res.data.success && res.data.data?.token) {
-          if (isMounted) {
-            setLivekitToken(res.data.data.token);
-            if (res.data.data.wsUrl) {
-              setLivekitWsUrl(res.data.data.wsUrl);
-            }
-          }
-        } else {
-          throw new Error(res.data.error?.message || 'No se pudo obtener el token WebRTC');
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err.message || 'Error conectando con la videollamada');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    if (consultationId) {
-      fetchToken();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [consultationId]);
-
-  // 3. Connect Socket.io for Realtime Chat
-  useEffect(() => {
-    if (!consultationId) return;
+    if (phase !== 'active' || !consultationId) return;
 
     const newSocket = io(WS_URL, {
       withCredentials: true,
@@ -103,6 +199,20 @@ export const ConsultationRoom: React.FC = () => {
       setMessages((prev) => [...prev, msg]);
     });
 
+    // ⚠️ Backend does NOT emit 'consultation:completed' (not in socket.types.ts).
+    // Poll HTTP every 5s to detect COMPLETED / CANCELLED from the ACTIVE phase.
+    pollingRef.current = setInterval(async () => {
+      const polled = await fetchConsultation();
+      if (!polled) return;
+      if (polled.status === 'COMPLETED') {
+        stopPolling();
+        setPhase('completed');
+      } else if (polled.status === 'CANCELLED') {
+        stopPolling();
+        setPhase('cancelled');
+      }
+    }, POLLING_INTERVAL_MS);
+
     // Load initial message history
     api.get<ApiResponse<Message[]>>(`/api/consultations/${consultationId}/messages`)
       .then((res) => {
@@ -115,8 +225,11 @@ export const ConsultationRoom: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [consultationId]);
+  }, [phase, consultationId, stopPolling]);
 
+  // ----------------------------------------------------------------
+  // Message sending
+  // ----------------------------------------------------------------
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || !socket || !consultationId) return;
@@ -187,19 +300,41 @@ export const ConsultationRoom: React.FC = () => {
     }
   };
 
-  if (loading) {
+  // ----------------------------------------------------------------
+  // Cancel consultation — call PATCH /cancel before navigating back
+  // so the consultation doesn't stay stuck in WAITING/ACTIVE in the DB.
+  // ----------------------------------------------------------------
+  const handleCancel = async () => {
+    stopPolling();
+    if (consultationId) {
+      try {
+        await api.patch(`/api/consultations/${consultationId}/cancel`);
+      } catch {
+        // Best-effort — navigate back even if cancel fails
+      }
+    }
+    navigate(-1);
+  };
+
+  // ================================================================
+  // RENDER — one branch per phase
+  // ================================================================
+
+  // --- Loading ---
+  if (phase === 'loading') {
     return (
       <div className="w-full h-screen bg-slate-900 text-white flex items-center justify-center">
-        <p className="text-lg">Conectando con la sala de consulta...</p>
+        <p className="text-lg">Cargando información de la consulta...</p>
       </div>
     );
   }
 
-  if (error || !livekitToken) {
+  // --- Error ---
+  if (phase === 'error') {
     return (
       <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
-        <h2 className="text-xl font-bold text-red-400 mb-2">Error de Conexion</h2>
-        <p className="text-slate-300 mb-6">{error || 'No se pudo obtener credenciales WebRTC'}</p>
+        <h2 className="text-xl font-bold text-red-400 mb-2">Error de Conexión</h2>
+        <p className="text-slate-300 mb-6">{errorMsg || 'No se pudo obtener credenciales WebRTC'}</p>
         <button
           onClick={() => navigate(-1)}
           className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold"
@@ -210,6 +345,78 @@ export const ConsultationRoom: React.FC = () => {
     );
   }
 
+  // --- Waiting (WAITING status — poll until ACTIVE) ---
+  if (phase === 'waiting') {
+    return (
+      <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 gap-6">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center">
+          <div className="w-16 h-16 rounded-full bg-sky-600/20 flex items-center justify-center animate-pulse">
+            <span className="text-3xl">🩺</span>
+          </div>
+          <h2 className="text-xl font-bold text-white">Sala de Espera</h2>
+          <p className="text-slate-300">
+            Tu consulta ha sido recibida. Estamos asignando al próximo veterinario de guardia disponible.
+            Por favor, aguarda un momento.
+          </p>
+          {consultation?.pet && (
+            <p className="text-xs text-slate-400">
+              Paciente: <span className="font-semibold text-slate-200">{consultation.pet.name}</span>
+            </p>
+          )}
+          <div className="flex items-center gap-2 text-xs text-sky-400 animate-pulse">
+            <span className="inline-block w-2 h-2 rounded-full bg-sky-400"></span>
+            Buscando veterinario de guardia...
+          </div>
+        </div>
+        <button
+          onClick={handleCancel}
+          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold"
+        >
+          Cancelar y volver
+        </button>
+      </div>
+    );
+  }
+
+  // --- Cancelled ---
+  if (phase === 'cancelled') {
+    return (
+      <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+        <h2 className="text-xl font-bold text-amber-400 mb-2">Consulta Cancelada</h2>
+        <p className="text-slate-300 mb-6">Esta consulta fue cancelada. Podés iniciar una nueva desde tu panel.</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold"
+        >
+          Volver al panel
+        </button>
+      </div>
+    );
+  }
+
+  // --- Completed (show summary / review prompt) ---
+  if (phase === 'completed') {
+    return (
+      <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+        <div className="bg-slate-800 rounded-xl p-8 max-w-md w-full text-center shadow-xl">
+          <span className="text-4xl">✅</span>
+          <h2 className="text-xl font-bold text-emerald-400 mt-4 mb-2">Consulta Finalizada</h2>
+          <p className="text-slate-300 mb-6">
+            La consulta médica ha concluido. Gracias por utilizar VetConnect.
+          </p>
+          {/* ReviewModal placeholder — to be implemented in CDD Fase 3 (ReviewModal.tsx) */}
+          <button
+            onClick={() => navigate(-1)}
+            className="w-full px-4 py-2 bg-sky-600 hover:bg-sky-500 rounded-lg text-sm font-semibold"
+          >
+            Volver al panel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Active (ACTIVE status — render call room + chat) ---
   return (
     <div className="w-full h-screen bg-slate-950 flex flex-col lg:flex-row overflow-hidden relative">
       {/* Main Video Call Area */}
@@ -225,7 +432,7 @@ export const ConsultationRoom: React.FC = () => {
         </header>
 
         <CallRoom
-          token={livekitToken}
+          token={livekitToken!}
           serverUrl={livekitWsUrl}
           onDisconnected={() => {
             if (typeof window !== 'undefined' && (window as any).ReactNativeWebView) {

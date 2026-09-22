@@ -181,7 +181,8 @@ A continuación se detalla la especificación visual, la disposición de element
 ---
 
 ### 🖥️ Pantalla 6A: Modal Clínico de Emisión de Receta Oficial (PrescriptionModal)
-- **Componente:** `web/src/components/ui/PrescriptionModal.tsx` (invocado en `ConsultationRoom.tsx` y `DashboardVet.tsx`).
+- **Componente Objetivo:** `web/src/components/ui/PrescriptionModal.tsx` (pendiente de extracción atómica — Fase 3 del CDD Roadmap en `06_SISTEMA_DE_DISENO_UI_KIT.md §10`).
+  > ⚠️ **Estado Real:** La lógica del modal de receta está actualmente **embebida en `DashboardVet.tsx`** (state `isPrescriptionModalOpen`, handler `handlePrescription`). El componente `PrescriptionModal.tsx` no existe aún. Al extraerlo, deberá ser invocado desde `DashboardVet.tsx` (reemplazando la implementación inline) y desde `ConsultationRoom.tsx` (nuevo botón de emisión de receta).
 - **Rol:** Veterinario autenticado (`VET` con `vetStatus: APPROVED`).
 - **Contrato REST:** `POST /api/consultations/:id/prescriptions` con payload `{ medication, dosage, frequency, durationDays, indications }`.
 
@@ -244,7 +245,7 @@ A continuación se detalla la especificación visual, la disposición de element
 2. **Alertas y Notificaciones Contextuales:**
    - Banner de confirmación Toast (`admin-toast-notification`) para decisiones procesadas exitosamente o mensajes de error.
 3. **Tabla de Verificación Profesional:**
-   - Columnas: `Nombre Profesional`, `Email`, `Matrícula` (destacada en tipografía monoespaciada), `Especialidad` (el selector `data-testid="vet-speciality-{id}"` muestra la información profesional contenida en `bio` o presentación en UI, ya que en el modelo relacional la persistencia reside en el campo `bio`), `Fecha Registro`, `Acciones de Auditoría`.
+   - Columnas: `Nombre Profesional`, `Email`, `Matrícula` (destacada en tipografía monoespaciada), `BIO / Especialidad` (el selector `data-testid="vet-speciality-{id}"` muestra la información profesional del campo `bio` del modelo `User` — **⚠️ en el esquema Prisma NO existe un campo `speciality`; el campo real es `bio: String?`**, por lo que el UI debe leer `vet.bio` para mostrar la especialidad/presentación profesional), `Fecha Registro`, `Acciones de Auditoría`.
    - Estado vacío (*Empty State*): *"Sin registros de veterinarios pendientes de aprobación"* cuando la cola está al día.
 4. **Modales y Acciones de Decisión:**
    - **Aprobación Directa:** Habilita el estado `APPROVED` (`vetStatus: 'APPROVED'`) notificando inmediatamente al profesional para iniciar guardias activas.

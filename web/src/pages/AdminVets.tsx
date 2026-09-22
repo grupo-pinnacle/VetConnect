@@ -137,7 +137,7 @@ export const AdminVets: React.FC = () => {
                       {vet.licenseNumber || 'N/A'}
                     </td>
                     <td className="p-3 text-slate-600 text-xs" data-testid={`vet-speciality-${vet.id}`}>
-                      {vet.speciality || 'General'}
+                      {vet.bio || 'General'}
                     </td>
                     <td className="p-3 text-slate-500 text-xs">
                       {new Date(vet.createdAt).toLocaleDateString()}
