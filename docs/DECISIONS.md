@@ -1,10 +1,10 @@
 # 🏛️ Decisiones de Arquitectura (ADRs) — VetConnect
 
-Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (ADR-001 al ADR-024 — FAANG Architecture).
+Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (ADR-001 al ADR-025 — FAANG Architecture).
 
 ---
 
-## Índice de Decisiones (ADRs — ADR-001 al ADR-024)
+## Índice de Decisiones (ADRs — ADR-001 al ADR-025)
 
 | ID | Título | Estado | Impacto |
 |---|---|---|---|
@@ -32,6 +32,7 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
 | **ADR-022** | Plataforma Definitiva de Despliegue Web (Vercel Edge vs Hostinger Contingencia) | Aprobado | Infraestructura / Web |
 | **ADR-023** | Escala Unificada de Calificación Profesional (1 a 5 Estrellas) | Aprobado | UX / Base de Datos |
 | **ADR-024** | Máquina de Estados Finita (FSM) en Consultas, Timeout de Triage (15 min) y Ventana de Reconexión WebRTC (3 min) | Aprobado | Backend / FSM |
+| **ADR-025** | Jerarquía Inmutable de Verdad (SSOT) y Neutralización del Split-Brain Documental | Aprobado | Gobernanza / AI-First |
 
 ---
 
@@ -181,3 +182,13 @@ Este registro documenta las 24 decisiones arquitectónicas clave tomadas durante
   4. **Ventana de Gracia por Desconexión (ACTIVE → CANCELLED o WAITING):** Si el veterinario pierde la conexión socket durante una consulta `ACTIVE`, se abre una ventana de gracia de **3 minutos** controlada por heartbeat y presencia Redis. Si reconecta dentro del intervalo, la sesión continúa sin interrupción. Si la ventana expira, la consulta transiciona a `CANCELLED` (`VET_DISCONNECTED_TIMEOUT`) con opción de reencolado prioritario en `WAITING` para el tutor.
   5. **Cancelaciones voluntarias:** Antes o durante la atención, cualquier participante puede cancelar hacia `CANCELLED` (código `VOLUNTARY_CANCELLATION`).
 - **Consecuencias:** Eliminación total de condiciones de carrera por oferta simultánea en WebSockets; comportamiento predecible y auditado ante los 5 escenarios posibles de la FSM; auditoría inequívoca de tiempos de espera ($P_{50} < 3\text{ min}$, $P_{95} < 5\text{ min}$); y experiencia de usuario resiliente ante cortes de red transitorios sin pérdida de la consulta.
+
+### ADR-025: Jerarquía Inmutable de Verdad (Single Source of Truth - SSOT) y Neutralización del Split-Brain Documental
+- **Contexto:** Durante la evolución del proyecto, la coexistencia de documentación teórica de diseño (wireframes de baja y alta fidelidad en `docs/web/`) y la implementación de código real en TypeScript/Prisma generó divergencias sutiles ("Split-Brain"). Los agentes de IA, al encontrar especificaciones contradictorias (ej. campos inexistentes en formularios o enlaces a pantallas de recuperación de contraseña no contempladas en el MVP v2.0), experimentaban desalineación probabilística, inventando endpoints y campos no soportados.
+- **Decisión:** Institucionalizar formalmente una **Jerarquía Inmutable de Verdad** con 4 niveles de precedencia estricta:
+  1. `Prisma Schema + Código Backend (Express)` (Nivel 1 - Inmutable)
+  2. `docs/TECH_REFERENCE.md + docs/web/AGENT_CODING_SPEC.md` (Nivel 2 - Contratos Canónicos)
+  3. `docs/ARCHITECTURE.md + docs/FRONTEND_ARCHITECTURE.md + docs/DECISIONS.md` (Nivel 3 - Arquitectura)
+  4. `docs/web/00..11 + docs/SISTEMA_DE_DISENO.md` (Nivel 4 - Wireframes y Narrativa UX)
+  Ante cualquier contradicción, los niveles superiores invalidan y anulan automáticamente a los inferiores. Prohibición taxativa de crear o modificar código fuente basándose en requerimientos de Nivel 4 que no tengan respaldo en los Niveles 1 y 2.
+- **Consecuencias:** Neutralización definitiva de alucinaciones y bucles en agentes de IA autónomos (Jules, Cursor, Claude); desarrollo predecible de UI basado exclusivamente en APIs y contratos reales; y preservación del 100% de la suite de pruebas automatizadas sin regresiones.

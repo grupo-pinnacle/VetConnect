@@ -35,10 +35,21 @@ graph LR
 ### 1.2 Criterio de Entrada: Definition of Ready (DoR) para Tareas Agénticas
 Ningún subagente debe iniciar una tarea sin validar que:
 1. **Contrato Congelado:** Los contratos requeridos están presentes en `docs/TECH_REFERENCE.md` sin campos de v2.1+.
-2. **ADR Vinculante:** La tarea referencia su ADR de los 24 aprobados en `docs/DECISIONS.md`.
+2. **ADR Vinculante:** La tarea referencia su ADR de los 25 aprobados en `docs/DECISIONS.md`.
 3. **Pipeline Previo Verde:** Las pruebas de la fase previa compilan y pasan exitosamente.
 4. **Cero PII en diseño:** No se requiere ni permite el transporte de correos o teléfonos en tokens WebRTC ni logs.
 5. **Comando de Verificación:** El prompt o task packet define el comando exacto para verificar el resultado.
+
+---
+
+### 1.3 Jerarquía Inmutable de Verdad (Single Source of Truth - SSOT / ADR-025)
+Para erradicar la ambigüedad y el fenómeno de Split-Brain en agentes autónomos, rige la siguiente jerarquía de precedencia descendente:
+1. **Nivel 1 (La Realidad Ejecutable):** `backend/prisma/schema.prisma` y controladores Express en `backend/src/modules/` representan la única verdad física.
+2. **Nivel 2 (Contratos Técnicos Canónicos):** `docs/TECH_REFERENCE.md` y `docs/web/AGENT_CODING_SPEC.md` rigen las interfaces, query keys y endpoints.
+3. **Nivel 3 (Documentación Arquitectónica):** `docs/ARCHITECTURE.md`, `docs/FRONTEND_ARCHITECTURE.md`, `docs/DECISIONS.md`.
+4. **Nivel 4 (Wireframes y Diseño Narrativo):** `docs/web/00_...` a `11_...` y `docs/SISTEMA_DE_DISENO.md`.
+
+*Regla Suprema de Inferencia:* En caso de cualquier colisión o discrepancia entre un documento de Nivel 4 (wireframes descriptivos) y los Niveles 1 o 2 (código y contratos canónicos), **los Niveles 1 y 2 tienen precedencia absoluta al 100%**. Queda estrictamente prohibido que un agente invente endpoints, campos de base de datos o componentes basándose exclusivamente en textos narrativos o wireframes desactualizados.
 
 ---
 
