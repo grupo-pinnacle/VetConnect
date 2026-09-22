@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Consultation, Prescription, ApiResponse, User } from '../types';
+import { PrescriptionModal } from '../components/ui/PrescriptionModal';
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
+import { ConsultationQueueSkeleton } from '../components/ui/Skeleton';
 
 export const DashboardVet: React.FC = () => {
   const { user, logout } = useAuth();
@@ -15,15 +18,6 @@ export const DashboardVet: React.FC = () => {
   // Prescription Modal State
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [selectedConsId, setSelectedConsId] = useState<string>('');
-  const [prescriptionForm, setPrescriptionForm] = useState({
-    medication: '',
-    dosage: '',
-    frequency: '',
-    durationDays: '7',
-    indications: '',
-  });
-  const [issuedPrescription, setIssuedPrescription] = useState<Prescription | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchQueue = async () => {
     try {
@@ -65,33 +59,6 @@ export const DashboardVet: React.FC = () => {
     }
   };
 
-  const handleCreatePrescription = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedConsId) return;
-
-    setIsSubmitting(true);
-    try {
-      const res = await api.post<ApiResponse<Prescription>>(
-        `/api/consultations/${selectedConsId}/prescriptions`,
-        {
-          medication: prescriptionForm.medication,
-          dosage: prescriptionForm.dosage,
-          frequency: prescriptionForm.frequency,
-          durationDays: parseInt(prescriptionForm.durationDays, 10),
-          indications: prescriptionForm.indications,
-        }
-      );
-
-      if (res.data.success && res.data.data) {
-        setIssuedPrescription(res.data.data);
-      }
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al emitir receta digital');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const getPriorityBadge = (notes?: string | null) => {
     if (notes?.includes('ROJO')) {
       return <span className="text-[10px] font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded" data-testid="badge-priority-rojo">ROJO</span>;
@@ -104,14 +71,19 @@ export const DashboardVet: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center" data-testid="vet-loading-state">
-        <p className="text-slate-600 font-medium">Cargando portal veterinario...</p>
+      <div className="min-h-screen bg-slate-50 p-6 max-w-7xl mx-auto space-y-6" data-testid="vet-loading-state">
+        <div className="bg-white p-4 rounded-xl shadow-sm h-20 animate-pulse" />
+        <ConsultationQueueSkeleton rows={3} />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6" data-testid="dashboard-vet-page">
+      <Breadcrumbs
+        items={[{ label: 'Inicio', path: '/' }, { label: 'Portal Médico Guardia' }]}
+        className="mb-4"
+      />
       <header className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-6">
         <div>
           <h1 className="text-xl font-bold text-primary-900" data-testid="header-vet-title">
@@ -246,7 +218,6 @@ export const DashboardVet: React.FC = () => {
                         onClick={() => {
                           setSelectedConsId(c.id);
                           setShowPrescriptionModal(true);
-                          setIssuedPrescription(null);
                         }}
                         className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-500"
                       >
@@ -261,134 +232,14 @@ export const DashboardVet: React.FC = () => {
       </main>
 
       {/* Modal Emisión de Receta Digital con QR */}
-      {showPrescriptionModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" data-testid="prescription-modal">
-          <div className="bg-white p-6 rounded-xl max-w-lg w-full shadow-2xl">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">
-              Emitir Receta Médica Digital Oficial SENASA
-            </h2>
-
-            {issuedPrescription ? (
-              <div className="text-center space-y-4" data-testid="prescription-success-container">
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-sm font-medium">
-                  ¡Receta Digital Emitida Exitosamente!
-                </div>
-
-                {issuedPrescription.qrCodeDataUrl && (
-                  <div className="flex flex-col items-center">
-                    <img
-                      src={issuedPrescription.qrCodeDataUrl}
-                      alt="Código QR de Receta"
-                      className="w-40 h-40 border border-slate-200 rounded p-2"
-                      data-testid="prescription-qr-image"
-                    />
-                    <p className="text-xs text-slate-500 mt-2">
-                      Escanear para validar en farmacias autorizadas
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  data-testid="close-prescription-success-button"
-                  onClick={() => setShowPrescriptionModal(false)}
-                  className="w-full py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold"
-                >
-                  Cerrar
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleCreatePrescription} className="space-y-3" data-testid="prescription-form">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Medicamento / Principio Activo *</label>
-                  <input
-                    type="text"
-                    data-testid="input-prescription-medication"
-                    placeholder="Ej. Amoxicilina 250mg"
-                    value={prescriptionForm.medication}
-                    onChange={(e) => setPrescriptionForm({ ...prescriptionForm, medication: e.target.value })}
-                    required
-                    className="w-full p-2 border rounded text-sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Dosis *</label>
-                    <input
-                      type="text"
-                      data-testid="input-prescription-dosage"
-                      placeholder="Ej. 1 comprimido"
-                      value={prescriptionForm.dosage}
-                      onChange={(e) => setPrescriptionForm({ ...prescriptionForm, dosage: e.target.value })}
-                      required
-                      className="w-full p-2 border rounded text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Frecuencia *</label>
-                    <input
-                      type="text"
-                      data-testid="input-prescription-frequency"
-                      placeholder="Ej. Cada 12 hs"
-                      value={prescriptionForm.frequency}
-                      onChange={(e) => setPrescriptionForm({ ...prescriptionForm, frequency: e.target.value })}
-                      required
-                      className="w-full p-2 border rounded text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Duración en Días *</label>
-                  <input
-                    type="number"
-                    data-testid="input-prescription-duration"
-                    value={prescriptionForm.durationDays}
-                    onChange={(e) => setPrescriptionForm({ ...prescriptionForm, durationDays: e.target.value })}
-                    required
-                    min={1}
-                    max={365}
-                    className="w-full p-2 border rounded text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Indicaciones Clínicas *</label>
-                  <textarea
-                    rows={3}
-                    data-testid="input-prescription-indications"
-                    placeholder="Administrar junto con alimento..."
-                    value={prescriptionForm.indications}
-                    onChange={(e) => setPrescriptionForm({ ...prescriptionForm, indications: e.target.value })}
-                    required
-                    className="w-full p-2 border rounded text-sm"
-                  />
-                </div>
-
-                <div className="flex gap-2 mt-4">
-                  <button
-                    type="button"
-                    data-testid="cancel-prescription-button"
-                    onClick={() => setShowPrescriptionModal(false)}
-                    className="flex-1 p-2 border rounded text-sm text-slate-600 hover:bg-slate-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    data-testid="save-prescription-button"
-                    disabled={isSubmitting}
-                    className="flex-1 p-2 bg-emerald-600 text-white rounded text-sm font-semibold hover:bg-emerald-500 disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Firmando...' : 'Emitir Receta con QR'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+      <PrescriptionModal
+        isOpen={showPrescriptionModal}
+        consultationId={selectedConsId}
+        onClose={() => setShowPrescriptionModal(false)}
+        onSuccess={() => {
+          fetchQueue();
+        }}
+      />
     </div>
   );
 };

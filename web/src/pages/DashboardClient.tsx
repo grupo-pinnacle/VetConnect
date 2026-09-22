@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Pet, Consultation, ApiResponse } from '../types';
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
+import { PetCardSkeleton } from '../components/ui/Skeleton';
 
 export const DashboardClient: React.FC = () => {
   const { user, logout } = useAuth();
@@ -108,14 +110,22 @@ export const DashboardClient: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center" data-testid="client-loading-state">
-        <p className="text-slate-600 font-medium">Cargando portal del tutor...</p>
+      <div className="min-h-screen bg-slate-50 p-6 max-w-7xl mx-auto space-y-6" data-testid="client-loading-state">
+        <div className="bg-white p-4 rounded-xl shadow-sm h-20 animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <PetCardSkeleton />
+          <PetCardSkeleton />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6" data-testid="dashboard-client-page">
+      <Breadcrumbs
+        items={[{ label: 'Inicio', path: '/' }, { label: 'Mis Mascotas y Consultas' }]}
+        className="mb-4"
+      />
       <header className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-6">
         <div>
           <h1 className="text-xl font-bold text-primary-900" data-testid="header-title">

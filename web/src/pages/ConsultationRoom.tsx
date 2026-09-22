@@ -4,6 +4,7 @@ import { io, Socket } from 'socket.io-client';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CallRoom from '../components/call/CallRoom';
+import { ReviewModal } from '../components/ui/ReviewModal';
 import { Message, ApiResponse, Consultation } from '../types';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
@@ -23,6 +24,8 @@ export const ConsultationRoom: React.FC = () => {
   // --- State machine ---
   const [phase, setPhase] = useState<RoomPhase>('loading');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState<boolean>(true);
+  const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
   const [consultation, setConsultation] = useState<Consultation | null>(null);
 
   // --- LiveKit credentials (only populated when phase === 'active') ---
@@ -399,19 +402,43 @@ export const ConsultationRoom: React.FC = () => {
     return (
       <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
         <div className="bg-slate-800 rounded-xl p-8 max-w-md w-full text-center shadow-xl">
-          <span className="text-4xl">✅</span>
+          <span className="text-4xl" role="img" aria-label="Completado">✅</span>
           <h2 className="text-xl font-bold text-emerald-400 mt-4 mb-2">Consulta Finalizada</h2>
           <p className="text-slate-300 mb-6">
             La consulta médica ha concluido. Gracias por utilizar VetConnect.
           </p>
-          {/* ReviewModal placeholder — to be implemented in CDD Fase 3 (ReviewModal.tsx) */}
+
+          {user?.role === 'CLIENT' && reviewSubmitted && (
+            <div className="mb-6 p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-lg text-emerald-300 text-xs font-medium">
+              ¡Muchas gracias por calificar la atención médica!
+            </div>
+          )}
+
+          {user?.role === 'CLIENT' && !reviewSubmitted && (
+            <button
+              onClick={() => setShowReviewModal(true)}
+              className="w-full mb-3 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-md transition"
+            >
+              ⭐ Calificar Atención Médica
+            </button>
+          )}
+
           <button
-            onClick={() => navigate(-1)}
-            className="w-full px-4 py-2 bg-sky-600 hover:bg-sky-500 rounded-lg text-sm font-semibold"
+            onClick={() => navigate(user?.role === 'VET' ? '/vet/dashboard' : '/client/dashboard')}
+            className="w-full px-4 py-2 bg-sky-600 hover:bg-sky-500 rounded-lg text-sm font-semibold transition"
           >
             Volver al panel
           </button>
         </div>
+
+        {user?.role === 'CLIENT' && consultationId && (
+          <ReviewModal
+            isOpen={showReviewModal && !reviewSubmitted}
+            consultationId={consultationId}
+            onClose={() => setShowReviewModal(false)}
+            onSuccess={() => setReviewSubmitted(true)}
+          />
+        )}
       </div>
     );
   }

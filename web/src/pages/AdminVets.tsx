@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { User, ApiResponse } from '../types';
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 
 export const AdminVets: React.FC = () => {
   const [pendingVets, setPendingVets] = useState<User[]>([]);
@@ -59,14 +60,27 @@ export const AdminVets: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center" data-testid="admin-vets-loading">
-        <p className="text-slate-600 font-medium">Cargando panel de auditoría SENASA...</p>
+      <div className="min-h-screen bg-slate-50 p-6 max-w-7xl mx-auto space-y-6" data-testid="admin-vets-loading">
+        <div className="bg-white p-4 rounded-xl shadow-sm h-20 animate-pulse" />
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+          <div className="h-6 w-48 bg-slate-200 rounded animate-pulse" />
+          <div className="h-12 bg-slate-100 rounded-lg animate-pulse" />
+          <div className="h-12 bg-slate-100 rounded-lg animate-pulse" />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6" data-testid="admin-vets-page">
+      <Breadcrumbs
+        items={[
+          { label: 'Inicio', path: '/' },
+          { label: 'Administración' },
+          { label: 'Fiscalización de Veterinarios' },
+        ]}
+        className="mb-4"
+      />
       <header className="bg-white p-4 rounded-xl shadow-sm mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-bold text-primary-900" data-testid="admin-title">
