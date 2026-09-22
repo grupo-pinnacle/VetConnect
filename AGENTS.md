@@ -122,7 +122,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // GOOD — Web SPA: Transmitir en cookie HttpOnly + Secure
-res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
 return res.json({ accessToken, user });
 
 // GOOD — Mobile (React Native): Detectar plataforma y retornar en body para expo-secure-store
@@ -130,7 +130,7 @@ return res.json({ accessToken, user });
 if (req.headers['x-client-platform'] === 'mobile') {
   return res.json({ accessToken, refreshToken, user }); // ✅ Seguro: persiste en hardware keychain
 }
-res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
 return res.json({ accessToken, user });
 ```
 

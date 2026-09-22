@@ -111,6 +111,32 @@ flowchart TB
 - **Requisito Crítico en Internet:** Cuando el portal web se aloja en `app.vetconnect.com.ar` y la API en `api.vetconnect.com.ar`, Chromium y Safari exigen obligatoriamente HTTPS con certificados TLS válidos en ambos extremos; de lo contrario, los navegadores descartan silenciosamente las cookies marcadas con `SameSite=None` si no viajan bajo `Secure: true`.
 - **CORS Restrictivo en Backend:** En el entorno de producción, la variable `CLIENT_URL` en el `.env` del backend debe configurarse de forma estricta con el dominio público del frontend (`https://app.vetconnect.com.ar`), prohibiendo comodines permisivos (`*`) o referencias a `localhost`.
 
+### 2.7 Flujo de Cierre de Consulta y Calificación Post-Atención
+
+El ciclo de vida completo de una consulta médica desde el punto de vista del frontend web es:
+
+```mermaid
+flowchart LR
+    A["ConsultationRoom\n(status: ACTIVE)"] --> B["Vet presiona\n'Finalizar Consulta'"]
+    B --> C["PATCH /api/consultations/:id/complete\n{ diagnosisNotes: string }"]
+    C --> D["Consulta → status: COMPLETED"]
+    D --> E["navigate(-1) a DashboardVet"]
+    D --> F["Cliente recibe notificación\n(Socket.io o polling)"]
+    F --> G["ReviewModal abre en\nDashboardClient"]
+    G --> H["POST /api/consultations/:id/review\n{ rating: 1-5, comment?: string }"]
+    H --> I["Calificación guardada\n(ADR-023)"]
+```
+
+**Notas de implementación para el agente de IA que construya el frontend:**
+
+1. **Hang-up (VET):** El botón "Finalizar Consulta" en `ConsultationRoom.tsx` debe llamar `PATCH /api/consultations/:id/complete` con `{ diagnosisNotes }` ANTES de navegar. El `navigate(-1)` actual (sin llamar al endpoint) es un gap conocido del MVP v2.0 que debe corregirse en la fase de desarrollo.
+
+2. **Review Modal (CLIENT):** Tras detectar `consultation.status === 'COMPLETED'` (via polling o Socket.io), `DashboardClient.tsx` debe mostrar un `ReviewModal` con un selector de 1 a 5 estrellas y un textarea opcional, ejecutando `POST /api/consultations/:id/review`.
+
+3. **Cancel Flow:** `PATCH /api/consultations/:id/cancel` está disponible para CLIENT y ADMIN. Debe ofrecerse como opción si el tiempo de espera en sala supera un umbral o el tutor decide abandonar.
+
+4. **AuditLog (ADMIN):** Las operaciones de aprobación/rechazo de veterinarios generan registros en `audit_logs` de forma automática en el backend. **No existe un endpoint `GET` de AuditLogs en v2.0** — el visor de auditoría es una característica de reportería administrativa planificada para v2.1+. `AdminVets.tsx` NO debe implementar un componente de AuditLog viewer en v2.0.
+
 ### 2.6 Integración 6: Módulos de Administración, Prescripciones Oficiales y Perfil de Guardia
 - **Visualización de Receta Digital SENASA (`GET /api/prescriptions/:id`):**
   - La página [`PrescriptionView.tsx`](../../web/src/pages/PrescriptionView.tsx) consulta este endpoint al montar la vista o cuando un tercero escanea el código QR de la receta.

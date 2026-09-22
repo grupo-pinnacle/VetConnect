@@ -118,7 +118,7 @@ describe('Prescriptions Module (/api/consultations/:id/prescriptions)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.medication).toBe('Amoxicilina 250mg');
       expect(res.body.data.qrCodeDataUrl).toContain('data:image/png;base64');
-      expect(res.body.data.verifyUrl).toBe('https://vetconnect.app/verify/prescription/prescription-uuid-1');
+      expect(res.body.data.verifyUrl).toBe('https://app.vetconnect.com.ar/prescriptions/prescription-uuid-1');
     });
 
     it('should REJECT prescription issuance from PENDING VET with 403 Forbidden', async () => {

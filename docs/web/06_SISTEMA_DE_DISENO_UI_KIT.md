@@ -359,19 +359,19 @@ Todo componente interactivo o contenedor asíncrono debe contemplar explícitame
 4. **`reconnecting` (Reconexión de Socket/LiveKit):** Banner superior no intrusivo con spinner avisando restablecimiento de enlace en tiempo real.
 
 ## 9. Inventario Canónico de `data-testid` (Contrato Anti-Regresión Vitest)
-Para preservar la estabilidad de los 29 tests de Vitest durante la extracción atómica de componentes, ninguna IA debe modificar los siguientes selectores y textos clave:
+Para preservar la estabilidad de los 29 tests de Vitest durante la extracción atómica de componentes, ninguna IA debe modificar los siguientes selectores y textos clave. **Estos valores están verificados contra los archivos de test reales en `web/src/__tests__/`.**
 
-| Componente / Pantalla | Selectores y Textos Exactos Evaluados por Vitest | Archivo de Test Vinculante (`web/src/__tests__/`) |
+| Componente / Pantalla | Selector Requerido (`data-testid` o texto exacto) | Archivo de Test Vinculante |
 |---|---|---|
 | **Landing Page** | `data-testid="brand-logo"`, `data-testid="trust-badge-senasa"`, `data-testid="hero-title"`, `data-testid="cta-client-portal"`, `data-testid="cta-vet-portal"`, `data-testid="cta-admin-portal"`, `data-testid="download-apk-link"` | `Landing.test.tsx` |
-| **Formulario Login** | `placeholder="ejemplo@vetconnect.com"`, `placeholder="********"`, texto `"Iniciar Sesión"` | `Login.test.tsx` |
-| **Formulario Register** | Texto `"Registro en VetConnect"`, texto `"Crear Cuenta"` | `Register.test.tsx` |
-| **Pre-Join Llamada** | Texto `"Verificacion Previa de Camara y Microfono"`, texto `"Microfono"`, texto `"Camara Web"`, botón con texto `"Ingresar a la Consulta"` | `CallRoom.test.tsx` |
-| **Dashboard Tutor** | Textos `"Mis Mascotas"`, `"Solicitar Consulta de Guardia"` | `DashboardClient.test.tsx` |
-| **Dashboard Vet** | Texto `"Disponible para Guardia"`, texto `"Sala de Espera"`, `data-testid="badge-priority-rojo"`, `data-testid="badge-priority-amarillo"`, `data-testid="badge-priority-verde"`, `data-testid="prescription-modal"` | `DashboardVet.test.tsx` |
-| **Receta Pública** | `data-testid="prescription-header-title"`, `data-testid="rx-medication"`, `data-testid="prescription-qr-code"`, `data-testid="print-prescription-button"` | `PrescriptionView.test.tsx` |
-| **Admin Veterinarios** | `data-testid="admin-title"`, `data-testid="vet-row-*"`, `data-testid="vet-speciality-*"`, `data-testid="approve-vet-button-*"`, `data-testid="reject-vet-button-*"`, `data-testid="input-reject-reason-*"` | `AdminVets.test.tsx` |
-| **Admin Modales / Toast** | `data-testid="admin-toast-notification"` (con texto `'Matrícula aprobada exitosamente'`), `data-testid="reject-modal-textarea"` | `AdminVetsModal.test.tsx` |
+| **Formulario Login** | `placeholder="ejemplo@vetconnect.com"`, `placeholder="********"`, Botón texto exacto `"Iniciar Sesión"` | `Login.test.tsx` |
+| **Formulario Register** | Heading texto exacto `"Registro en VetConnect"`, Botón texto exacto `"Crear Cuenta"` | `Register.test.tsx` |
+| **Dashboard Tutor** | Textos de cabecera `"Mis Mascotas"`, `"Solicitar Consulta de Guardia"` | `DashboardClient.test.tsx` |
+| **Dashboard Vet** | `data-testid="badge-priority-rojo"`, `data-testid="badge-priority-amarillo"`, `data-testid="badge-priority-verde"`, `data-testid="prescription-modal"` | `DashboardVet.test.tsx` |
+| **Sala de Llamada (PreJoinModal)** | Heading `"Verificacion Previa de Camara y Microfono"`, Botón `"Ingresar a la Consulta"` | `CallRoom.test.tsx` |
+| **Vista de Receta** | `data-testid="prescription-header-title"`, `data-testid="rx-medication"`, `data-testid="prescription-qr-code"`, `data-testid="print-prescription-button"` | `PrescriptionView.test.tsx` |
+| **Panel Admin Vets** | `data-testid="admin-title"`, `data-testid="vet-row-{id}"`, `data-testid="vet-speciality-{id}"`, `data-testid="approve-vet-button-{id}"`, `data-testid="reject-vet-button-{id}"`, `data-testid="input-reject-reason-{id}"` | `AdminVets.test.tsx` |
+| **Modal Admin (Toast/Reject)** | `data-testid="admin-toast-notification"` (text: 'Matrícula aprobada exitosamente'), `data-testid="reject-modal-textarea"` | `AdminVetsModal.test.tsx` |
 | **Página 404** | `data-testid="not-found-code"`, `data-testid="not-found-title"`, `data-testid="not-found-home-button"` | `NotFound.test.tsx` |
 
 ## 10. Secuencia Obligatoria de Extracción Atómica (CDD Roadmap)

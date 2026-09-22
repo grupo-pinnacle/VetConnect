@@ -11,7 +11,7 @@ vetconnect/
 ├── backend/                        # API REST, WebSockets & Capa de Persistencia
 │   ├── prisma/
 │   │   ├── schema.prisma           # Modelado de datos PostgreSQL
-│   │   └── seed.js                 # Semilla de datos de prueba
+│   │   └── seed.ts                 # Semilla de datos de prueba (TypeScript, ejecutado via `ts-node`)
 │   ├── src/
 │   │   ├── modules/
 │   │   │   ├── admin/              # Fiscalización SENASA, aprobación/rechazo de veterinarios, AuditLogs
@@ -110,9 +110,10 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | `GET`  | `/api/auth/me`     | Rehidratación del perfil de usuario autenticado activo en `AuthContext.tsx` | Autenticado |
 
 ### 2.2 Usuarios & Perfil (`/api/users`)
+> ⚠️ **Nota de Contrato:** Para obtener el perfil del usuario autenticado, usar `GET /api/auth/me` (definido en la sección 2.1). El módulo `users` solo expone `PATCH /api/users/profile` para actualizaciones.
+
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `GET`  | `/api/users/profile` | Obtener perfil completo del usuario autenticado | Autenticado |
 | `PATCH`| `/api/users/profile` | Conmutación reactiva de guardia (`isOnline: boolean`), edición de `speciality`, `bio`, `licenseNumber` y `photoUrl` | Autenticado |
 
 ### 2.3 Mascotas (`/api/pets`)
@@ -127,16 +128,14 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 ### 2.3 Consultas & Telemedicina (`/api/consultations`)
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
-| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min). Convención UI: la prioridad elegida (`GREEN`\|`YELLOW`\|`RED`) se antepone en `notes` como `[Prioridad: ${priority}] ${notes}` | CLIENT |
-| `GET`  | `/api/consultations/mine`| Listar consultas activas/pendientes del usuario autenticado | Autenticado |
-| `GET`  | `/api/consultations`     | Listar consultas en cola filtradas por estado (ej. `?status=WAITING`) | VET / ADMIN |
+| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min). Convención UI: la prioridad elegida (`ROJO`\|`AMARILLO`\|`VERDE`) se antepone en `notes` como `[Prioridad: ${priority}] ${notes}` | CLIENT |
+| `GET`  | `/api/consultations/mine`| **CLIENT:** Devuelve sus propias consultas activas/pendientes. **VET:** Devuelve sus consultas asignadas MÁS todas las consultas en estado `WAITING` de la cola de guardia (sin requerir query params). | Autenticado |
 | `GET` | `/api/consultations/:id`| Obtener detalle completo de consulta e historial | Participantes / ADMIN |
 | `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o auto-asignación FIFO | VET (Approved) / ADMIN |
 | `PATCH`| `/api/consultations/:id/cancel` | Cancelar consulta telemática (transición a `CANCELLED`) | Participantes / ADMIN |
 | `PATCH`| `/api/consultations/:id/complete` | Cerrar consulta registrando evolución (`diagnosisNotes`) | VET asignado |
 | `POST` | `/api/consultations/:id/prescriptions` | Emitir receta digital oficial con QR y firma | VET asignado |
-| `GET`  | `/api/consultations/:id/messages` | Listar mensajes de chat o sincronización incremental (`?after={ISO_TIMESTAMP}`) | Participantes |
-| `POST` | `/api/consultations/:id/messages` | Enviar mensaje en el chat médico (idempotente con `clientMsgId`) | Participantes |
+| `GET`  | `/api/consultations/:id/messages` | Recuperar historial de mensajes o sincronización incremental (`?after={ISO_TIMESTAMP}`). ⚠️ **Los mensajes nuevos se envían EXCLUSIVAMENTE via Socket.io `message:send` — no existe un endpoint REST para enviar mensajes.** | Participantes |
 | `POST` | `/api/consultations/:id/review` | Calificar atención médica (1 a 5 estrellas, ADR-023) | CLIENT asignado |
 
 ### 2.4 Administración & Fiscalización SENASA (`/api/admin`)
@@ -178,7 +177,7 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | Evento | Payload | Emisor | Receptor | Descripción |
 |---|---|---|---|---|
 | `join:consultation` | `{ consultationId: string }` | Cliente / Vet | Servidor | Une el socket a la sala de chat de la consulta |
-| `message:send` | `{ consultationId, content, clientMsgId, attachmentUrl }` | Cliente / Vet | Servidor | Envía un nuevo mensaje de chat con deduplicación idempotente por clientMsgId |
+| `message:send` | `{ consultationId, content, clientMsgId, attachmentUrl? }` | Cliente / Vet | Servidor | **Única forma de enviar mensajes de chat (no existe REST POST para mensajes).** Deduplicación idempotente: si `clientMsgId` ya existe, el servidor retorna el mensaje preexistente sin duplicar (HTTP 200). |
 | `message:new` | `Message` object | Servidor | Sala de Consulta | Broadcast del mensaje a ambos participantes |
 | `call:incoming` | `{ consultationId, callerName, roomName }` | Servidor | Usuario llamado | Dispara la alerta de llamada entrante en Web y Mobile |
 | `call:answered` | `{ consultationId }` | Usuario llamado | Servidor | Notifica que la videollamada fue atendida |

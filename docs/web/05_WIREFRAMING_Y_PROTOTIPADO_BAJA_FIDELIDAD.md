@@ -200,39 +200,41 @@ A continuación se detallan las pantallas esenciales del ecosistema web de VetCo
 
 ---
 
-### Pantalla 6: Vista y Verificación Pública de Receta Oficial SENASA (`/prescriptions/:id`)
+### Pantalla 6A: Modal de Emisión de Receta Oficial (Inline en ConsultationRoom / DashboardVet)
 
-*Conexión con el Árbol Web: [Nivel 3] Consulta & Verificación Pública de Receta Oficial*
+*Conexión con el Árbol Web: [Nivel 3] Emisión de Receta (Modal Flotante)*
+*Archivos Fuente Reales:* Modal flotante invocado desde [`web/src/pages/ConsultationRoom.tsx`](../../web/src/pages/ConsultationRoom.tsx) y [`web/src/pages/DashboardVet.tsx`](../../web/src/pages/DashboardVet.tsx). El modal se activa con el botón `[ CONFECCIONAR RECETA MÉDICA SENASA ]`.
+
+- **Acciones disponibles:** Completar campos de medicamento (`medication`), dosis (`dosage`), frecuencia (`frequency`), duración (`durationDays`) e indicaciones (`indications`, mínimo 5 caracteres). Al confirmar, el frontend ejecuta `POST /api/consultations/:id/prescriptions`.
+
+---
+
+### Pantalla 6B: Vista Pública de Verificación QR de Receta (`/prescriptions/:id`)
+
+*Conexión con el Árbol Web: [Nivel 2] Receta Digital Oficial SENASA (/prescriptions/:id)*
 *Archivo Fuente Real:* [`web/src/pages/PrescriptionView.tsx`](../../web/src/pages/PrescriptionView.tsx)
-
-Ruta pública, imprimible y accesible sin autenticación para validación sanitaria y farmacéutica mediante escaneo de código QR (cargada por `web/src/pages/PrescriptionView.tsx`).
+*Acceso:* **Público** — Veterinarias, farmacias y SENASA escanean el QR para verificar la receta.
 
 ```
 +-------------------------------------------------------------------------------------------------------------+
-| [ VETCONNECT ]               SISTEMA OFICIAL DE PRESCRIPCIÓN VETERINARIA DIGITAL                             |
+| [data-testid="prescription-header-title"] RECETA MÉDICA OFICIAL SENASA                                      |
 +-------------------------------------------------------------------------------------------------------------+
-| RECETA MÉDICA OFICIAL N° rx-84920-2026                                                                      |
-| Paciente: Milo (Canino, 4 años, 8.5 kg) | Tutor: Laura Gómez (Contacto Autorizado)                           |
-| Médico Emisor: Dr. Juan Mendoza | Matrícula SENASA: MP-84920 / MN-1234                                      |
+| Paciente: [nombre de la mascota] | Tutor: [nombre del cliente] | Fecha: [ISO]                               |
+| Médico Emisor: Dr. [nombre] | Matrícula: [licenseNumber]                                                    |
 +-------------------------------------------------------------------------------------------------------------+
-| INDICACIÓN FARMACÉUTICA (Rp/):                                                                              |
-| Medicamento: Metoclopramida Gotas (0.5%)                                                                    |
-| Dosis & Frecuencia: 8 gotas cada 8 hs durante 3 días                                                        |
-| Indicaciones: Administrar con alimentos. Control en 24 hs.                                                  |
+| [data-testid="rx-medication"] Medicamento: [medication]                                                     |
+| Dosis: [dosage] | Frecuencia: [frequency] | Duración: [durationDays] días                                  |
+| Indicaciones: [indications]                                                                                  |
 +-------------------------------------------------------------------------------------------------------------+
-| VALIDACIÓN SANITARIA CRIPTOGRÁFICA & QR:                                                                    |
-| [ QR CODE VALIDACIÓN ]  https://app.vetconnect.com.ar/prescriptions/rx-84920-2026                           |
-|                         [ BADGE: RECETA OFICIAL FIRMADA DIGITALMENTE Y VERIFICADA ANTE SENASA ]              |
+| [data-testid="prescription-qr-code"] ████ CÓDIGO QR DE VERIFICACIÓN ████                                  |
+| URL del QR: https://app.vetconnect.com.ar/prescriptions/:id                                                 |
 +-------------------------------------------------------------------------------------------------------------+
-| ACCIONES DISPONIBLES:                                                                                       |
-| [ 🖨️ IMPRIMIR RECETA OFICIAL (window.print()) ]               [ ← Volver a la Aplicación ]                   |
+| [data-testid="print-prescription-button"] [ 🖨️ IMPRIMIR RECETA A4 ]                                        |
 +-------------------------------------------------------------------------------------------------------------+
 ```
 
-- **Información que contiene:** Identificación oficial de la receta, datos del animal y tutor, matrícula validada del profesional, fármaco prescrito con posología estructurada, código QR de verificación pública y certificado de firma digital.
-- **Acciones disponibles:** Imprimir o guardar documento en formato físico/PDF (`window.print()`) y validar inmutabilidad escaneando el código QR desde cualquier dispositivo.
-
-> 🛑 **NOTA DE ARQUITECTURA:** La confección y emisión interactiva de recetas médicas NO ocurre en la ruta `/prescriptions/:id`. Se realiza mediante el componente modal interactivo `PrescriptionModal` (`data-testid="prescription-modal"`), el cual reside operativamente en `web/src/pages/DashboardVet.tsx` (consumiendo `POST /api/consultations/:id/prescriptions`) y está planificado para reutilizarse en `ConsultationRoom.tsx`.
+- **Endpoint consumido:** `GET /api/prescriptions/:id` (Público, no requiere autenticación).
+- **Estilo de Impresión:** CSS `@media print` activo — genera hoja A4 médica lista para farmacias.
 
 ---
 
