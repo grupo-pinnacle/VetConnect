@@ -984,7 +984,7 @@ export const Landing: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-emerald-600" />
-              <span>Escuela Técnica Nº 20 D.E. 20 &ldquo;Carolina Muzilli&rdquo;</span>
+              <span>Pinnacle Group — Soluciones Audiovisuales &amp; Streaming</span>
             </div>
           </div>
         </section>

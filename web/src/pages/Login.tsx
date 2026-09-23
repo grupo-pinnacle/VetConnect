@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, Lock, Award, HeartHandshake, AlertCircle, ArrowRight, Stethoscope, ArrowLeft } from 'lucide-react';
+import {
+  ShieldCheck,
+  Lock,
+  HeartHandshake,
+  AlertCircle,
+  ArrowRight,
+  Stethoscope,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
+import HamsterMascot from '../components/ui/HamsterMascot';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [forgotPasswordNotice, setForgotPasswordNotice] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,123 +56,140 @@ export const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col lg:grid lg:grid-cols-12 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
-      {/* Columna Izquierda: Branding, Trust & Respaldo Clínico Institucional */}
-      <section className="lg:col-span-5 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-white p-8 lg:p-14 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800/80 relative overflow-hidden">
-        {/* Halo de luz decorativo */}
+      {/* Columna Izquierda: Branding Pinnacle Group & Respaldo Tecnológico (Desktop) */}
+      <section className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#022A21] via-[#03362A] to-slate-950 text-white p-8 lg:p-14 flex-col justify-between border-b lg:border-b-0 lg:border-r border-emerald-900/60 relative overflow-hidden">
+        {/* Halos ambientales */}
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10">
-          {/* Header de Marca (Enlace navegable a inicio) */}
+          {/* Header de Marca (Enlace al inicio) */}
           <Link
             to="/"
             className="inline-flex items-center gap-3 mb-10 group focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-xl p-1"
             title="Volver a la página principal"
           >
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
-              <Stethoscope className="w-6 h-6 text-white" aria-hidden="true" />
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#00D084] to-[#00A86B] flex items-center justify-center shadow-lg shadow-emerald-950/40 group-hover:scale-105 transition-transform">
+              <Stethoscope className="w-6 h-6 text-[#022A21]" aria-hidden="true" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              <span className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
                 VetConnect
-                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  v2.0 Hospitalaria
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Hospitalaria
                 </span>
               </span>
               <p className="text-xs text-slate-400 font-medium group-hover:text-emerald-300 transition-colors">
-                Telemedicina Veterinaria & Gestión Clínica
+                Telemedicina Veterinaria Oficial
               </p>
             </div>
           </Link>
 
           {/* Título de Propuesta de Valor */}
-          <div className="space-y-4 max-w-lg mb-12">
+          <div className="space-y-4 max-w-lg mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 text-emerald-300 rounded-full text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Infraestructura Pinnacle Group</span>
+            </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              Cuidado médico experto y regulado para quienes más amas.
+              Cuidado veterinario en vivo, rápido y sin complicaciones.
             </h1>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              Conectamos tutores de animales de compañía con profesionales veterinarios matriculados en tiempo real, bajo los más estrictos estándares sanitarios y legales de la República Argentina.
+            <p className="text-sm text-slate-300 leading-relaxed font-normal">
+              Accedé a tus consultas clínicas de guardia, recetas digitales homologadas con código QR y el historial unificado de tus compañeros.
             </p>
           </div>
 
-          {/* Badges de Confianza y Cumplimiento Normativo */}
+          {/* 3 Beneficios Clave Minimalistas */}
           <div className="space-y-3 max-w-md">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 backdrop-blur-sm">
-              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+              <Zap className="w-5 h-5 text-emerald-400 shrink-0" />
               <div>
-                <p className="text-xs font-bold text-white">SENASA Resolución 1442/2021</p>
-                <p className="text-[11px] text-slate-400">Plataforma homologada con verificación de matrícula oficial</p>
+                <p className="text-xs font-bold text-white">Guardia Activa 24 Horas</p>
+                <p className="text-[11px] text-slate-400">Atención médica en menos de 3 minutos</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 backdrop-blur-sm">
-              <Lock className="w-5 h-5 text-sky-400 shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+              <ShieldCheck className="w-5 h-5 text-teal-400 shrink-0" />
               <div>
-                <p className="text-xs font-bold text-white">Cifrado WebRTC de Grado Médico</p>
-                <p className="text-[11px] text-slate-400">Salas de videoconsulta punto a punto y protección 256-bit SSL</p>
+                <p className="text-xs font-bold text-white">SENASA Res. 1442/2021</p>
+                <p className="text-[11px] text-slate-400">Prescripciones oficiales con firma digital</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 backdrop-blur-sm">
-              <Award className="w-5 h-5 text-amber-400 shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+              <Lock className="w-5 h-5 text-sky-400 shrink-0" />
               <div>
-                <p className="text-xs font-bold text-white">Respaldo Técnico Institucional</p>
-                <p className="text-[11px] text-slate-400">Escuela Técnica N° 20 D.E. 20 "Carolina Muzilli"</p>
+                <p className="text-xs font-bold text-white">Transmisión Segura de Baja Latencia</p>
+                <p className="text-[11px] text-slate-400">Tecnología de streaming provista por Pinnacle Group</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Cita Testimonial Clínica */}
-        <div className="relative z-10 mt-12 pt-8 border-t border-slate-800/80">
-          <blockquote className="text-xs text-slate-300 italic leading-relaxed mb-3">
-            &ldquo;En situaciones de guardia y urgencia clínica, la inmediatez de la videoconsulta y la prescripción con validación QR inviolable transformaron la seguridad asistencial de nuestros pacientes.&rdquo;
-          </blockquote>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 font-bold flex items-center justify-center text-xs border border-emerald-500/30">
-              SR
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white">Dra. Silvina Romero</p>
-              <p className="text-[10px] text-slate-400">Médica Veterinaria (M.P. 4492 - Colegiada)</p>
-            </div>
+        {/* Respaldo Institucional Pinnacle Group */}
+        <div className="relative z-10 mt-10 pt-6 border-t border-emerald-900/60 flex items-center justify-between text-xs text-slate-400">
+          <div>
+            <p className="font-bold text-slate-200">Pinnacle Group</p>
+            <p className="text-[10px] text-slate-500">Soluciones Audiovisuales, Broadcast & Streaming</p>
           </div>
+          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+            Sponsor Oficial
+          </span>
         </div>
       </section>
 
-      {/* Columna Derecha: Tarjeta de Acceso y Formulario Clínico */}
-      <section className="lg:col-span-7 bg-slate-50 flex items-center justify-center p-6 sm:p-12 lg:p-16">
-        <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-200/70 transition-all duration-200">
-          {/* Botón de retorno accesible a la Landing Page */}
-          <div className="mb-6">
+      {/* Columna Derecha: Tarjeta de Acceso con Mascota Hamster Interactiva */}
+      <section className="lg:col-span-7 bg-[#F9FBFA] flex items-center justify-center p-6 sm:p-12 lg:p-14">
+        <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-3xl shadow-xl shadow-slate-200/70 border border-slate-200/80 transition-all duration-200">
+          {/* Botón de retorno al inicio */}
+          <div className="mb-4 flex justify-between items-center">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors group focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-lg px-2 py-1 bg-slate-50 hover:bg-emerald-50/50 border border-slate-200/60"
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors group focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-lg px-2.5 py-1 bg-slate-50 hover:bg-emerald-50/50 border border-slate-200/70"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform text-slate-400 group-hover:text-emerald-700" aria-hidden="true" />
               <span>Volver al inicio</span>
             </Link>
+
+            <span className="text-[10px] font-semibold text-slate-400">Acceso Seguro SSL</span>
+          </div>
+
+          {/* LA MASCOTA OFICIAL: HÁMSTER TIPO DUOLINGO ANIMADO */}
+          <div className="flex flex-col items-center justify-center mb-1">
+            <HamsterMascot
+              isCoveringEyes={showPassword || isPasswordFocused}
+              isLookingAtInput={isEmailFocused}
+              className="mb-1"
+            />
           </div>
 
           {/* Encabezado del Formulario */}
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold mb-3">
-              <HeartHandshake className="w-3.5 h-3.5" aria-hidden="true" />
-              Acceso a Portal Seguro
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          <div className="text-center mb-7">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Bienvenido a VetConnect
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
-              Ingresá tus credenciales para acceder a tus consultas y registros médicos.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Ingresá tus credenciales para acceder a tus consultas.
             </p>
           </div>
+
+          {/* Banner de Aviso: Olvidaste contraseña */}
+          {forgotPasswordNotice && (
+            <div className="bg-sky-50 border border-sky-200 text-sky-800 p-3.5 rounded-2xl text-xs mb-5 flex items-start gap-2 animate-fadeIn">
+              <AlertCircle className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block">¿Olvidaste tu contraseña?</span>
+                <span>Contactá al soporte de Pinnacle Group a soporte@vetconnect.com.ar para restablecer tu clave segura.</span>
+              </div>
+            </div>
+          )}
 
           {/* Banner de Error Accesible */}
           {error && (
             <div
               role="alert"
-              className="bg-red-50 border border-red-200 text-red-700 p-3.5 rounded-xl text-xs sm:text-sm mb-6 flex items-start gap-2.5 animate-fadeIn"
+              className="bg-red-50 border border-red-200 text-red-700 p-3.5 rounded-2xl text-xs mb-5 flex items-start gap-2.5 animate-fadeIn"
             >
               <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
               <span className="font-medium">{error}</span>
@@ -163,7 +197,7 @@ export const Login: React.FC = () => {
           )}
 
           {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="login-email"
@@ -176,6 +210,8 @@ export const Login: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setIsEmailFocused(true)}
+                onBlur={() => setIsEmailFocused(false)}
                 required
                 autoComplete="email"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition-all placeholder:text-slate-400"
@@ -191,51 +227,68 @@ export const Login: React.FC = () => {
                 >
                   Contraseña
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setForgotPasswordNotice(!forgotPasswordNotice)}
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
               </div>
-              <input
-                id="login-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition-all placeholder:text-slate-400"
-                placeholder="********"
-              />
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
+                  required
+                  autoComplete="current-password"
+                  className="w-full pl-4 pr-11 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition-all placeholder:text-slate-400"
+                  placeholder="********"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 focus:outline-none"
+                  title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/30 transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 group cursor-pointer"
+              className="w-full bg-[#03362A] hover:bg-[#044c3b] active:bg-[#022c22] text-white py-3.5 px-4 rounded-xl font-bold text-sm shadow-md shadow-[#03362A]/20 hover:shadow-lg transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 group cursor-pointer mt-3"
             >
               <span>{isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}</span>
               {!isSubmitting && (
-                <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+                <ArrowRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
               )}
             </button>
           </form>
 
-          {/* Badges de Seguridad de Formulario */}
-          <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-center gap-4 text-[11px] text-slate-400 font-medium">
-            <span className="flex items-center gap-1">
-              <Lock className="w-3 h-3 text-emerald-600" aria-hidden="true" /> 256-bit SSL
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3 text-emerald-600" aria-hidden="true" /> Plataforma Homologada
-            </span>
-          </div>
-
           {/* Enlace a Registro */}
-          <p className="text-center text-xs sm:text-sm text-slate-600 mt-6">
-            ¿No tienes una cuenta?{' '}
+          <p className="text-center text-xs sm:text-sm text-slate-600 mt-6 pt-4 border-t border-slate-100">
+            ¿No tenés una cuenta?{' '}
             <Link
               to="/register"
-              className="text-emerald-700 font-bold hover:text-emerald-600 hover:underline transition-colors"
+              className="text-emerald-700 font-bold hover:text-emerald-800 hover:underline transition-colors"
             >
-              Regístrate aquí
+              Registrate aquí
             </Link>
+          </p>
+
+          <p className="text-center text-[10px] text-slate-400 mt-4">
+            Tecnología y soporte por <span className="font-semibold text-slate-600">Pinnacle Group</span>
           </p>
         </div>
       </section>
