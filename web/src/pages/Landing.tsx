@@ -260,7 +260,7 @@ export const Landing: React.FC = () => {
                 Inicio
               </a>
               <a href="#simulador" className="hover:text-emerald-300 transition-colors">
-                Triage Clínico
+                Orientador de Salud
               </a>
               <a href="#portales" className="hover:text-emerald-300 transition-colors">
                 Portales
@@ -326,7 +326,7 @@ export const Landing: React.FC = () => {
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white font-medium"
             >
-              Simulador de Triage
+              Orientador de Salud
             </a>
             <a
               href="#portales"
@@ -413,7 +413,7 @@ export const Landing: React.FC = () => {
                   className="px-7 py-4 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-sm sm:text-base rounded-full shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Activity className="w-4 h-4 text-[#00A86B]" />
-                  <span>Probar Triage Clínico</span>
+                  <span>Orientador de Salud</span>
                 </a>
               </div>
 
@@ -712,25 +712,26 @@ export const Landing: React.FC = () => {
           </div>
         </section>
 
-        {/* 4. Simulador de Triage por Especie (Simple, Sin Saturación) */}
+        {/* 4. Orientador Rápido de Salud Animal (Cálido, Intuitivo y con Bordes Suaves) */}
         <section id="simulador" className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-left">
-          <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200/90">
-            {/* Cabecera */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-6">
+          <div className="bg-gradient-to-b from-white to-[#F8FBF9] rounded-[36px] p-6 sm:p-10 shadow-[0_20px_50px_-12px_rgba(2,42,33,0.08)] border border-slate-200/80">
+            {/* Cabecera Cálida y Humana */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-7">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#00875A] bg-[#E6F7F0] px-3 py-1 rounded-full">
-                  Triage Protocolizado
+                <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#00875A] bg-[#E6F7F0] px-3.5 py-1 rounded-full border border-emerald-200/60">
+                  <span>💡</span>
+                  <span>Orientador Rápido de Salud</span>
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
-                  ¿Qué síntoma presenta tu compañero?
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2 font-display">
+                  ¿Qué le pasa a tu compañero?
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Elegí la especie para ver la respuesta clínica y el tiempo de atención recomendado.
+                <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+                  Elegí qué animal tenés y qué síntoma observás para saber en 10 segundos la atención recomendada.
                 </p>
               </div>
 
-              {/* Selector de Especies */}
-              <div className="flex gap-2">
+              {/* Selector de Especies con Botones Suaves y Acolchados */}
+              <div className="flex gap-2.5">
                 {(['DOG', 'CAT', 'EXOTIC'] as SpeciesType[]).map((speciesKey) => {
                   const item = SPECIES_DATA[speciesKey];
                   const isSelected = selectedSpecies === speciesKey;
@@ -739,13 +740,13 @@ export const Landing: React.FC = () => {
                       key={speciesKey}
                       type="button"
                       onClick={() => handleSpeciesChange(speciesKey)}
-                      className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all duration-150 active:scale-95 cursor-pointer flex items-center gap-2 ${
                         isSelected
-                          ? 'border-[#00875A] bg-[#E6F7F0] text-[#00875A] shadow-sm'
-                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                          ? 'border-[#00875A] bg-[#E6F7F0] text-[#00875A] shadow-sm ring-1 ring-[#00875A]/20'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300'
                       }`}
                     >
-                      <span>{item.emoji}</span>
+                      <span className="text-base">{item.emoji}</span>
                       <span>{item.label}</span>
                     </button>
                   );
@@ -753,8 +754,8 @@ export const Landing: React.FC = () => {
               </div>
             </div>
 
-            {/* Síntomas */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            {/* Tarjetas de Síntomas con Bordes Curvos y Micro-interacciones */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-6">
               {currentSpeciesData.scenarios.map((sc) => {
                 const isSelected = activeScenario.id === sc.id;
                 return (
@@ -762,20 +763,20 @@ export const Landing: React.FC = () => {
                     key={sc.id}
                     type="button"
                     onClick={() => setSelectedScenarioId(sc.id)}
-                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                    className={`p-5 rounded-[24px] border text-left transition-all duration-200 cursor-pointer ${
                       isSelected
                         ? sc.priority === 'ROJO'
-                          ? 'border-rose-500 bg-rose-50/70 ring-1 ring-rose-500'
+                          ? 'border-rose-400 bg-rose-50/70 shadow-md shadow-rose-500/10 ring-2 ring-rose-400/50'
                           : sc.priority === 'AMARILLO'
-                          ? 'border-amber-500 bg-amber-50/70 ring-1 ring-amber-500'
-                          : 'border-emerald-500 bg-emerald-50/70 ring-1 ring-emerald-500'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                          ? 'border-amber-400 bg-amber-50/70 shadow-md shadow-amber-500/10 ring-2 ring-amber-400/50'
+                          : 'border-emerald-400 bg-emerald-50/70 shadow-md shadow-emerald-500/10 ring-2 ring-emerald-400/50'
+                        : 'border-slate-200/90 hover:border-slate-300 bg-white hover:shadow-sm'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-900">{sc.name}</span>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <span className="text-xs font-black text-slate-900 font-display">{sc.name}</span>
                       <span
-                        className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                        className={`text-[10px] font-black uppercase tracking-wide px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
                           sc.priority === 'ROJO'
                             ? 'bg-rose-100 text-rose-800'
                             : sc.priority === 'AMARILLO'
@@ -783,31 +784,33 @@ export const Landing: React.FC = () => {
                             : 'bg-emerald-100 text-emerald-800'
                         }`}
                       >
-                        {sc.priority}
+                        <span>{sc.priority === 'ROJO' ? '🚨' : sc.priority === 'AMARILLO' ? '⚠️' : '💚'}</span>
+                        <span>{sc.priority === 'ROJO' ? 'Alerta' : sc.priority === 'AMARILLO' ? 'Urgente' : 'Control'}</span>
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600 leading-snug">{sc.symptom}</p>
+                    <p className="text-xs text-slate-600 leading-relaxed">{sc.symptom}</p>
                   </button>
                 );
               })}
             </div>
 
-            {/* Respuesta Protocolizada */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-slate-900">{activeScenario.priorityLabel}</span>
-                  <span className="text-xs text-slate-500 font-medium">• Tiempo estimado: {activeScenario.responseTime}</span>
+            {/* Respuesta Orientadora Inteligente con Bordes Suaves */}
+            <div className="p-6 rounded-[28px] bg-gradient-to-r from-[#022A21] via-[#03362A] to-[#022A21] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xl shadow-emerald-950/15 border border-emerald-800/40">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-black text-sm text-white font-display">{activeScenario.priorityLabel}</span>
+                  <span className="text-xs text-emerald-300 font-mono">• Tiempo: {activeScenario.responseTime}</span>
                 </div>
-                <p className="text-xs text-slate-600 max-w-xl">{activeScenario.description}</p>
+                <p className="text-xs text-slate-300 max-w-xl leading-relaxed">{activeScenario.description}</p>
               </div>
 
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                className="px-6 py-2.5 bg-[#03362A] hover:bg-[#044c3b] text-white rounded-full font-bold text-xs shrink-0 cursor-pointer shadow-sm transition"
+                className="px-6 py-3 bg-[#00D084] hover:bg-[#05b876] active:scale-[0.98] text-[#022A21] rounded-2xl font-black text-xs shrink-0 cursor-pointer shadow-md transition-all duration-150 flex items-center gap-1.5"
               >
-                {activeScenario.ctaText} →
+                <span>{activeScenario.ctaText}</span>
+                <span>→</span>
               </button>
             </div>
           </div>
