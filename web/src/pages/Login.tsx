@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, Lock, Award, HeartHandshake, AlertCircle, ArrowRight, Stethoscope } from 'lucide-react';
+import { ShieldCheck, Lock, Award, HeartHandshake, AlertCircle, ArrowRight, Stethoscope, ArrowLeft } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -46,9 +46,13 @@ export const Login: React.FC = () => {
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10">
-          {/* Header de Marca */}
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+          {/* Header de Marca (Enlace navegable a inicio) */}
+          <Link
+            to="/"
+            className="inline-flex items-center gap-3 mb-10 group focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-xl p-1"
+            title="Volver a la página principal"
+          >
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
               <Stethoscope className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
             <div>
@@ -58,9 +62,11 @@ export const Login: React.FC = () => {
                   v2.0 Hospitalaria
                 </span>
               </span>
-              <p className="text-xs text-slate-400 font-medium">Telemedicina Veterinaria & Gestión Clínica</p>
+              <p className="text-xs text-slate-400 font-medium group-hover:text-emerald-300 transition-colors">
+                Telemedicina Veterinaria & Gestión Clínica
+              </p>
             </div>
-          </div>
+          </Link>
 
           {/* Título de Propuesta de Valor */}
           <div className="space-y-4 max-w-lg mb-12">
@@ -120,6 +126,17 @@ export const Login: React.FC = () => {
       {/* Columna Derecha: Tarjeta de Acceso y Formulario Clínico */}
       <section className="lg:col-span-7 bg-slate-50 flex items-center justify-center p-6 sm:p-12 lg:p-16">
         <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-200/70 transition-all duration-200">
+          {/* Botón de retorno accesible a la Landing Page */}
+          <div className="mb-6">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors group focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-lg px-2 py-1 bg-slate-50 hover:bg-emerald-50/50 border border-slate-200/60"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform text-slate-400 group-hover:text-emerald-700" aria-hidden="true" />
+              <span>Volver al inicio</span>
+            </Link>
+          </div>
+
           {/* Encabezado del Formulario */}
           <div className="mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold mb-3">
@@ -130,7 +147,7 @@ export const Login: React.FC = () => {
               Bienvenido a VetConnect
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
-              Ingresa tus credenciales para acceder a tus consultas y registros médicos.
+              Ingresá tus credenciales para acceder a tus consultas y registros médicos.
             </p>
           </div>
 
