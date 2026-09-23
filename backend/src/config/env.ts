@@ -1,7 +1,33 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 
-dotenv.config();
+// Cargar .env desde múltiples rutas candidatas (raíz del monorepo, backend/ o cwd)
+const candidatePaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'backend', '.env'),
+  path.resolve(__dirname, '..', '..', '..', '.env'),
+  path.resolve(__dirname, '..', '..', '.env'),
+  path.resolve(__dirname, '..', '.env'),
+];
+
+for (const p of candidatePaths) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p, override: false });
+  }
+}
+
+// Soporte para variables en minúsculas (ej. database_url -> DATABASE_URL)
+if (!process.env.DATABASE_URL && process.env.database_url) {
+  process.env.DATABASE_URL = process.env.database_url;
+}
+
+// Fallback amigable para desarrollo local si aún no está definida
+if (!process.env.DATABASE_URL && process.env.NODE_ENV !== 'production') {
+  process.env.DATABASE_URL =
+    'postgresql://vetconnect:vetconnect_password@localhost:5432/vetconnect?schema=public';
+}
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
