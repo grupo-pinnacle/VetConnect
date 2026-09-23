@@ -32,6 +32,8 @@ import {
   Volume2,
   Calendar,
   Check,
+  AlertTriangle,
+  PawPrint,
 } from 'lucide-react';
 
 export type SpeciesType = 'DOG' | 'CAT' | 'EXOTIC';
@@ -48,17 +50,52 @@ export interface TriageScenario {
   ctaText: string;
 }
 
+const DogIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .18 1.6 1.6 2 2.5 2 .5 0 1-.2 1.5-.5" />
+    <path d="M14 5.172C14 3.782 15.577 2.679 17.5 3c2.823.47 4.113 6.006 4 7-.18 1.6-1.6 2-2.5 2-.5 0-1-.2-1.5-.5" />
+    <path d="M8 14v.5" />
+    <path d="M16 14v.5" />
+    <path d="M11.25 16.25h1.5" />
+    <path d="M5.42 9C6.4 5.5 8.9 5 12 5s5.6.5 6.58 4c.6 2.13.42 5.5-1.58 7.5-1.5 1.5-3 1.5-5 1.5s-3.5 0-5-1.5C5 14.5 4.82 11.13 5.42 9z" />
+  </svg>
+);
+
+const CatIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <path d="M12 5c-4 0-7.5 2.5-7.5 6.5 0 2.5 1.5 4.5 3.5 5.5.5 1 2 2 4 2s3.5-1 4-2c2-1 3.5-3 3.5-5.5C19.5 7.5 16 5 12 5z" />
+    <path d="M5.5 8.5L3 3l5.5 2.5" />
+    <path d="M18.5 8.5L21 3l-5.5 2.5" />
+    <circle cx="9.5" cy="11.5" r=".75" fill="currentColor" />
+    <circle cx="14.5" cy="11.5" r=".75" fill="currentColor" />
+    <path d="M11.25 14h1.5" />
+    <path d="M8 13.5l-3-.5" />
+    <path d="M16 13.5l3-.5" />
+  </svg>
+);
+
+const RabbitIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <path d="M8 3c-1.5 0-2.5 3-2.5 6.5 0 2 .5 3.5 1.5 4.5" />
+    <path d="M16 3c1.5 0 2.5 3 2.5 6.5 0 2-.5 3.5-1.5 4.5" />
+    <path d="M12 9c-3.5 0-5.5 2.5-5.5 6 0 3 2.5 5 5.5 5s5.5-2 5.5-5c0-3.5-2-6-5.5-6z" />
+    <circle cx="10" cy="14" r=".75" fill="currentColor" />
+    <circle cx="14" cy="14" r=".75" fill="currentColor" />
+    <path d="M11.5 16.5h1" />
+  </svg>
+);
+
 const SPECIES_DATA: Record<
   SpeciesType,
   {
     label: string;
-    emoji: string;
+    Icon: React.FC<{ className?: string }>;
     scenarios: TriageScenario[];
   }
 > = {
   DOG: {
     label: 'Perros',
-    emoji: '🐶',
+    Icon: DogIcon,
     scenarios: [
       {
         id: 'dog-rojo',
@@ -97,7 +134,7 @@ const SPECIES_DATA: Record<
   },
   CAT: {
     label: 'Gatos',
-    emoji: '🐱',
+    Icon: CatIcon,
     scenarios: [
       {
         id: 'cat-rojo',
@@ -136,7 +173,7 @@ const SPECIES_DATA: Record<
   },
   EXOTIC: {
     label: 'Exóticos & Otros',
-    emoji: '🐰',
+    Icon: RabbitIcon,
     scenarios: [
       {
         id: 'exotic-rojo',
@@ -474,7 +511,7 @@ export const Landing: React.FC = () => {
 
                 {/* 3. Badge Flotante Notificación Push Superior Derecha */}
                 <div className="hidden sm:flex absolute -right-6 top-8 bg-slate-900/90 text-white backdrop-blur-md rounded-2xl px-3.5 py-2 shadow-lg z-30 items-center gap-2 text-[11px] border border-slate-700/80 transition-all duration-500 group-hover/phone:translate-y-[-4px]">
-                  <span className="text-emerald-400">🩺</span>
+                  <Stethoscope className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="font-medium">Dra. Romero se unió a la sala</span>
                 </div>
 
@@ -576,17 +613,17 @@ export const Landing: React.FC = () => {
 
                             {/* Miniatura PiP de Milo */}
                             <div className="absolute bottom-2 right-2 w-16 h-14 rounded-xl bg-slate-900/90 border border-slate-600 p-1 flex flex-col items-center justify-center z-20 shadow-md">
-                              <span className="text-base">🐕</span>
+                              <PawPrint className="w-5 h-5 text-amber-400 mb-0.5" />
                               <span className="text-[8px] font-bold text-slate-200">Milo</span>
                             </div>
 
                             {/* Signos Vitales */}
                             <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 text-[9px] font-mono">
-                              <span className="px-1.5 py-0.5 bg-black/60 rounded text-emerald-400 border border-emerald-500/30">
-                                ❤️ 92 bpm
+                              <span className="px-1.5 py-0.5 bg-black/60 rounded text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500" /> 92 bpm
                               </span>
-                              <span className="px-1.5 py-0.5 bg-black/60 rounded text-sky-400 border border-sky-500/30">
-                                🫁 24 rpm
+                              <span className="px-1.5 py-0.5 bg-black/60 rounded text-sky-400 border border-sky-500/30 flex items-center gap-1">
+                                <Activity className="w-2.5 h-2.5 text-sky-400" /> 24 rpm
                               </span>
                             </div>
                           </div>
@@ -719,7 +756,7 @@ export const Landing: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-7">
               <div>
                 <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#00875A] bg-[#E6F7F0] px-3.5 py-1 rounded-full border border-emerald-200/60">
-                  <span>💡</span>
+                  <Sparkles className="w-3.5 h-3.5 text-[#00875A]" />
                   <span>Orientador Rápido de Salud</span>
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2 font-display">
@@ -746,7 +783,7 @@ export const Landing: React.FC = () => {
                           : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300'
                       }`}
                     >
-                      <span className="text-base">{item.emoji}</span>
+                      <item.Icon className="w-4 h-4 shrink-0" />
                       <span>{item.label}</span>
                     </button>
                   );
@@ -784,7 +821,13 @@ export const Landing: React.FC = () => {
                             : 'bg-emerald-100 text-emerald-800'
                         }`}
                       >
-                        <span>{sc.priority === 'ROJO' ? '🚨' : sc.priority === 'AMARILLO' ? '⚠️' : '💚'}</span>
+                        {sc.priority === 'ROJO' ? (
+                          <AlertCircle className="w-3 h-3 text-rose-700" />
+                        ) : sc.priority === 'AMARILLO' ? (
+                          <AlertTriangle className="w-3 h-3 text-amber-700" />
+                        ) : (
+                          <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                        )}
                         <span>{sc.priority === 'ROJO' ? 'Alerta' : sc.priority === 'AMARILLO' ? 'Urgente' : 'Control'}</span>
                       </span>
                     </div>

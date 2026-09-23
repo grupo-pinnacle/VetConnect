@@ -1,9 +1,9 @@
+import './config/env';
 import express, { Express, Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import prisma from './lib/prisma';
 import { errorHandler } from './middlewares/errorHandler';
 import authRoutes from './modules/auth/auth.routes';
@@ -15,8 +15,6 @@ import mediaRoutes from './modules/media/media.routes';
 import notificationRoutes from './modules/notifications/notifications.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import userRoutes from './modules/users/users.routes';
-
-dotenv.config();
 
 const app: Express = express();
 

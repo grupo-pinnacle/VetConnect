@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { User, ApiResponse } from '../types';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
+import { X } from 'lucide-react';
 
 export const AdminVets: React.FC = () => {
   const [pendingVets, setPendingVets] = useState<User[]>([]);
@@ -105,9 +106,10 @@ export const AdminVets: React.FC = () => {
           <span>{notification.message}</span>
           <button
             onClick={() => setNotification(null)}
-            className="text-xs font-bold px-2 py-0.5 rounded hover:bg-black/10"
+            className="text-xs font-bold p-1 rounded hover:bg-black/10 flex items-center justify-center"
+            aria-label="Cerrar notificación"
           >
-            ✕
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}

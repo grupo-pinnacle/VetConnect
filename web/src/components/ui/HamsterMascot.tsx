@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { EyeOff } from 'lucide-react';
 
 interface HamsterMascotProps {
   isCoveringEyes?: boolean;
@@ -84,7 +85,7 @@ export const HamsterMascot: React.FC<HamsterMascotProps> = ({
         }`}
       >
         <div className="relative bg-[#FFFBEB] text-[#78350F] border-2 border-[#F59E0B] text-[11px] font-black tracking-wide px-3 py-1 rounded-2xl shadow-md flex items-center gap-1.5 whitespace-nowrap animate-bounce">
-          <span className="text-sm">🙈</span>
+          <EyeOff className="w-3.5 h-3.5 text-[#D97706]" />
           <span>¡No miro!</span>
           {/* Triángulo tipo bocadillo */}
           <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#FFFBEB] border-b-2 border-r-2 border-[#F59E0B] rotate-45" />

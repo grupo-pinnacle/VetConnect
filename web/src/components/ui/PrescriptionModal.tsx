@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, QrCode } from 'lucide-react';
+import { X, Loader2, QrCode, Check } from 'lucide-react';
 import { PrescriptionModalProps, Prescription, ApiResponse } from '../../types';
 import api from '../../services/api';
 import { cn } from '../../lib/utils';
@@ -146,7 +146,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
         {issuedPrescription ? (
           <div className="text-center space-y-4 pt-2" data-testid="prescription-success-container">
             <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-semibold flex items-center justify-center gap-2">
-              <span className="text-emerald-600 text-base">✓</span>
+              <Check className="w-5 h-5 text-emerald-600" />
               <span>¡Receta Digital Emitida Exitosamente!</span>
             </div>
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PawPrint } from 'lucide-react';
 import { AvatarProps } from '../../types';
 
 export const Avatar: React.FC<AvatarProps> = ({
@@ -49,8 +50,8 @@ export const Avatar: React.FC<AvatarProps> = ({
           className="w-full h-full rounded-full object-cover border border-slate-200"
         />
       ) : (
-        <div className="w-full h-full rounded-full bg-sky-100 text-sky-800 font-semibold flex items-center justify-center border border-sky-200">
-          {initials || '🐾'}
+        <div className="w-full h-full rounded-full bg-emerald-100 text-emerald-800 font-semibold flex items-center justify-center border border-emerald-200">
+          {initials || <PawPrint className="w-1/2 h-1/2 text-emerald-700" />}
         </div>
       )}
       {status && (

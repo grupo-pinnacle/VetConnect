@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import CallRoom from '../components/call/CallRoom';
 import { ReviewModal } from '../components/ui/ReviewModal';
 import { Message, ApiResponse, Consultation } from '../types';
+import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X } from 'lucide-react';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 const POLLING_INTERVAL_MS = 5000;
@@ -286,7 +287,7 @@ export const ConsultationRoom: React.FC = () => {
 
         socket.emit('message:send', {
           consultationId,
-          content: inputMessage.trim() || `📷 ${file.name}`,
+          content: inputMessage.trim() || `[Foto: ${file.name}]`,
           attachmentUrl,
           clientMsgId,
         });
@@ -354,7 +355,7 @@ export const ConsultationRoom: React.FC = () => {
       <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 gap-6">
         <div className="flex flex-col items-center gap-4 max-w-md text-center">
           <div className="w-16 h-16 rounded-full bg-sky-600/20 flex items-center justify-center animate-pulse">
-            <span className="text-3xl">🩺</span>
+            <Stethoscope className="w-8 h-8 text-sky-400" />
           </div>
           <h2 className="text-xl font-bold text-white">Sala de Espera</h2>
           <p className="text-slate-300">
@@ -402,7 +403,9 @@ export const ConsultationRoom: React.FC = () => {
     return (
       <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
         <div className="bg-slate-800 rounded-xl p-8 max-w-md w-full text-center shadow-xl">
-          <span className="text-4xl" role="img" aria-label="Completado">✅</span>
+          <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2">
+            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+          </div>
           <h2 className="text-xl font-bold text-emerald-400 mt-4 mb-2">Consulta Finalizada</h2>
           <p className="text-slate-300 mb-6">
             La consulta médica ha concluido. Gracias por utilizar VetConnect.
@@ -511,8 +514,9 @@ export const ConsultationRoom: React.FC = () => {
                         className="max-h-36 max-w-full object-cover rounded"
                         onClick={() => setZoomImage(fullAttachmentUrl)}
                       />
-                      <span className="text-[10px] text-slate-300 block px-1 py-0.5 bg-black/40 text-center">
-                        🔍 Clic para ampliar
+                      <span className="text-[10px] text-slate-300 px-1 py-0.5 bg-black/40 text-center flex items-center justify-center gap-1">
+                        <Search className="w-3 h-3 text-sky-400" />
+                        <span>Clic para ampliar</span>
                       </span>
                     </div>
                   )}
@@ -535,9 +539,9 @@ export const ConsultationRoom: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingPhoto}
             title="Adjuntar macro-fotografía clínica"
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded border border-slate-700 disabled:opacity-50 transition-colors"
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded border border-slate-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
-            {uploadingPhoto ? '⏳' : '📎'}
+            {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin text-sky-400" /> : <Paperclip className="w-4 h-4 text-slate-300" />}
           </button>
           <input
             type="text"
@@ -566,9 +570,10 @@ export const ConsultationRoom: React.FC = () => {
           <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setZoomImage(null)}
-              className="absolute -top-10 right-0 text-white hover:text-red-400 font-bold text-sm bg-slate-800/80 px-3 py-1 rounded-full"
+              className="absolute -top-10 right-0 text-white hover:text-red-400 font-bold text-sm bg-slate-800/80 px-3 py-1 rounded-full flex items-center gap-1.5"
             >
-              Cerrar (Esc) ✕
+              <span>Cerrar (Esc)</span>
+              <X className="w-3.5 h-3.5" />
             </button>
             <img
               src={zoomImage}
