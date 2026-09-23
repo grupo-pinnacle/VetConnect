@@ -6,14 +6,12 @@ import {
   Lock,
   AlertCircle,
   ArrowRight,
-  Stethoscope,
   ArrowLeft,
   Eye,
   EyeOff,
-  Sparkles,
-  Zap,
-  Activity,
-  HeartPulse,
+  Radio,
+  Volume2,
+  Tv,
 } from 'lucide-react';
 import HamsterMascot from '../components/ui/HamsterMascot';
 
@@ -56,123 +54,127 @@ export const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col lg:grid lg:grid-cols-12 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
-      {/* Columna Izquierda: Branding Pinnacle Group & Hub Clínico en Vivo (Desktop) */}
-      <section className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#022A21] via-[#03362A] to-slate-950 text-white p-8 lg:p-14 flex-col justify-between border-b lg:border-b-0 lg:border-r border-emerald-900/60 relative overflow-hidden">
-        {/* Halos ambientales suaves y orgánicos */}
-        <div className="absolute -top-32 -left-32 w-[30rem] h-[30rem] bg-emerald-500/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-[30rem] h-[30rem] bg-teal-500/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-[#00D084]/10 rounded-full blur-[90px] pointer-events-none" />
+      {/* Columna Izquierda: Master Control Room & Pinnacle Broadcast Studio (Desktop) */}
+      <section className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#021F18] via-[#032E24] to-slate-950 text-white p-8 lg:p-12 flex-col justify-between border-b lg:border-b-0 lg:border-r border-emerald-900/60 relative overflow-hidden">
+        {/* Halos de iluminación de estudio broadcast */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/15 rounded-full blur-[100px] pointer-events-none" />
 
         <div className="relative z-10">
-          {/* Header de Marca Claramente Distinguible como Botón de Retorno al Inicio */}
-          <div className="mb-10">
+          {/* Switcher de Canal / Retorno a Inicio de Marca */}
+          <div className="mb-8">
             <Link
               to="/"
-              className="inline-flex items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] active:scale-[0.98] border border-white/[0.12] hover:border-emerald-400/50 shadow-lg shadow-black/20 transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer"
-              title="Volver a la página de inicio"
+              className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] active:scale-[0.98] border border-white/[0.12] hover:border-emerald-400/60 shadow-lg shadow-black/20 transition-all duration-200 group cursor-pointer"
+              title="Volver a la portada de VetConnect"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00D084] to-[#00A86B] flex items-center justify-center shadow-md shadow-emerald-950/40 group-hover:scale-105 transition-transform">
-                <Stethoscope className="w-5 h-5 text-[#022A21]" aria-hidden="true" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00D084] to-[#00A86B] flex items-center justify-center text-slate-950 shadow-md">
+                <Tv className="w-4 h-4 text-[#021F18]" />
               </div>
               <div className="text-left">
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-extrabold tracking-tight text-white font-display">
-                    VetConnect
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-300 flex items-center gap-1 group-hover:-translate-x-0.5 transition-transform">
-                    <span>←</span>
-                    <span>Inicio</span>
+                  <span className="text-sm font-black tracking-tight text-white font-display">VetConnect Live</span>
+                  <span className="text-[10px] font-bold text-emerald-300 flex items-center gap-0.5 group-hover:-translate-x-1 transition-transform">
+                    ← Volver
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium">Portal Oficial de Telemedicina</p>
+                <p className="text-[10px] text-slate-400">Canal Oficial de Telemedicina</p>
               </div>
             </Link>
           </div>
 
-          {/* Título de Propuesta de Valor */}
-          <div className="space-y-4 max-w-lg mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-semibold backdrop-blur-sm">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Tecnología Pinnacle Group</span>
+          {/* Título de Propuesta Inesperada: Calidad Broadcast */}
+          <div className="space-y-3 max-w-lg mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-black tracking-wider uppercase backdrop-blur-sm">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span>ON AIR • TRANSMISIÓN EN VIVO</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight font-display">
-              Cuidado veterinario en vivo, cuando cada segundo cuenta.
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight font-display">
+              Telemedicina con calidad de broadcast profesional.
             </h1>
-            <p className="text-sm text-slate-300 leading-relaxed font-normal">
-              Accedé a tus videoconsultas de guardia, recetas digitales homologadas con código QR y seguimiento clínico seguro de tus compañeros.
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+              Guardia médica en tiempo real a 60 FPS sin latencia, impulsada por la infraestructura audiovisual y de streaming de <span className="text-white font-bold">Pinnacle Group</span>.
             </p>
           </div>
 
-          {/* Hub Clínico en Vivo (Monitor de Guardia con Glassmorphism) */}
-          <div className="p-5 rounded-3xl bg-white/[0.05] border border-white/[0.1] backdrop-blur-xl space-y-4 shadow-xl shadow-black/10 max-w-md">
-            {/* Cabecera de estado activo con pulso */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                </span>
-                <span className="text-xs font-bold text-white tracking-wide uppercase">
-                  Guardia Médica 24hs Activa
-                </span>
+          {/* Monitor de Estudio de Transmisión (Blackmagic / Broadcast Styling) */}
+          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-xl relative max-w-md overflow-hidden">
+            {/* Cabecera del Monitor con SMPTE Timecode y Estado */}
+            <div className="flex justify-between items-center pb-2.5 mb-2.5 border-b border-slate-800 text-[10px] font-mono">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-emerald-400 font-bold">CAM-01 • HD 1080p</span>
               </div>
-              <span className="text-[11px] font-mono text-emerald-300 font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
-                8 Médicos Online
+              <span className="text-slate-400">SMPTE: 00:14:32:18</span>
+            </div>
+
+            {/* Pantalla Simulada de Transmisión */}
+            <div className="relative rounded-2xl bg-slate-950 aspect-video flex flex-col justify-between p-3 border border-slate-800/90 overflow-hidden mb-3">
+              {/* Marcas de Encuadre de Cámara [ + ] */}
+              <div className="absolute inset-2 border border-dashed border-white/20 rounded-xl pointer-events-none flex items-center justify-center">
+                <span className="text-white/20 text-lg font-mono">+</span>
+              </div>
+
+              {/* Tag de Especialista en Cámara */}
+              <div className="relative z-10 flex justify-between items-start text-[10px]">
+                <div className="bg-black/70 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10 text-white flex items-center gap-1.5">
+                  <span>🩺</span>
+                  <span className="font-bold">Dra. Silvina Romero (M.P. 4492)</span>
+                </div>
+                <div className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded text-[9px] font-mono font-bold">
+                  SFU 18ms
+                </div>
+              </div>
+
+              {/* VU Meter de Audio en Tiempo Real */}
+              <div className="relative z-10 flex items-center justify-between bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 text-[9px]">
+                <div className="flex items-center gap-1.5 text-slate-300">
+                  <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="font-mono">AUDIO 48kHz</span>
+                </div>
+                {/* Barras de Vúmetro simuladas */}
+                <div className="flex items-center gap-0.5 h-2">
+                  <span className="w-1 h-2 bg-emerald-400 rounded-sm" />
+                  <span className="w-1 h-2.5 bg-emerald-400 rounded-sm" />
+                  <span className="w-1 h-3 bg-emerald-400 rounded-sm" />
+                  <span className="w-1 h-2 bg-emerald-400 rounded-sm" />
+                  <span className="w-1 h-2.5 bg-amber-400 rounded-sm" />
+                  <span className="w-1 h-1 bg-slate-700 rounded-sm" />
+                </div>
+              </div>
+            </div>
+
+            {/* Sello de Infraestructura Pinnacle Group */}
+            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+              <span className="text-slate-300 font-semibold flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5 text-[#00D084]" />
+                <span>LiveKit Cloud SFU Streaming</span>
               </span>
-            </div>
-
-            {/* Ficha de Especialistas de Guardia */}
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">🩺</span>
-                  <span className="font-semibold text-white">Dra. Silvina Romero</span>
-                </div>
-                <span className="text-[10px] text-emerald-400 font-mono">M.P. 4492 • Disponible</span>
-              </div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">🐱</span>
-                  <span className="font-semibold text-white">Dr. Nicolás Chen</span>
-                </div>
-                <span className="text-[10px] text-emerald-400 font-mono">M.P. 3821 • Disponible</span>
-              </div>
-            </div>
-
-            {/* Indicadores Clínicos Clave */}
-            <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-              <div className="p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-                <p className="text-[10px] text-slate-400 font-medium">Tiempo de espera</p>
-                <p className="font-extrabold text-white text-xs mt-0.5 font-mono">&lt; 2 min 40 s</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-                <p className="text-[10px] text-slate-400 font-medium">Receta Digital</p>
-                <p className="font-extrabold text-emerald-300 text-xs mt-0.5">SENASA Res. 1442</p>
-              </div>
+              <span className="text-[10px] font-mono text-emerald-400">LATENCIA ULTRA BAJA</span>
             </div>
           </div>
         </div>
 
         {/* Respaldo Institucional Oficial Pinnacle Group */}
-        <div className="relative z-10 mt-8 pt-6 border-t border-emerald-900/60 flex items-center justify-between text-xs text-slate-400">
+        <div className="relative z-10 mt-8 pt-5 border-t border-emerald-900/60 flex items-center justify-between text-xs text-slate-400">
           <div>
-            <p className="font-bold text-slate-200">Pinnacle Group</p>
-            <p className="text-[10px] text-slate-400">Infraestructura Audiovisual, Broadcast &amp; Streaming SFU</p>
+            <p className="font-black text-slate-100 font-display text-sm tracking-wide">PINNACLE GROUP</p>
+            <p className="text-[10px] text-slate-400">Sponsor Oficial de Tecnología Broadcast &amp; Streaming</p>
           </div>
-          <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-            Sponsor Oficial
-          </span>
+          <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white font-mono font-bold text-xs">
+            PG
+          </div>
         </div>
       </section>
 
-      {/* Columna Derecha: Tarjeta de Acceso con Mascota Hamster Orgánica */}
-      <section className="lg:col-span-7 bg-gradient-to-br from-slate-50 via-[#F4F9F6] to-emerald-50/40 flex items-center justify-center p-6 sm:p-12 lg:p-14 relative">
-        <div className="w-full max-w-md bg-white/95 backdrop-blur-xl p-8 sm:p-11 rounded-[32px] shadow-[0_24px_64px_-12px_rgba(2,42,33,0.08)] border border-emerald-950/[0.06] transition-all duration-300 animate-fadeIn">
+      {/* Columna Derecha: Tarjeta de Acceso con Mascota Hamster Duolingo */}
+      <section className="lg:col-span-7 bg-gradient-to-br from-slate-50 via-[#F5FAF7] to-emerald-50/30 flex items-center justify-center p-6 sm:p-12 lg:p-14 relative">
+        <div className="w-full max-w-md bg-white p-8 sm:p-11 rounded-[32px] shadow-[0_24px_64px_-12px_rgba(2,42,33,0.08)] border border-slate-200/80 transition-all duration-300 animate-fadeIn">
           {/* Botón de retorno al inicio accesible */}
           <div className="mb-8 flex justify-between items-center">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-emerald-700 active:scale-[0.97] transition-all duration-150 group focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full px-3 py-1.5 bg-slate-100/80 hover:bg-emerald-50 border border-slate-200/80"
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-emerald-700 active:scale-[0.97] transition-all duration-150 group focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full px-3.5 py-1.5 bg-slate-100/80 hover:bg-emerald-50 border border-slate-200/80 cursor-pointer"
               title="Volver a la portada de VetConnect"
             >
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform text-slate-400 group-hover:text-emerald-700" aria-hidden="true" />
@@ -185,19 +187,19 @@ export const Login: React.FC = () => {
             </span>
           </div>
 
-          {/* LA MASCOTA OFICIAL: HÁMSTER ORGÁNICO CON EXPRESIONES */}
-          {/* REGLA: isCoveringEyes se activa EXCLUSIVAMENTE cuando el usuario toca el botón de ver contraseña */}
-          <div className="flex flex-col items-center justify-center mb-1">
+          {/* LA MASCOTA OFICIAL: HÁMSTER MINIMALISTA ESTILO DUOLINGO */}
+          {/* REGLA: isCoveringEyes se activa EXCLUSIVAMENTE al tocar el botón de ver contraseña */}
+          <div className="flex flex-col items-center justify-center mb-2">
             <HamsterMascot
               isCoveringEyes={showPassword}
               isLookingAtInput={isEmailFocused}
-              className="mb-1.5"
+              className="mb-1"
             />
           </div>
 
           {/* Encabezado del Formulario */}
           <div className="text-center mb-7">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-display">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-display">
               Bienvenido a VetConnect
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
@@ -212,7 +214,7 @@ export const Login: React.FC = () => {
               <div className="space-y-0.5">
                 <span className="font-bold block text-sky-900">¿Olvidaste tu contraseña?</span>
                 <span className="text-slate-600 leading-relaxed">
-                  Comunicate con el equipo de soporte técnico de Pinnacle Group escribiendo a <span className="font-semibold text-sky-900">soporte@vetconnect.com.ar</span> para restablecer tu clave segura.
+                  Comunicate con soporte técnico de Pinnacle Group escribiendo a <span className="font-semibold text-sky-900">soporte@vetconnect.com.ar</span> para restablecer tu acceso seguro.
                 </span>
               </div>
             </div>
@@ -282,7 +284,7 @@ export const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-slate-400 hover:text-emerald-700 hover:bg-emerald-50/80 active:scale-90 transition-all duration-150 focus:outline-none"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-slate-400 hover:text-emerald-700 hover:bg-emerald-50/80 active:scale-90 transition-all duration-150 focus:outline-none cursor-pointer"
                   title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                 >
@@ -298,7 +300,7 @@ export const Login: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-[#03362A] hover:bg-[#044c3b] active:bg-[#022c22] active:scale-[0.98] text-white py-3.5 px-5 rounded-2xl font-bold text-sm shadow-md shadow-[#03362A]/20 hover:shadow-xl hover:shadow-[#03362A]/25 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 group cursor-pointer mt-3"
+              className="w-full bg-[#032E24] hover:bg-[#044c3b] active:bg-[#02231b] active:scale-[0.98] text-white py-3.5 px-5 rounded-2xl font-bold text-sm shadow-md shadow-[#032E24]/20 hover:shadow-xl hover:shadow-[#032E24]/25 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 group cursor-pointer mt-3"
             >
               <span>{isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}</span>
               {!isSubmitting && (
@@ -319,7 +321,7 @@ export const Login: React.FC = () => {
           </p>
 
           <p className="text-center text-[10px] text-slate-400 mt-4">
-            Tecnología y soporte por <span className="font-semibold text-slate-600">Pinnacle Group</span>
+            Infraestructura y streaming por <span className="font-semibold text-slate-700">Pinnacle Group</span>
           </p>
         </div>
       </section>

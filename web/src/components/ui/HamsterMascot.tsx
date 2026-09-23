@@ -16,7 +16,7 @@ export const HamsterMascot: React.FC<HamsterMascotProps> = ({
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
-    // Solo habilitar tracking de mouse en desktop con puntero fino (no en touch/móviles ni JSDOM)
+    // Solo habilitar tracking de cursor en desktop con mouse (desactivado en touch/móvil y JSDOM)
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return;
     }
@@ -34,7 +34,7 @@ export const HamsterMascot: React.FC<HamsterMascotProps> = ({
         return () => mediaQuery.removeEventListener('change', handleMediaChange);
       }
     } catch {
-      // Fallback silencioso si el entorno no soporta matchMedia
+      // Fallback silencioso en entornos sin matchMedia
     }
   }, []);
 
@@ -57,7 +57,7 @@ export const HamsterMascot: React.FC<HamsterMascotProps> = ({
       const deltaX = e.clientX - eyeCenterX;
       const deltaY = e.clientY - eyeCenterY;
       const angle = Math.atan2(deltaY, deltaX);
-      const distance = Math.min(Math.hypot(deltaX, deltaY) / 28, 4); // Radio máximo suave de 4px
+      const distance = Math.min(Math.hypot(deltaX, deltaY) / 30, 4); // Radio ágil de 4px
 
       setPupilOffset({
         x: Math.cos(angle) * distance,
@@ -75,224 +75,149 @@ export const HamsterMascot: React.FC<HamsterMascotProps> = ({
       className={`relative flex flex-col items-center justify-center select-none transition-transform duration-300 ${className}`}
       aria-hidden="true"
     >
-      {/* Bocadillo adorable cuando se tapa los ojos al ver contraseña */}
+      {/* Cartel flotante tipo cómic: SOLO cuando se tapa los ojos con "Ver contraseña" */}
       <div
         className={`absolute -top-7 transition-all duration-300 ease-out z-20 pointer-events-none ${
           isCoveringEyes
             ? 'opacity-100 translate-y-0 scale-100'
-            : 'opacity-0 translate-y-2 scale-90'
+            : 'opacity-0 translate-y-2 scale-75'
         }`}
       >
-        <div className="relative bg-gradient-to-r from-amber-50 to-orange-50 text-amber-900 border border-amber-300/80 text-[11px] font-bold px-3 py-1 rounded-2xl shadow-md shadow-amber-900/10 flex items-center gap-1.5 whitespace-nowrap animate-bounce">
+        <div className="relative bg-[#FFFBEB] text-[#78350F] border-2 border-[#F59E0B] text-[11px] font-black tracking-wide px-3 py-1 rounded-2xl shadow-md flex items-center gap-1.5 whitespace-nowrap animate-bounce">
           <span className="text-sm">🙈</span>
-          <span>¡No estoy mirando!</span>
-          {/* Colita del bocadillo */}
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-orange-50 border-b border-r border-amber-300/80 rotate-45" />
+          <span>¡No miro!</span>
+          {/* Triángulo tipo bocadillo */}
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#FFFBEB] border-b-2 border-r-2 border-[#F59E0B] rotate-45" />
         </div>
       </div>
 
+      {/* Ilustración Vectorial Bold & Minimalista Estilo Duolingo */}
       <svg
-        viewBox="0 0 160 140"
-        className="w-28 h-24 sm:w-32 sm:h-28 drop-shadow-[0_8px_16px_rgba(217,119,6,0.18)] transition-all duration-300"
+        viewBox="0 0 140 130"
+        className="w-24 h-24 sm:w-28 sm:h-28 drop-shadow-[0_8px_20px_rgba(245,158,11,0.22)] transition-all duration-300 hover:scale-105 cursor-pointer"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <defs>
-          {/* Gradiente suave del pelaje cálido */}
-          <linearGradient id="furGrad" x1="80" y1="20" x2="80" y2="120" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FBBF24" />
-            <stop offset="65%" stopColor="#F59E0B" />
-            <stop offset="100%" stopColor="#D97706" />
-          </linearGradient>
-
-          {/* Gradiente de las orejas internas */}
-          <linearGradient id="earInnerGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FECDD3" />
-            <stop offset="100%" stopColor="#FB7185" />
-          </linearGradient>
-
-          {/* Gradiente del hocico esponjoso blanco */}
-          <linearGradient id="muzzleGrad" x1="80" y1="65" x2="80" y2="105" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#FFFBEB" />
-          </linearGradient>
-
-          {/* Rubor radial suave difuminado */}
-          <radialGradient id="blushGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FB7185" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#FB7185" stopOpacity="0" />
-          </radialGradient>
-
-          {/* Gradiente del estetoscopio médico */}
-          <linearGradient id="stethoGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#059669" />
-            <stop offset="50%" stopColor="#10B981" />
-            <stop offset="100%" stopColor="#047857" />
-          </linearGradient>
-
-          {/* Shimmer metálico del estetoscopio */}
-          <radialGradient id="metalShine" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="45%" stopColor="#CBD5E1" />
-            <stop offset="100%" stopColor="#64748B" />
-          </radialGradient>
-        </defs>
-
-        {/* OREJAS ORGÁNICAS (Suaves con volumen) */}
+        {/* OREJITAS REDONDAS BOLD */}
         {/* Oreja Izquierda */}
-        <g>
-          <ellipse cx="40" cy="34" rx="15" ry="17" fill="url(#furGrad)" transform="rotate(-10 40 34)" />
-          <ellipse cx="40" cy="35" rx="9" ry="11" fill="url(#earInnerGrad)" transform="rotate(-10 40 35)" />
-        </g>
+        <ellipse cx="36" cy="28" rx="14" ry="16" fill="#F59E0B" transform="rotate(-12 36 28)" />
+        <ellipse cx="36" cy="29" rx="8" ry="10" fill="#FDA4AF" transform="rotate(-12 36 29)" />
+
         {/* Oreja Derecha */}
-        <g>
-          <ellipse cx="120" cy="34" rx="15" ry="17" fill="url(#furGrad)" transform="rotate(10 120 34)" />
-          <ellipse cx="120" cy="35" rx="9" ry="11" fill="url(#earInnerGrad)" transform="rotate(10 120 35)" />
-        </g>
+        <ellipse cx="104" cy="28" rx="14" ry="16" fill="#F59E0B" transform="rotate(12 104 28)" />
+        <ellipse cx="104" cy="29" rx="8" ry="10" fill="#FDA4AF" transform="rotate(12 104 29)" />
 
-        {/* CABEZA ORGÁNICA CON CACHETES REDONDITOS */}
+        {/* CUERPO ORGÁNICO MALVAVISCO / BEAN (Forma limpia y continua) */}
         <path
-          d="M 38,76 C 30,92 42,112 80,112 C 118,112 130,92 122,76 C 118,48 106,34 80,34 C 54,34 42,48 38,76 Z"
-          fill="url(#furGrad)"
+          d="M 28,68 C 18,94 32,116 70,116 C 108,116 122,94 112,68 C 106,38 94,28 70,28 C 46,28 34,38 28,68 Z"
+          fill="#FBBF24"
         />
 
-        {/* CACHETES Y HOCICO BLANCO ESPONJOSO (Contornos fluidos) */}
+        {/* BARRIGA & HOCICO CREMOSO (Silueta pura) */}
         <path
-          d="M 46,82 C 46,72 58,68 80,68 C 102,68 114,72 114,82 C 114,98 100,108 80,108 C 60,108 46,98 46,82 Z"
-          fill="url(#muzzleGrad)"
+          d="M 42,76 C 42,66 54,62 70,62 C 86,62 98,66 98,76 C 98,96 86,112 70,112 C 54,112 42,96 42,76 Z"
+          fill="#FFFBEB"
         />
 
-        {/* MEJILLAS ROSADAS CON RUBOR RADIAL DIFUMINADO */}
-        <circle cx="48" cy="84" r="10" fill="url(#blushGrad)" />
-        <circle cx="112" cy="84" r="10" fill="url(#blushGrad)" />
+        {/* RUBOR DE MEJILLAS REDONDO TIERNO */}
+        <circle cx="38" cy="74" r="8" fill="#FB7185" fillOpacity="0.45" />
+        <circle cx="102" cy="74" r="8" fill="#FB7185" fillOpacity="0.45" />
 
-        {/* NARICITA DE FRESA REDONDEADA */}
+        {/* NARICITA Y BOCA TIPO DUOLINGO */}
+        <ellipse cx="70" cy="70" rx="4" ry="3.2" fill="#F43F5E" />
         <path
-          d="M 76,76 C 76,73 84,73 84,76 C 84,79 81,81 80,81 C 79,81 76,79 76,76 Z"
-          fill="#E11D48"
-        />
-
-        {/* BOQUITA SONRIENTE SUAVE */}
-        <path
-          d="M 74,83 Q 77,87 80,84 Q 83,87 86,83"
+          d="M 64,74 Q 67,78 70,75 Q 73,78 76,74"
           stroke="#78350F"
-          strokeWidth="2.2"
+          strokeWidth="2.8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
-        {/* ESTETOSCOPIO MÉDICO OFICIAL DE VETCONNECT */}
+        {/* COLLAR MÉDICO VETCONNECT EN MENTA BOLD */}
         <path
-          d="M 52,96 C 52,115 108,115 108,96"
-          stroke="url(#stethoGrad)"
-          strokeWidth="4"
+          d="M 44,92 Q 70,102 96,92"
+          stroke="#00C48C"
+          strokeWidth="5.5"
           strokeLinecap="round"
-          fill="none"
         />
-        {/* Campana del estetoscopio con brillo metálico */}
-        <circle cx="80" cy="116" r="6" fill="url(#metalShine)" stroke="#047857" strokeWidth="1.5" />
-        <circle cx="78.5" cy="114.5" r="1.5" fill="#FFFFFF" fillOpacity="0.8" />
+        {/* Medalla de doctor con cruz clínica */}
+        <circle cx="70" cy="101" r="6" fill="#F59E0B" stroke="#B45309" strokeWidth="1" />
+        <path d="M 70,98 V 104 M 67,101 H 73" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
 
-        {/* OJOS: ABIERTOS (Gaze dinámico con doble brillo) vs CERRADOS (^ ^) */}
+        {/* OJOS GIGANTES EXPRESIVOS TIPO DUOLINGO (Legibles a distancia) */}
         {!isCoveringEyes ? (
           <>
             {/* OJO IZQUIERDO */}
             <g>
-              <ellipse cx="58" cy="62" rx="10" ry="11" fill="#FFFFFF" />
-              {/* Pupila móvil con seguimiento suave */}
+              {/* Esclera Blanca Gigante */}
+              <ellipse cx="48" cy="54" rx="14" ry="15" fill="#FFFFFF" />
+              {/* Pupila Negra Bold con Seguimiento */}
               <g
                 style={{
                   transform: `translate(${pupilOffset.x}px, ${pupilOffset.y}px)`,
-                  transition: isDesktop ? 'transform 0.08s ease-out' : 'transform 0.25s ease',
+                  transition: isDesktop ? 'transform 0.08s ease-out' : 'transform 0.2s ease',
                 }}
               >
-                {/* Iris profundo */}
-                <ellipse cx="58" cy="62" rx="6.5" ry="7" fill="#0F172A" />
-                {/* Media luna cálida de luz en iris */}
-                <path
-                  d="M 54,64 A 4.5 4.5 0 0 0 62,64 A 4 4 0 0 1 54,64"
-                  fill="#D97706"
-                  opacity="0.85"
-                />
-                {/* Brillo especular principal */}
-                <circle cx="56" cy="59.5" r="2.4" fill="#FFFFFF" />
-                {/* Brillo secundario de ternura */}
-                <circle cx="60.5" cy="63.5" r="1.2" fill="#FFFFFF" />
+                <ellipse cx="48" cy="54" rx="9.5" ry="10.5" fill="#18181B" />
+                {/* Gran Reflejo Blanco Especular Nítido */}
+                <circle cx="45.5" cy="50.5" r="4" fill="#FFFFFF" />
+                {/* Micro destello tierno */}
+                <circle cx="51" cy="56" r="1.6" fill="#FFFFFF" />
               </g>
             </g>
 
             {/* OJO DERECHO */}
             <g>
-              <ellipse cx="102" cy="62" rx="10" ry="11" fill="#FFFFFF" />
-              {/* Pupila móvil con seguimiento suave */}
+              {/* Esclera Blanca Gigante */}
+              <ellipse cx="92" cy="54" rx="14" ry="15" fill="#FFFFFF" />
+              {/* Pupila Negra Bold con Seguimiento */}
               <g
                 style={{
                   transform: `translate(${pupilOffset.x}px, ${pupilOffset.y}px)`,
-                  transition: isDesktop ? 'transform 0.08s ease-out' : 'transform 0.25s ease',
+                  transition: isDesktop ? 'transform 0.08s ease-out' : 'transform 0.2s ease',
                 }}
               >
-                {/* Iris profundo */}
-                <ellipse cx="102" cy="62" rx="6.5" ry="7" fill="#0F172A" />
-                {/* Media luna cálida de luz en iris */}
-                <path
-                  d="M 98,64 A 4.5 4.5 0 0 0 106,64 A 4 4 0 0 1 98,64"
-                  fill="#D97706"
-                  opacity="0.85"
-                />
-                {/* Brillo especular principal */}
-                <circle cx="100" cy="59.5" r="2.4" fill="#FFFFFF" />
-                {/* Brillo secundario de ternura */}
-                <circle cx="104.5" cy="63.5" r="1.2" fill="#FFFFFF" />
+                <ellipse cx="92" cy="54" rx="9.5" ry="10.5" fill="#18181B" />
+                {/* Gran Reflejo Blanco Especular Nítido */}
+                <circle cx="89.5" cy="50.5" r="4" fill="#FFFFFF" />
+                {/* Micro destello tierno */}
+                <circle cx="95" cy="56" r="1.6" fill="#FFFFFF" />
               </g>
             </g>
           </>
         ) : (
           <>
-            {/* OJITOS CERRADOS DE TERNURA Y VERGÜENZA (^ ^) */}
+            {/* OJOS CERRADOS FELICES (^ ^) CON TRAZO GRUESO BOLD */}
             <path
-              d="M 50,65 Q 58,57 66,65"
+              d="M 37,56 Q 48,44 59,56"
               stroke="#78350F"
-              strokeWidth="3.2"
+              strokeWidth="4"
               strokeLinecap="round"
             />
             <path
-              d="M 94,65 Q 102,57 110,65"
+              d="M 81,56 Q 92,44 103,56"
               stroke="#78350F"
-              strokeWidth="3.2"
+              strokeWidth="4"
               strokeLinecap="round"
             />
           </>
         )}
 
-        {/* PATITAS REDONDITAS (PAWS):
-            - Abajo en reposo o sosteniendo el estetoscopio
-            - Arriba tapándose los ojos con suavidad cuando isCoveringEyes === true */}
+        {/* MANITAS REGORDETAS CARICATURESCAS */}
         <g
           className="transition-transform duration-300 ease-out"
           style={{
-            transform: isCoveringEyes ? 'translateY(-27px) scale(1.08)' : 'translateY(0px)',
-            transformOrigin: '80px 92px',
+            transform: isCoveringEyes ? 'translateY(-34px) scale(1.12)' : 'translateY(0px)',
+            transformOrigin: '70px 95px',
           }}
         >
           {/* Patita Izquierda */}
-          <g>
-            <ellipse cx="56" cy="94" rx="10" ry="8" fill="url(#furGrad)" stroke="#B45309" strokeWidth="1" />
-            {/* Almohadilla rosa de patita */}
-            <circle cx="56" cy="93" r="3.5" fill="#FDA4AF" />
-            <circle cx="52" cy="91" r="1.5" fill="#FDA4AF" />
-            <circle cx="56" cy="89" r="1.5" fill="#FDA4AF" />
-            <circle cx="60" cy="91" r="1.5" fill="#FDA4AF" />
-          </g>
+          <ellipse cx="44" cy="94" rx="12" ry="10" fill="#F59E0B" />
+          <circle cx="44" cy="93" r="3.5" fill="#FDA4AF" />
 
           {/* Patita Derecha */}
-          <g>
-            <ellipse cx="104" cy="94" rx="10" ry="8" fill="url(#furGrad)" stroke="#B45309" strokeWidth="1" />
-            {/* Almohadilla rosa de patita */}
-            <circle cx="104" cy="93" r="3.5" fill="#FDA4AF" />
-            <circle cx="100" cy="91" r="1.5" fill="#FDA4AF" />
-            <circle cx="104" cy="89" r="1.5" fill="#FDA4AF" />
-            <circle cx="108" cy="91" r="1.5" fill="#FDA4AF" />
-          </g>
+          <ellipse cx="96" cy="94" rx="12" ry="10" fill="#F59E0B" />
+          <circle cx="96" cy="93" r="3.5" fill="#FDA4AF" />
         </g>
       </svg>
     </div>

@@ -7,15 +7,13 @@ import {
   Lock,
   AlertCircle,
   ArrowRight,
-  Stethoscope,
   ArrowLeft,
   Eye,
   EyeOff,
-  Sparkles,
-  Zap,
+  Radio,
+  Tv,
   CheckCircle2,
   UserCheck,
-  Award,
 } from 'lucide-react';
 import HamsterMascot from '../components/ui/HamsterMascot';
 
@@ -63,107 +61,103 @@ export const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col lg:grid lg:grid-cols-12 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
-      {/* Columna Izquierda: Branding Pinnacle Group & Hub Clínico (Desktop) */}
-      <section className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#022A21] via-[#03362A] to-slate-950 text-white p-8 lg:p-14 flex-col justify-between border-b lg:border-b-0 lg:border-r border-emerald-900/60 relative overflow-hidden">
-        {/* Halos ambientales suaves y difuminados */}
-        <div className="absolute -top-32 -left-32 w-[30rem] h-[30rem] bg-emerald-500/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-[30rem] h-[30rem] bg-teal-500/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-[#00D084]/10 rounded-full blur-[90px] pointer-events-none" />
+      {/* Columna Izquierda: Master Control Room & Pinnacle Broadcast Studio (Desktop) */}
+      <section className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#021F18] via-[#032E24] to-slate-950 text-white p-8 lg:p-12 flex-col justify-between border-b lg:border-b-0 lg:border-r border-emerald-900/60 relative overflow-hidden">
+        {/* Halos de ambientación de estudio broadcast */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/15 rounded-full blur-[100px] pointer-events-none" />
 
         <div className="relative z-10">
-          {/* Header de Marca Claramente Distinguible como Botón de Retorno al Inicio */}
-          <div className="mb-10">
+          {/* Switcher de Canal / Retorno a Inicio de Marca */}
+          <div className="mb-8">
             <Link
               to="/"
-              className="inline-flex items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] active:scale-[0.98] border border-white/[0.12] hover:border-emerald-400/50 shadow-lg shadow-black/20 transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer"
-              title="Volver a la página de inicio"
+              className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] active:scale-[0.98] border border-white/[0.12] hover:border-emerald-400/60 shadow-lg shadow-black/20 transition-all duration-200 group cursor-pointer"
+              title="Volver a la portada de VetConnect"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00D084] to-[#00A86B] flex items-center justify-center shadow-md shadow-emerald-950/40 group-hover:scale-105 transition-transform">
-                <Stethoscope className="w-5 h-5 text-[#022A21]" aria-hidden="true" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00D084] to-[#00A86B] flex items-center justify-center text-slate-950 shadow-md">
+                <Tv className="w-4 h-4 text-[#021F18]" />
               </div>
               <div className="text-left">
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-extrabold tracking-tight text-white font-display">
-                    VetConnect
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-300 flex items-center gap-1 group-hover:-translate-x-0.5 transition-transform">
-                    <span>←</span>
-                    <span>Inicio</span>
+                  <span className="text-sm font-black tracking-tight text-white font-display">VetConnect Live</span>
+                  <span className="text-[10px] font-bold text-emerald-300 flex items-center gap-0.5 group-hover:-translate-x-1 transition-transform">
+                    ← Volver
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium">Portal Oficial de Telemedicina</p>
+                <p className="text-[10px] text-slate-400">Canal Oficial de Telemedicina</p>
               </div>
             </Link>
           </div>
 
           {/* Título de Propuesta de Valor */}
-          <div className="space-y-4 max-w-lg mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-semibold backdrop-blur-sm">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Infraestructura Pinnacle Group</span>
+          <div className="space-y-3 max-w-lg mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-black tracking-wider uppercase backdrop-blur-sm">
+              <Radio className="w-3.5 h-3.5 text-[#00D084]" />
+              <span>ALTA DE NODO CLÍNICO</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight font-display">
-              Unite al ecosistema de telemedicina veterinaria.
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight font-display">
+              Unite a la mayor red de telemedicina animal.
             </h1>
-            <p className="text-sm text-slate-300 leading-relaxed font-normal">
-              Creá tu cuenta institucional como tutor responsable o como médico veterinario para brindar atención clínica homologada por SENASA.
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+              Creá tu usuario seguro como tutor o como médico colegiado para participar en guardias interactivas y emitir prescripciones oficiales QR.
             </p>
           </div>
 
-          {/* Tarjeta de Garantías Clínicas con Glassmorphism */}
-          <div className="p-5 rounded-3xl bg-white/[0.05] border border-white/[0.1] backdrop-blur-xl space-y-3.5 shadow-xl shadow-black/10 max-w-md">
-            <div className="flex items-start gap-3">
+          {/* Tarjeta de Garantías Clínicas Broadcast */}
+          <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-xl space-y-3 max-w-md">
+            <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-white/[0.03]">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
               <div>
                 <p className="text-xs font-bold text-white">Historias Clínicas Inmutables</p>
-                <p className="text-[11px] text-slate-400 leading-snug">Trazabilidad diagnóstica y preservación de datos bajo Ley 25.326</p>
+                <p className="text-[11px] text-slate-400 leading-snug">Preservación estricta y soft-deletes auditados bajo Ley 25.326</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-white/[0.03]">
               <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0 mt-0.5">
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <div>
                 <p className="text-xs font-bold text-white">Validación de Matrícula Profesional</p>
-                <p className="text-[11px] text-slate-400 leading-snug">Auditoría manual de matrículas provinciales ante SENASA Res. 1442/2021</p>
+                <p className="text-[11px] text-slate-400 leading-snug">Homologación ante SENASA Res. 1442/2021 para médicos veterinarios</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-white/[0.03]">
               <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-300 flex items-center justify-center shrink-0 mt-0.5">
                 <Lock className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">Recetas Digitales con QR Inviolable</p>
-                <p className="text-[11px] text-slate-400 leading-snug">Firma electrónica con validación pública en farmacias de todo el país</p>
+                <p className="text-xs font-bold text-white">Transmisión Cifrada en Tiempo Real</p>
+                <p className="text-[11px] text-slate-400 leading-snug">WebRTC SFU de grado broadcast provisto por Pinnacle Group</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Respaldo Institucional Oficial Pinnacle Group */}
-        <div className="relative z-10 mt-8 pt-6 border-t border-emerald-900/60 flex items-center justify-between text-xs text-slate-400">
+        <div className="relative z-10 mt-8 pt-5 border-t border-emerald-900/60 flex items-center justify-between text-xs text-slate-400">
           <div>
-            <p className="font-bold text-slate-200">Pinnacle Group</p>
-            <p className="text-[10px] text-slate-400">Soluciones Audiovisuales, Broadcast &amp; Streaming</p>
+            <p className="font-black text-slate-100 font-display text-sm tracking-wide">PINNACLE GROUP</p>
+            <p className="text-[10px] text-slate-400">Sponsor Oficial de Tecnología Broadcast &amp; Streaming</p>
           </div>
-          <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-            Sponsor Oficial
-          </span>
+          <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white font-mono font-bold text-xs">
+            PG
+          </div>
         </div>
       </section>
 
-      {/* Columna Derecha: Tarjeta de Registro con Mascota Hamster Orgánica */}
-      <section className="lg:col-span-7 bg-gradient-to-br from-slate-50 via-[#F4F9F6] to-emerald-50/40 flex items-center justify-center p-6 sm:p-12 lg:p-14 relative">
-        <div className="w-full max-w-lg bg-white/95 backdrop-blur-xl p-8 sm:p-11 rounded-[32px] shadow-[0_24px_64px_-12px_rgba(2,42,33,0.08)] border border-emerald-950/[0.06] transition-all duration-300 animate-fadeIn">
+      {/* Columna Derecha: Tarjeta de Registro con Mascota Hamster Duolingo */}
+      <section className="lg:col-span-7 bg-gradient-to-br from-slate-50 via-[#F5FAF7] to-emerald-50/30 flex items-center justify-center p-6 sm:p-12 lg:p-14 relative">
+        <div className="w-full max-w-lg bg-white p-8 sm:p-11 rounded-[32px] shadow-[0_24px_64px_-12px_rgba(2,42,33,0.08)] border border-slate-200/80 transition-all duration-300 animate-fadeIn">
           {/* Botón de retorno accesible */}
           <div className="mb-8 flex justify-between items-center">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-emerald-700 active:scale-[0.97] transition-all duration-150 group focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full px-3 py-1.5 bg-slate-100/80 hover:bg-emerald-50 border border-slate-200/80"
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-emerald-700 active:scale-[0.97] transition-all duration-150 group focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full px-3.5 py-1.5 bg-slate-100/80 hover:bg-emerald-50 border border-slate-200/80 cursor-pointer"
               title="Volver a la portada de VetConnect"
             >
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform text-slate-400 group-hover:text-emerald-700" aria-hidden="true" />
@@ -176,13 +170,13 @@ export const Register: React.FC = () => {
             </span>
           </div>
 
-          {/* LA MASCOTA OFICIAL: HÁMSTER ORGÁNICO CON EXPRESIONES */}
-          {/* REGLA: isCoveringEyes se activa EXCLUSIVAMENTE cuando el usuario toca el botón de ver contraseña */}
-          <div className="flex flex-col items-center justify-center mb-1">
+          {/* LA MASCOTA OFICIAL: HÁMSTER MINIMALISTA ESTILO DUOLINGO */}
+          {/* REGLA: isCoveringEyes se activa EXCLUSIVAMENTE al tocar el botón de ver contraseña */}
+          <div className="flex flex-col items-center justify-center mb-2">
             <HamsterMascot
               isCoveringEyes={showPassword}
               isLookingAtInput={isInputFocused}
-              className="mb-1.5"
+              className="mb-1"
             />
           </div>
 
@@ -192,7 +186,7 @@ export const Register: React.FC = () => {
               <UserCheck className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Alta de Usuario Seguro</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-display">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-display">
               Registro en VetConnect
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
@@ -299,7 +293,7 @@ export const Register: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-slate-400 hover:text-emerald-700 hover:bg-emerald-50/80 active:scale-90 transition-all duration-150 focus:outline-none"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-slate-400 hover:text-emerald-700 hover:bg-emerald-50/80 active:scale-90 transition-all duration-150 focus:outline-none cursor-pointer"
                   title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                 >
@@ -385,7 +379,7 @@ export const Register: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-[#03362A] hover:bg-[#044c3b] active:bg-[#022c22] active:scale-[0.98] text-white py-3.5 px-5 rounded-2xl font-bold text-sm shadow-md shadow-[#03362A]/20 hover:shadow-xl hover:shadow-[#03362A]/25 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 group cursor-pointer mt-3"
+              className="w-full bg-[#032E24] hover:bg-[#044c3b] active:bg-[#02231b] active:scale-[0.98] text-white py-3.5 px-5 rounded-2xl font-bold text-sm shadow-md shadow-[#032E24]/20 hover:shadow-xl hover:shadow-[#032E24]/25 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 group cursor-pointer mt-3"
             >
               <span>{isSubmitting ? 'Registrando...' : 'Crear Cuenta'}</span>
               {!isSubmitting && (
@@ -406,7 +400,7 @@ export const Register: React.FC = () => {
           </p>
 
           <p className="text-center text-[10px] text-slate-400 mt-4">
-            Tecnología y soporte por <span className="font-semibold text-slate-600">Pinnacle Group</span>
+            Infraestructura y streaming por <span className="font-semibold text-slate-700">Pinnacle Group</span>
           </p>
         </div>
       </section>
