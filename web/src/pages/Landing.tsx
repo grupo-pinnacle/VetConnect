@@ -593,223 +593,258 @@ export const Landing: React.FC = () => {
               </div>
             </div>
 
-            {/* Columna Derecha: CONSOLA DE GUARDIA Y TELEMETRÍA CLÍNICA EN VIVO (Bespoke Medical Station) */}
+            {/* Columna Derecha: EL SMARTPHONE REAL-SIZE CON ANIMACIÓN 3D HOVER & PANTALLA INTERACTIVA */}
             <div className="lg:col-span-6 relative flex justify-center items-center py-4">
-              {/* Halos ambientales suaves */}
-              <div className="absolute w-[440px] sm:w-[540px] h-[440px] sm:h-[540px] rounded-full bg-gradient-to-tr from-[#DDF4EA]/70 via-[#E9F7F1]/50 to-emerald-100/30 -z-10 pointer-events-none blur-2xl" />
+              {/* Gran Fondo Circular con Gradiente de Luz Suave */}
+              <div className="absolute w-[440px] sm:w-[520px] h-[440px] sm:h-[520px] rounded-full bg-gradient-to-tr from-[#DDF4EA] via-[#E9F7F1] to-white/60 -z-10 pointer-events-none blur-sm" />
 
-              {/* Contenedor Principal de la Consola de Guardia */}
-              <div className="w-full max-w-lg bg-[#FAF8F5] border border-[#E8E2D5] rounded-3xl p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(6,36,29,0.18)] text-slate-800 transition-all duration-300 hover:shadow-[0_30px_70px_-15px_rgba(6,36,29,0.22)]">
-                {/* Cabecera Institucional del Monitor */}
-                <div className="flex flex-wrap items-center justify-between pb-3.5 border-b border-[#E8E2D5] gap-2 mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-[#06241D] text-emerald-400 flex items-center justify-center shadow-sm">
-                      <Stethoscope className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-serif font-bold text-[#06241D] tracking-tight">
-                          Consola de Guardia 24hs
-                        </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                          ONLINE
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-mono">SENASA R.1442 • WebRTC 1080p</p>
-                    </div>
+              {/* Grupo del Celular con Hover 3D */}
+              <div className="relative group/phone select-none cursor-pointer">
+                {/* 1. Badge Flotante Superior Izquierdo: Telemetría / Audio HD */}
+                <div className="absolute -left-6 sm:-left-12 top-20 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-slate-100 flex items-center gap-3 z-30 transition-all duration-500 group-hover/phone:-translate-x-3 group-hover/phone:-translate-y-2">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#00A86B] flex items-center justify-center">
+                    <Volume2 className="w-5 h-5" />
                   </div>
-
-                  {/* Selector de Modos / Pestañas de la Consola */}
-                  <div className="flex bg-[#EFECE6] p-1 rounded-xl text-[11px] font-semibold">
-                    <button
-                      type="button"
-                      onClick={() => setPhoneTab('CALL')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                        phoneTab === 'CALL'
-                          ? 'bg-white text-[#06241D] shadow-xs font-bold'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Teleconsulta
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhoneTab('PRESCRIPTION')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                        phoneTab === 'PRESCRIPTION'
-                          ? 'bg-white text-[#06241D] shadow-xs font-bold'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Receta SENASA
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhoneTab('HISTORY')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                        phoneTab === 'HISTORY'
-                          ? 'bg-white text-[#06241D] shadow-xs font-bold'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Historial
-                    </button>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-xs font-extrabold text-slate-800">Audio HD • 18ms</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500">WebRTC LiveKit SFU</p>
                   </div>
                 </div>
 
-                {/* Contenido Dinámico de la Pestaña */}
-                {phoneTab === 'CALL' && (
-                  <div className="space-y-4 animate-fadeIn">
-                    {/* Visualizador de la Videollamada Médica */}
-                    <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-video shadow-inner flex items-center justify-center border border-slate-800">
-                      {/* Doctor en pantalla */}
-                      <div className="flex flex-col items-center justify-center text-center p-4 z-10">
-                        <div className="w-14 h-14 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg">
-                          <Stethoscope className="w-7 h-7" />
+                {/* 2. Badge Flotante Inferior Derecho: Receta Oficial con QR */}
+                <div className="absolute -right-4 sm:-right-10 bottom-16 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 shadow-xl border border-slate-100 z-30 transition-all duration-500 group-hover/phone:translate-x-3 group-hover/phone:translate-y-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 rounded bg-[#E6F7F0] flex items-center justify-center text-[#00875A]">
+                      <QrCode className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-900">Receta Oficial SENASA</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Hash criptográfico verificado</p>
+                </div>
+
+                {/* 3. Badge Flotante Notificación Push Superior Derecha */}
+                <div className="hidden sm:flex absolute -right-6 top-8 bg-slate-900/90 text-white backdrop-blur-md rounded-2xl px-3.5 py-2 shadow-lg z-30 items-center gap-2 text-[11px] border border-slate-700/80 transition-all duration-500 group-hover/phone:translate-y-[-4px]">
+                  <Stethoscope className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="font-medium">Dra. Romero se unió a la sala</span>
+                </div>
+
+                {/* CHASIS DEL SMARTPHONE TAMAÑO REAL (340px - 360px de ancho x 720px de alto) */}
+                <div className="w-[325px] sm:w-[355px] min-h-[690px] bg-slate-950 rounded-[52px] p-3.5 shadow-[0_35px_80px_-15px_rgba(3,54,42,0.35)] border-[6px] border-slate-800 text-white transform rotate-[-3.5deg] group-hover/phone:rotate-0 group-hover/phone:scale-[1.03] group-hover/phone:-translate-y-3 transition-all duration-700 ease-out">
+                  {/* Dynamic Island / Parlante */}
+                  <div className="w-28 h-5 bg-black rounded-full mx-auto mb-2 flex items-center justify-between px-3">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-900 inline-block" />
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[8px] font-mono text-emerald-400">LIVE</span>
+                    </div>
+                  </div>
+
+                  {/* Status Bar */}
+                  <div className="flex justify-between items-center px-4 mb-2 text-[11px] text-slate-400 font-mono">
+                    <span className="font-bold text-slate-300">9:41</span>
+                    <div className="flex items-center gap-1.5">
+                      <Wifi className="w-3.5 h-3.5 text-slate-300" />
+                      <Battery className="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                  </div>
+
+                  {/* Pantalla Interna de la Aplicación VetConnect */}
+                  <div className="bg-white rounded-[38px] p-4 text-slate-900 flex flex-col justify-between min-h-[620px] overflow-hidden shadow-inner">
+                    {/* Header de la App en Pantalla */}
+                    <div>
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-[#00A86B] flex items-center justify-center text-white shadow-sm">
+                            <HeartPulse className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-xs text-slate-900 tracking-tight leading-none">VetConnect</p>
+                            <p className="text-[9px] text-emerald-700 font-medium">Clínica 24hs</p>
+                          </div>
                         </div>
-                        <h4 className="text-sm font-serif font-bold text-white tracking-wide">
-                          Dra. Silvina Romero
-                        </h4>
-                        <p className="text-[11px] text-emerald-300 font-mono">
-                          Mat. CPMV 4492 • Especialista en Pequeños Animales
-                        </p>
-                      </div>
-
-                      {/* Miniatura PiP del Paciente */}
-                      <div className="absolute bottom-2.5 right-2.5 bg-slate-900/90 backdrop-blur-xs border border-slate-700/80 rounded-xl px-2.5 py-1.5 flex items-center gap-2 z-20 shadow-md">
-                        <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center">
-                          <PawPrint className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="text-left">
-                          <span className="text-[10px] font-bold text-white block leading-none">Milo</span>
-                          <span className="text-[9px] text-slate-400">Bulldog Francés</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold">
+                            EN GUARDIA
+                          </span>
+                          <Bell className="w-4 h-4 text-slate-400" />
                         </div>
                       </div>
 
-                      {/* Tiras de Telemetría WebRTC */}
-                      <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 text-[10px] font-mono">
-                        <span className="px-2 py-0.5 bg-black/70 backdrop-blur-xs rounded-md text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                          <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500 animate-pulse" /> 94 bpm
-                        </span>
-                        <span className="px-2 py-0.5 bg-black/70 backdrop-blur-xs rounded-md text-sky-400 border border-sky-500/30 flex items-center gap-1">
-                          <Activity className="w-2.5 h-2.5 text-sky-400" /> 1080p • 18ms
-                        </span>
+                      {/* Selector de Pestañas Interactivas Dentro del Móvil */}
+                      <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl mb-3 text-[10px] font-bold text-center">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPhoneTab('CALL');
+                          }}
+                          className={`py-1.5 rounded-lg transition-all ${
+                            phoneTab === 'CALL' ? 'bg-white text-[#03362A] shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          Llamada
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPhoneTab('PRESCRIPTION');
+                          }}
+                          className={`py-1.5 rounded-lg transition-all ${
+                            phoneTab === 'PRESCRIPTION' ? 'bg-white text-[#03362A] shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          Receta QR
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPhoneTab('HISTORY');
+                          }}
+                          className={`py-1.5 rounded-lg transition-all ${
+                            phoneTab === 'HISTORY' ? 'bg-white text-[#03362A] shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          Historial
+                        </button>
                       </div>
+
+                      {/* Contenido Dinámico de la Pantalla del Celular */}
+                      {phoneTab === 'CALL' && (
+                        <div className="space-y-3 animate-fadeIn">
+                          {/* Ventana de Videollamada Activa */}
+                          <div className="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video shadow-md flex items-center justify-center border border-slate-700">
+                            {/* Doctora en Pantalla */}
+                            <div className="flex flex-col items-center justify-center text-center p-3 z-10">
+                              <div className="w-12 h-12 rounded-full bg-emerald-600/40 border border-emerald-400/60 flex items-center justify-center text-emerald-300 mb-1">
+                                <Stethoscope className="w-6 h-6" />
+                              </div>
+                              <p className="text-xs font-bold text-white">Dra. Silvina Romero</p>
+                              <p className="text-[10px] text-emerald-300 font-mono">M.P. 4492 • Guardia Activa</p>
+                            </div>
+
+                            {/* Miniatura PiP de Milo */}
+                            <div className="absolute bottom-2 right-2 w-16 h-14 rounded-xl bg-slate-900/90 border border-slate-600 p-1 flex flex-col items-center justify-center z-20 shadow-md">
+                              <PawPrint className="w-5 h-5 text-amber-400 mb-0.5" />
+                              <span className="text-[8px] font-bold text-slate-200">Milo</span>
+                            </div>
+
+                            {/* Signos Vitales */}
+                            <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 text-[9px] font-mono">
+                              <span className="px-1.5 py-0.5 bg-black/60 rounded text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500" /> 92 bpm
+                              </span>
+                              <span className="px-1.5 py-0.5 bg-black/60 rounded text-sky-400 border border-sky-500/30 flex items-center gap-1">
+                                <Activity className="w-2.5 h-2.5 text-sky-400" /> 24 rpm
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Tarjeta de Paciente Activo */}
+                          <div className="bg-[#03362A] text-white rounded-2xl p-3 shadow-sm">
+                            <div className="flex justify-between items-center text-[10px] text-emerald-300 mb-1">
+                              <span>Paciente en Consulta</span>
+                              <span className="font-mono text-emerald-400">04:32 min</span>
+                            </div>
+                            <h4 className="font-extrabold text-sm text-white">Milo (Golden Retriever, 3 años)</h4>
+                            <p className="text-[10px] text-slate-300">Tutor: Martín Rossi • Consulta digestiva</p>
+                          </div>
+
+                          {/* Controles de Llamada */}
+                          <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold">
+                            <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 flex flex-col items-center">
+                              <Video className="w-4 h-4 text-emerald-600 mb-1" />
+                              <span>Cámara</span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 flex flex-col items-center">
+                              <FileText className="w-4 h-4 text-sky-600 mb-1" />
+                              <span>Receta</span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex flex-col items-center">
+                              <PhoneCall className="w-4 h-4 text-rose-600 mb-1" />
+                              <span>Finalizar</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {phoneTab === 'PRESCRIPTION' && (
+                        <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-2.5 animate-fadeIn">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
+                                SENASA Res. 1442
+                              </span>
+                              <h4 className="font-bold text-xs text-slate-900 mt-1">Receta Médica Digital</h4>
+                            </div>
+                            <div className="w-12 h-12 bg-white p-1 rounded-lg border border-slate-200 flex items-center justify-center">
+                              <QrCode className="w-10 h-10 text-slate-800" />
+                            </div>
+                          </div>
+                          <div className="bg-white p-2 rounded-xl border border-slate-100 text-[10px] space-y-1">
+                            <p className="font-bold text-slate-800">Rp/ Amoxicilina + Ácido Clavulánico</p>
+                            <p className="text-slate-600">Dosis: 500mg cada 12hs por 7 días</p>
+                            <p className="text-slate-400 text-[9px]">Dra. Silvina Romero • M.P. 4492</p>
+                          </div>
+                          <div className="text-[9px] text-emerald-700 flex items-center gap-1 font-semibold">
+                            <Check className="w-3 h-3 text-emerald-600" /> Válida para farmacias veterinarias
+                          </div>
+                        </div>
+                      )}
+
+                      {phoneTab === 'HISTORY' && (
+                        <div className="space-y-2 animate-fadeIn text-[10px]">
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                            <div>
+                              <p className="font-bold text-slate-800">Vacuna Séxtuple Canina</p>
+                              <p className="text-slate-400 text-[9px]">Aplicada: 15 Ene 2026</p>
+                            </div>
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">
+                              Vigente
+                            </span>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                            <div>
+                              <p className="font-bold text-slate-800">Antiparasitario Interno</p>
+                              <p className="text-slate-400 text-[9px]">Próximo: 15 Oct 2026</p>
+                            </div>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[9px]">
+                              Próximo
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Ficha de Triaje en Vivo */}
-                    <div className="p-3.5 rounded-2xl bg-white border border-[#E8E2D5] shadow-xs">
-                      <div className="flex items-center justify-between text-[11px] mb-1.5">
-                        <span className="font-semibold text-slate-600">Evaluación Inicial de Guardia:</span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                          Código Amarillo • Moderado
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-800 font-medium">
-                        Motivo: <span className="text-slate-600">Vómito reiterado e inapetencia tras paseo de mañana.</span>
-                      </p>
-                      <p className="text-[11px] text-emerald-800 mt-1 font-medium flex items-center gap-1">
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Plan terapéutico enviado con pautas de alarma e hidratación oral.</span>
-                      </p>
+                    {/* Botón Inferior de Entrada Rápida */}
+                    <div className="pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (user) {
+                            navigate(
+                              user.role === 'VET'
+                                ? '/vet/dashboard'
+                                : user.role === 'ADMIN'
+                                ? '/admin/dashboard'
+                                : '/client/dashboard'
+                            );
+                          } else {
+                            navigate('/login');
+                          }
+                        }}
+                        className="w-full py-2.5 bg-[#03362A] hover:bg-[#044c3b] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition"
+                      >
+                        <span>Entrar a mi Portal</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                )}
-
-                {phoneTab === 'PRESCRIPTION' && (
-                  <div className="p-4 bg-white border border-[#E8E2D5] rounded-2xl space-y-3 animate-fadeIn">
-                    <div className="flex justify-between items-start pb-3 border-b border-slate-100">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
-                          SENASA Res. 1442/2021
-                        </span>
-                        <h4 className="font-serif font-bold text-sm text-[#06241D] mt-1.5">
-                          Receta Médica Digital Oficial
-                        </h4>
-                        <p className="text-[11px] text-slate-500 font-mono">Folio: VC-2026-9921-BA</p>
-                      </div>
-                      <div className="w-14 h-14 bg-slate-50 p-1.5 rounded-xl border border-slate-200 flex items-center justify-center">
-                        <QrCode className="w-11 h-11 text-slate-800" />
-                      </div>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#E8E2D5] text-xs space-y-1">
-                      <p className="font-bold text-[#06241D]">Rp/ Amoxicilina + Ácido Clavulánico 500mg</p>
-                      <p className="text-slate-600 text-[11px]">Dosis: 1 comp. cada 12 hs con las comidas por 7 días.</p>
-                      <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center text-[10px] text-slate-500">
-                        <span>Médica: Dra. Silvina Romero (M.P. 4492)</span>
-                        <span className="font-mono text-emerald-700 font-semibold">✓ Firma Tokenizada</span>
-                      </div>
-                    </div>
-
-                    <div className="text-[11px] text-emerald-800 flex items-center gap-1.5 font-semibold bg-emerald-50/80 p-2 rounded-xl border border-emerald-200">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Habilitada para compra en cualquier farmacia veterinaria nacional.</span>
-                    </div>
-                  </div>
-                )}
-
-                {phoneTab === 'HISTORY' && (
-                  <div className="space-y-2.5 animate-fadeIn text-xs">
-                    <div className="p-3 rounded-xl bg-white border border-[#E8E2D5] flex justify-between items-center shadow-xs">
-                      <div>
-                        <p className="font-bold text-[#06241D]">Vacuna Séxtuple Canina (DHPPi-L)</p>
-                        <p className="text-slate-500 text-[11px]">Aplicada en Clínica Central • Lote #4992</p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold text-[10px] border border-emerald-300">
-                        Al día
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-white border border-[#E8E2D5] flex justify-between items-center shadow-xs">
-                      <div>
-                        <p className="font-bold text-[#06241D]">Desparasitación Interna (Praziquantel)</p>
-                        <p className="text-slate-500 text-[11px]">Próximo refuerzo: Noviembre 2026</p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-300">
-                        Programado
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-white border border-[#E8E2D5] flex justify-between items-center shadow-xs">
-                      <div>
-                        <p className="font-bold text-[#06241D]">Antirrábica Anual Oficial</p>
-                        <p className="text-slate-500 text-[11px]">Certificado N° 84920 con número de microchip</p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold text-[10px] border border-emerald-300">
-                        Al día
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Pie de Consola: Acceso Rápido al Portal */}
-                <div className="mt-4 pt-3.5 border-t border-[#E8E2D5] flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Registro Oficial SENASA</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (user) {
-                        navigate(
-                          user.role === 'VET'
-                            ? '/vet/dashboard'
-                            : user.role === 'ADMIN'
-                            ? '/admin/dashboard'
-                            : '/client/dashboard'
-                        );
-                      } else {
-                        navigate('/login');
-                      }
-                    }}
-                    className="px-4 py-2 bg-[#06241D] hover:bg-[#0b382e] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-sm"
-                  >
-                    <span>{user ? 'Abrir mi Panel' : 'Ingresar a la Plataforma'}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
-                  </button>
                 </div>
               </div>
             </div>
