@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../src/lib/authStore';
 import api, { getApiErrorMessage } from '../../src/lib/api';
 import { Pet, Consultation, ApiResponse } from '../../src/types';
+import { VetWorkspace } from '../../src/components/VetWorkspace';
 import { colors } from '../../src/theme/tokens';
 
 export default function HomeScreen() {
@@ -36,6 +37,10 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  if (user?.role === 'VET') {
+    return <VetWorkspace />;
+  }
 
   if (loading) {
     return (
