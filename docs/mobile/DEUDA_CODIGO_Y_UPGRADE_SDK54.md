@@ -31,3 +31,4 @@ Conteo ADRs 24 vs 25, `strict` vs `lax`, 129 vs 123 tests, `TS5.8` vs `5.7`, `PE
 4. ✅ Banner `reconnecting`, error UI con Reintentar, `syncIncrementalMessages` visible.
 5. ✅ Verificado: `npm run typecheck` ✅, `npm test` (9 suites/21 tests) ✅, `expo export --platform android` ✅ (4.18 MB).
 6. Hallazgos de build (monorepo) registrados en `metro.config.js` + `babel.config.js`: `blockList` copia única RN (root 0.76.7 stale + 0.87.1 anidada vetadas), `extraNodeModules` react/RN canónicos, plugin `expo-router-plugin` explícito (preset hoisted no detecta `expo-router` anidado), cast `WebView` 13.17 vía `unknown`.
+7. EAS cloud pendiente de `eas login` (el CLI lo exige aun con `--local`); a cambio se verificó el pipeline idéntico manual (`prebuild` + `assembleRelease` → APK 94.6 MB, ver `06_*`). Requiere ruta ASCII (la `ó` de `Programación` rompe clang), JDK 21 y SDK con espacio (movido a `D:\Android\Sdk`).

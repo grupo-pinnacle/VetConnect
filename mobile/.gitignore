@@ -1,0 +1,11 @@
+# Expo managed workflow — nativos generados, no commitear
+android/
+ios/
+.expo/
+dist/
+
+# Binarios firmados / instalables
+*.apk
+*.aab
+*.keystore
+*.jks
