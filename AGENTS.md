@@ -53,6 +53,19 @@ Para erradicar la ambigüedad y el fenómeno de Split-Brain en agentes autónomo
 
 ---
 
+### 1.4 Criterio de Salida: Definition of Done (DoD) para Producción — Cero Plantillas / Integridad Absoluta de Datos
+Antes de responder afirmativamente a la pregunta *"¿Está lista la página o el sistema para producción?"*, el agente **DEBE auditar y garantizar obligatoriamente**:
+1. **Cero Placeholders y Cero Métricas Falsas:**
+   - Queda terminantemente prohibido hardcodear números cosméticos (ej. `4.95 ⭐`, `18 en guardia`, `98.4% aprobación`, `02:15 min`).
+   - Todo KPI, contador o indicador visible en pantalla **debe provenir al 100% de la base de datos PostgreSQL** o calcularse matemáticamente en tiempo real (`useMemo`) sobre las entidades reales cargadas.
+2. **Manejo Honesto de Estados Vacíos (Empty States):**
+   - Si un profesional recién registrado tiene 0 calificaciones (`ratingCount === 0`), la UI **DEBE mostrar `—` y un badge `Nuevo / Sin calificaciones aún`**, con estrellas vacías. Está estrictamente prohibido inventar reputaciones no ganadas.
+   - Si no hay expedientes, pacientes o mascotas, la UI debe renderizar estados vacíos informativos y de bienvenida, nunca datos simulados.
+3. **Erradicación de Ramas de Mocking en Código:**
+   - Prohibido dejar branches condicionales tipo `if (urlParams.get('mock') === 'true')` o `if (id === 'demo')`. Todo flujo transaccional debe resolverse a través de los contratos y APIs reales del sistema.
+
+---
+
 ## 🛡️ 2. Guardarraíles Absolutos de Seguridad
 
 1. **Gestión de Secretos (`.env` Guardrail):**
@@ -196,6 +209,33 @@ app.get('/api/media/:id', authenticate, async (req, res) => {
   // En producción S3: retornar Presigned URL con TTL 5 min
   // En local: res.sendFile(path.resolve(file.localPath));
 });
+```
+
+### ❌ NO USO 6: Hardcodear Métricas o Calificaciones Falsas en la UI ("Síndrome de la Plantilla")
+```tsx
+// BAD: Inventar 4.95 estrellas y textos de excelencia estáticos para cualquier profesional
+<span className="text-3xl font-bold">4.95</span>
+<div className="text-amber-400">★★★★★</div>
+<p>Nivel de excelencia SENASA</p>
+
+// GOOD: Renderizar métricas vivas calculadas y transparentes con empty states
+{user.ratingCount > 0 ? (
+  <>
+    <span className="text-3xl font-extrabold">{user.ratingAvg.toFixed(2)}</span>
+    <div className="flex text-amber-400">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star key={s} className={s <= Math.round(user.ratingAvg) ? 'fill-current' : 'text-slate-200'} />
+      ))}
+    </div>
+    <p>{user.ratingCount} consultas calificadas</p>
+  </>
+) : (
+  <>
+    <span className="text-3xl font-extrabold text-slate-400">—</span>
+    <span className="text-xs bg-slate-100 rounded px-2">Nuevo</span>
+    <p>Sin calificaciones aún • 0 consultas valoradas</p>
+  </>
+)}
 ```
 
 ---

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -120,6 +120,20 @@ export const DashboardVet: React.FC = () => {
   const ratingCount = user?.ratingCount ?? 0;
   const ratingAvg = user?.ratingAvg ?? 0;
   const hasReviews = ratingCount > 0;
+
+  // Tiempo de espera real promedio calculado dinámicamente de la cola FIFO
+  const avgWaitTimeMinutes = useMemo(() => {
+    if (waitingQueue.length === 0) return '00:00';
+    const now = Date.now();
+    const totalMs = waitingQueue.reduce(
+      (acc, c) => acc + Math.max(0, now - new Date(c.createdAt).getTime()),
+      0
+    );
+    const avgMs = totalMs / waitingQueue.length;
+    const mins = Math.floor(avgMs / 60000);
+    const secs = Math.floor((avgMs % 60000) / 1000);
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }, [waitingQueue]);
 
   if (loading) {
     return (
@@ -306,8 +320,8 @@ export const DashboardVet: React.FC = () => {
               </div>
             </div>
             <div className="mt-2">
-              <span className="text-3xl font-extrabold text-[#06241D] tracking-tight font-mono">
-                {waitingQueue.length > 0 ? '02:15' : '00:00'}
+              <span className="text-3xl font-extrabold text-[#06241D] tracking-tight font-mono" data-testid="vet-avg-wait-time">
+                {avgWaitTimeMinutes}
                 <span className="text-sm font-sans font-semibold text-slate-500 ml-1">min</span>
               </span>
               <p className="text-xs mt-1 text-slate-500 flex items-center gap-1">

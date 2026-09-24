@@ -23,6 +23,26 @@ const userSelectFields = {
 };
 
 export class AdminService {
+  public async getStats() {
+    const [pendingVets, approvedVets, rejectedVets, onlineVets] = await Promise.all([
+      prisma.user.count({ where: { role: Role.VET, vetStatus: VetStatus.PENDING, deletedAt: null } }),
+      prisma.user.count({ where: { role: Role.VET, vetStatus: VetStatus.APPROVED, deletedAt: null } }),
+      prisma.user.count({ where: { role: Role.VET, vetStatus: VetStatus.REJECTED, deletedAt: null } }),
+      prisma.user.count({ where: { role: Role.VET, vetStatus: VetStatus.APPROVED, isOnline: true, deletedAt: null } }),
+    ]);
+
+    const totalDecided = approvedVets + rejectedVets;
+    const approvalRate = totalDecided > 0 ? parseFloat(((approvedVets / totalDecided) * 100).toFixed(1)) : 100;
+
+    return {
+      pendingVets,
+      approvedVets,
+      rejectedVets,
+      onlineVets,
+      approvalRate,
+    };
+  }
+
   public async getPendingVets() {
     return prisma.user.findMany({
       where: {

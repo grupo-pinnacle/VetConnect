@@ -52,52 +52,29 @@ export const AdminVets: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('ALL');
 
+  interface AdminStats {
+    pendingVets: number;
+    approvedVets: number;
+    rejectedVets: number;
+    onlineVets: number;
+    approvalRate: number;
+  }
+  const [stats, setStats] = useState<AdminStats | null>(null);
+
+  const fetchStats = async () => {
+    try {
+      const res = await api.get<ApiResponse<AdminStats>>('/api/admin/stats');
+      if (res.data.success && res.data.data) {
+        setStats(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Error fetching admin stats:', err);
+    }
+  };
+
   const fetchPendingVets = async () => {
     try {
       setError(null);
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('mock') === 'true') {
-          setPendingVets([
-            {
-              id: 'vet-senasa-01',
-              firstName: 'Carolina',
-              lastName: 'Méndez',
-              email: 'carolina.mendez@vetconnect.com.ar',
-              role: 'VET',
-              vetStatus: 'PENDING',
-              licenseNumber: 'CPMV Mat. 4492',
-              bio: 'Medicina Felina y Terapia Intensiva',
-              createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-            } as User,
-            {
-              id: 'vet-senasa-02',
-              firstName: 'Alejandro',
-              lastName: 'Rossi',
-              email: 'a.rossi@veterinaria-central.ar',
-              role: 'VET',
-              vetStatus: 'PENDING',
-              licenseNumber: 'CVPBA Mat. 9340',
-              bio: 'Cirugía de Tejidos Blandos y Trauma',
-              createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
-            } as User,
-            {
-              id: 'vet-senasa-03',
-              firstName: 'Martín',
-              lastName: 'Sánchez',
-              email: 'msanchez@vetneuquen.gob.ar',
-              role: 'VET',
-              vetStatus: 'PENDING',
-              licenseNumber: 'CMV-RN Mat. 1180',
-              bio: 'Clínica General y Diagnóstico por Imágenes',
-              createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-            } as User,
-          ]);
-          setLoading(false);
-          return;
-        }
-      }
-
       const res = await api.get<ApiResponse<User[]>>('/api/admin/vets/pending');
       if (res.data.success && res.data.data) {
         setPendingVets(res.data.data);
@@ -112,6 +89,7 @@ export const AdminVets: React.FC = () => {
 
   useEffect(() => {
     fetchPendingVets();
+    fetchStats();
   }, []);
 
   const showToast = (type: 'success' | 'error', message: string) => {
@@ -126,6 +104,7 @@ export const AdminVets: React.FC = () => {
       if (res.data.success) {
         setPendingVets((prev) => prev.filter((v) => v.id !== id));
         showToast('success', 'Matrícula aprobada exitosamente');
+        fetchStats();
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
@@ -143,6 +122,7 @@ export const AdminVets: React.FC = () => {
       if (res.data.success) {
         setPendingVets((prev) => prev.filter((v) => v.id !== id));
         showToast('success', 'Matrícula rechazada');
+        fetchStats();
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
@@ -283,7 +263,7 @@ export const AdminVets: React.FC = () => {
         </header>
 
         <main className="space-y-6">
-          {/* 2. Bento Grid de KPIs de Fiscalización Sanitaria */}
+          {/* 2. Bento Grid de KPIs de Fiscalización Sanitaria Dinámicos */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1: Matrículas Pendientes */}
             <div className="bg-white/95 backdrop-blur-md p-5 rounded-2xl border border-[#E8E2D5] shadow-[0_4px_20px_-4px_rgba(6,36,29,0.05)] relative overflow-hidden">
@@ -294,15 +274,15 @@ export const AdminVets: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-[#06241D] tracking-tight">{pendingVets.length}</span>
+                <span className="text-3xl font-extrabold text-[#06241D] tracking-tight">{stats?.pendingVets ?? pendingVets.length}</span>
                 <span
                   className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
-                    pendingVets.length > 0
+                    (stats?.pendingVets ?? pendingVets.length) > 0
                       ? 'bg-amber-100 text-amber-950 border-amber-300 animate-pulse'
                       : 'bg-emerald-100 text-emerald-950 border-emerald-300'
                   }`}
                 >
-                  {pendingVets.length > 0 ? 'Dictamen requerido' : 'Al día'}
+                  {(stats?.pendingVets ?? pendingVets.length) > 0 ? 'Dictamen requerido' : 'Al día'}
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-2 font-medium">Solicitudes en cola de revisión deontológica</p>
@@ -317,13 +297,13 @@ export const AdminVets: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-[#06241D] tracking-tight">18</span>
+                <span className="text-3xl font-extrabold text-[#06241D] tracking-tight">{stats?.onlineVets ?? 0}</span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-300 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
                   En Turno
                 </span>
               </div>
-              <p className="text-xs text-slate-600 mt-2 font-medium">Médicos habilitados atendiendo urgencias</p>
+              <p className="text-xs text-slate-600 mt-2 font-medium">Médicos habilitados conectados a la guardia</p>
             </div>
 
             {/* Card 3: Tasa de Aprobación Sanitaria */}
@@ -335,29 +315,29 @@ export const AdminVets: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-[#06241D] tracking-tight">98.4%</span>
+                <span className="text-3xl font-extrabold text-[#06241D] tracking-tight">{stats ? `${stats.approvalRate}%` : '100%'}</span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-950 border border-sky-300">
-                  Histórico
+                  {stats ? `${stats.approvedVets} aprobados` : 'Histórico'}
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-2 font-medium">Conformidad con padrón federal SENASA</p>
             </div>
 
-            {/* Card 4: Tiempo Medio de Dictamen */}
+            {/* Card 4: Veterinarios Certificados */}
             <div className="bg-white/95 backdrop-blur-md p-5 rounded-2xl border border-[#E8E2D5] shadow-[0_4px_20px_-4px_rgba(6,36,29,0.05)]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Tiempo de Dictamen</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Padrón Colegiado</span>
                 <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center">
-                  <Timer className="w-4 h-4" />
+                  <ShieldCheck className="w-4 h-4" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-[#06241D] tracking-tight">&lt; 2h</span>
+                <span className="text-3xl font-extrabold text-[#06241D] tracking-tight">{stats?.approvedVets ?? 0}</span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-300">
-                  1.4h Promedio
+                  Habilitados
                 </span>
               </div>
-              <p className="text-xs text-slate-600 mt-2 font-medium">SLA de validación y respuesta institucional</p>
+              <p className="text-xs text-slate-600 mt-2 font-medium">Profesionales con firma de receta digital activa</p>
             </div>
           </div>
 

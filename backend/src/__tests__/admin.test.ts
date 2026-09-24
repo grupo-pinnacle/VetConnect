@@ -11,6 +11,7 @@ jest.mock('../lib/prisma', () => ({
       findFirst: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      count: jest.fn(),
     },
     auditLog: {
       create: jest.fn(),
@@ -154,6 +155,31 @@ describe('Admin Module (/api/admin)', () => {
           action: 'REJECT_VET',
           targetId: 'vet-pending-1',
         }),
+      });
+    });
+  });
+
+  describe('GET /api/admin/stats', () => {
+    it('should return real-time operational admin statistics', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockAdmin);
+      mockPrismaUser.count
+        .mockResolvedValueOnce(3)  // pendingVets
+        .mockResolvedValueOnce(15) // approvedVets
+        .mockResolvedValueOnce(1)  // rejectedVets
+        .mockResolvedValueOnce(4);  // onlineVets
+
+      const res = await request(app)
+        .get('/api/admin/stats')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toEqual({
+        pendingVets: 3,
+        approvedVets: 15,
+        rejectedVets: 1,
+        onlineVets: 4,
+        approvalRate: 93.8,
       });
     });
   });

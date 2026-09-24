@@ -16,38 +16,6 @@ export const PrescriptionView: React.FC = () => {
     const fetchPrescription = async () => {
       try {
         if (!id) return;
-        if (id === 'mock-rx' || id === 'demo') {
-          setPrescription({
-            id: 'RX-2026-0922-8841',
-            consultationId: 'cons-demo-123',
-            vetId: 'vet-4492',
-            medication: 'Amoxicilina + Ácido Clavulánico 500mg',
-            dosage: '1 comprimido cada 12 horas',
-            frequency: 'Vía oral con alimento',
-            durationDays: 7,
-            indications: 'Completar los 7 días de tratamiento aún si los síntomas remiten.',
-            qrCodeDataUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23f1f5f9"/><text x="10" y="55" font-size="12" fill="%23059669">SENASA QR</text></svg>',
-            createdAt: '2026-09-22T20:00:00.000Z',
-            updatedAt: '2026-09-22T20:00:00.000Z',
-            vet: {
-              id: 'vet-4492',
-              firstName: 'Silvina',
-              lastName: 'Romero',
-              licenseNumber: 'MP-4492 (FeVA)',
-              specialty: 'Clínica Médica de Pequeños Animales',
-            },
-            pet: {
-              id: 'pet-milo-1',
-              name: 'Milo',
-              species: 'Canino',
-              breed: 'Golden Retriever',
-              weightKg: 32.5,
-              microchip: '032-984-771-002',
-            },
-          } as unknown as Prescription);
-          setLoading(false);
-          return;
-        }
         const res = await api.get<ApiResponse<Prescription>>(`/api/prescriptions/${id}`);
         if (res.data.success && res.data.data) {
           setPrescription(res.data.data);

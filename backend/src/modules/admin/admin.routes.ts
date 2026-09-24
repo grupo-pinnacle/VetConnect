@@ -9,6 +9,7 @@ const controller = new AdminController();
 router.use(authenticate);
 router.use(requireRole(Role.ADMIN));
 
+router.get('/stats', controller.getStats);
 router.get('/vets/pending', controller.getPendingVets);
 router.patch('/vets/:id/approve', controller.approveVet);
 router.patch('/vets/:id/reject', controller.rejectVet);

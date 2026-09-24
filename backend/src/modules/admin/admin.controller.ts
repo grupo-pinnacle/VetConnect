@@ -8,6 +8,18 @@ const adminService = new AdminService();
 const getParamId = (param: string | string[]): string => (Array.isArray(param) ? param[0] : param);
 
 export class AdminController {
+  public getStats = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const stats = await adminService.getStats();
+      res.status(200).json({
+        success: true,
+        data: stats,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public getPendingVets = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const vets = await adminService.getPendingVets();
