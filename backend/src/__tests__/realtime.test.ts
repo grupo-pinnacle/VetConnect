@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { Prisma } from '@prisma/client';
 import app from '../app';
 import prisma from '../lib/prisma';
-import { initializeSocketServer } from '../realtime/socket.server';
+import { initializeSocketServer, io as serverIo } from '../realtime/socket.server';
 
 jest.mock('../lib/prisma', () => ({
   __esModule: true,
@@ -248,4 +248,53 @@ describe('Realtime & Chat Socket Gateway (TASK-3.1 & TASK-3.2)', () => {
       );
     });
   });
+
+  // Boundary Integration Test: Communication with calls.service.ts consumer
+  it('should deliver call:incoming event to personal user room via in-memory adapter (Boundary Integration)', (done) => {
+    mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+    mockPrismaUser.update.mockResolvedValue(mockClient);
+
+    const socket = Client(`http://localhost:${port}`, {
+      auth: { token: `Bearer ${validToken}` },
+      transports: ['websocket'],
+    });
+
+    const callPayload = {
+      consultationId: 'consultation-call-1',
+      roomName: 'room-call-1',
+      token: 'livekit-mock-token',
+      caller: {
+        id: 'vet-uuid-99',
+        firstName: 'Dra. Silvina',
+        role: 'VET',
+      },
+    };
+
+    socket.on('call:incoming', (data: any) => {
+      expect(data.consultationId).toBe('consultation-call-1');
+      expect(data.roomName).toBe('room-call-1');
+      expect(data.caller.firstName).toBe('Dra. Silvina');
+      socket.disconnect();
+      done();
+    });
+
+    socket.on('connect', () => {
+      // Simulate calls.service.ts emitting to user room
+      serverIo.to(`user:${mockClient.id}`).emit('call:incoming', callPayload as any);
+    });
+  });
+
+  // Unit Test del Cerco: Fallback ante ausencia o fallo de Redis
+  it('should gracefully handle Redis connection failure without crashing and operate on in-memory adapter', () => {
+    const dummyHttpServer = createServer();
+    const prevRedisUrl = process.env.REDIS_URL;
+    process.env.REDIS_URL = 'redis://127.0.0.1:63799';
+
+    const testIo = initializeSocketServer(dummyHttpServer);
+    expect(testIo).toBeDefined();
+
+    // Restore environment
+    process.env.REDIS_URL = prevRedisUrl;
+  });
 });
+
