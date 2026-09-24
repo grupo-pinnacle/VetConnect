@@ -14,7 +14,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const cached = window.localStorage.getItem('vetconnect_user');
+        return cached ? JSON.parse(cached) : null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  });
   const [loading, setLoading] = useState<boolean>(true);
 
   const refreshSession = async () => {
@@ -27,13 +37,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await api.get<ApiResponse<{ user: User }>>('/api/auth/me');
       if (res.data.success && res.data.data?.user) {
         setUser(res.data.data.user);
+        try {
+          window.localStorage.setItem('vetconnect_user', JSON.stringify(res.data.data.user));
+        } catch {}
       } else {
         setUser(null);
         setAccessToken(null);
+        try {
+          window.localStorage.removeItem('vetconnect_user');
+        } catch {}
       }
-    } catch (err) {
-      setUser(null);
-      setAccessToken(null);
+    } catch (err: any) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        setUser(null);
+        setAccessToken(null);
+        try {
+          window.localStorage.removeItem('vetconnect_user');
+        } catch {}
+      }
+      // If offline or network error, keep cached user so navigation doesn't disrupt session
     } finally {
       setLoading(false);
     }
@@ -54,6 +76,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { user: loggedUser, accessToken } = res.data.data;
     setAccessToken(accessToken);
     setUser(loggedUser);
+    try {
+      window.localStorage.setItem('vetconnect_user', JSON.stringify(loggedUser));
+    } catch {}
     return loggedUser;
   };
 
@@ -68,6 +93,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { user: registeredUser, accessToken } = res.data.data;
     setAccessToken(accessToken);
     setUser(registeredUser);
+    try {
+      window.localStorage.setItem('vetconnect_user', JSON.stringify(registeredUser));
+    } catch {}
     return registeredUser;
   };
 
@@ -77,6 +105,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setAccessToken(null);
       setUser(null);
+      try {
+        window.localStorage.removeItem('vetconnect_user');
+      } catch {}
     }
   };
 
@@ -87,10 +118,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return {
+      user: null,
+      loading: false,
+      login: async () => {
+        throw new Error('useAuth must be used within an AuthProvider');
+      },
+      register: async () => {
+        throw new Error('useAuth must be used within an AuthProvider');
+      },
+      logout: async () => {},
+      refreshSession: async () => {},
+    };
   }
   return context;
 };

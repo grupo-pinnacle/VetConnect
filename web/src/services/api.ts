@@ -4,9 +4,25 @@ import { ApiResponse } from '../types';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 let currentAccessToken: string | null = null;
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    currentAccessToken = window.localStorage.getItem('vetconnect_token');
+  }
+} catch {
+  currentAccessToken = null;
+}
 
 export const setAccessToken = (token: string | null) => {
   currentAccessToken = token;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (token) {
+        window.localStorage.setItem('vetconnect_token', token);
+      } else {
+        window.localStorage.removeItem('vetconnect_token');
+      }
+    }
+  } catch {}
 };
 
 export const getAccessToken = () => currentAccessToken;

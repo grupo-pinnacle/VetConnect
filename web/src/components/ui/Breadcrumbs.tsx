@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { BreadcrumbsProps } from '../../types';
 import { cn } from '../../lib/utils';
@@ -8,6 +9,15 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
   className = '',
   'data-testid': testId = 'breadcrumbs',
 }) => {
+  let navigate: ReturnType<typeof useNavigate> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    navigate = useNavigate();
+  } catch {
+    // Fallback for isolated unit tests or Storybook without MemoryRouter
+    navigate = null;
+  }
+
   if (!items || items.length === 0) {
     return null;
   }
@@ -48,7 +58,13 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
                 <a
                   href={item.path}
                   data-testid={`breadcrumb-link-${index}`}
-                  className="text-slate-600 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 rounded px-1 py-0.5 transition-colors"
+                  onClick={(e) => {
+                    if (navigate && item.path && item.path.startsWith('/')) {
+                      e.preventDefault();
+                      navigate(item.path);
+                    }
+                  }}
+                  className="text-slate-600 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 rounded px-1 py-0.5 transition-colors"
                 >
                   {item.label}
                 </a>

@@ -28,8 +28,16 @@ export const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login } = useAuth();
+  const { user: currentUser, login } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === 'VET') navigate('/vet/dashboard', { replace: true });
+      else if (currentUser.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
+      else navigate('/client/dashboard', { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
