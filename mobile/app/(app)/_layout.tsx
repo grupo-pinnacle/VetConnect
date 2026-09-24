@@ -43,6 +43,7 @@ export default function AppLayout() {
       <Tabs.Screen name="pets/new" options={{ title: 'Mascota' }} />
       <Tabs.Screen name="pets/[id]" options={{ href: null, title: 'Mascota' }} />
       <Tabs.Screen name="notifications" options={{ title: 'Alertas' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Perfil' }} />
       <Tabs.Screen name="history" options={{ href: null, title: 'Historial' }} />
       <Tabs.Screen
         name="chat/[consultationId]"

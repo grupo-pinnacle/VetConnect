@@ -9,7 +9,7 @@ import { colors } from '../../src/theme/tokens';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const [pets, setPets] = useState<Pet[]>([]);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -57,8 +57,12 @@ export default function HomeScreen() {
           <Text style={styles.headerTitle}>VetConnect Mobile</Text>
           <Text style={styles.headerSub}>Bienvenido, {user?.firstName} {user?.lastName}</Text>
         </View>
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout} testID="home-logout">
-          <Text style={styles.logoutText}>Salir</Text>
+        <TouchableOpacity
+          style={styles.avatarBtn}
+          onPress={() => router.push('/profile')}
+          testID="home-go-profile"
+        >
+          <Text style={styles.avatarText}>{(user?.firstName?.[0] || '?').toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
 
@@ -127,8 +131,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 40 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: colors.ink },
   headerSub: { fontSize: 14, color: '#475569' },
-  logoutBtn: { backgroundColor: colors.line, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
-  logoutText: { color: colors.body, fontWeight: 'bold', fontSize: 12 },
+  avatarBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
   errorBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: colors.danger, borderRadius: 8, padding: 12, marginBottom: 12 },
   errorText: { color: colors.danger, fontSize: 13, marginBottom: 6 },
   retryText: { color: colors.primary, fontWeight: 'bold' },
