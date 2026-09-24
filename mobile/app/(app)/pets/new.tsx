@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import api from '../../../src/lib/api';
-import { ApiResponse, Pet } from '../../../src/types';
+import { getApiErrorMessage } from '../../../src/lib/api';
+import { createPet } from '../../../src/services/pets.service';
 
 export default function NewPetScreen() {
   const router = useRouter();
@@ -27,21 +27,19 @@ export default function NewPetScreen() {
 
     setIsSubmitting(true);
     try {
-      const res = await api.post<ApiResponse<Pet>>('/api/pets', {
+      await createPet({
         name: name.trim(),
         species,
         breed: breed.trim(),
-        weightKg: weightKg ? parseFloat(weightKg) : undefined,
-        microchip: microchip.trim() ? microchip.trim() : undefined,
+        weightKg: weightKg ? parseFloat(weightKg) : null,
+        microchip: microchip.trim() ? microchip.trim() : null,
       });
 
-      if (res.data.success) {
-        Alert.alert('Éxito', 'Mascota registrada correctamente', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
-      }
-    } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.error?.message || 'Error al registrar mascota');
+      Alert.alert('Éxito', 'Mascota registrada correctamente', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (err: unknown) {
+      Alert.alert('Error', getApiErrorMessage(err, 'Error al registrar mascota'));
     } finally {
       setIsSubmitting(false);
     }

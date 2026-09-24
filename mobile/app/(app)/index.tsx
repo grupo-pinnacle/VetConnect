@@ -74,10 +74,14 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
         ListEmptyComponent={<Text style={styles.empty}>No tienes mascotas registradas</Text>}
         renderItem={({ item }) => (
-          <View style={styles.petCard}>
+          <TouchableOpacity
+            style={styles.petCard}
+            onPress={() => router.push(`/pets/${item.id}`)}
+            testID={`home-pet-${item.id}`}
+          >
             <Text style={styles.petName}>{item.name}</Text>
             <Text style={styles.petBreed}>{item.species} - {item.breed}</Text>
-          </View>
+          </TouchableOpacity>
         )}
       />
 

@@ -41,6 +41,7 @@ export default function AppLayout() {
       <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
       <Tabs.Screen name="consultation/new" options={{ title: 'Consulta', href: 'consultation/new' }} />
       <Tabs.Screen name="pets/new" options={{ title: 'Mascota' }} />
+      <Tabs.Screen name="pets/[id]" options={{ href: null, title: 'Mascota' }} />
       <Tabs.Screen name="notifications" options={{ title: 'Alertas' }} />
       <Tabs.Screen
         name="chat/[consultationId]"
