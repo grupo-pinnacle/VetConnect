@@ -108,6 +108,28 @@ describe('Auth Module (/api/auth)', () => {
       expect(res.body.data.user.role).toBe('VET');
       expect(res.body.data.user.vetStatus).toBe('PENDING');
     });
+
+    it('should return 503 DATABASE_UNAVAILABLE when database throws PrismaClientInitializationError during registration', async () => {
+      const { Prisma } = await import('@prisma/client');
+      const prismaInitError = new Prisma.PrismaClientInitializationError(
+        'Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wnijtwmrkzjurpomddwx not found',
+        '6.4.0'
+      );
+      mockPrismaUser.findUnique.mockRejectedValue(prismaInitError);
+
+      const res = await request(app).post('/api/auth/register').send({
+        email: 'new.user@vetconnect.com',
+        password: 'Password123!',
+        firstName: 'Carlos',
+        lastName: 'Gomez',
+        role: 'CLIENT',
+      });
+
+      expect(res.status).toBe(503);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('DATABASE_UNAVAILABLE');
+      expect(res.body.error.message).toContain('servidor de base de datos');
+    });
   });
 
   describe('POST /api/auth/login (Dual Web / Mobile Strategy)', () => {
