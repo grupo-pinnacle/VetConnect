@@ -40,6 +40,12 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a VetConnect adjuntar fotos clínicas de tu mascota al chat médico."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",

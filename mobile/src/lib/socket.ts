@@ -9,7 +9,7 @@ export class MobileSocketManager {
   private socket: Socket | null = null;
   private activeConsultationIds: Set<string> = new Set();
   private lastKnownTimestamps: Map<string, string> = new Map();
-  private appStateSubscription: any = null;
+  private appStateSubscription: { remove: () => void } | null = null;
 
   public connect(token: string) {
     if (this.socket && this.socket.connected) {

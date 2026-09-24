@@ -1,6 +1,7 @@
 export type Role = 'CLIENT' | 'VET' | 'ADMIN';
 export type VetStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type ConsultationStatus = 'WAITING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+export type TriagePriority = 'ROJO' | 'AMARILLO' | 'VERDE';
 
 export interface User {
   id: string;
@@ -85,26 +86,47 @@ export interface Message {
   };
 }
 
+export interface MediaFile {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+}
+
 export interface Notification {
   id: string;
   userId: string;
   title: string;
   body: string;
   type: string;
-  data?: Record<string, any> | null;
+  data?: Record<string, unknown> | null;
   isRead: boolean;
   readAt?: string | null;
   createdAt: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: unknown;
+  timestamp: string;
+}
+
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-    timestamp: string;
-  };
+  error?: ApiError;
+}
+
+export interface AuthPayload {
+  accessToken: string;
+  refreshToken?: string;
+  user: User;
+}
+
+export interface LiveKitTokenPayload {
+  token: string;
+  wsUrl: string;
 }

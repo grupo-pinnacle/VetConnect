@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, RefreshControl } from 'react-native';
-import api from '../../src/lib/api';
+import api, { getApiErrorMessage } from '../../src/lib/api';
 import { Notification, ApiResponse } from '../../src/types';
 
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchNotifications = async () => {
     try {
@@ -14,8 +15,8 @@ export default function NotificationsScreen() {
       if (res.data.success && res.data.data) {
         setNotifications(res.data.data);
       }
-    } catch (err) {
-      console.warn('Error fetching notifications:', err);
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Error cargando notificaciones. Deslice para reintentar.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,6 +49,11 @@ export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bandeja de Notificaciones</Text>
+      {error && (
+        <View style={styles.errorBox} testID="notifications-error">
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id}
@@ -98,6 +104,8 @@ const styles = StyleSheet.create({
   itemBody: { fontSize: 14, color: '#475569', marginTop: 4 },
   itemDate: { fontSize: 12, color: '#94A3B8', marginTop: 8 },
   badge: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#0284C7' },
+  errorBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#EF4444', borderRadius: 8, padding: 10, marginBottom: 12 },
+  errorText: { color: '#EF4444', fontSize: 13, textAlign: 'center' },
   emptyContainer: { padding: 40, alignItems: 'center' },
   emptyText: { color: '#64748B', fontSize: 16 },
 });

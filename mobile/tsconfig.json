@@ -3,7 +3,9 @@
     "target": "ES2021",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2021"],
+    "lib": [
+      "ES2021"
+    ],
     "jsx": "react-native",
     "noEmit": true,
     "isolatedModules": true,
@@ -12,5 +14,9 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "app/**/*"]
+  "include": [
+    "src/**/*",
+    "app/**/*",
+    "nativewind-env.d.ts"
+  ]
 }

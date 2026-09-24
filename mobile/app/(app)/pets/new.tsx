@@ -48,7 +48,7 @@ export default function NewPetScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }} testID="newpet-screen">
       <Text style={styles.title}>Registrar Nueva Mascota</Text>
 
       <Text style={styles.label}>Nombre *</Text>
@@ -92,7 +92,7 @@ export default function NewPetScreen() {
         onChangeText={setMicrochip}
       />
 
-      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={isSubmitting}>
+      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={isSubmitting} testID="newpet-submit">
         {isSubmitting ? (
           <ActivityIndicator color="#FFF" />
         ) : (

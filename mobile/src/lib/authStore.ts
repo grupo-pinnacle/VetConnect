@@ -1,16 +1,22 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import api, { SECURE_STORE_REFRESH_KEY } from './api';
-import { User, ApiResponse } from '../types';
+import { User, ApiResponse, AuthPayload } from '../types';
+import { loginSchema, registerSchema, LoginInput, RegisterInput } from '../validation/auth';
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   isLoading: boolean;
-  login: (credentials: Record<string, any>) => Promise<User>;
-  register: (data: Record<string, any>) => Promise<User>;
+  login: (credentials: LoginInput) => Promise<User>;
+  register: (data: RegisterInput) => Promise<User>;
   logout: () => Promise<void>;
   initAuth: () => Promise<void>;
+}
+
+function applySession(accessToken: string, user: User, set: (s: Partial<AuthState>) => void) {
+  api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+  set({ user, accessToken, isLoading: false });
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -26,33 +32,33 @@ export const useAuthStore = create<AuthState>((set) => ({
         return;
       }
 
-      const res = await api.post<ApiResponse<{ accessToken: string; refreshToken?: string; user: User }>>(
-        '/api/auth/refresh',
-        { refreshToken: storedRefreshToken }
-      );
+      const res = await api.post<ApiResponse<AuthPayload>>('/api/auth/refresh', {
+        refreshToken: storedRefreshToken,
+      });
 
       if (res.data.success && res.data.data) {
         const { accessToken, refreshToken: newRefreshToken, user } = res.data.data;
         if (newRefreshToken) {
           await SecureStore.setItemAsync(SECURE_STORE_REFRESH_KEY, newRefreshToken);
         }
-        api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
-        set({ user, accessToken, isLoading: false });
+        applySession(accessToken, user, set);
       } else {
         await SecureStore.deleteItemAsync(SECURE_STORE_REFRESH_KEY);
         set({ user: null, accessToken: null, isLoading: false });
       }
-    } catch (err) {
+    } catch {
       await SecureStore.deleteItemAsync(SECURE_STORE_REFRESH_KEY).catch(() => {});
       set({ user: null, accessToken: null, isLoading: false });
     }
   },
 
   login: async (credentials) => {
-    const res = await api.post<ApiResponse<{ accessToken: string; refreshToken?: string; user: User }>>(
-      '/api/auth/login',
-      credentials
-    );
+    const parsed = loginSchema.safeParse(credentials);
+    if (!parsed.success) {
+      throw new Error(parsed.error.issues[0]?.message || 'Credenciales inválidas');
+    }
+
+    const res = await api.post<ApiResponse<AuthPayload>>('/api/auth/login', parsed.data);
 
     if (!res.data.success || !res.data.data) {
       throw new Error(res.data.error?.message || 'Error iniciando sesion');
@@ -62,16 +68,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (refreshToken) {
       await SecureStore.setItemAsync(SECURE_STORE_REFRESH_KEY, refreshToken);
     }
-    api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
-    set({ user, accessToken, isLoading: false });
+    applySession(accessToken, user, set);
     return user;
   },
 
   register: async (data) => {
-    const res = await api.post<ApiResponse<{ accessToken: string; refreshToken?: string; user: User }>>(
-      '/api/auth/register',
-      data
-    );
+    const parsed = registerSchema.safeParse(data);
+    if (!parsed.success) {
+      throw new Error(parsed.error.issues[0]?.message || 'Datos de registro inválidos');
+    }
+    if (parsed.data.role === 'VET' && !parsed.data.licenseNumber?.trim()) {
+      throw new Error('La matrícula profesional es requerida para veterinarios');
+    }
+
+    const res = await api.post<ApiResponse<AuthPayload>>('/api/auth/register', parsed.data);
 
     if (!res.data.success || !res.data.data) {
       throw new Error(res.data.error?.message || 'Error en registro');
@@ -81,15 +91,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (refreshToken) {
       await SecureStore.setItemAsync(SECURE_STORE_REFRESH_KEY, refreshToken);
     }
-    api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
-    set({ user, accessToken, isLoading: false });
+    applySession(accessToken, user, set);
     return user;
   },
 
   logout: async () => {
     try {
       await api.post('/api/auth/logout');
-    } catch (err) {
+    } catch {
       // Ignore network errors on logout
     } finally {
       await SecureStore.deleteItemAsync(SECURE_STORE_REFRESH_KEY).catch(() => {});

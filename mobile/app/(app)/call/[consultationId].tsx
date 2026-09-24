@@ -1,14 +1,21 @@
 import React, { useEffect, useState, useRef } from 'react';
+import type { ComponentClass } from 'react';
 import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import { WebView as RNWebView, WebViewProps, WebViewMessageEvent } from 'react-native-webview';
 import api from '../../../src/lib/api';
 import { ApiResponse } from '../../../src/types';
+
+// webview@13.17 declara `class WebView<P = undefined> extends Component<Props & P>`:
+// `Props & undefined` colapsa a `never` y rechaza toda prop en JSX.
+// Cast quirúrgico (vía unknown, cero `any`) hasta corrección upstream.
+const WebView = RNWebView as unknown as ComponentClass<WebViewProps>;
+type WebViewInstance = InstanceType<typeof RNWebView>;
 
 export default function CallScreen() {
   const { consultationId } = useLocalSearchParams<{ consultationId: string }>();
   const router = useRouter();
-  const webViewRef = useRef<WebView>(null);
+  const webViewRef = useRef<WebViewInstance | null>(null);
 
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -122,7 +129,9 @@ export default function CallScreen() {
         </View>
       )}
       <WebView
-        ref={webViewRef}
+        ref={(instance) => {
+          webViewRef.current = instance as unknown as WebViewInstance | null;
+        }}
         source={{ uri: callRoomUrl }}
         onMessage={handleWebViewMessage}
         allowsInlineMediaPlayback

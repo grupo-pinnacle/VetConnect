@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { ApiResponse } from '../types';
+import { ApiResponse, AuthPayload } from '../types';
 
 export const SECURE_STORE_REFRESH_KEY = 'vetconnect_refresh_token';
 
@@ -17,10 +17,10 @@ export const api = axios.create({
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
 }> = [];
 
-const processQueue = (error: AxiosError | null) => {
+const processQueue = (error: unknown | null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -61,14 +61,16 @@ api.interceptors.response.use(
           throw new Error('No refresh token in secure store');
         }
 
-        const refreshRes = await axios.post<
-          ApiResponse<{ accessToken: string; refreshToken?: string }>
-        >(`${API_URL}/api/auth/refresh`, { refreshToken: storedRefreshToken }, {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Client-Platform': 'mobile',
-          },
-        });
+        const refreshRes = await axios.post<ApiResponse<AuthPayload>>(
+          `${API_URL}/api/auth/refresh`,
+          { refreshToken: storedRefreshToken },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Client-Platform': 'mobile',
+            },
+          }
+        );
 
         if (refreshRes.data.success && refreshRes.data.data) {
           const { accessToken, refreshToken: newRefreshToken } = refreshRes.data.data;
@@ -85,7 +87,7 @@ api.interceptors.response.use(
         }
       } catch (refreshError) {
         await SecureStore.deleteItemAsync(SECURE_STORE_REFRESH_KEY).catch(() => {});
-        processQueue(refreshError as AxiosError);
+        processQueue(refreshError);
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -95,5 +97,13 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export function getApiErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError<ApiResponse>(err)) {
+    return err.response?.data?.error?.message || err.message || fallback;
+  }
+  if (err instanceof Error) return err.message || fallback;
+  return fallback;
+}
 
 export default api;
