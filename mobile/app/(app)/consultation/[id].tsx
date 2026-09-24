@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { fetchConsultation } from '../../../src/services/consultations.service';
 import { parseTriagePriority } from '../../../src/lib/triage';
+import { useAuthStore } from '../../../src/lib/authStore';
+import { VetConsultationActions } from '../../../src/components/VetConsultationActions';
 import { Consultation } from '../../../src/types';
 import { triageColors, colors } from '../../../src/theme/tokens';
 
@@ -10,6 +12,7 @@ import { triageColors, colors } from '../../../src/theme/tokens';
 export default function ConsultationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -114,6 +117,12 @@ export default function ConsultationDetailScreen() {
           <TouchableOpacity style={styles.btn} onPress={() => router.push(`/review/${consultation.id}`)} testID="consdetail-go-review">
             <Text style={styles.btnText}>Calificar atención (1-5)</Text>
           </TouchableOpacity>
+        )}
+        {user?.role === 'VET' && isActive && consultation.vetId === user.id && (
+          <VetConsultationActions
+            consultationId={consultation.id}
+            onClosed={() => { setLoading(true); load(); }}
+          />
         )}
       </View>
     </ScrollView>

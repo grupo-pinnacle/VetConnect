@@ -53,6 +53,10 @@ export default function AppLayout() {
         name="consultation/[id]"
         options={{ href: null, title: 'Detalle' }}
       />
+      <Tabs.Screen
+        name="consultation/[id]/prescribe"
+        options={{ href: null, title: 'Receta' }}
+      />
       <Tabs.Screen name="prescriptions/[id]" options={{ href: null, title: 'Receta' }} />
       <Tabs.Screen name="review/[consultationId]" options={{ href: null, title: 'Calificar' }} />
     </Tabs>
