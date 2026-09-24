@@ -72,7 +72,7 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 ```mermaid
 flowchart TB
     subgraph Frontend["Capas de Cliente (Monorepo Workspaces)"]
-        Mobile["📱 Mobile App (React Native + Expo 54)\n• NativeWind Tailwind\n• SecureStore\n• TanStack Query"]
+        Mobile["📱 Mobile App (React Native 0.81 + Expo SDK 54)\n• NativeWind v4 + Tokens\n• SecureStore + Zustand\n• Tabs + Guards por rol"]
         WebClient["💻 Web App & Pro Dashboard (React 18.3.1 LTS + Vite)\n• Layered Shadows Craft\n• GlobalCallListener\n• LiveKit Components"]
     end
 
@@ -103,7 +103,11 @@ flowchart TB
 | **Docker & Docker Compose** | Reciente | [docker.com](https://docker.com) |
 | **Git** | `>= 2.30` | [git-scm.com](https://git-scm.com) |
 | **Expo Go** (para Mobile) | SDK 54 | [Google Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent) |
-| **ADB (Android Platform Tools)** | Opcional | [developer.android.com](https://developer.android.com/tools/releases/platform-tools) |
+| **ADB (Android Platform Tools)** | Opcional (dev con USB) | [developer.android.com](https://developer.android.com/tools/releases/platform-tools) |
+| **JDK 21 + Android SDK** | Solo build nativo APK (no necesario para Expo Go) | [Android Studio](https://developer.android.com/studio) o `cmdline-tools`; NDK 27 se instala solo |
+| **EAS CLI** | Opcional (builds cloud) | Incluido como devDependency en `mobile` (`npx eas`) — requiere `eas login` |
+
+> ⚠️ **Build nativo en Windows:** el proyecto debe estar en una ruta **sin caracteres no-ASCII** (la `ó` de carpetas como `Programación` rompe el toolchain NDK/clang) y el SDK necesita espacio libre (C: lleno bloquea la descarga del NDK/Gradle). Ver receta verificada en [docs/mobile/06_QA_PERFORMANCE_SEGURIDAD.md](docs/mobile/06_QA_PERFORMANCE_SEGURIDAD.md).
 
 ---
 
@@ -119,6 +123,12 @@ npm install
 
 # 3. Configurar variables de entorno iniciales
 cp .env.example backend/.env
+# Ajusta en backend/.env: DATABASE_URL (docker: postgresql://postgres:postgrespassword@localhost:5432/vetconnect_dev),
+# JWT_SECRET y JWT_REFRESH_SECRET (mín. 32 caracteres)
+
+# 4. Aplicar migraciones y datos iniciales
+cd backend && npx prisma migrate dev && npm run seed
+cd ..
 ```
 
 
@@ -153,8 +163,29 @@ cp .env.example backend/.env
 ```bash
 npm run dev:backend   # Inicia únicamente la API Express
 npm run dev:web       # Inicia únicamente la SPA Web en Vite
-npm run dev:mobile    # Inicia el bundler Metro de Expo
+npm run dev:mobile    # Inicia el bundler Metro de Expo (Expo Go SDK 54)
 ```
+
+> 📱 **Variables de Mobile:** por defecto apunta a `http://localhost:3001`. Para probar en red local usa `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_WS_URL` y `EXPO_PUBLIC_WEB_URL`. Con USB + `adb reverse` no hace falta cambiar nada (`start.ps1` lo configura solo).
+
+### 3. Build APK Android — App Mobile (verificado 2026-09-24)
+
+```powershell
+# Requiere: JDK 21 (JAVA_HOME), Android SDK + NDK 27 (ANDROID_HOME),
+# ruta del proyecto SIN caracteres no-ASCII y espacio libre en disco.
+cd mobile
+
+# Opción 1: EAS local (requiere eas login, aun en local)
+npm run build:apk
+
+# Opción 2: pipeline manual equivalente (sin cuenta Expo)
+npx expo prebuild --platform android
+cd android
+.\gradlew.bat assembleRelease
+# APK en: android\app\build\outputs\apk\release\app-release.apk
+```
+
+> Detalle completo, versiones exactas y solución de problemas en [docs/mobile/06_QA_PERFORMANCE_SEGURIDAD.md](docs/mobile/06_QA_PERFORMANCE_SEGURIDAD.md). Los artefactos (`android/`, `*.apk`) están gitignorados: el workflow es managed.
 
 ---
 
@@ -168,6 +199,12 @@ npm test
 
 # Ejecutar typecheck estricto de TypeScript en todas las capas
 npm run typecheck
+
+# Por workspace (backend: jest · web: vitest · mobile: jest 9 suites / 21 tests)
+npm test -w backend
+npm test -w web
+npm test -w mobile
+npm run typecheck -w mobile
 
 # Validar esquema relacional de Prisma
 cd backend && npx prisma validate
