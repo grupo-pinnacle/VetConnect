@@ -36,3 +36,30 @@ export function mimeFromExtension(fileName: string): string {
   if (ext === 'pdf') return 'application/pdf';
   return 'image/jpeg';
 }
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('No se pudo leer el adjunto'));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Descarga autenticada (sigue el 302 a presigned/S3 o stream local) y la
+ * expone como data URL para <Image/>. Evita URLs firmadas en logs/estado.
+ */
+export async function fetchMediaDataUrl(mediaId: string): Promise<{ dataUrl: string; mime: string }> {
+  try {
+    const res = await api.get<ArrayBuffer>(`/api/media/${mediaId}`, {
+      responseType: 'arraybuffer',
+    });
+    const mime = String(res.headers?.['content-type'] || 'image/jpeg');
+    const bytes = new Uint8Array(res.data);
+    const blob = new Blob([bytes], { type: mime });
+    return { dataUrl: await blobToDataUrl(blob), mime };
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err, 'No se pudo descargar el adjunto'));
+  }
+}

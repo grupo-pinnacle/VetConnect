@@ -8,6 +8,7 @@ import socketManager from '../../../src/lib/socket';
 import api, { getApiErrorMessage } from '../../../src/lib/api';
 import { Message, ApiResponse } from '../../../src/types';
 import { uploadMediaFile, mimeFromExtension } from '../../../src/services/media.service';
+import { AttachmentView } from '../../../src/components/AttachmentView';
 import { colors } from '../../../src/theme/tokens';
 
 interface SendAck {
@@ -157,7 +158,9 @@ export default function ChatScreen() {
               <Text style={styles.senderName}>{item.sender?.firstName || 'Usuario'}</Text>
               <View style={[styles.msgBubble, isMine ? styles.myBubble : styles.otherBubble]}>
                 <Text style={isMine ? styles.myText : styles.otherText}>{item.content}</Text>
-                {!!item.attachmentUrl && <Text style={styles.attachText}>📎 adjunto</Text>}
+                {!!item.attachmentUrl && (
+                  <AttachmentView attachmentId={item.attachmentUrl} testID={`chat-attach-${item.clientMsgId}`} />
+                )}
               </View>
             </View>
           );
@@ -201,7 +204,6 @@ const styles = StyleSheet.create({
   otherBubble: { backgroundColor: colors.line },
   myText: { color: '#FFF', fontSize: 14 },
   otherText: { color: colors.ink, fontSize: 14 },
-  attachText: { fontSize: 11, marginTop: 4, opacity: 0.8 },
   inputRow: { flexDirection: 'row', padding: 12, backgroundColor: '#FFF', borderTopWidth: 1, borderColor: colors.line, alignItems: 'center' },
   attachBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.line, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
   attachBtnText: { fontSize: 20, color: colors.primary, fontWeight: 'bold' },
