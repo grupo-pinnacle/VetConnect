@@ -85,7 +85,12 @@ export default function HomeScreen() {
         )}
       />
 
-      <Text style={styles.sectionTitle}>Consultas ({consultations.length})</Text>
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionTitle}>Consultas ({consultations.length})</Text>
+        <TouchableOpacity onPress={() => router.push('/history')} testID="home-go-history">
+          <Text style={styles.sectionLink}>Historial →</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={consultations}
         keyExtractor={(item) => item.id}
@@ -123,6 +128,8 @@ const styles = StyleSheet.create({
   errorText: { color: colors.danger, fontSize: 13, marginBottom: 6 },
   retryText: { color: colors.primary, fontWeight: 'bold' },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginTop: 16, marginBottom: 8 },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  sectionLink: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
   petCard: { backgroundColor: '#FFF', padding: 16, borderRadius: 8, marginRight: 12, width: 140, borderWidth: 1, borderColor: colors.lineDark },
   petName: { fontSize: 16, fontWeight: 'bold', color: colors.ink },
   petBreed: { fontSize: 12, color: colors.muted, marginTop: 4 },
