@@ -1,7 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 import prisma from '../lib/prisma';
 import { socketAuthMiddleware } from './socket.auth.middleware';
 import { registerChatGateway } from './gateways/chat.gateway';
@@ -33,20 +33,48 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
     }
   );
 
-  // Redis Adapter setup if REDIS_URL is provided
+  // Redis Adapter setup if REDIS_URL is provided (ADR-009)
   if (process.env.REDIS_URL) {
-    try {
-      const pubClient = new Redis(process.env.REDIS_URL);
-      const subClient = pubClient.duplicate();
+    const redisOptions: RedisOptions = {
+      lazyConnect: true,
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 1,
+      connectTimeout: 2000,
+      retryStrategy: () => null,
+    };
 
-      pubClient.on('error', (err) => console.warn('Redis Pub Client Error:', err.message));
-      subClient.on('error', (err) => console.warn('Redis Sub Client Error:', err.message));
+    const pubClient = new Redis(process.env.REDIS_URL, redisOptions);
+    const subClient = pubClient.duplicate(redisOptions);
 
-      io.adapter(createAdapter(pubClient, subClient));
-      console.log('⚡ Socket.io Redis Adapter connected successfully');
-    } catch (err) {
-      console.warn('⚠️ Could not initialize Redis Adapter, falling back to in-memory adapter:', err);
-    }
+    // Suppress console spam while probing the initial connection
+    const handleProbeError = () => {};
+    pubClient.on('error', handleProbeError);
+    subClient.on('error', handleProbeError);
+
+    Promise.all([pubClient.connect(), subClient.connect()])
+      .then(() => {
+        pubClient.off('error', handleProbeError);
+        subClient.off('error', handleProbeError);
+
+        pubClient.on('error', (err) => console.warn('Redis Pub Client Error:', err.message));
+        subClient.on('error', (err) => console.warn('Redis Sub Client Error:', err.message));
+
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log('⚡ Socket.io Redis Adapter connected successfully');
+      })
+      .catch((err: Error) => {
+        pubClient.off('error', handleProbeError);
+        subClient.off('error', handleProbeError);
+
+        pubClient.disconnect(false);
+        subClient.disconnect(false);
+
+        if (process.env.NODE_ENV === 'production') {
+          console.error('❌ [CRITICAL] Could not connect to Redis Adapter in production:', err.message);
+        } else {
+          console.info('ℹ️ Redis no disponible en ' + process.env.REDIS_URL + ' (modo local). Operando con Socket.io InMemoryAdapter por defecto.');
+        }
+      });
   }
 
   // Middleware
