@@ -25,13 +25,17 @@ Tipos mobile espejo en `mobile/src/types/index.ts:1-110`. Fix pendiente: `ApiRes
 | `GET` | `/api/consultations/:id` | Chat/Call header | Participantes/ADMIN. Incluye `email+phone` sin redactar (no loggear) |
 | `GET` | `/api/consultations/:id/messages?after=ISO` | Chat historial + sync | Único GET mensajes. **No existe `POST …/messages`** |
 | `POST` | `/api/consultations/:id/review` | Rating | `{ rating: 1-5, comment? }` entero, una por consulta |
+| `PATCH` | `/api/consultations/:id/assign` | Vet toma caso | Solo VET APPROVED; `WAITING→ACTIVE` + `startedAt`. `400 INVALID_STATUS` si no está en espera |
+| `PATCH` | `/api/consultations/:id/complete` | Vet cierra | Solo asignado/ADMIN; body `{ diagnosisNotes }` min 2. Cierra sala LiveKit |
+| `PATCH` | `/api/consultations/:id/cancel` | Cancelar tutor/vet | Participantes/ADMIN; `{ reason? }` se anexa a `notes`. No si `COMPLETED/CANCELLED` |
+| `POST` | `/api/consultations/:id/prescriptions` | Vet emite receta | Solo asignado; `{ medication, dosage, frequency, durationDays 1-365, indications }` |
 | `POST` | `/api/calls/:consultationId/token` | Call bridge | `{ token, wsUrl }`, requiere `ACTIVE`. Sin PII |
 | `POST` | `/api/calls/:consultationId/ring` | Timbrar par | Requiere `ACTIVE`. Errores reales `400 INVALID_CONSULTATION_STATE`, `403 NOT_CONSULTATION_PARTICIPANT` (no `INVALID_STATE/FORBIDDEN`) |
 | `POST` | `/api/notifications/register-token` | Push init | `{ token: ExponentPushToken[…], platform }` idempotente |
 | `GET` | `/api/notifications` | Bandeja | **`take:50` fijo, sin `skip/cursor`** aunque docs digan `take,skip` |
 | `PATCH` | `/api/notifications/:id/read` | Marcar leída | `{ isRead:true, readAt }` |
 | `POST` | `/api/media` | Adjuntar foto | multipart, 10MB/archivo `413 FILE_TOO_LARGE`, 50MB/día `429 UPLOAD_QUOTA_EXCEEDED`, magic JPEG/PNG/PDF (cobertura 8 hex real) |
-| `GET` | `/api/media/:id` | Ver adjunto | **302 redirect a presigned TTL 300s** (S3) o stream local. Dueño/vet asignado/ADMIN o `403` |
+| `GET` | `/api/media/:id` | Ver adjunto | **302 redirect a presigned TTL 300s** (S3) o stream local. Dueño/vet asignado/ADMIN o `403`. Mobile descarga a data URL (nunca expone presigned) |
 | `GET` | `/api/prescriptions/:id` | Ver receta QR | Público, inmutable. Polling (socket `prescription:new` no se emite) |
 
 Error uniforme RFC7807: `{ success:false, error:{ code, message, details?, timestamp } }` (`middlewares/errorHandler.ts:28-36`).

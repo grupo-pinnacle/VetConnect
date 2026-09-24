@@ -13,9 +13,10 @@
 1. `register/login → initAuth → registerPushToken` (permiso + `POST register-token`).
 2. `Home (index.tsx:47-93)`: mascotas horizontal + consultas vertical; empty `No tienes…`; tap consulta → `/call/:id` o `/chat/:id` según estado.
 3. `consultation/new`: selector mascota + prioridad ROJO/AMARILLO/VERDE + notas → `POST /consultations`; si nace `ACTIVE` ir directo a chat/call, si `WAITING` mostrar TTL 15min + reintento.
-4. `chat/[id]`: historial `GET messages`, envío `message:send clientMsgId mobile-…`, adjunto vía `POST /media` → `attachmentUrl`.
+4. `chat/[id]`: historial `GET messages`, envío `message:send clientMsgId mobile-…`, adjunto vía `POST /media` → `attachmentUrl` → visor con descarga autenticada a data URL (modal imagen).
 5. `call/[id]`: bridge (ver `05_*`), PiP para chatear sin colgar.
-6. `prescriptions/[id]`: vista pública QR + farmacia; rating post-`COMPLETED`.
+6. Vet: guardia `WAITING` → `PATCH assign` → `ACTIVE`; `consultation/[id]` con `VetConsultationActions` (cerrar con `diagnosisNotes` + `POST prescriptions`); toggle `isOnline` en guardia y perfil.
+7. Tutor: `history` con filtros por estado + cancelar con motivo; `pets/[id]` ver/editar/baja lógica; `profile` (bio/foto) + logout; `prescriptions/[id]`: vista pública QR + farmacia; rating post-`COMPLETED`.
 
 ## 5 estados obligatorios por pantalla
 

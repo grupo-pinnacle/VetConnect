@@ -8,7 +8,7 @@ app/index.tsx → Redirect: !user→/(auth)/login, CLIENT→/(app), VET pendient
 app/(auth)/_layout.tsx (TODO) → Stack sin tabs, `login`, `register`
 app/(app)/_layout.tsx (TODO) → Tabs: Home | Pets | Chat | Historial + header `isOnline`
 app/(app)/index.tsx → GET /pets + GET /consultations/mine (Promise.all, hoy sin error UI)
-...(rutas existentes: pets/new, consultation/new, chat/[id], call/[id], notifications, prescriptions/[id])
+...(rutas: `(auth)/login,register`, `(app)/index (rol: tutor→home, VET→guardia)`, `pets/new`, `pets/[id]`, `consultation/new`, `consultation/[id]`, `consultation/[id]/prescribe`, `chat/[id]`, `call/[id]`, `notifications`, `history`, `prescriptions/[id]`, `review/[id]`, `profile`)
 ```
 
 Guards: `useAuthStore(isLoading,user,vetStatus)`; VET `PENDING/REJECTED` no entra a `(app)` (ADR-013); deep-link `vetconnect://call/:id`, `.../consultation/:id` preservando `SecureStore` session; tap push ya navega (`notifications.service.ts:51-55`).

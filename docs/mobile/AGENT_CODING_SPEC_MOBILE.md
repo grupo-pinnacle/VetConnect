@@ -22,9 +22,14 @@
 app/_layout.tsx        # Slot + initAuth (sin Stack/Redirect todavía)
 app/index.tsx          # dummy, debe redirigir por rol tras guards
 app/(auth)/login.tsx, register.tsx
-app/(app)/index.tsx              # Home: GET /pets + GET /consultations/mine en paralelo
+app/(app)/index.tsx              # Home tutor (GET /pets + GET /consultations/mine) o guardia VET
 app/(app)/pets/new.tsx
+app/(app)/pets/[id].tsx              # Detalle/editar/baja lógica
 app/(app)/consultation/new.tsx   # POST /consultations con [Prioridad: ROJO|AMARILLO|VERDE] en notes
+app/(app)/consultation/[id].tsx  # Detalle + acciones vet asignado (cerrar/receta)
+app/(app)/consultation/[id]/prescribe.tsx # POST /consultations/:id/prescriptions
+app/(app)/history.tsx            # Historial con filtros + cancelar con motivo
+app/(app)/profile.tsx            # Perfil, bio/foto, online, logout
 app/(app)/chat/[consultationId].tsx  # join + message:send + GET messages + ?after=
 app/(app)/call/[consultationId].tsx  # bridge WebView (ver §5)
 app/(app)/notifications.tsx      # lista take:50 fijo, PATCH :id/read
