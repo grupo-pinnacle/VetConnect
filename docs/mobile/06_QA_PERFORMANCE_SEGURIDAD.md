@@ -9,7 +9,7 @@
 
 * `eas build --local` exige cuenta Expo (`eas login` o `EXPO_TOKEN`) aun en local — sin credenciales se usa el pipeline equivalente manual: `expo prebuild --platform android` + `gradlew assembleRelease`. `eas-cli` como devDependency + `eas.json` listo para cuando haya login (cloud).
 * Requisitos Windows verificados: JDK 21 (`JAVA_HOME`, Gradle 8.14 no corre en Java 23), `ANDROID_HOME` + NDK 27.1.12297006 (SDK movido a `D:\Android\Sdk` porque C: estaba lleno), `GRADLE_USER_HOME` en D:.
-* Restricción real: el workspace `D:\Proyectos-Programación\...` contiene `ó` y el toolchain NDK/clang + el embedder de Metro fallan ahí. Build reproducible en ruta ASCII standalone (`D:\vcapp\mobile`: copia de `mobile/` + `npm install` + `prebuild` + `assembleRelease`). Artefacto: `app-release.apk` (`com.vetconnect.app`, versionCode 1, versionName 2.0.0, `MainActivity` verificada con `aapt dump badging`). APKs ignorados (`mobile/.gitignore`: `android/`, `*.apk`, `.expo/`).
+* Restricción real: el workspace `D:\Proyectos-Programación\...` contiene `ó` y el toolchain NDK/clang + el embedder de Metro fallan ahí. Build reproducible en ruta ASCII standalone (`D:\vcapp\mobile`: copia de `mobile/` + `npm install` + `prebuild` + `assembleRelease`). Artefacto: `app-release.apk` (`com.vetconnect.app`, versionName 2.0.0; vc1 2026-09-24, vc2 con todas las features 2026-09-24, verificadas con `aapt dump badging`). APKs ignorados (`mobile/.gitignore`: `android/`, `*.apk`, `.expo/`).
 
 ## QA
 
