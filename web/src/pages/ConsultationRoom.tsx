@@ -5,8 +5,9 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CallRoom from '../components/call/CallRoom';
 import { ReviewModal } from '../components/ui/ReviewModal';
+import { PrescriptionModal } from '../components/ui/PrescriptionModal';
 import { Message, ApiResponse, Consultation } from '../types';
-import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X } from 'lucide-react';
+import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X, FileText, CheckCircle, ShieldCheck } from 'lucide-react';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 const POLLING_INTERVAL_MS = 5000;
@@ -28,6 +29,12 @@ export const ConsultationRoom: React.FC = () => {
   const [showReviewModal, setShowReviewModal] = useState<boolean>(true);
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
   const [consultation, setConsultation] = useState<Consultation | null>(null);
+
+  // --- Vet Clinical In-Call Actions ---
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState<boolean>(false);
+  const [showCompleteModal, setShowCompleteModal] = useState<boolean>(false);
+  const [diagnosisNotes, setDiagnosisNotes] = useState<string>('');
+  const [isCompleting, setIsCompleting] = useState<boolean>(false);
 
   // --- LiveKit credentials (only populated when phase === 'active') ---
   const [livekitToken, setLivekitToken] = useState<string | null>(null);
@@ -320,6 +327,33 @@ export const ConsultationRoom: React.FC = () => {
     navigate(-1);
   };
 
+  // ----------------------------------------------------------------
+  // Complete consultation — Vet clinical discharge & diagnosis notes
+  // ----------------------------------------------------------------
+  const handleCompleteConsultation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!consultationId) return;
+    if (!diagnosisNotes.trim() || diagnosisNotes.trim().length < 2) {
+      alert('Por favor ingrese la evolución o diagnóstico clínico (mínimo 2 caracteres).');
+      return;
+    }
+
+    try {
+      setIsCompleting(true);
+      const res = await api.patch<ApiResponse<Consultation>>(`/api/consultations/${consultationId}/complete`, {
+        diagnosisNotes: diagnosisNotes.trim(),
+      });
+      if (res.data.success) {
+        setShowCompleteModal(false);
+        setPhase('completed');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.error?.message || 'Error al completar la consulta');
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
   // ================================================================
   // RENDER — one branch per phase
   // ================================================================
@@ -450,41 +484,100 @@ export const ConsultationRoom: React.FC = () => {
   return (
     <div className="w-full h-screen bg-slate-950 flex flex-col lg:flex-row overflow-hidden relative">
       {/* Main Video Call Area */}
-      <div className="flex-1 h-2/3 lg:h-full relative">
-        <header className="absolute top-0 left-0 right-0 bg-slate-900/80 backdrop-blur-sm text-white p-4 flex justify-between items-center z-20">
-          <h1 className="text-md font-semibold">Consulta Médica #{consultationId?.slice(0, 8)}</h1>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-3 py-1 bg-red-600/80 hover:bg-red-600 text-xs font-semibold rounded"
-          >
-            Salir
-          </button>
+      <div className="flex-1 h-2/3 lg:h-full relative flex flex-col">
+        {/* Medical Command Header Bar */}
+        <header className="absolute top-0 left-0 right-0 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white px-4 py-2.5 flex flex-wrap justify-between items-center gap-2 z-20 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+              <Stethoscope className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm font-semibold tracking-tight text-white">
+                  Consulta Médica #{consultationId?.slice(0, 8)}
+                </h1>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  WebRTC HD
+                </span>
+              </div>
+              {consultation?.pet && (
+                <p className="text-[11px] text-slate-300">
+                  Paciente: <span className="font-semibold text-white">{consultation.pet.name}</span> ({consultation.pet.species})
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {user?.role === 'VET' && (
+              <>
+                <button
+                  type="button"
+                  data-testid="in-call-emit-prescription-btn"
+                  onClick={() => setShowPrescriptionModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00875A] hover:bg-[#00704A] text-white text-xs font-semibold rounded-lg shadow-sm transition active:scale-95"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Emitir Receta</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="in-call-complete-consultation-btn"
+                  onClick={() => setShowCompleteModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm transition active:scale-95"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Finalizar Consulta</span>
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => navigate(-1)}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold rounded-lg border border-slate-700 transition"
+            >
+              Salir
+            </button>
+          </div>
         </header>
 
-        <CallRoom
-          token={livekitToken!}
-          serverUrl={livekitWsUrl}
-          onDisconnected={() => {
-            if (typeof window !== 'undefined' && (window as any).ReactNativeWebView) {
-              (window as any).ReactNativeWebView.postMessage(
-                JSON.stringify({ type: 'call:ended' })
-              );
-            }
-            navigate(-1);
-          }}
-        />
+        <div className="flex-1 w-full h-full pt-14">
+          <CallRoom
+            token={livekitToken!}
+            serverUrl={livekitWsUrl}
+            onDisconnected={() => {
+              if (typeof window !== 'undefined' && (window as any).ReactNativeWebView) {
+                (window as any).ReactNativeWebView.postMessage(
+                  JSON.stringify({ type: 'call:ended' })
+                );
+              }
+              navigate(-1);
+            }}
+          />
+        </div>
       </div>
 
       {/* Live Chat Side Panel */}
-      <div className="w-full lg:w-80 h-1/3 lg:h-full bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col">
+      <div className="w-full lg:w-84 h-1/3 lg:h-full bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col">
         <div className="p-3 border-b border-slate-800 bg-slate-900/90 text-white font-semibold text-sm flex justify-between items-center">
-          <span>Chat Clínico en Vivo</span>
-          {uploadingPhoto && <span className="text-xs text-sky-400 animate-pulse">Subiendo foto...</span>}
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Chat Clínico & Telemetría</span>
+          </div>
+          {uploadingPhoto ? (
+            <span className="text-[11px] text-sky-400 animate-pulse flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" /> Subiendo...
+            </span>
+          ) : (
+            <span className="text-[10px] text-slate-400 font-mono tracking-wider">SENASA R.1442</span>
+          )}
         </div>
 
-        <div className="flex-1 p-3 overflow-y-auto space-y-2">
+        <div className="flex-1 p-3 overflow-y-auto space-y-2.5">
           {messages.map((msg) => {
             const isMine = msg.senderId === user?.id;
+            const isVet = msg.sender?.role === 'VET';
             const fullAttachmentUrl = msg.attachmentUrl
               ? msg.attachmentUrl.startsWith('http')
                 ? msg.attachmentUrl
@@ -496,27 +589,35 @@ export const ConsultationRoom: React.FC = () => {
                 key={msg.id || msg.clientMsgId}
                 className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
               >
-                <span className="text-[10px] text-slate-400 mb-0.5">
-                  {msg.sender?.firstName || 'Usuario'}
-                </span>
+                <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5">
+                  {isVet ? (
+                    <span className="font-semibold text-emerald-400 flex items-center gap-0.5">
+                      <Stethoscope className="w-2.5 h-2.5" /> Dr/a. {msg.sender?.firstName || 'Veterinario'}
+                    </span>
+                  ) : (
+                    <span>{msg.sender?.firstName || 'Usuario'}</span>
+                  )}
+                </div>
                 <div
-                  className={`px-3 py-1.5 rounded-lg text-xs max-w-[85%] ${
-                    isMine ? 'bg-sky-600 text-white' : 'bg-slate-800 text-slate-200'
+                  className={`px-3 py-2 rounded-xl text-xs max-w-[88%] leading-relaxed ${
+                    isMine
+                      ? 'bg-[#00875A] text-white shadow-sm'
+                      : 'bg-slate-800 text-slate-200 border border-slate-700/60'
                   }`}
                 >
                   {msg.content}
 
                   {fullAttachmentUrl && (
-                    <div className="mt-1.5 cursor-pointer overflow-hidden rounded border border-slate-700 hover:opacity-90 transition-opacity">
+                    <div className="mt-2 cursor-pointer overflow-hidden rounded-lg border border-white/10 hover:opacity-95 transition-opacity">
                       <img
                         src={fullAttachmentUrl}
                         alt="Fotografía clínica"
-                        className="max-h-36 max-w-full object-cover rounded"
+                        className="max-h-40 max-w-full object-cover rounded-t-lg"
                         onClick={() => setZoomImage(fullAttachmentUrl)}
                       />
-                      <span className="text-[10px] text-slate-300 px-1 py-0.5 bg-black/40 text-center flex items-center justify-center gap-1">
-                        <Search className="w-3 h-3 text-sky-400" />
-                        <span>Clic para ampliar</span>
+                      <span className="text-[10px] text-slate-200 px-2 py-1 bg-black/60 backdrop-blur-xs text-center flex items-center justify-center gap-1">
+                        <Search className="w-3 h-3 text-emerald-400" />
+                        <span>Clic para ampliar macroscopía</span>
                       </span>
                     </div>
                   )}
@@ -526,7 +627,7 @@ export const ConsultationRoom: React.FC = () => {
           })}
         </div>
 
-        <form onSubmit={handleSendMessage} className="p-2 border-t border-slate-800 flex items-center gap-2">
+        <form onSubmit={handleSendMessage} className="p-2.5 border-t border-slate-800 bg-slate-900/60 flex items-center gap-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -539,9 +640,9 @@ export const ConsultationRoom: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingPhoto}
             title="Adjuntar macro-fotografía clínica"
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded border border-slate-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
-            {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin text-sky-400" /> : <Paperclip className="w-4 h-4 text-slate-300" />}
+            {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin text-emerald-400" /> : <Paperclip className="w-4 h-4 text-slate-300" />}
           </button>
           <input
             type="text"
@@ -549,12 +650,12 @@ export const ConsultationRoom: React.FC = () => {
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder={uploadingPhoto ? 'Subiendo imagen...' : 'Escriba un mensaje...'}
             disabled={uploadingPhoto}
-            className="flex-1 bg-slate-800 text-white text-xs px-3 py-2 rounded border border-slate-700 focus:outline-none focus:border-sky-500"
+            className="flex-1 bg-slate-800 text-white text-xs px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500 transition"
           />
           <button
             type="submit"
             disabled={uploadingPhoto || !inputMessage.trim()}
-            className="bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white px-3 py-2 rounded text-xs font-semibold"
+            className="bg-[#00875A] hover:bg-[#00704A] disabled:opacity-40 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95"
           >
             Enviar
           </button>
@@ -583,6 +684,95 @@ export const ConsultationRoom: React.FC = () => {
             <p className="text-xs text-slate-400 mt-2 text-center">
               Inspección Macroscópica de Lesión Clínica — Presione Escape para salir
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* In-Call Vet Prescription Modal */}
+      {user?.role === 'VET' && consultationId && (
+        <PrescriptionModal
+          isOpen={showPrescriptionModal}
+          consultationId={consultationId}
+          onClose={() => setShowPrescriptionModal(false)}
+          onSuccess={() => {
+            setShowPrescriptionModal(false);
+          }}
+        />
+      )}
+
+      {/* In-Call Vet Finalize Consultation Modal */}
+      {user?.role === 'VET' && showCompleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#FAF8F5] border border-[#E8E2D5] rounded-2xl max-w-lg w-full p-6 shadow-2xl text-slate-800">
+            <div className="flex items-center justify-between pb-4 border-b border-[#E8E2D5]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-700">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-lg text-[#06241D]">
+                    Finalizar Atención Médica
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Cierre de acto médico oficial según resolución SENASA
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCompleteModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCompleteConsultation} className="mt-4 space-y-4">
+              {consultation?.pet && (
+                <div className="p-3 bg-emerald-50/70 border border-emerald-200/60 rounded-xl text-xs text-emerald-900">
+                  <span className="font-semibold">Paciente:</span> {consultation.pet.name} ({consultation.pet.species})
+                  {consultation.notes && (
+                    <div className="mt-1 text-slate-600">
+                      <span className="font-semibold">Motivo inicial:</span> {consultation.notes}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Evolución Clínica & Diagnóstico Presuntivo *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={diagnosisNotes}
+                  onChange={(e) => setDiagnosisNotes(e.target.value)}
+                  placeholder="Detalle la evolución del paciente durante la teleconsulta, diagnóstico presuntivo, indicaciones terapéuticas y pautas de alarma..."
+                  className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#00875A] bg-white resize-none"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Mínimo 2 caracteres. Quedará registrado en la historia clínica del paciente.</p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#E8E2D5]">
+                <button
+                  type="button"
+                  onClick={() => setShowCompleteModal(false)}
+                  disabled={isCompleting}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCompleting || !diagnosisNotes.trim()}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm disabled:opacity-50 transition flex items-center gap-1.5"
+                >
+                  {isCompleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  <span>Confirmar y Completar Consulta</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
