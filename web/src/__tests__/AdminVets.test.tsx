@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AdminVets } from '../pages/AdminVets';
 import api from '../services/api';
@@ -82,7 +82,9 @@ describe('AdminVets Page', () => {
       expect(screen.getByTestId('approve-vet-button-vet-pending-1')).toBeDefined();
     });
 
-    fireEvent.click(screen.getByTestId('approve-vet-button-vet-pending-1'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('approve-vet-button-vet-pending-1'));
+    });
 
     expect(api.patch).toHaveBeenCalledWith('/api/admin/vets/vet-pending-1/approve');
   });
@@ -122,10 +124,61 @@ describe('AdminVets Page', () => {
       target: { value: 'Matrícula caducada en SENASA' },
     });
 
-    fireEvent.click(screen.getByTestId('reject-vet-button-vet-pending-2'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('reject-vet-button-vet-pending-2'));
+    });
 
     expect(api.patch).toHaveBeenCalledWith('/api/admin/vets/vet-pending-2/reject', {
       reason: 'Matrícula caducada en SENASA',
     });
+  });
+
+  it('should filter pending vets by search term', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'vet-pending-a',
+            email: 'carlos@vetconnect.com',
+            firstName: 'Carlos',
+            lastName: 'Tevez',
+            role: 'VET',
+            vetStatus: 'PENDING',
+            licenseNumber: 'MP-5555',
+            bio: 'Cirugía',
+            createdAt: '2026-09-15T00:00:00.000Z',
+          },
+          {
+            id: 'vet-pending-b',
+            email: 'sofia@vetconnect.com',
+            firstName: 'Sofia',
+            lastName: 'Loren',
+            role: 'VET',
+            vetStatus: 'PENDING',
+            licenseNumber: 'MP-7777',
+            bio: 'Medicina Felina',
+            createdAt: '2026-09-15T00:00:00.000Z',
+          },
+        ],
+      },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <AdminVets />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('vet-row-vet-pending-a')).toBeDefined();
+      expect(screen.getByTestId('vet-row-vet-pending-b')).toBeDefined();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/Buscar por nombre profesional/i);
+    fireEvent.change(searchInput, { target: { value: 'Sofia' } });
+
+    expect(screen.queryByTestId('vet-row-vet-pending-a')).toBeNull();
+    expect(screen.getByTestId('vet-row-vet-pending-b')).toBeDefined();
   });
 });

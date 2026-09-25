@@ -45,6 +45,7 @@ export const App: React.FC = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/prescriptions/:id" element={<PrescriptionView />} />
+                <Route path="/preview/admin" element={<AdminVets />} />
 
                 <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
                   <Route path="/client/dashboard" element={<DashboardClient />} />

@@ -293,7 +293,7 @@ export class ConsultationsService {
           OR: [{ vetId: requester.id }, { status: ConsultationStatus.WAITING }],
           deletedAt: null,
         },
-        include: { pet: true, client: { select: userSelectFields } },
+        include: { pet: true, client: { select: userSelectFields }, review: true },
         orderBy: { createdAt: 'desc' },
       });
     }
@@ -308,7 +308,7 @@ export class ConsultationsService {
 
     return prisma.consultation.findMany({
       where: { clientId: requester.id, deletedAt: null },
-      include: { pet: true, vet: { select: userSelectFields } },
+      include: { pet: true, vet: { select: userSelectFields }, review: true },
       orderBy: { createdAt: 'desc' },
     });
   }

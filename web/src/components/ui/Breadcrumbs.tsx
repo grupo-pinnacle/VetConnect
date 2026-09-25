@@ -69,7 +69,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
                   {item.label}
                 </a>
               ) : (
-                <span className="text-slate-500 hover:text-slate-700 transition-colors px-1 py-0.5">
+                <span className="text-slate-600 hover:text-slate-900 transition-colors px-1 py-0.5">
                   {item.label}
                 </span>
               )}

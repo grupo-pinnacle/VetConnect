@@ -15,8 +15,19 @@ vi.mock('../services/api', () => ({
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'v1', firstName: 'Carlos', lastName: 'Mendoza', role: 'VET', vetStatus: 'APPROVED', licenseNumber: 'MP-8921', isOnline: true },
+    user: {
+      id: 'v1',
+      firstName: 'Carlos',
+      lastName: 'Mendoza',
+      role: 'VET',
+      vetStatus: 'APPROVED',
+      licenseNumber: 'MP-8921',
+      isOnline: true,
+      ratingAvg: 0,
+      ratingCount: 0,
+    },
     logout: vi.fn(),
+    refreshSession: vi.fn(),
   }),
 }));
 
@@ -160,6 +171,56 @@ describe('DashboardVet Page', () => {
         indications: 'Junto con alimento',
       });
       expect(screen.getByTestId('prescription-qr-image')).toBeDefined();
+    });
+  });
+
+  it('should display "—" and "Sin valoraciones aún" when vet has 0 reviews', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } } as any);
+
+    render(
+      <MemoryRouter>
+        <DashboardVet />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      const scoreElement = screen.getByTestId('vet-rating-score');
+      expect(scoreElement.textContent).toBe('—');
+      expect(screen.getByText('Sin valoraciones aún • 0 consultas calificadas')).toBeDefined();
+      expect(screen.getByText('Nuevo')).toBeDefined();
+    });
+  });
+
+  it('should render tutor review with rating and comment on assigned consultation when reviewed', async () => {
+    const mockAssignedWithReview = {
+      id: 'c-reviewed',
+      clientId: 'u1',
+      petId: 'p1',
+      vetId: 'v1',
+      status: 'COMPLETED',
+      notes: 'Consulta de control dermatológico',
+      createdAt: new Date().toISOString(),
+      pet: { name: 'Luna', species: 'CANINE', breed: 'Caniche' },
+      review: {
+        id: 'rev-1',
+        rating: 5,
+        comment: 'Excelente atención de la doctora, muy atenta y clara.',
+      },
+    };
+
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, data: [mockAssignedWithReview] },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <DashboardVet />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Valoración del tutor:')).toBeDefined();
+      expect(screen.getByText('"Excelente atención de la doctora, muy atenta y clara."')).toBeDefined();
     });
   });
 });
