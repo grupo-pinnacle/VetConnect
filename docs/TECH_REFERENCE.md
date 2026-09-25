@@ -202,8 +202,8 @@ Cada página del frontend web implementa una interfaz formal tipada, gestionando
 | **DashboardClient** (`DashboardClient.tsx`) | `/client/dashboard` | `CLIENT` | `GET /api/pets`, `POST /api/pets`, `POST /api/consultations`, `GET /api/consultations/mine` | `N/A (Polling HTTP /api/consultations/:id en espera)` |
 | **DashboardVet** (`DashboardVet.tsx`) | `/vet/dashboard` | `VET` | `PATCH /api/users/profile`, `GET /api/consultations/mine`, `PATCH /api/consultations/:id/assign`, `POST /api/consultations/:id/prescriptions` | `N/A (Presencia y cola vía REST)` |
 | **ConsultationRoom** (`ConsultationRoom.tsx`) | `/call/:id` | `CLIENT`, `VET`, `ADMIN` | `POST /api/calls/:id/token`, `GET /api/consultations/:id/messages` | `join:consultation`, `message:send`, `message:new`, LiveKit WebRTC SFU |
-| **PrescriptionView** (`PrescriptionView.tsx`) | `/prescriptions/:id` | Público | `GET /api/prescriptions/:id` | N/A (Vista optimizada para impresión y farmacia) |
-| **AdminVets** (`AdminVets.tsx`) | `/admin/vets`, `/admin/dashboard` | `ADMIN` | `GET /api/admin/vets/pending`, `PATCH /api/admin/vets/:id/approve`, `PATCH /api/admin/vets/:id/reject` | N/A |
+| **PrescriptionView** (`PrescriptionView.tsx`) | `/prescriptions/:id`, `/verify-rx` | Público | `GET /api/prescriptions/:id` | N/A (Vista optimizada para impresión, farmacia y validación QR SENASA) |
+| **AdminVets** (`AdminVets.tsx`) | `/admin/vets`, `/admin/dashboard` | `ADMIN` | `GET /api/admin/vets/pending`, `GET /api/admin/stats`, `PATCH /api/admin/vets/:id/approve`, `PATCH /api/admin/vets/:id/reject` | N/A |
 | **NotFound** (`NotFound.tsx`) | `*` (Catch-all) | Público | N/A | N/A (Redirección segura al home) |
 
 ---

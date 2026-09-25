@@ -33,6 +33,7 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
 | **ADR-023** | Escala Unificada de Calificación Profesional (1 a 5 Estrellas) | Aprobado | UX / Base de Datos |
 | **ADR-024** | Máquina de Estados Finita (FSM) en Consultas, Timeout de Triage (15 min) y Ventana de Reconexión WebRTC (3 min) | Aprobado | Backend / FSM |
 | **ADR-025** | Jerarquía Inmutable de Verdad (SSOT) y Neutralización del Split-Brain Documental | Aprobado | Gobernanza / AI-First |
+| **ADR-026** | Adopción Segura de Capacidades Clínicas y Señalización WebRTC (GlobalCallListener, Ficha Médica y Verificación SENASA) | Aprobado | Frontend / Telemedicina |
 
 ---
 
@@ -192,3 +193,14 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
   4. `docs/web/00..11 + docs/SISTEMA_DE_DISENO.md` (Nivel 4 - Wireframes y Narrativa UX)
   Ante cualquier contradicción, los niveles superiores invalidan y anulan automáticamente a los inferiores. Prohibición taxativa de crear o modificar código fuente basándose en requerimientos de Nivel 4 que no tengan respaldo en los Niveles 1 y 2.
 - **Consecuencias:** Neutralización definitiva de alucinaciones y bucles en agentes de IA autónomos (Jules, Cursor, Claude); desarrollo predecible de UI basado exclusivamente en APIs y contratos reales; y preservación del 100% de la suite de pruebas automatizadas sin regresiones.
+
+### ADR-026: Adopción Segura de Capacidades Clínicas y Señalización WebRTC (GlobalCallListener, Ficha Médica y Verificación SENASA)
+- **Contexto:** El análisis del repositorio paralelo `conectavet` reveló funcionalidades de alto valor percibido en telemedicina (alertas sonoras de videollamada entrante, expedientes clínicos imprimibles y validación pública de recetas con QR). No obstante, la implementación en dicho proyecto presentaba graves vicios de diseño: temporizadores de sondeo manuales (`setInterval(fetch, 10000)`), intento de enviar mensajes por REST HTTP en lugar de WebSockets, borrados masivos destructivos en base de datos y escalas divergentes de 1 a 10 estrellas.
+- **Decisión:**
+  1. **Adoptar exclusivamente el valor funcional y UX:** Incorporar el listener global de videollamadas (`GlobalCallListener`) utilizando un sintetizador matemático nativo Web Audio (`AudioContext` con acordes sinusoidales de 440 Hz / 554.37 Hz, sin archivos `.mp3`), escuchando el evento Socket.io nativo `call:incoming` ya soportado en `backend/src/modules/calls/calls.service.ts`.
+  2. **Expediente Clínico y Dossier Imprimible:** Adaptar el modal de ficha médica con soporte para impresión legal (`@media print`) bajo la Ley 25.326 y alternancia a vista de línea de tiempo (Timeline), utilizando exclusivamente el endpoint canónico `GET /api/pets/:id` y `useQuery` de TanStack Query v5.
+  3. **Drawer Lateral de Paciente (`VetPatientProfile`):** Permitir al veterinario desplegar el contexto clínico del animal (alergias con badge ámbar, enfermedades crónicas con badge rojo, contacto telefónico del tutor) durante el chat o videollamada sin abandonar la pantalla.
+  4. **Verificación Pública de Recetas SENASA (`/verify-rx`):** Exponer verificación pública oficial consumiendo `GET /api/prescriptions/:id` con empty states transparentes y cero datos falsos.
+  5. **Veto estricto de antipatrones:** Quedan formalmente prohibidos el polling por temporizadores, el borrado físico de usuarios y la alteración de la escala oficial de 1 a 5 estrellas.
+- **Consecuencias:** Integración de funcionalidades críticas de telemedicina con cero degradación de la estabilidad del sistema, preservación de los 156 tests automatizados y respeto absoluto de los estándares de ingeniería FAANG.
+
