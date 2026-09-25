@@ -9,6 +9,8 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
+import OfflineBanner from './components/common/OfflineBanner';
+import GlobalCallListener from './components/call/GlobalCallListener';
 
 // Code-Splitting: Lazy load heavy clinical rooms and dashboards to optimize Landing LCP
 const DashboardClient = React.lazy(() => import('./pages/DashboardClient'));
@@ -39,12 +41,15 @@ export const App: React.FC = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+            <OfflineBanner />
+            <GlobalCallListener />
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/prescriptions/:id" element={<PrescriptionView />} />
+                <Route path="/verify-rx" element={<PrescriptionView />} />
                 <Route path="/preview/admin" element={<AdminVets />} />
 
                 <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>

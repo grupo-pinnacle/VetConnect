@@ -50,7 +50,19 @@ export const AdminVets: React.FC = () => {
 
   // Filter & Search State
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('ALL');
+
+  useEffect(() => {
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
+      setDebouncedSearchQuery(searchQuery);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   interface AdminStats {
     pendingVets: number;
@@ -149,7 +161,7 @@ export const AdminVets: React.FC = () => {
   // Filtered List
   const filteredVets = useMemo(() => {
     return pendingVets.filter((vet) => {
-      const query = searchQuery.toLowerCase().trim();
+      const query = debouncedSearchQuery.toLowerCase().trim();
       const fullName = `${vet.firstName || ''} ${vet.lastName || ''}`.toLowerCase();
       const email = (vet.email || '').toLowerCase();
       const license = (vet.licenseNumber || '').toLowerCase();
@@ -172,7 +184,7 @@ export const AdminVets: React.FC = () => {
 
       return matchesQuery && matchesSpecialty;
     });
-  }, [pendingVets, searchQuery, selectedSpecialty]);
+  }, [pendingVets, debouncedSearchQuery, selectedSpecialty]);
 
   if (loading) {
     return (

@@ -6,6 +6,7 @@ import { Pet, Consultation, ApiResponse } from '../types';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { PetCardSkeleton } from '../components/ui/Skeleton';
 import { SpeciesIcon } from '../components/icons/SpeciesIcons';
+import PetDossierModal from '../components/dashboard/PetDossierModal';
 import {
   Heart,
   Stethoscope,
@@ -24,6 +25,7 @@ import {
   Activity,
   X,
   Calendar,
+  LayoutGrid,
 } from 'lucide-react';
 
 export const DashboardClient: React.FC = () => {
@@ -51,6 +53,10 @@ export const DashboardClient: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [triagePriority, setTriagePriority] = useState<'ROJO' | 'AMARILLO' | 'VERDE'>('VERDE');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Clinical Dossier & View Mode State
+  const [viewMode, setViewMode] = useState<'cards' | 'timeline'>('cards');
+  const [selectedDossierPet, setSelectedDossierPet] = useState<Pet | null>(null);
 
   const fetchData = async () => {
     try {
@@ -330,7 +336,10 @@ export const DashboardClient: React.FC = () => {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3.5">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 shadow-inner">
+                          <div
+                            data-testid={`pet-avatar-${pet.id}`}
+                            className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 shadow-inner"
+                          >
                             <SpeciesIcon species={pet.species} className="w-6 h-6 text-emerald-700" />
                           </div>
 
@@ -342,7 +351,10 @@ export const DashboardClient: React.FC = () => {
                               >
                                 {pet.name}
                               </h3>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                              <span
+                                data-testid={`pet-badge-${pet.id}`}
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200"
+                              >
                                 {pet.species}
                               </span>
                             </div>
@@ -353,7 +365,10 @@ export const DashboardClient: React.FC = () => {
 
                             <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500">
                               {pet.weightKg && (
-                                <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md font-semibold">
+                                <span
+                                  data-testid={`pet-weight-${pet.id}`}
+                                  className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md font-semibold"
+                                >
                                   <Scale className="w-3 h-3 text-amber-600" />
                                   {pet.weightKg} kg
                                 </span>
@@ -367,23 +382,45 @@ export const DashboardClient: React.FC = () => {
                                   ISO: {pet.microchip}
                                 </span>
                               )}
+                              {pet.allergies && pet.allergies.length > 0 && (
+                                <span
+                                  data-testid={`pet-allergies-${pet.id}`}
+                                  className="inline-flex items-center gap-1 bg-amber-100/70 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold"
+                                >
+                                  Alergias: {pet.allergies.length}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
 
-                        {/* Quick Action Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleQuickTriage(pet.id)}
-                          className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-600 text-white shadow-sm'
-                              : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
-                          }`}
-                        >
-                          <span>{isSelected ? 'Seleccionado' : 'Pedir Consulta'}</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </button>
+                        {/* Action Buttons: Dossier + Consultation */}
+                        <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-1.5">
+                          <button
+                            type="button"
+                            data-testid={`pet-dossier-btn-${pet.id}`}
+                            onClick={() => setSelectedDossierPet(pet)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 transition-all cursor-pointer shadow-2xs"
+                            title="Ver e imprimir expediente clínico oficial"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-stone-600" />
+                            <span>Expediente</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            data-testid={`pet-request-consultation-btn-${pet.id}`}
+                            onClick={() => handleQuickTriage(pet.id)}
+                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                            }`}
+                          >
+                            <span>{isSelected ? 'Seleccionado' : 'Pedir Consulta'}</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -557,19 +594,48 @@ export const DashboardClient: React.FC = () => {
               className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5]"
               data-testid="active-consultations-section"
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-[#E8E2D5]">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
                     <Activity className="w-4 h-4" />
                   </div>
                   <h3 className="font-bold text-[#06241D] text-base">Mis Consultas Recientes</h3>
+                  <span className="text-xs font-semibold text-slate-500 ml-1">
+                    ({consultations.length})
+                  </span>
                 </div>
-                <span className="text-xs font-semibold text-slate-500">
-                  {consultations.length} {consultations.length === 1 ? 'registro' : 'registros'}
-                </span>
+
+                <div className="flex items-center gap-1 bg-[#F8F5EE] p-1 rounded-xl border border-[#E8E2D5]">
+                  <button
+                    type="button"
+                    data-testid="viewmode-cards-btn"
+                    onClick={() => setViewMode('cards')}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viewMode === 'cards'
+                        ? 'bg-white text-emerald-800 shadow-2xs border border-[#E8E2D5]'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span>Tarjetas</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="viewmode-timeline-btn"
+                    onClick={() => setViewMode('timeline')}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viewMode === 'timeline'
+                        ? 'bg-white text-emerald-800 shadow-2xs border border-[#E8E2D5]'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Línea de Tiempo</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-3">
+              <div className={viewMode === 'timeline' ? 'relative border-l-2 border-emerald-300 ml-3 sm:ml-4 pl-4 sm:pl-6 space-y-6 my-2' : 'space-y-3'}>
                 {consultations.length === 0 ? (
                   <div
                     className="p-8 text-center bg-gradient-to-b from-[#F8F5EE]/60 to-[#F8F5EE] border border-dashed border-[#E8E2D5] rounded-2xl flex flex-col items-center justify-center transition-all"
@@ -594,7 +660,11 @@ export const DashboardClient: React.FC = () => {
                       <div
                         key={c.id}
                         data-testid={`consultation-card-${c.id}`}
-                        className="p-4 rounded-xl border border-[#E8E2D5] bg-white hover:bg-[#F8F5EE]/40 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+                        className={`rounded-xl border border-[#E8E2D5] bg-white hover:bg-[#F8F5EE]/40 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 relative ${
+                          viewMode === 'timeline'
+                            ? 'p-4 shadow-sm before:content-[""] before:absolute before:-left-[23px] sm:before:-left-[31px] before:top-5 before:w-3.5 before:h-3.5 before:rounded-full before:bg-white before:border-2 before:border-emerald-600 before:shadow-xs'
+                            : 'p-4'
+                        }`}
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-2">
@@ -612,6 +682,11 @@ export const DashboardClient: React.FC = () => {
                             ) : (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                                 VERDE
+                              </span>
+                            )}
+                            {viewMode === 'timeline' && c.createdAt && (
+                              <span className="text-[11px] text-stone-500 font-medium ml-1">
+                                • {new Date(c.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
                               </span>
                             )}
                           </div>
@@ -796,6 +871,13 @@ export const DashboardClient: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Clinical Dossier Modal (Printable Official Document) */}
+        <PetDossierModal
+          pet={selectedDossierPet}
+          isOpen={Boolean(selectedDossierPet)}
+          onClose={() => setSelectedDossierPet(null)}
+        />
       </div>
     </div>
   );

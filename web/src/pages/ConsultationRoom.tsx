@@ -7,7 +7,8 @@ import CallRoom from '../components/call/CallRoom';
 import { ReviewModal } from '../components/ui/ReviewModal';
 import { PrescriptionModal } from '../components/ui/PrescriptionModal';
 import { Message, ApiResponse, Consultation } from '../types';
-import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X, FileText, CheckCircle, ShieldCheck } from 'lucide-react';
+import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X, FileText, CheckCircle, ShieldCheck, ClipboardList } from 'lucide-react';
+import VetPatientProfile from '../components/dashboard/VetPatientProfile';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 const POLLING_INTERVAL_MS = 5000;
@@ -33,6 +34,7 @@ export const ConsultationRoom: React.FC = () => {
   // --- Vet Clinical In-Call Actions ---
   const [showPrescriptionModal, setShowPrescriptionModal] = useState<boolean>(false);
   const [showCompleteModal, setShowCompleteModal] = useState<boolean>(false);
+  const [showPatientProfile, setShowPatientProfile] = useState<boolean>(false);
   const [diagnosisNotes, setDiagnosisNotes] = useState<string>('');
   const [isCompleting, setIsCompleting] = useState<boolean>(false);
 
@@ -512,6 +514,18 @@ export const ConsultationRoom: React.FC = () => {
           <div className="flex items-center gap-2">
             {user?.role === 'VET' && (
               <>
+                {consultation?.petId && (
+                  <button
+                    type="button"
+                    data-testid="in-call-view-patient-profile-btn"
+                    onClick={() => setShowPatientProfile(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-stone-200 hover:text-white text-xs font-semibold rounded-lg border border-slate-700 shadow-sm transition active:scale-95"
+                    title="Ver ficha clínica del paciente y contacto de emergencia"
+                  >
+                    <ClipboardList className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Ficha Paciente</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   data-testid="in-call-emit-prescription-btn"
@@ -776,6 +790,13 @@ export const ConsultationRoom: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Clinical Patient Profile Drawer */}
+      <VetPatientProfile
+        petId={consultation?.petId || null}
+        isOpen={showPatientProfile}
+        onClose={() => setShowPatientProfile(false)}
+      />
     </div>
   );
 };

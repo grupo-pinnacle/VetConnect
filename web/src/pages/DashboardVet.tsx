@@ -6,6 +6,7 @@ import { Consultation, ApiResponse, User } from '../types';
 import { PrescriptionModal } from '../components/ui/PrescriptionModal';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { ConsultationQueueSkeleton } from '../components/ui/Skeleton';
+import VetPatientProfile from '../components/dashboard/VetPatientProfile';
 import {
   Stethoscope,
   Activity,
@@ -24,6 +25,7 @@ import {
   HeartHandshake,
   Timer,
   Sparkles,
+  ClipboardList,
 } from 'lucide-react';
 
 export const DashboardVet: React.FC = () => {
@@ -34,9 +36,10 @@ export const DashboardVet: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isOnline, setIsOnline] = useState<boolean>(user?.isOnline || false);
 
-  // Prescription Modal State
+  // Prescription Modal & Patient Profile Drawer State
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [selectedConsId, setSelectedConsId] = useState<string>('');
+  const [selectedPetProfileId, setSelectedPetProfileId] = useState<string | null>(null);
 
   const fetchQueue = async () => {
     try {
@@ -524,18 +527,33 @@ export const DashboardVet: React.FC = () => {
                         </p>
                       </div>
 
-                      <button
-                        data-testid={`assign-patient-button-${c.id}`}
-                        onClick={() => handleAssignAndJoin(c.id)}
-                        className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 shrink-0 active:scale-[0.98] ${
-                          isRed
-                            ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
-                        }`}
-                      >
-                        <span>Atender Paciente</span>
-                        <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                      </button>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
+                        {c.petId && (
+                          <button
+                            type="button"
+                            data-testid={`view-pet-profile-btn-${c.id}`}
+                            onClick={() => setSelectedPetProfileId(c.petId)}
+                            className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                            title="Ver ficha clínica completa y antecedentes"
+                          >
+                            <ClipboardList className="w-4 h-4 text-stone-600" aria-hidden="true" />
+                            <span>Ficha Paciente</span>
+                          </button>
+                        )}
+
+                        <button
+                          data-testid={`assign-patient-button-${c.id}`}
+                          onClick={() => handleAssignAndJoin(c.id)}
+                          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer ${
+                            isRed
+                              ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                          }`}
+                        >
+                          <span>Atender Paciente</span>
+                          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })
@@ -665,6 +683,13 @@ export const DashboardVet: React.FC = () => {
           onSuccess={() => {
             fetchQueue();
           }}
+        />
+
+        {/* Clinical Patient Profile Off-Canvas Drawer */}
+        <VetPatientProfile
+          petId={selectedPetProfileId}
+          isOpen={Boolean(selectedPetProfileId)}
+          onClose={() => setSelectedPetProfileId(null)}
         />
       </div>
     </div>
