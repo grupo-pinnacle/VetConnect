@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import api, { SECURE_STORE_REFRESH_KEY } from './api';
+import api, { resetRefreshState, SECURE_STORE_REFRESH_KEY, setSessionExpiredHandler } from './api';
 import { User, ApiResponse, AuthPayload } from '../types';
 import { loginSchema, registerSchema, LoginInput, RegisterInput } from '../validation/auth';
 
@@ -11,15 +11,18 @@ interface AuthState {
   login: (credentials: LoginInput) => Promise<User>;
   register: (data: RegisterInput) => Promise<User>;
   logout: () => Promise<void>;
+  clearSession: () => Promise<void>;
   initAuth: () => Promise<void>;
 }
 
 function applySession(accessToken: string, user: User, set: (s: Partial<AuthState>) => void) {
   api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+  // A new session must never inherit refresh singletons from the previous one.
+  resetRefreshState();
   set({ user, accessToken, isLoading: false });
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   isLoading: true,
@@ -95,15 +98,51 @@ export const useAuthStore = create<AuthState>((set) => ({
     return user;
   },
 
+  /**
+   * Wipes the local session without calling the backend and without touching
+   * the refresh singletons. It doubles as the terminal-refresh-failure handler,
+   * where re-arming the refresh flow would allow an endless 401/refresh loop.
+   */
+  clearSession: async () => {
+    await SecureStore.deleteItemAsync(SECURE_STORE_REFRESH_KEY).catch(() => {});
+    delete api.defaults.headers.common.Authorization;
+    set({ user: null, accessToken: null, isLoading: false });
+  },
+
   logout: async () => {
     try {
       await api.post('/api/auth/logout');
     } catch {
       // Ignore network errors on logout
     } finally {
-      await SecureStore.deleteItemAsync(SECURE_STORE_REFRESH_KEY).catch(() => {});
-      delete api.defaults.headers.common.Authorization;
-      set({ user: null, accessToken: null, isLoading: false });
+      await get().clearSession();
+      // Releases anything parked in the refresh queue and clears the in-flight
+      // flag, so the next login starts from a clean module state.
+      resetRefreshState();
     }
   },
 }));
+
+/**
+ * Sends the user to the login route after a terminal refresh failure.
+ *
+ * The router is resolved with a dynamic import on purpose. A static
+ * `import { router } from 'expo-router'` would be evaluated while this module is
+ * still initialising (the API interceptor is registered by `api.ts`, which
+ * imports this file) and would pull the whole navigation tree into every unit
+ * test that touches auth. `expo-router` does not import this module, so the lazy
+ * edge cannot become a cycle.
+ */
+async function redirectToLogin(): Promise<void> {
+  try {
+    const { router } = await import('expo-router');
+    router.replace('/(auth)/login');
+  } catch {
+    // Navigation must never break the session-expiry cleanup path.
+  }
+}
+
+setSessionExpiredHandler(() => {
+  void useAuthStore.getState().clearSession();
+  void redirectToLogin();
+});

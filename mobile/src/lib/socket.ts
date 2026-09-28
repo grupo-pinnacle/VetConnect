@@ -5,11 +5,19 @@ import { Message, ApiResponse } from '../types';
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'http://localhost:3001';
 
+/**
+ * Consumer of the incremental sync result. The chat screens register one of
+ * these so messages fetched while reconnecting or while the app returns to the
+ * foreground actually reach the UI.
+ */
+export type SyncedMessagesHandler = (consultationId: string, messages: Message[]) => void;
+
 export class MobileSocketManager {
   private socket: Socket | null = null;
   private activeConsultationIds: Set<string> = new Set();
   private lastKnownTimestamps: Map<string, string> = new Map();
   private appStateSubscription: { remove: () => void } | null = null;
+  private syncedMessagesHandlers: Set<SyncedMessagesHandler> = new Set();
 
   public connect(token: string) {
     if (this.socket && this.socket.connected) {
@@ -36,6 +44,17 @@ export class MobileSocketManager {
 
   public updateLastKnownTimestamp(consultationId: string, timestamp: string) {
     this.lastKnownTimestamps.set(consultationId, timestamp);
+  }
+
+  /**
+   * Subscribes to incremental sync results. Returns the unsubscribe function so
+   * a screen can detach itself on unmount without leaking a stale closure.
+   */
+  public onSyncedMessages(handler: SyncedMessagesHandler): () => void {
+    this.syncedMessagesHandlers.add(handler);
+    return () => {
+      this.syncedMessagesHandlers.delete(handler);
+    };
   }
 
   private setupAppStateListener() {
@@ -69,17 +88,41 @@ export class MobileSocketManager {
         ? `/api/consultations/${consultationId}/messages?after=${encodeURIComponent(lastKnown)}`
         : `/api/consultations/${consultationId}/messages`;
 
+      let messages: Message[];
       try {
         const res = await api.get<ApiResponse<Message[]>>(url);
-        if (res.data.success && res.data.data && res.data.data.length > 0) {
-          const messages = res.data.data;
-          syncedMessages.set(consultationId, messages);
-
-          const latestMsg = messages[messages.length - 1];
-          this.lastKnownTimestamps.set(consultationId, latestMsg.createdAt);
+        if (!res.data?.success || !Array.isArray(res.data.data)) {
+          // Unusable envelope: the watermark stays put so the next attempt
+          // re-reads the very same window instead of skipping over it.
+          continue;
         }
+        messages = res.data.data;
       } catch (err) {
         console.warn(`Failed incremental sync for consultation ${consultationId}:`, err);
+        // Failed fetch: the watermark stays put, so nothing is lost.
+        continue;
+      }
+
+      if (messages.length === 0) continue;
+
+      // Deliver BEFORE moving the watermark. Advancing it first and letting the
+      // caller drop the payload is what permanently lost messages.
+      let delivered = false;
+      for (const handler of this.syncedMessagesHandlers) {
+        try {
+          handler(consultationId, messages);
+          delivered = true;
+        } catch (err) {
+          console.warn(`Synced messages handler failed for consultation ${consultationId}:`, err);
+        }
+      }
+      if (!delivered) continue;
+
+      syncedMessages.set(consultationId, messages);
+
+      const latestMsg = messages[messages.length - 1];
+      if (latestMsg?.createdAt) {
+        this.lastKnownTimestamps.set(consultationId, latestMsg.createdAt);
       }
     }
 
@@ -95,6 +138,7 @@ export class MobileSocketManager {
       this.socket.disconnect();
       this.socket = null;
     }
+    this.syncedMessagesHandlers.clear();
     this.activeConsultationIds.clear();
     this.lastKnownTimestamps.clear();
   }
