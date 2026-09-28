@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 import api, { setAccessToken } from '../services/api';
 import { User, ApiResponse } from '../types';
 
@@ -27,35 +28,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
   const [loading, setLoading] = useState<boolean>(true);
 
+  const clearSession = () => {
+    setUser(null);
+    setAccessToken(null);
+    try {
+      window.localStorage.removeItem('vetconnect_user');
+    } catch {}
+  };
+
+  /**
+   * Restores the session on mount.
+   *
+   * The existing access token is probed FIRST with `GET /api/auth/me`. On a 401
+   * the shared response interceptor (`services/api.ts`) already performs the
+   * single refresh attempt and replays the request, so no second refresh is
+   * issued here — the fallback is centralised, not duplicated.
+   *
+   * The previous order called `POST /api/auth/refresh` unconditionally and wiped
+   * the token on any failure, which destroyed a valid token that had just been
+   * injected into storage before the bundle's module-load read. A WebView
+   * embedding (the mobile call screen) carries no refresh cookie, so that token
+   * was the only credential and the page always bounced to /login.
+   */
   const refreshSession = async () => {
     try {
-      const refreshRes = await api.post<ApiResponse<{ accessToken: string }>>('/api/auth/refresh');
-      if (refreshRes.data.success && refreshRes.data.data?.accessToken) {
-        setAccessToken(refreshRes.data.data.accessToken);
-      }
-
       const res = await api.get<ApiResponse<{ user: User }>>('/api/auth/me');
       if (res.data.success && res.data.data?.user) {
         setUser(res.data.data.user);
         try {
           window.localStorage.setItem('vetconnect_user', JSON.stringify(res.data.data.user));
         } catch {}
-      } else {
-        setUser(null);
-        setAccessToken(null);
-        try {
-          window.localStorage.removeItem('vetconnect_user');
-        } catch {}
+        return;
       }
-    } catch (err: any) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        setUser(null);
-        setAccessToken(null);
-        try {
-          window.localStorage.removeItem('vetconnect_user');
-        } catch {}
+
+      // A non-error response without a user is a protocol violation, not a
+      // session problem: keep the cached user rather than logging them out.
+      if (res.status < 400) return;
+
+      clearSession();
+    } catch (err) {
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+
+      if (status === 401 || status === 403) {
+        clearSession();
+        return;
       }
-      // If offline or network error, keep cached user so navigation doesn't disrupt session
+
+      // Offline or network error: keep the cached user so a transient failure
+      // does not disrupt navigation.
     } finally {
       setLoading(false);
     }

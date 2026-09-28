@@ -33,7 +33,11 @@ jest.mock('../lib/api', () => ({
     }),
   },
   SECURE_STORE_REFRESH_KEY: 'vetconnect_refresh_token',
+  setSessionExpiredHandler: jest.fn(),
+  resetRefreshState: jest.fn(),
 }));
+
+const resetRefreshState = jest.requireMock('../lib/api').resetRefreshState as jest.Mock<void, []>;
 
 describe('Mobile AuthStore (Zustand + SecureStore)', () => {
   beforeEach(() => {
@@ -67,5 +71,11 @@ describe('Mobile AuthStore (Zustand + SecureStore)', () => {
     expect(state.user).toBeNull();
     expect(state.accessToken).toBeNull();
     expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('vetconnect_refresh_token');
+  });
+
+  it('should reset the module-level refresh state on logout', async () => {
+    await useAuthStore.getState().logout();
+
+    expect(resetRefreshState).toHaveBeenCalledTimes(1);
   });
 });

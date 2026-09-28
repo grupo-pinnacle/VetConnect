@@ -1,44 +1,47 @@
-# 📱 VetConnect Mobile Docs — Índice Maestro (v2.0)
+# 📱 VetConnect Mobile — Índice Maestro (SSOT)
 
-> **SSOT (ADR-025):** Nivel 1 `backend/prisma/schema.prisma` + `backend/src/modules/` > Nivel 2 `docs/TECH_REFERENCE.md` + `docs/mobile/AGENT_CODING_SPEC_MOBILE.md` > Nivel 3 `ARCHITECTURE`/`DECISIONS` > Nivel 4 wireframes/narrativa. Ante conflicto, vale el nivel superior. Prohibido inventar endpoints/campos desde Nivel 4.
+> **Precedencia (ADR-025).** Nivel 1 `backend/prisma/schema.prisma` + `backend/src/modules/` → Nivel 2 `01_TECH_REFERENCE_MOBILE.md` + `AGENT_CODING_SPEC_MOBILE.md` → Nivel 3 `docs/ARCHITECTURE.md` + `docs/DECISIONS.md` → Nivel 4 narrativa web/wireframes.
+> Ante conflicto **manda el nivel superior**. Prohibido inventar endpoints, campos o estados desde narrativa o wireframes.
 
-## Mapa (todo lo anterior: contratos + spec + réplica web adaptada)
+## Mapa de documentos — cada archivo tiene UN dueño, cero solapamiento
 
-| Archivo | Nivel | Propósito |
+| Archivo | Nivel | Dueño único de este contenido |
 |---|---|---|
-| `AGENT_CODING_SPEC_MOBILE.md` | 2 | Contrato canónico ejecutable mobile (stack, auth, router, sockets, LiveKit, guardrails) |
-| `01_TECH_REFERENCE_MOBILE.md` | 2 | Endpoints/sockets/modelos reales consumidos por mobile, con códigos reales |
-| `00_AUDITORIA_ESTADO_REAL_MOBILE.md` | — | Foto real SDK 52 vs baseline exigido SDK 54, brechas verificadas `archivo:línea` |
-| `02_ARQUITECTURA_NAVEGACION.md` | 3 | Expo Router real + guards TODO + deep-links + offline |
-| `03_DCU_Y_UX_MOBILE.md` | 4 | Réplica ligera web 01-04: arquetipos, journeys, 5 estados UI obligatorios |
-| `04_SISTEMA_DISENO_MOBILE.md` | 4 | Tokens → StyleSheet actual → migración NativeWind v4 |
-| `05_LIVEKIT_MOBILE_BRIDGE.md` | 2/3 | Bridge WebView + PiP/BottomSheet + `facingMode:environment` (ADR-012) |
-| `06_QA_PERFORMANCE_SEGURIDAD.md` | 3 | EAS tripartita, ADB reverse, TestSprite, PII cero, cuotas |
-| `DEUDA_CODIGO_Y_UPGRADE_SDK54.md` | — | Deuda backend/docs marcada (no corregida) + checklist upgrade SDK 54 |
+| `AGENT_CODING_SPEC_MOBILE.md` | 2 | **Contrato ejecutable de código**: stack, auth, router+guards, sockets, bridge LiveKit, 5 estados UI, tokens, guardrails |
+| `01_TECH_REFERENCE_MOBILE.md` | 2 | **Contratos de backend consumidos** + tabla de deuda backend con su workaround mobile |
+| `02_QA_DISTRIBUCION_Y_SEGURIDAD.md` | 3 | **Operación**: build EAS/local, distribución, QA, performance, seguridad y legal |
+| `03_ESTADO_Y_DEUDA_MOBILE.md` | — | **Foto verificada del estado real** + registro de deuda + roadmap restante |
 
-## Qué NO heredar (inconsistencias neutralizadas)
+**Regla anti-ambigüedad:** si un dato aparece en dos de estos archivos, es un error. Cada tabla, endpoint o regla vive en exactamente un lugar.
 
-1. **ADRs = 25** (`docs/DECISIONS.md:3`). Ignorar `AGENTS.md §1.1`=24 y `RECONCILIACION`=24.
-2. **Mensajes solo Socket** (`TECH_REFERENCE.md:138,216`). Ignorar `SPEC.md:320` `POST /:id/messages` — no existe en `consultations.routes.ts:11-18`.
-3. **Sin TanStack en mobile.** `TECH §2.9`/ADR-015 describen web; mobile usa `zustand` (`src/lib/authStore.ts:1`) + `axios+failedQueue` (`src/lib/api.ts:17-97`). No instalar `@tanstack/react-query`.
-4. **FSM 4 estados** `WAITING/ACTIVE/COMPLETED/CANCELLED` (`schema.prisma:22-27`). Ignorar `SISTEMA_DE_DISENO §1.2` `PENDING/IN_PROGRESS`.
-5. **SameSite `lax` dev / `none;Secure` prod** (ADR-004). Ignorar `FRONTEND_ARCH: strict`.
-6. **Tests 123 baseline web** (`docs/web/README`), no 129 del `DOSSIER`. Mobile: 7 suites en `src/__tests__/`.
-7. **`FavoriteVet`, `calendar.ics`, `VetDrive`, vacunación/alarmas, `raza=otros`, fallecimiento** son v2.1+ (`MINUTA 2026-09`, `SPEC:479-491`). No existen en schema. No implementar.
-8. **Links muertos** `PLAN_ACCION_VETCONNECT.md`, `AI_TECHLEAD_BRIEF.md` — no replicar.
-9. **Códigos reales** `INVALID_CONSULTATION_STATE` + `NOT_CONSULTATION_PARTICIPANT` (`calls.service.ts:60,98,105`), no `INVALID_STATE/FORBIDDEN` de `TECH:158`.
-10. **`GET /notifications` = `take:50` fijo** (`notifications.service.ts:23-29`), sin `skip`. **`GET /media/:id` = `302 redirect` TTL 300s** (`media.controller.ts:28-29`), no JSON.
+## Qué NO heredar (inconsistencias neutralizadas a propósito)
 
-## Baseline exigido — IMPLEMENTADO 2026-09-24 ✅
+Estas contradicciones existen en documentación general del repo. Mobile las ignora deliberadamente.
 
-* React **19.1.0** en mobile (excepción: SDK 54/RN 0.81 lo requieren; web sigue 18.3.1) — ver `00_*`.
-* Expo **SDK 54 + Router ~6 + RN ~0.81 + NativeWind v4** ✅ (instalado y verificado con `expo export`).
-* Auth dual: web cookie `HttpOnly`, mobile `X-Client-Platform: mobile` + `expo-secure-store` (`api.ts:9-14`, `authStore.ts:62-63`).
+| # | Usar (verdad mobile) | Ignorar (contradicto) |
+|---|---|---|
+| 1 | **25 ADRs** (`docs/DECISIONS.md:3`) | `AGENTS.md §1.1`=24, `RECONCILIACION_*`=24, `PLAN_ACCION_*` |
+| 2 | Mensajes **solo por socket** + `GET …/messages?after=` | `SPEC.md:320` `POST /:id/messages` — no existe en `consultations.routes.ts` |
+| 3 | **Sin TanStack Query.** Estado con `zustand` + `axios` (`src/lib/authStore.ts`, `src/lib/api.ts`) | `TECH_REFERENCE §2.9` / ADR-015 (describen web) |
+| 4 | FSM de 4 estados `WAITING/ACTIVE/COMPLETED/CANCELLED` (`schema.prisma:22-27`) | `SISTEMA_DE_DISENO §1.2` `PENDING/IN_PROGRESS` |
+| 5 | Cookies `SameSite=lax` (dev) / `none;Secure` (prod) — **solo web** (ADR-004) | `FRONTEND_ARCHITECTURE.md` `strict` |
+| 6 | Mobile: **11 suites / 29 tests** en `src/__tests__/` | Web: 123 baseline, no 129 del `DOSSIER` |
+| 7 | Mobile: **React 19.1.0** (exigido por SDK 54 / RN 0.81) | Web: React 18.3.1 LTS (motivo: LiveKit nativo; mobile usa bridge WebView) |
+| 8 | Códigos reales `INVALID_CONSULTATION_STATE` + `NOT_CONSULTATION_PARTICIPANT` (`calls.service.ts:60,98,105`) | `INVALID_STATE` / `FORBIDDEN` de `TECH_REFERENCE:158` |
+| 9 | `GET /api/notifications` = `take:50` **fijo, sin cursor** (`notifications.service.ts:23-29`) | Documentación que prometa `take`+`skip` |
+| 10 | `GET /api/media/:id` = **302 redirect** a presigned TTL 300s (`media.controller.ts:28-29`), no JSON | Contratos que esperen payload JSON |
+
+### v2.1+ — NO EXISTEN, no implementar
+
+`FavoriteVet` · `GET /pets/:id/calendar.ics` · `VaccinationRecord` · `MedicationSchedule` · `PetDocument` · `GET /consultations/pending` · campo `priority` con enum · `raza = otros` · baja de paciente por fallecimiento. Todas ausentes de `schema.prisma`. Cerradas como wontfix para v2.0 (`SPEC.md:479-491`, `docs/MINUTA_STAKEHOLDER_2026-09.md`).
 
 ## Verificación
 
 ```powershell
-npx prisma validate --schema=backend/prisma/schema.prisma
-npm run typecheck --workspaces
-npm test --workspaces
+# Requiere `npm install` en la raíz del monorepo (workspaces)
+npm run typecheck -w mobile          # tsc --noEmit, cero `any`
+npm test -w mobile                   # jest, 11 suites / 29 tests
+cd backend; npx prisma validate      # si se toca contrato de datos
 ```
+
+> ⚠️ La cadena de build Android requiere JDK 21 + Android SDK/NDK y una **ruta sin tildes ni caracteres no-ASCII** (el toolchain NDK/clang y el embedder de Metro fallan con `ó` en la ruta). Detalle en `02_QA_DISTRIBUCION_Y_SEGURIDAD.md`.

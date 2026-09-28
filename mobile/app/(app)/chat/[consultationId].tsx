@@ -17,6 +17,29 @@ interface SendAck {
   error?: { message: string };
 }
 
+function messageKey(message: Message): string {
+  return message.id || message.clientMsgId;
+}
+
+/**
+ * Merges an incoming batch without duplicating messages that are already on
+ * screen, keeping the list ordered by creation time. Used both for the initial
+ * history load and for the incremental sync, because either can land first
+ * after a reconnect.
+ */
+function mergeMessages(current: Message[], incoming: Message[]): Message[] {
+  if (incoming.length === 0) return current;
+
+  const byKey = new Map<string, Message>();
+  for (const message of current) byKey.set(messageKey(message), message);
+  for (const message of incoming) {
+    const key = messageKey(message);
+    if (!byKey.has(key)) byKey.set(key, message);
+  }
+
+  return [...byKey.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
 export default function ChatScreen() {
   const { consultationId } = useLocalSearchParams<{ consultationId: string }>();
   const user = useAuthStore((state) => state.user);
@@ -40,11 +63,13 @@ export default function ChatScreen() {
     const onConnect = () => {
       setConnected(true);
       setError(null);
-      socketManager.syncIncrementalMessages().catch(() => {});
+      socketManager
+        .syncIncrementalMessages()
+        .catch((err: unknown) => console.warn('Incremental sync after reconnect failed:', err));
     };
     const onDisconnect = () => setConnected(false);
     const onNew = (msg: Message) => {
-      setMessages((prev) => (prev.some((m) => m.clientMsgId === msg.clientMsgId) ? prev : [...prev, msg]));
+      setMessages((prev) => mergeMessages(prev, [msg]));
       if (msg.createdAt) socketManager.updateLastKnownTimestamp(consultationId, msg.createdAt);
     };
 
@@ -53,13 +78,19 @@ export default function ChatScreen() {
     s.emit('join:consultation', { consultationId });
     s.on('message:new', onNew);
 
+    // Messages fetched by the incremental sync (reconnect / app foreground) are
+    // delivered here; the manager only advances its watermark after this runs.
+    const unsubscribeFromSync = socketManager.onSyncedMessages((_syncedConsultationId, synced) => {
+      setMessages((prev) => mergeMessages(prev, synced));
+    });
+
     socketManager.trackConsultation(consultationId);
 
     api
       .get<ApiResponse<Message[]>>(`/api/consultations/${consultationId}/messages`)
       .then((res) => {
         if (res.data.success && res.data.data) {
-          setMessages(res.data.data);
+          setMessages((prev) => mergeMessages(prev, res.data.data ?? []));
           if (res.data.data.length > 0) {
             const latest = res.data.data[res.data.data.length - 1];
             socketManager.updateLastKnownTimestamp(consultationId, latest.createdAt);
@@ -75,6 +106,10 @@ export default function ChatScreen() {
       s.off('connect', onConnect);
       s.off('disconnect', onDisconnect);
       s.off('message:new', onNew);
+      unsubscribeFromSync();
+      // Releases the socket and the tracked consultations so neither leaks into
+      // the next consultation.
+      socketManager.disconnect();
     };
   }, [consultationId, accessToken]);
 
@@ -148,7 +183,7 @@ export default function ChatScreen() {
 
       <FlatList
         data={messages}
-        keyExtractor={(item) => item.id || item.clientMsgId}
+        keyExtractor={(item) => messageKey(item)}
         contentContainerStyle={{ padding: 16 }}
         ListEmptyComponent={<Text style={styles.empty} testID="chat-empty">Aún no hay mensajes. Escriba el primero.</Text>}
         renderItem={({ item }) => {
