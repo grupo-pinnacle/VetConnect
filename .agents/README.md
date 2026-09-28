@@ -102,7 +102,22 @@ Cualquier operación de programación, refactorización o creación de código s
 Todo agente que opere en este repositorio está subordinado a la siguiente precedencia:
 1. **Nivel 1:** `backend/prisma/schema.prisma` y controladores Express en `backend/src/modules/`.
 2. **Nivel 2:** `docs/TECH_REFERENCE.md` y `docs/web/AGENT_CODING_SPEC.md` / `docs/mobile/AGENT_CODING_SPEC_MOBILE.md`.
-3. **Nivel 3:** `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` (26 ADRs) y `docs/FRONTEND_ARCHITECTURE.md`.
+3. **Nivel 3:** `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` (27 ADRs) y `docs/FRONTEND_ARCHITECTURE.md`.
 4. **Nivel 4:** Wireframes y narrativa de diseño (`docs/web/00..11`, `docs/SISTEMA_DE_DISENO.md`).
 
 *Regla de Oro:* **Queda prohibido inventar endpoints o campos basados en documentos de Nivel 4.**
+
+---
+
+## 🧰 5. Hub de Skills Extensibles & Conexión con Antigravity Remoto
+
+Cada agente del escuadrón está calibrado al nivel de inteligencia y razonamiento de **Claude Opus 5.5 / Staff FAANG Tier**, operando con matrices formales de habilidades (Skills) nativas y hooks de extensibilidad:
+
+* **Estructura de Skills:** Toda skill reside en una carpeta con un manifiesto `SKILL.md` con frontmatter YAML declarando su nombre y descripción de activación.
+* **Integración con PC Secundaria Antigravity:** Cuando se copian o vinculan las skills adicionales desde la otra máquina (`~/.gemini/antigravity/builtin/skills/` o `.gemini/skills/`), el Orquestador las detecta dinámicamente y las activa en el agente de capa correspondiente:
+  * Skills de base de datos y optimización SQL (`skill-pg-query-optimizer`) ➔ **Agente Backend**.
+  * Skills de UI generativa y visual diff (`generative_ui`, `skill-visual-diff`) ➔ **Agente Frontend**.
+  * Skills de emuladores y profiling móvil (`skill-hermes-profiler`) ➔ **Agente Mobile**.
+  * Skills de mutación y escaneo de vulnerabilidades (`skill-security-scan`) ➔ **Agente QA**.
+  * Skills de linteo contractual y fuga de PII (`skill-pii-leak-detector`) ➔ **Agente Compliance**.
+
