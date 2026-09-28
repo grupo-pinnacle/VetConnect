@@ -31,6 +31,18 @@ Como en la empresa las redes Wi-Fi a veces bloquean conexiones, la forma más se
 
 ## 💻 PARTE 3: Encender el Sistema
 
+### ⚡ Método Rápido (1 solo clic - Recomendado en Windows):
+Si estás en Windows, simplemente hacé **doble clic en el archivo `run.bat`** (ubicado en la raíz de la carpeta VetConnect).
+El archivo se encargará automáticamente de:
+- Verificar que tengas Node.js instalado.
+- Crear los archivos de configuración `.env` si no existen.
+- Instalar todas las dependencias del monorepo si es tu primera vez (`npm install`).
+- Generar el cliente de Prisma para la base de datos (`prisma generate`).
+- Darte a elegir qué servicios arrancar (por defecto enciende **Backend + Web** a los 5 segundos sin tocar nada).
+
+---
+
+### Método Manual (Paso a paso en VS Code):
 Abrí **Visual Studio Code**. Arriba en el menú tocá `Terminal` -> `New Terminal` (Nueva terminal). Vas a ver que se abre un recuadro abajo para escribir comandos.
 
 Debemos encender **tres partes** por separado. Lo ideal es abrir **3 pestañas de terminal distintas** (usando el botón `+` en la ventana de terminal de VS Code).

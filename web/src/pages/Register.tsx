@@ -35,6 +35,7 @@ export const Register: React.FC = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const { user: currentUser, register } = useAuth();
   const navigate = useNavigate();
@@ -50,6 +51,12 @@ export const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!acceptedTerms) {
+      setError('Debes aceptar los Términos y Condiciones y las Políticas de Privacidad y Reembolsos para registrarte.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -386,6 +393,54 @@ export const Register: React.FC = () => {
                 </p>
               </div>
             )}
+
+            {/* Casilla de Consentimiento Informado & Aceptación Legal */}
+            <div className="pt-2">
+              <div className="flex items-start gap-3 p-3.5 bg-[#FAF8F4] border border-[#DCD5C8] rounded-2xl">
+                <input
+                  id="register-terms"
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  required
+                  aria-required="true"
+                  className="mt-1 w-4 h-4 rounded border-[#DCD5C8] text-[#0A342B] focus:ring-[#0A342B] focus:ring-offset-0 cursor-pointer shrink-0"
+                />
+                <label
+                  htmlFor="register-terms"
+                  className="text-xs text-[#3D3A34] leading-relaxed cursor-pointer select-none"
+                >
+                  He leído y acepto los{' '}
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-[#0A342B] underline hover:text-[#0E463A] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#0A342B] rounded"
+                  >
+                    Términos y Condiciones
+                  </Link>
+                  , la{' '}
+                  <Link
+                    to="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-[#0A342B] underline hover:text-[#0E463A] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#0A342B] rounded"
+                  >
+                    Política de Privacidad
+                  </Link>{' '}
+                  y la{' '}
+                  <Link
+                    to="/refunds"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-[#0A342B] underline hover:text-[#0E463A] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#0A342B] rounded"
+                  >
+                    Política de Reembolsos
+                  </Link>
+                  . Comprendo que este servicio brinda teleorientación y triaje sanitario.
+                </label>
+              </div>
+            </div>
 
             <button
               type="submit"

@@ -204,6 +204,10 @@ Cada página del frontend web implementa una interfaz formal tipada, gestionando
 | **ConsultationRoom** (`ConsultationRoom.tsx`) | `/call/:id` | `CLIENT`, `VET`, `ADMIN` | `POST /api/calls/:id/token`, `GET /api/consultations/:id/messages` | `join:consultation`, `message:send`, `message:new`, LiveKit WebRTC SFU |
 | **PrescriptionView** (`PrescriptionView.tsx`) | `/prescriptions/:id`, `/verify-rx` | Público | `GET /api/prescriptions/:id` | N/A (Vista optimizada para impresión, farmacia y validación QR SENASA) |
 | **AdminVets** (`AdminVets.tsx`) | `/admin/vets`, `/admin/dashboard` | `ADMIN` | `GET /api/admin/vets/pending`, `GET /api/admin/stats`, `PATCH /api/admin/vets/:id/approve`, `PATCH /api/admin/vets/:id/reject` | N/A |
+| **PrivacyPolicy** (`PrivacyPolicy.tsx`) | `/privacy` | Público | N/A | N/A (Estatutos Ley 25.326, canal ARCO, minimización de datos) |
+| **TermsConditions** (`TermsConditions.tsx`) | `/terms` | Público | N/A | N/A (Descargo de emergencia, Ley 14.072, deslinde de responsabilidad) |
+| **CookiePolicy** (`CookiePolicy.tsx`) | `/cookies` | Público | N/A | N/A (Cookies técnicas vs analíticas, panel de revocación) |
+| **RefundPolicy** (`RefundPolicy.tsx`) | `/refunds` | Público | N/A | N/A (Ley 24.240 Art. 34, SLA de triage 15 min, cortes de conexión) |
 | **NotFound** (`NotFound.tsx`) | `*` (Catch-all) | Público | N/A | N/A (Redirección segura al home) |
 
 ---

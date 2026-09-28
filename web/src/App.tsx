@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import NotFound from './pages/NotFound';
 import OfflineBanner from './components/common/OfflineBanner';
 import GlobalCallListener from './components/call/GlobalCallListener';
+import CookieConsentBanner from './components/common/CookieConsentBanner';
 
 // Code-Splitting: Lazy load heavy clinical rooms and dashboards to optimize Landing LCP
 const DashboardClient = React.lazy(() => import('./pages/DashboardClient'));
@@ -18,6 +19,12 @@ const DashboardVet = React.lazy(() => import('./pages/DashboardVet'));
 const AdminVets = React.lazy(() => import('./pages/AdminVets'));
 const ConsultationRoom = React.lazy(() => import('./pages/ConsultationRoom'));
 const PrescriptionView = React.lazy(() => import('./pages/PrescriptionView'));
+
+// Legal & Compliance Pages
+const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
+const TermsConditions = React.lazy(() => import('./pages/TermsConditions'));
+const CookiePolicy = React.lazy(() => import('./pages/CookiePolicy'));
+const RefundPolicy = React.lazy(() => import('./pages/RefundPolicy'));
 
 const PageLoader: React.FC = () => (
   <div className="w-full h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300">
@@ -43,6 +50,7 @@ export const App: React.FC = () => {
           <BrowserRouter>
             <OfflineBanner />
             <GlobalCallListener />
+            <CookieConsentBanner />
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Landing />} />
@@ -51,6 +59,12 @@ export const App: React.FC = () => {
                 <Route path="/prescriptions/:id" element={<PrescriptionView />} />
                 <Route path="/verify-rx" element={<PrescriptionView />} />
                 <Route path="/preview/admin" element={<AdminVets />} />
+
+                {/* Páginas Legales y Regulatorias */}
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsConditions />} />
+                <Route path="/cookies" element={<CookiePolicy />} />
+                <Route path="/refunds" element={<RefundPolicy />} />
 
                 <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
                   <Route path="/client/dashboard" element={<DashboardClient />} />

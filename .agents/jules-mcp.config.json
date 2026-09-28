@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/mcp-server-config.json",
+  "name": "VetConnect Jules MCP Gateway",
+  "version": "2.0.0",
+  "description": "Configuracion de referencia para conectar clientes MCP (Antigravity, Claude Desktop, Cursor) con Google Jules",
+  "server": {
+    "command": "npx",
+    "args": ["-y", "jules-mcp"],
+    "env": {
+      "JULES_API_KEY": "${JULES_API_KEY}"
+    }
+  },
+  "tools": [
+    {
+      "name": "jules_list_sources",
+      "description": "Lista los repositorios GitHub vinculados para obtener el ID de contexto"
+    },
+    {
+      "name": "jules_create_session",
+      "description": "Inicia una tarea autonoma de programacion en Jules enviando el task packet y el cerco de seguridad"
+    },
+    {
+      "name": "jules_list_sessions",
+      "description": "Consulta el estado, historial y PRs generados por Jules"
+    },
+    {
+      "name": "jules_approve_plan",
+      "description": "Aprueba el plan de ejecucion de Jules para comenzar la fase de Quirofano"
+    }
+  ]
+}

@@ -29,4 +29,20 @@ describe('Landing Page', () => {
     expect(screen.getByTestId('cta-admin-portal')).toBeDefined();
     expect(screen.getByTestId('download-apk-link')).toBeDefined();
   });
+
+  it('should render emergency health disclaimer and business legal entity details', () => {
+    render(
+      <MemoryRouter>
+        <Landing />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText(/Aviso de Salud Animal:/i)).toBeDefined();
+    expect(screen.getAllByText(/Pinnacle Group S\.A\./i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/30-71234567-8/i)).toBeDefined();
+    expect(screen.getByText(/Términos y Condiciones/i)).toBeDefined();
+    expect(screen.getByText(/Política de Privacidad/i)).toBeDefined();
+    expect(screen.getByText(/Política de Cookies/i)).toBeDefined();
+    expect(screen.getByText(/Política de Reembolsos/i)).toBeDefined();
+  });
 });

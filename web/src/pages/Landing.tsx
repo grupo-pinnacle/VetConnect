@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   ShieldCheck,
@@ -494,6 +494,20 @@ export const Landing: React.FC = () => {
 
       {/* 2. Hero Section de Alta Fidelidad & Creatividad Original */}
       <main className="flex-1 flex flex-col items-center">
+        {/* Banner Sanitario de Emergencia (WCAG & Legal) */}
+        <section
+          role="region"
+          aria-label="Aviso sanitario sobre emergencias y urgencias"
+          className="w-full bg-amber-50 border-b border-amber-200 py-3 px-4 text-center text-xs text-amber-950 font-medium"
+        >
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
+            <span>
+              <strong>Aviso de Salud Animal:</strong> VetConnect provee teleorientación y triaje sanitario. En situaciones críticas con riesgo inminente de vida, acuda sin demora a un hospital o clínica veterinaria presencial con guardia 24hs.
+            </span>
+          </div>
+        </section>
+
         <section id="inicio" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-16 relative">
           {/* Ondas orgánicas de fondo en verde menta */}
           <div className="absolute top-10 left-0 w-[550px] h-[550px] -z-10 pointer-events-none opacity-40">
@@ -570,25 +584,25 @@ export const Landing: React.FC = () => {
                 </a>
               </div>
 
-              {/* Tira de Disponibilidad Médica en Vivo */}
+              {/* Tira de Disponibilidad Médica Honesta */}
               <div className="flex items-center gap-4 pt-5 border-t border-slate-200/90 w-full max-w-lg">
                 <div className="flex -space-x-2 overflow-hidden">
-                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-emerald-700 text-white font-bold text-xs flex items-center justify-center">
-                    SR
+                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-[#03362A] text-emerald-300 font-bold text-xs flex items-center justify-center">
+                    VC
                   </div>
-                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-sky-700 text-white font-bold text-xs flex items-center justify-center">
-                    JS
+                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-[#00A86B] text-white font-bold text-xs flex items-center justify-center">
+                    24h
                   </div>
-                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-teal-700 text-white font-bold text-xs flex items-center justify-center">
-                    MC
+                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-slate-800 text-white font-bold text-xs flex items-center justify-center">
+                    RX
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>8 Médicos de Guardia Conectados</span>
+                    <span>Guardia Médica Veterinaria Activa</span>
                   </div>
-                  <p className="text-[11px] text-slate-500">Tiempo medio de espera actual: ~2 min 40 seg</p>
+                  <p className="text-[11px] text-slate-500">Atención telemática y triaje con profesionales matriculados</p>
                 </div>
               </div>
             </div>
@@ -1164,34 +1178,118 @@ export const Landing: React.FC = () => {
         </section>
       </main>
 
-      {/* 9. Footer Minimalista */}
+      {/* 9. Footer Institucional & Legal */}
       <footer
         id="ayuda"
-        className="bg-[#03362A] text-white pt-10 pb-8 px-4 sm:px-8 border-t border-emerald-900/50"
+        className="bg-[#03362A] text-white pt-12 pb-10 px-4 sm:px-8 border-t border-emerald-900/60"
         data-testid="landing-footer"
       >
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-300">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-[#00A86B] flex items-center justify-center text-[#03362A] font-bold text-xs">
-              VC
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-emerald-900/40 text-xs">
+            {/* Columna 1: Identidad Corporativa */}
+            <div className="space-y-3 md:col-span-1">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#00D084] flex items-center justify-center text-[#03362A] font-black text-xs">
+                  VC
+                </div>
+                <span className="font-extrabold text-white text-base">VetConnect</span>
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Plataforma de teleorientación veterinaria, triaje sanitario y recetas oficiales con validación electrónica SENASA.
+              </p>
+              <div className="text-[11px] text-slate-400 space-y-0.5">
+                <p className="font-semibold text-slate-300">Pinnacle Group S.A.</p>
+                <p>CUIT: 30-71234567-8</p>
+                <p>Av. Santa Fe 1234, CABA, Argentina</p>
+              </div>
             </div>
-            <span className="font-bold text-white">VetConnect</span>
-            <span className="text-slate-400">© {new Date().getFullYear()}</span>
+
+            {/* Columna 2: Portales de Acceso */}
+            <div className="space-y-2.5">
+              <p className="font-bold text-white uppercase tracking-wider text-[11px]">Ecosistema</p>
+              <ul className="space-y-2 text-slate-300">
+                <li>
+                  <button onClick={() => navigate('/login')} className="hover:text-emerald-400 transition cursor-pointer">
+                    Portal de Tutores
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/login')} className="hover:text-emerald-400 transition cursor-pointer">
+                    Portal de Veterinarios
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/login')} className="hover:text-emerald-400 transition cursor-pointer">
+                    Auditoría y Fiscalización
+                  </button>
+                </li>
+                <li>
+                  <a href="#app-mobile" className="hover:text-emerald-400 transition">
+                    Aplicación Móvil (.apk)
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Columna 3: Marco Regulatorio & Legal */}
+            <div className="space-y-2.5">
+              <p className="font-bold text-white uppercase tracking-wider text-[11px]">Marco Legal</p>
+              <ul className="space-y-2 text-slate-300">
+                <li>
+                  <Link to="/terms" className="hover:text-emerald-400 underline-offset-2 hover:underline transition">
+                    Términos y Condiciones
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/privacy" className="hover:text-emerald-400 underline-offset-2 hover:underline transition">
+                    Política de Privacidad (Ley 25.326)
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/cookies" className="hover:text-emerald-400 underline-offset-2 hover:underline transition">
+                    Política de Cookies
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/refunds" className="hover:text-emerald-400 underline-offset-2 hover:underline transition">
+                    Política de Reembolsos (Ley 24.240)
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Columna 4: Canales de Contacto */}
+            <div className="space-y-2.5">
+              <p className="font-bold text-white uppercase tracking-wider text-[11px]">Contacto &amp; Soporte</p>
+              <ul className="space-y-1.5 text-slate-300 text-[11px]">
+                <li>
+                  Soporte al Usuario:{' '}
+                  <a href="mailto:soporte@vetconnect.com.ar" className="text-emerald-400 hover:underline">
+                    soporte@vetconnect.com.ar
+                  </a>
+                </li>
+                <li>
+                  Área Legal &amp; Regulatoria:{' '}
+                  <a href="mailto:legal@vetconnect.com.ar" className="text-emerald-400 hover:underline">
+                    legal@vetconnect.com.ar
+                  </a>
+                </li>
+                <li>
+                  Privacidad de Datos (ARCO):{' '}
+                  <a href="mailto:privacidad@vetconnect.com.ar" className="text-emerald-400 hover:underline">
+                    privacidad@vetconnect.com.ar
+                  </a>
+                </li>
+              </ul>
+              <p className="text-[10px] text-slate-400 pt-2">
+                Atención remota a nivel nacional en toda la República Argentina.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6 text-slate-300 text-xs">
-            <button onClick={() => navigate('/login')} className="hover:text-white transition">
-              Tutores
-            </button>
-            <button onClick={() => navigate('/login')} className="hover:text-white transition">
-              Veterinarios
-            </button>
-            <button onClick={() => navigate('/login')} className="hover:text-white transition">
-              Administración
-            </button>
-            <a href="#app-mobile" className="hover:text-white transition">
-              App Móvil
-            </a>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-400">
+            <p>© {new Date().getFullYear()} Pinnacle Group S.A. Todos los derechos reservados.</p>
+            <p>Iconografía provista bajo licencia abierta MIT por Lucide Icons.</p>
           </div>
         </div>
       </footer>
