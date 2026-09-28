@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Tabs } from 'expo-router';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Redirect, Tabs } from 'expo-router';
 import { useAuthStore } from '../../src/lib/authStore';
 import { colors } from '../../src/theme/tokens';
 
@@ -26,8 +26,23 @@ function VetPendingBlock() {
 
 export default function AppLayout() {
   const user = useAuthStore((state) => state.user);
+  const isLoading = useAuthStore((state) => state.isLoading);
 
-  if (user?.role === 'VET' && user?.vetStatus !== 'APPROVED') {
+  // A deep link lands straight on this layout (`vetconnect://call/:id` resolves
+  // to `/(app)/call/[consultationId]`), bypassing `app/index.tsx`. Without the
+  // auth gate here, `initAuth()` would still be running and the screen would
+  // mount with `user === null`.
+  if (isLoading) {
+    return (
+      <View style={styles.block} testID="app-auth-splash">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!user) return <Redirect href="/(auth)/login" />;
+
+  if (user.role === 'VET' && user.vetStatus !== 'APPROVED') {
     return <VetPendingBlock />;
   }
 
