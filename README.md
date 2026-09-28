@@ -107,7 +107,7 @@ flowchart TB
 | **JDK 21 + Android SDK** | Solo build nativo APK (no necesario para Expo Go) | [Android Studio](https://developer.android.com/studio) o `cmdline-tools`; NDK 27 se instala solo |
 | **EAS CLI** | Opcional (builds cloud) | Incluido como devDependency en `mobile` (`npx eas`) — requiere `eas login` |
 
-> ⚠️ **Build nativo en Windows:** el proyecto debe estar en una ruta **sin caracteres no-ASCII** (la `ó` de carpetas como `Programación` rompe el toolchain NDK/clang) y el SDK necesita espacio libre (C: lleno bloquea la descarga del NDK/Gradle). Ver receta verificada en [docs/mobile/06_QA_PERFORMANCE_SEGURIDAD.md](docs/mobile/06_QA_PERFORMANCE_SEGURIDAD.md).
+> ⚠️ **Build nativo en Windows:** el proyecto debe estar en una ruta **sin caracteres no-ASCII** (una `ó` en el path rompe el toolchain NDK/clang) y el SDK necesita espacio libre. Ver receta verificada en [docs/mobile/02_QA_DISTRIBUCION_Y_SEGURIDAD.md](docs/mobile/02_QA_DISTRIBUCION_Y_SEGURIDAD.md).
 
 ---
 
@@ -185,7 +185,7 @@ cd android
 # APK en: android\app\build\outputs\apk\release\app-release.apk
 ```
 
-> Detalle completo, versiones exactas y solución de problemas en [docs/mobile/06_QA_PERFORMANCE_SEGURIDAD.md](docs/mobile/06_QA_PERFORMANCE_SEGURIDAD.md). Los artefactos (`android/`, `*.apk`) están gitignorados: el workflow es managed.
+> Detalle completo, versiones exactas y solución de problemas en [docs/mobile/02_QA_DISTRIBUCION_Y_SEGURIDAD.md](docs/mobile/02_QA_DISTRIBUCION_Y_SEGURIDAD.md). Los artefactos (`android/`, `*.apk`) están gitignorados: el workflow es managed.
 
 ---
 
