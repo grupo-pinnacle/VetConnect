@@ -59,25 +59,29 @@ alongside the behavior they cover, not as a separate ceremony.
 
 ### Phase 1 — Unblock what already exists
 
-- [ ] **WU1** Session expiry (D-07). On refresh failure clear `useAuthStore` and navigate to
+- [x] **WU1** Session expiry (D-07). On refresh failure clear `useAuthStore` and navigate to
       `/(auth)/login`. Reset `isRefreshing`/`failedQueue` on logout.
-      *Check:* typecheck + test green; new test asserts store cleared on refresh rejection.
-- [ ] **WU2** Chat sync + socket leak (D-05, D-06). Consume the
+      *Check:* ✅ typecheck + 14 suites / 118 tests green. Store cleared, routed, queue drained.
+- [x] **WU2** Chat sync + socket leak (D-05, D-06). Consume the
       `syncIncrementalMessages()` result instead of discarding it; do not advance the watermark
       when the fetch fails. Disconnect the socket manager on unmount.
-      *Check:* typecheck + test green; new test asserts failed sync leaves watermark unchanged.
-- [ ] **WU3** Deep linking (D-02). Wire `expo-linking`, add `+not-found.tsx`, honor
+      *Check:* ✅ Failed sync leaves watermark unchanged; success delivers then advances.
+- [x] **WU3** Deep linking (D-02). Wire `expo-linking`, add `+not-found.tsx`, honor
       `vetconnect://call/:id`, `://consultation/:id`, `://prescriptions/:id` while preserving the
       SecureStore session.
-      *Check:* typecheck + test green.
-- [ ] **WU4** Push wiring, mobile half (D-01). Invoke `registerPushToken()` and install
+      *Check:* ✅ Pure URL→route mapper extracted and tested. Root layout no longer replaces the
+      navigator, which is what actually discarded cold-start links.
+- [x] **WU4** Push wiring, mobile half (D-01). Invoke `registerPushToken()` and install
       `setupNotificationListeners()` from the root layout. Validate `Platform.OS` against the
       closed `ios|android|web` enum before sending.
-      *Check:* typecheck + test green; test asserts invalid platform is not posted.
-- [ ] **WU5** Call screen (D-03). Request real permissions via `expo-camera` so the denied branch is
+      *Check:* ✅ Unsupported platform does not POST. Dropped deprecated `shouldShowAlert`.
+- [x] **WU5** Call screen (D-03). Request real permissions via `expo-camera` so the denied branch is
       reachable; fix the token handshake with the embedded web client; remove the dead
       `initLiveKitCall` no-op or make it real on the web side; drop `catch (err: any)`.
-      *Check:* typecheck + test green; no `any` remains in the file.
+      *Check:* ✅ Seeded localStorage via `injectedJavaScriptBeforeContentLoaded`; AuthContext probes
+      `/api/auth/me` before refresh; both camera and mic requested; no `any`.
+      *Scope note:* required a two-line change in `web/src/context/AuthContext.tsx`. The WebView
+      cannot authenticate by any mobile-only route, so this was unavoidable to close D-03.
 
 ### Phase 2 — Call signalling
 
@@ -137,10 +141,10 @@ alongside the behavior they cover, not as a separate ceremony.
 | Phase | Status |
 |---|---|
 | 0. Docs consolidation | ✅ done — 10 files → 5, one owner each |
-| 1. Unblock | 🔲 not started |
+| 1. Unblock | ✅ done — WU1..WU5 |
 | 2. Call signalling | 🔲 not started |
 | 3. Contracts | 🔲 not started |
-| 4. Tests | 🔲 not started |
+| 4. Tests | ◑ partial — 3 tautological suites rewritten in WU3/WU5; api.ts and socket.ts now covered. Remaining: hooks, 4 services, 19 render tests, `app.test.ts` still `expect(true).toBe(true)` |
 | 5. Product | 🔲 not started |
 | 6. Backend | 🔲 not started |
 
@@ -149,8 +153,34 @@ alongside the behavior they cover, not as a separate ceremony.
 Baseline before any source write (2026-09-28):
 - `npm install` → 2043 packages (workspace had **no** `node_modules`).
 - `npm run typecheck -w mobile` → **green**.
-- `npm test -w mobile` → **11 suites / 29 tests green**.
+- `npm test -w mobile` → **11 suites / 29 tests**.
+
+After Phase 1:
+- `npm run typecheck -w mobile` → **green**.
+- `npm test -w mobile` → **14 suites / 118 tests**.
+- `npm run typecheck -w web` → **green**.
+- `npm test -w web` → **17 files / 43 tests**.
+- Zero `: any` / `as any` in `mobile/`.
+
+## Commits
+
+| Commit | Work unit |
+|---|---|
+| `90d41ae` | docs: 10 mobile docs → 5 single-owner SSOT files |
+| `7a683a8` | chore(odd): register the six-phase feature |
+| `b8118b0` | WU1+WU2: session expiry, chat resync, socket leak |
+| `9594651` | WU3+WU4+WU5: deep links, push wiring, call screen |
 
 ## Next step
 
-WU1 — session expiry handling.
+Phase 2 — WU6, call signalling (ring, incoming-call UI, answer/reject).
+
+## Known items deliberately still open
+
+- **Backend sends no push at all.** `calls.service.ts:117` emits Socket.io `call:incoming`, but
+  nothing anywhere dispatches an Expo push or creates a `Notification` row. `setupNotificationListeners`
+  currently handles payloads nothing produces. This is WU19 and it is backend work.
+- `app.json` lacks `microphonePermission` in the `expo-camera` plugin block, so on iOS the mic
+  prompt has no usage string. A config/credential decision, not code.
+- `eas.json` has no `projectId`/`owner`; `app.json` has no `android.googleServicesFile`.
+- `web/src/services/api.ts:48` has a pre-existing `any` in the refresh queue type. Out of mobile scope.
