@@ -64,6 +64,7 @@ if errorlevel 1 goto error_prisma
 echo       Prisma Client listo.
 echo.
 
+:menu_inicio
 REM 6. Menu de Inicio
 echo ======================================================================
 echo  Selecciona el servicio que deseas encender:
@@ -157,7 +158,7 @@ if errorlevel 1 (
     exit /b 1
 )
 echo Prisma Client generado correctamente.
-goto fin
+goto menu_inicio
 
 :salir
 echo.
