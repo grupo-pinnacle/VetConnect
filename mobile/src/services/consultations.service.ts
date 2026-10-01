@@ -1,5 +1,5 @@
 import api, { getApiErrorMessage } from '../lib/api';
-import { ApiResponse, Consultation } from '../types';
+import { ApiResponse, Consultation, RingCallResponse } from '../types';
 import { reviewSchema } from '../validation/auth';
 import {
   completeConsultationSchema,
@@ -111,5 +111,17 @@ export async function fetchConsultation(consultationId: string): Promise<Consult
     return res.data.data;
   } catch (err) {
     throw new Error(getApiErrorMessage(err, 'Error al cargar consulta'));
+  }
+}
+
+export async function ringConsultationCall(consultationId: string): Promise<RingCallResponse> {
+  try {
+    const res = await api.post<ApiResponse<RingCallResponse>>(`/api/calls/${consultationId}/ring`);
+    if (!res.data.success || !res.data.data) {
+      throw new Error(res.data.error?.message || 'No se pudo iniciar la llamada');
+    }
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err, 'No se pudo iniciar la llamada'));
   }
 }

@@ -11,11 +11,14 @@ jest.mock('../lib/prisma', () => ({
     },
     pushToken: {
       upsert: jest.fn(),
+      findMany: jest.fn(),
     },
     notification: {
       findMany: jest.fn(),
       findFirst: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
+      create: jest.fn(),
     },
   },
 }));
@@ -149,6 +152,72 @@ describe('Notifications Module (/api/notifications)', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.isRead).toBe(true);
+    });
+  });
+
+  describe('PATCH /api/notifications/read-all', () => {
+    it('should mark all unread notifications as read for authenticated user', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockUser);
+      mockPrismaNotification.updateMany.mockResolvedValue({ count: 5 });
+
+      const res = await request(app)
+        .patch('/api/notifications/read-all')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(mockPrismaNotification.updateMany).toHaveBeenCalledWith({
+        where: { userId: mockUser.id, isRead: false },
+        data: expect.objectContaining({ isRead: true }),
+      });
+    });
+  });
+
+  describe('notificationsService.createAndDispatch', () => {
+    it('persists notification in database with correct payload', async () => {
+      const { notificationsService } = await import('../modules/notifications/notifications.service');
+
+      mockPrismaNotification.create.mockResolvedValue({
+        id: 'new-notif-1',
+        userId: mockUser.id,
+        title: 'Nueva receta médica oficial',
+        body: 'El profesional emitió una receta',
+        type: 'PRESCRIPTION_NEW',
+        data: { consultationId: 'c-100' },
+        isRead: false,
+        readAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockPrismaPushToken.findMany.mockResolvedValue([
+        {
+          id: 'push-1',
+          userId: mockUser.id,
+          token: 'ExponentPushToken[mock-token-abc]',
+          platform: 'android',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+
+      const result = await notificationsService.createAndDispatch(
+        mockUser.id,
+        'Nueva receta médica oficial',
+        'El profesional emitió una receta',
+        'PRESCRIPTION_NEW',
+        { consultationId: 'c-100' }
+      );
+
+      expect(result.id).toBe('new-notif-1');
+      expect(mockPrismaNotification.create).toHaveBeenCalledWith({
+        data: {
+          userId: mockUser.id,
+          title: 'Nueva receta médica oficial',
+          body: 'El profesional emitió una receta',
+          type: 'PRESCRIPTION_NEW',
+          data: { consultationId: 'c-100' },
+        },
+      });
     });
   });
 });

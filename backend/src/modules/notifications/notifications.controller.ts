@@ -45,4 +45,16 @@ export class NotificationsController {
       next(error);
     }
   };
+
+  public markAllRead = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await notificationsService.markAllAsRead(req.user!.id);
+      res.status(200).json({
+        success: true,
+        message: 'Todas las notificaciones fueron marcadas como leidas',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

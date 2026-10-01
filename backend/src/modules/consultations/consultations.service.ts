@@ -2,6 +2,7 @@ import { ConsultationStatus, Role, VetStatus, User, Prisma } from '@prisma/clien
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import { CallsService } from '../calls/calls.service';
+import { notificationsService } from '../notifications/notifications.service';
 import {
   CreateConsultationDTO,
   CompleteConsultationDTO,
@@ -159,7 +160,7 @@ export class ConsultationsService {
       throw new AppError('La consulta no se encuentra en sala de espera', 400, 'INVALID_STATUS');
     }
 
-    return prisma.consultation.update({
+    const updated = await prisma.consultation.update({
       where: { id: consultationId },
       data: {
         vetId: vetUser.id,
@@ -172,6 +173,18 @@ export class ConsultationsService {
         vet: { select: userSelectFields },
       },
     });
+
+    await notificationsService
+      .createAndDispatch(
+        updated.clientId,
+        'Veterinario asignado',
+        `El Dr. ${vetUser.firstName} ha tomado tu consulta y está listo para atenderte`,
+        'CONSULTATION_ASSIGNED',
+        { consultationId: updated.id }
+      )
+      .catch(() => {});
+
+    return updated;
   }
 
   public async completeConsultation(consultationId: string, vetUser: User, dto: CompleteConsultationDTO) {

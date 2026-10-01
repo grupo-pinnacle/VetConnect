@@ -1,4 +1,6 @@
 const post = jest.fn();
+const get = jest.fn();
+const patch = jest.fn();
 const getPermissionsAsync = jest.fn();
 const requestPermissionsAsync = jest.fn();
 const getExpoPushTokenAsync = jest.fn();
@@ -24,7 +26,7 @@ jest.mock('expo-secure-store', () => ({
 
 jest.mock('../lib/api', () => ({
   __esModule: true,
-  default: { post, defaults: { headers: { common: {} } } },
+  default: { post, get, patch, defaults: { headers: { common: {} } } },
   SECURE_STORE_REFRESH_KEY: 'vetconnect_refresh_token',
   resetRefreshState: jest.fn(),
   setSessionExpiredHandler: jest.fn(),
@@ -222,5 +224,41 @@ describe('SDK 54 notification handler keys', () => {
       // `shouldShowAlert` is @deprecated in favour of banner/list in SDK 54.
       expect(behavior).not.toHaveProperty('shouldShowAlert');
     });
+  });
+});
+
+describe('fetchNotifications, markAsRead and markAllAsRead', () => {
+  it('fetches notifications from GET /api/notifications', async () => {
+    const { service } = loadService('android');
+    get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [{ id: 'n1', title: 'Alerta', body: 'Mensaje', isRead: false }],
+      },
+    });
+
+    const result = await service.fetchNotifications();
+
+    expect(get).toHaveBeenCalledWith('/api/notifications');
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('n1');
+  });
+
+  it('marks a single notification as read with PATCH /api/notifications/:id/read', async () => {
+    const { service } = loadService('android');
+    patch.mockResolvedValueOnce({ data: { success: true } });
+
+    await service.markAsRead('n1');
+
+    expect(patch).toHaveBeenCalledWith('/api/notifications/n1/read');
+  });
+
+  it('marks all notifications as read with PATCH /api/notifications/read-all', async () => {
+    const { service } = loadService('android');
+    patch.mockResolvedValueOnce({ data: { success: true } });
+
+    await service.markAllAsRead();
+
+    expect(patch).toHaveBeenCalledWith('/api/notifications/read-all');
   });
 });

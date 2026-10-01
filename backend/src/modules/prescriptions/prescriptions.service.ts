@@ -3,6 +3,7 @@ import { User, Role, VetStatus, ConsultationStatus } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import { CreatePrescriptionDTO } from './prescriptions.schemas';
+import { notificationsService } from '../notifications/notifications.service';
 
 export class PrescriptionsService {
   public async createPrescription(
@@ -74,6 +75,16 @@ export class PrescriptionsService {
     } catch (err) {
       console.error('Failed to generate QR code for prescription:', err);
     }
+
+    await notificationsService
+      .createAndDispatch(
+        prescription.consultation.clientId,
+        'Nueva receta médica oficial',
+        `El profesional ${user.firstName} ha emitido una receta para ${prescription.consultation.pet?.name || 'tu mascota'}`,
+        'PRESCRIPTION_NEW',
+        { consultationId, prescriptionId: prescription.id }
+      )
+      .catch(() => {});
 
     return {
       ...prescription,

@@ -9,6 +9,7 @@ router.use(authenticate);
 
 router.post('/register-token', controller.registerToken);
 router.get('/', controller.listMine);
+router.patch('/read-all', controller.markAllRead);
 router.patch('/:id/read', controller.markRead);
 
 export default router;

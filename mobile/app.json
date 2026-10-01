@@ -14,7 +14,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vetconnect.app"
+      "bundleIdentifier": "com.vetconnect.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Permite a VetConnect acceder a tu cámara para realizar videoconsultas veterinarias en vivo.",
+        "NSMicrophoneUsageDescription": "Permite a VetConnect acceder a tu micrófono para comunicarte durante la videoconsulta.",
+        "NSPhotoLibraryUsageDescription": "Permite a VetConnect adjuntar fotos y recetas clínicas de tu mascota."
+      }
     },
     "android": {
       "adaptiveIcon": {

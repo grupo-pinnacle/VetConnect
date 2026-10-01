@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Socket } from 'socket.io-client';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../../src/lib/authStore';
@@ -8,6 +8,7 @@ import socketManager from '../../../src/lib/socket';
 import api, { getApiErrorMessage } from '../../../src/lib/api';
 import { Message, ApiResponse } from '../../../src/types';
 import { uploadMediaFile, mimeFromExtension } from '../../../src/services/media.service';
+import { ringConsultationCall } from '../../../src/services/consultations.service';
 import { AttachmentView } from '../../../src/components/AttachmentView';
 import { colors } from '../../../src/theme/tokens';
 
@@ -42,6 +43,7 @@ function mergeMessages(current: Message[], incoming: Message[]): Message[] {
 
 export default function ChatScreen() {
   const { consultationId } = useLocalSearchParams<{ consultationId: string }>();
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
 
@@ -52,6 +54,7 @@ export default function ChatScreen() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [startingCall, setStartingCall] = useState(false);
 
   useEffect(() => {
     if (!consultationId || !accessToken) return;
@@ -158,6 +161,25 @@ export default function ChatScreen() {
     }
   };
 
+  const handleStartCall = async () => {
+    if (!consultationId || startingCall) return;
+    setStartingCall(true);
+    try {
+      await ringConsultationCall(consultationId);
+      router.push({
+        pathname: '/(app)/call/[consultationId]',
+        params: { consultationId },
+      });
+    } catch (err) {
+      Alert.alert(
+        'Llamada',
+        err instanceof Error ? err.message : 'No se pudo iniciar la llamada.'
+      );
+    } finally {
+      setStartingCall(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.center} testID="chat-loading">
@@ -168,7 +190,20 @@ export default function ChatScreen() {
 
   return (
     <View style={styles.container} testID="chat-screen">
-      <Text style={styles.header}>Chat Médico #{consultationId?.slice(0, 8)}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>Chat Médico #{consultationId?.slice(0, 8)}</Text>
+        <TouchableOpacity
+          style={styles.callButton}
+          onPress={handleStartCall}
+          disabled={startingCall}
+          testID="chat-start-call-button"
+          accessibilityLabel="Iniciar videollamada"
+        >
+          <Text style={styles.callButtonText}>
+            {startingCall ? 'Llamando…' : '📹 Llamar'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {!connected && (
         <View style={styles.offlineBar} testID="chat-offline">
@@ -224,7 +259,31 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 16, fontWeight: 'bold', padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: colors.line, marginTop: 30 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderColor: colors.line,
+    marginTop: 30,
+  },
+  header: { fontSize: 16, fontWeight: 'bold', color: colors.ink },
+  callButton: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  callButtonText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   offlineBar: { backgroundColor: '#FEF3C7', padding: 8 },
   offlineText: { color: '#92400E', fontSize: 12, textAlign: 'center' },
   errorBox: { backgroundColor: '#FEF2F2', padding: 8 },

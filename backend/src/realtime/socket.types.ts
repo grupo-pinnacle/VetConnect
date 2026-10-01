@@ -28,6 +28,7 @@ export interface ServerToClientEvents {
   'message:new': (message: any) => void;
   'call:incoming': (data: { consultationId: string; callerName: string; roomName: string }) => void;
   'prescription:new': (prescription: any) => void;
+  'notification:new': (notification: any) => void;
 }
 
 export interface InterServerEvents {}

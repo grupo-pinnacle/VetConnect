@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { AppState, AppStateStatus } from 'react-native';
 import api from './api';
-import { Message, ApiResponse } from '../types';
+import { Message, ApiResponse, IncomingCallPayload } from '../types';
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'http://localhost:3001';
 
@@ -11,6 +11,7 @@ const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'http://localhost:3001';
  * foreground actually reach the UI.
  */
 export type SyncedMessagesHandler = (consultationId: string, messages: Message[]) => void;
+export type IncomingCallHandler = (call: IncomingCallPayload) => void;
 
 export class MobileSocketManager {
   private socket: Socket | null = null;
@@ -18,6 +19,11 @@ export class MobileSocketManager {
   private lastKnownTimestamps: Map<string, string> = new Map();
   private appStateSubscription: { remove: () => void } | null = null;
   private syncedMessagesHandlers: Set<SyncedMessagesHandler> = new Set();
+  private incomingCallHandlers: Set<IncomingCallHandler> = new Set();
+
+  public getSocket(): Socket | null {
+    return this.socket;
+  }
 
   public connect(token: string) {
     if (this.socket && this.socket.connected) {
@@ -30,9 +36,40 @@ export class MobileSocketManager {
       autoConnect: true,
     });
 
+    this.socket.on('call:incoming', (call: IncomingCallPayload) => {
+      for (const handler of this.incomingCallHandlers) {
+        try {
+          handler(call);
+        } catch (err) {
+          console.warn('Error handling incoming call in socketManager:', err);
+        }
+      }
+    });
+
     this.setupAppStateListener();
 
     return this.socket;
+  }
+
+  public onIncomingCall(handler: IncomingCallHandler): () => void {
+    this.incomingCallHandlers.add(handler);
+    return () => {
+      this.incomingCallHandlers.delete(handler);
+    };
+  }
+
+  public emitAnswerCall(consultationId: string) {
+    const s = this.getSocket();
+    if (s) {
+      s.emit('call:answered', { consultationId });
+    }
+  }
+
+  public emitRejectCall(consultationId: string, reason?: string) {
+    const s = this.getSocket();
+    if (s) {
+      s.emit('call:rejected', { consultationId, reason });
+    }
   }
 
   public trackConsultation(consultationId: string, initialTimestamp?: string) {
@@ -139,6 +176,7 @@ export class MobileSocketManager {
       this.socket = null;
     }
     this.syncedMessagesHandlers.clear();
+    this.incomingCallHandlers.clear();
     this.activeConsultationIds.clear();
     this.lastKnownTimestamps.clear();
   }

@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import { useAuthStore } from '../../src/lib/authStore';
 import { colors } from '../../src/theme/tokens';
+import socketManager from '../../src/lib/socket';
+import callSignalingService from '../../src/services/callSignaling.service';
+import { IncomingCallModal } from '../../src/components/IncomingCallModal';
+import MobileNotificationService from '../../src/services/notifications.service';
+import { checkVetAccess, resolveUserNavTabs } from '../../src/lib/navGuards';
 
 /**
  * Zona autenticada con Tabs + bloqueo SENASA (ADR-013).
@@ -25,8 +30,29 @@ function VetPendingBlock() {
 }
 
 export default function AppLayout() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const accessToken = useAuthStore((state) => state.accessToken);
   const isLoading = useAuthStore((state) => state.isLoading);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    socketManager.connect(accessToken);
+    const unsubscribeCall = callSignalingService.initListener();
+
+    MobileNotificationService.registerPushToken().catch((err) => {
+      console.warn('Failed registering push token:', err);
+    });
+
+    const unsubscribePush = MobileNotificationService.setupNotificationListeners((href) => {
+      router.push(href as any);
+    });
+
+    return () => {
+      unsubscribeCall();
+      unsubscribePush();
+    };
+  }, [accessToken, router]);
 
   // A deep link lands straight on this layout (`vetconnect://call/:id` resolves
   // to `/(app)/call/[consultationId]`), bypassing `app/index.tsx`. Without the
@@ -42,40 +68,60 @@ export default function AppLayout() {
 
   if (!user) return <Redirect href="/(auth)/login" />;
 
-  if (user.role === 'VET' && user.vetStatus !== 'APPROVED') {
+  if (checkVetAccess(user) === 'BLOCKED_SENASA') {
     return <VetPendingBlock />;
   }
 
+  const { homeTitle, consultationHref, petsHref } = resolveUserNavTabs(user);
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
-      <Tabs.Screen name="consultation/new" options={{ title: 'Consulta', href: 'consultation/new' }} />
-      <Tabs.Screen name="pets/new" options={{ title: 'Mascota' }} />
-      <Tabs.Screen name="pets/[id]" options={{ href: null, title: 'Mascota' }} />
-      <Tabs.Screen name="notifications" options={{ title: 'Alertas' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Perfil' }} />
-      <Tabs.Screen name="history" options={{ href: null, title: 'Historial' }} />
-      <Tabs.Screen
-        name="chat/[consultationId]"
-        options={{ href: null, title: 'Chat' }}
-      />
-      <Tabs.Screen name="call/[consultationId]" options={{ href: null, title: 'Llamada' }} />
-      <Tabs.Screen
-        name="consultation/[id]"
-        options={{ href: null, title: 'Detalle' }}
-      />
-      <Tabs.Screen
-        name="consultation/[id]/prescribe"
-        options={{ href: null, title: 'Receta' }}
-      />
-      <Tabs.Screen name="prescriptions/[id]" options={{ href: null, title: 'Receta' }} />
-      <Tabs.Screen name="review/[consultationId]" options={{ href: null, title: 'Calificar' }} />
-    </Tabs>
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
+        }}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{ title: homeTitle }}
+        />
+        <Tabs.Screen
+          name="consultation/new"
+          options={{
+            title: 'Consulta',
+            href: consultationHref,
+          }}
+        />
+        <Tabs.Screen
+          name="pets/new"
+          options={{
+            title: 'Mascota',
+            href: petsHref,
+          }}
+        />
+        <Tabs.Screen name="pets/[id]" options={{ href: null, title: 'Mascota' }} />
+        <Tabs.Screen name="notifications" options={{ title: 'Alertas' }} />
+        <Tabs.Screen name="profile" options={{ title: 'Perfil' }} />
+        <Tabs.Screen name="history" options={{ href: null, title: 'Historial' }} />
+        <Tabs.Screen
+          name="chat/[consultationId]"
+          options={{ href: null, title: 'Chat' }}
+        />
+        <Tabs.Screen name="call/[consultationId]" options={{ href: null, title: 'Llamada' }} />
+        <Tabs.Screen
+          name="consultation/[id]"
+          options={{ href: null, title: 'Detalle' }}
+        />
+        <Tabs.Screen
+          name="consultation/[id]/prescribe"
+          options={{ href: null, title: 'Receta' }}
+        />
+        <Tabs.Screen name="prescriptions/[id]" options={{ href: null, title: 'Receta' }} />
+        <Tabs.Screen name="review/[consultationId]" options={{ href: null, title: 'Calificar' }} />
+      </Tabs>
+      <IncomingCallModal />
+    </>
   );
 }
 

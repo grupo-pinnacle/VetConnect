@@ -2,13 +2,30 @@ import api, { getApiErrorMessage } from '../lib/api';
 import { ApiResponse, MediaFile } from '../types';
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB — espejo de media.middleware.ts:27
+export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+
+export function validateFileSize(fileSizeBytes?: number): void {
+  if (fileSizeBytes !== undefined && fileSizeBytes > MAX_FILE_BYTES) {
+    throw new Error('El archivo supera el tamaño máximo permitido de 10 MB.');
+  }
+}
+
+export function validateFileType(mimeType: string): void {
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    throw new Error('Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y PDF.');
+  }
+}
 
 export async function uploadMediaFile(
   fileUri: string,
   fileName: string,
   mimeType: string,
-  consultationId?: string
+  consultationId?: string,
+  fileSizeBytes?: number
 ): Promise<MediaFile> {
+  validateFileSize(fileSizeBytes);
+  validateFileType(mimeType);
+
   const form = new FormData();
   form.append('file', {
     uri: fileUri,

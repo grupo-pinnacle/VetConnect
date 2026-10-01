@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import api from '../lib/api';
-import { ApiResponse } from '../types';
+import { ApiResponse, Notification } from '../types';
 import { resolveNotificationHref } from '../lib/deepLinks';
 
 /**
@@ -130,6 +130,22 @@ export class MobileNotificationService {
       responseListener.remove();
       handled.clear();
     };
+  }
+
+  public static async fetchNotifications(): Promise<Notification[]> {
+    const res = await api.get<ApiResponse<Notification[]>>('/api/notifications');
+    if (!res.data.success || !res.data.data) {
+      throw new Error(res.data.error?.message || 'Error cargando notificaciones');
+    }
+    return res.data.data;
+  }
+
+  public static async markAsRead(id: string): Promise<void> {
+    await api.patch(`/api/notifications/${id}/read`);
+  }
+
+  public static async markAllAsRead(): Promise<void> {
+    await api.patch('/api/notifications/read-all');
   }
 }
 

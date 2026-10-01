@@ -3,6 +3,7 @@ import { User, Role, ConsultationStatus } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import { io } from '../../realtime/socket.server';
+import { notificationsService } from '../notifications/notifications.service';
 
 const getLiveKitConfig = () => {
   const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
@@ -120,6 +121,17 @@ export class CallsService {
         roomName: consultationId,
       });
     }
+
+    // Persist notification and dispatch push notification
+    await notificationsService
+      .createAndDispatch(
+        targetUserId,
+        'Videoconsulta entrante',
+        `${callerUser.firstName} te está llamando para una videoconsulta`,
+        'CALL_INCOMING',
+        { consultationId }
+      )
+      .catch(() => {});
 
     return {
       consultationId,

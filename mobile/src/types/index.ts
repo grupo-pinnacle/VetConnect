@@ -53,6 +53,19 @@ export interface Consultation {
   pet?: Pet;
   client?: Partial<User>;
   vet?: Partial<User>;
+  prescriptions?: Prescription[];
+  review?: Review | null;
+}
+
+export interface Review {
+  id: string;
+  consultationId: string;
+  clientId: string;
+  vetId: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Prescription {
@@ -129,4 +142,16 @@ export interface AuthPayload {
 export interface LiveKitTokenPayload {
   token: string;
   wsUrl: string;
+}
+
+export interface IncomingCallPayload {
+  consultationId: string;
+  callerName: string;
+  roomName: string;
+}
+
+export interface RingCallResponse {
+  consultationId: string;
+  targetUserId: string;
+  status: string;
 }
