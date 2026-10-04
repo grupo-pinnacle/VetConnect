@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Switch, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/lib/authStore';
 import { useProfile } from '../../src/hooks/useProfile';
 import { LoadingView, ErrorBox } from '../../src/components/ScreenState';
@@ -81,7 +82,7 @@ export default function ProfileScreen() {
           <View style={styles.row}>
             <Text style={styles.label}>Calificación</Text>
             <Text style={styles.value} testID="profile-rating">
-              ★ {user.ratingAvg.toFixed(1)} ({user.ratingCount})
+              <Ionicons name="star" size={14} color={colors.amber} /> {user.ratingAvg.toFixed(1)} ({user.ratingCount})
             </Text>
           </View>
         )}

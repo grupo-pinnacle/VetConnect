@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Socket } from 'socket.io-client';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../../src/lib/authStore';
@@ -199,8 +200,9 @@ export default function ChatScreen() {
           testID="chat-start-call-button"
           accessibilityLabel="Iniciar videollamada"
         >
+          <Ionicons name="videocam" size={16} color="#FFF" style={styles.callIcon} />
           <Text style={styles.callButtonText}>
-            {startingCall ? 'Llamando…' : '📹 Llamar'}
+            {startingCall ? 'Llamando…' : 'Llamar'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -238,8 +240,12 @@ export default function ChatScreen() {
       />
 
       <View style={styles.inputRow}>
-        <TouchableOpacity style={styles.attachBtn} onPress={handleAttach} disabled={uploading} testID="chat-attach">
-          <Text style={styles.attachBtnText}>{uploading ? '…' : '+'}</Text>
+        <TouchableOpacity style={styles.attachBtn} onPress={handleAttach} disabled={uploading} testID="chat-attach" accessibilityLabel="Adjuntar imagen">
+          {uploading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Ionicons name="attach" size={22} color={colors.primary} />
+          )}
         </TouchableOpacity>
         <TextInput
           style={styles.input}
@@ -248,8 +254,8 @@ export default function ChatScreen() {
           onChangeText={setInputText}
           testID="chat-input"
         />
-        <TouchableOpacity style={styles.sendBtn} onPress={handleSend} testID="chat-send">
-          <Text style={styles.sendText}>Enviar</Text>
+        <TouchableOpacity style={styles.sendBtn} onPress={handleSend} testID="chat-send" accessibilityLabel="Enviar mensaje">
+          <Ionicons name="send" size={18} color="#FFF" />
         </TouchableOpacity>
       </View>
     </View>
@@ -272,13 +278,14 @@ const styles = StyleSheet.create({
   },
   header: { fontSize: 16, fontWeight: 'bold', color: colors.ink },
   callButton: {
-    backgroundColor: '#10B981',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    backgroundColor: colors.ok,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
   },
+  callIcon: { marginRight: 6 },
   callButtonText: {
     color: '#FFF',
     fontSize: 12,

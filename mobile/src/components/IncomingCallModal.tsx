@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useCallStore, callSignalingService } from '../services/callSignaling.service';
 import { colors, radius, spacing } from '../theme/tokens';
 
@@ -32,7 +33,7 @@ export function IncomingCallModalView({
       <View style={styles.overlay}>
         <View style={styles.card}>
           <View style={styles.iconCircle}>
-            <Text style={styles.iconText}>📞</Text>
+            <Ionicons name="videocam" size={32} color={colors.ok} />
           </View>
 
           <Text style={styles.badge}>Videoconsulta en vivo</Text>
@@ -50,7 +51,8 @@ export function IncomingCallModalView({
               testID="reject-call-button"
               accessibilityLabel="Rechazar llamada"
             >
-              <Text style={styles.rejectText}>✕ Rechazar</Text>
+              <Ionicons name="close" size={18} color={colors.danger} />
+              <Text style={styles.rejectText}>Rechazar</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -59,7 +61,8 @@ export function IncomingCallModalView({
               testID="accept-call-button"
               accessibilityLabel="Atender videoconsulta"
             >
-              <Text style={styles.acceptText}>✓ Atender</Text>
+              <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+              <Text style={styles.acceptText}>Atender</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -159,6 +162,8 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    flexDirection: 'row',
+    gap: 6,
     paddingVertical: 14,
     borderRadius: radius.md,
     alignItems: 'center',

@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Notification } from '../../src/types';
 import { getApiErrorMessage } from '../../src/lib/api';
 import MobileNotificationService from '../../src/services/notifications.service';
@@ -115,7 +116,7 @@ export default function NotificationsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer} testID="notifications-empty">
-            <Text style={styles.emptyIcon}>🔔</Text>
+            <Ionicons name="notifications-outline" size={48} color={colors.faint} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Bandeja al día</Text>
             <Text style={styles.emptyText}>No tienes alertas clínicas pendientes</Text>
           </View>
