@@ -1,17 +1,21 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchPet, updatePet, removePet } from '../../../src/services/pets.service';
 import { Pet } from '../../../src/types';
 import { PetUpdateInput } from '../../../src/validation/pet';
 import { LoadingView, ErrorBox, EmptyView } from '../../../src/components/ScreenState';
 import { PrimaryButton } from '../../../src/components/PrimaryButton';
 import { Field } from '../../../src/components/Field';
-import { colors } from '../../../src/theme/tokens';
+import { colors, radius } from '../../../src/theme/tokens';
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+function InfoRow({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
     <View style={styles.row}>
+      <Ionicons name={icon} size={18} color={colors.primary} style={styles.rowIcon} />
       <Text style={styles.label}>{label}</Text>
       <Text style={styles.value}>{value}</Text>
     </View>
@@ -113,18 +117,28 @@ export default function PetDetailScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }} testID="petdetail-screen">
-      <Text style={styles.title}>{pet.name}</Text>
+      <View style={styles.passport}>
+        <View style={styles.passportTop}>
+          <Text style={styles.passportLabel}>PASAPORTE SANITARIO</Text>
+          <Ionicons name="shield-checkmark" size={20} color={colors.okLight} />
+        </View>
+        <Text style={styles.title}>{pet.name}</Text>
+        <Text style={styles.passportMeta}>{pet.species} - {pet.breed}</Text>
+        <Text style={styles.passportChip}>
+          {pet.microchip ? `Microchip ${pet.microchip}` : 'Sin microchip registrado'}
+        </Text>
+      </View>
       {!!error && <ErrorBox message={error} testID="petdetail-error" />}
 
       {!editing ? (
         <View style={styles.card} testID="petdetail-info">
-          <InfoRow label="Especie" value={pet.species} />
-          <InfoRow label="Raza" value={pet.breed} />
-          <InfoRow label="Peso" value={pet.weightKg != null ? `${pet.weightKg} kg` : '—'} />
-          <InfoRow label="Sexo" value={pet.sex || '—'} />
-          <InfoRow label="Microchip" value={pet.microchip || '—'} />
-          <InfoRow label="Alergias" value={pet.allergies || '—'} />
-          <InfoRow label="Crónicas" value={pet.chronicConditions || '—'} />
+          <InfoRow icon="paw-outline" label="Especie" value={pet.species} />
+          <InfoRow icon="ribbon-outline" label="Raza" value={pet.breed} />
+          <InfoRow icon="speedometer-outline" label="Peso" value={pet.weightKg != null ? `${pet.weightKg} kg` : '—'} />
+          <InfoRow icon="male-female-outline" label="Sexo" value={pet.sex || '—'} />
+          <InfoRow icon="hardware-chip-outline" label="Microchip" value={pet.microchip || '—'} />
+          <InfoRow icon="warning-outline" label="Alergias" value={pet.allergies || '—'} />
+          <InfoRow icon="fitness-outline" label="Crónicas" value={pet.chronicConditions || '—'} />
         </View>
       ) : (
         <View testID="petdetail-form">
@@ -157,11 +171,17 @@ export default function PetDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
-  center: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#FFF' },
-  title: { fontSize: 22, fontWeight: 'bold', color: colors.ink, marginBottom: 16, marginTop: 20 },
-  card: { backgroundColor: colors.canvas, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.line, marginBottom: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  container: { flex: 1, backgroundColor: colors.canvas },
+  center: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.canvas },
+  passport: { backgroundColor: colors.passport, borderRadius: radius.pass, padding: 20, marginBottom: 16 },
+  passportTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  passportLabel: { color: colors.faint, fontSize: 11, fontWeight: '700', letterSpacing: 1.2 },
+  passportMeta: { color: colors.lineDark, fontSize: 14, marginTop: 4 },
+  passportChip: { color: colors.okLight, fontSize: 12, fontWeight: '600', marginTop: 12 },
+  title: { fontSize: 26, fontWeight: '800', color: '#FFF', marginTop: 16 },
+  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 16, borderWidth: 1, borderColor: colors.line, marginBottom: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  rowIcon: { marginRight: 10 },
   label: { fontSize: 13, color: colors.muted, flex: 1 },
   value: { fontSize: 14, fontWeight: '600', color: colors.ink, flex: 1, textAlign: 'right' },
   actions: { gap: 10, marginTop: 16, marginBottom: 32 },
