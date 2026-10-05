@@ -8,6 +8,7 @@ import { PetCardSkeleton } from '../components/ui/Skeleton';
 import { SpeciesIcon } from '../components/icons/SpeciesIcons';
 import PetDossierModal from '../components/dashboard/PetDossierModal';
 import { ClinicalIntakeForm } from '../components/dashboard/ClinicalIntakeForm';
+import { parseConsultationNotes } from '../lib/consultationNotes';
 import {
   Heart,
   Stethoscope,
@@ -378,103 +379,103 @@ export const DashboardClient: React.FC = () => {
                     <div
                       key={pet.id}
                       data-testid={`pet-card-${pet.id}`}
-                      className={`p-4 rounded-xl border transition-all duration-200 relative group ${
+                      className={`p-4 rounded-xl border transition-all duration-200 relative group flex flex-col justify-between ${
                         isSelected
                           ? 'bg-emerald-50/70 border-emerald-400 shadow-sm'
                           : 'bg-white hover:bg-[#F8F5EE]/60 border-[#E8E2D5] hover:border-emerald-300 shadow-[0_2px_8px_-2px_rgba(6,36,29,0.04)]'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3.5">
-                          <div
-                            data-testid={`pet-avatar-${pet.id}`}
-                            className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 shadow-inner"
-                          >
-                            <SpeciesIcon species={pet.species} className="w-6 h-6 text-emerald-700" />
-                          </div>
-
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h3
-                                className="font-extrabold text-[#06241D] text-base tracking-tight"
-                                data-testid={`pet-name-${pet.id}`}
-                              >
-                                {pet.name}
-                              </h3>
-                              <span
-                                data-testid={`pet-badge-${pet.id}`}
-                                className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200"
-                              >
-                                {pet.species}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-slate-600 font-medium">
-                              {pet.breed || 'Raza mestiza / sin especificar'}
-                            </p>
-
-                            <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500">
-                              {pet.sex && (
-                                <span
-                                  data-testid={`pet-sex-${pet.id}`}
-                                  className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md font-semibold"
-                                >
-                                  {pet.sex}
-                                </span>
-                              )}
-                              {pet.weightKg && (
-                                <span
-                                  data-testid={`pet-weight-${pet.id}`}
-                                  className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md font-semibold"
-                                >
-                                  <Scale className="w-3 h-3 text-amber-600" />
-                                  {pet.weightKg} kg
-                                </span>
-                              )}
-                              {pet.microchip && (
-                                <span
-                                  className="inline-flex items-center gap-1 bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold"
-                                  data-testid={`pet-microchip-${pet.id}`}
-                                >
-                                  <QrCode className="w-3 h-3 text-sky-600" />
-                                  ISO: {pet.microchip}
-                                </span>
-                              )}
-                              {pet.allergies && (
-                                <span
-                                  data-testid={`pet-allergies-${pet.id}`}
-                                  className="inline-flex items-center gap-1 bg-amber-100/70 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold max-w-[170px] truncate"
-                                  title={Array.isArray(pet.allergies as unknown) ? (pet.allergies as unknown as string[]).join(', ') : String(pet.allergies)}
-                                >
-                                  <AlertTriangle className="w-2.5 h-2.5 text-amber-700 shrink-0" />
-                                  <span className="truncate">
-                                    Alergias: {Array.isArray(pet.allergies as unknown) ? (pet.allergies as unknown as string[]).join(', ') : String(pet.allergies)}
-                                  </span>
-                                </span>
-                              )}
-                              {pet.chronicConditions && (
-                                <span
-                                  data-testid={`pet-chronic-${pet.id}`}
-                                  className="inline-flex items-center gap-1 bg-rose-100/70 text-rose-900 border border-rose-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold max-w-[170px] truncate"
-                                  title={Array.isArray(pet.chronicConditions as unknown) ? (pet.chronicConditions as unknown as string[]).join(', ') : String(pet.chronicConditions)}
-                                >
-                                  <AlertCircle className="w-2.5 h-2.5 text-rose-700 shrink-0" />
-                                  <span className="truncate">
-                                    Crónico: {Array.isArray(pet.chronicConditions as unknown) ? (pet.chronicConditions as unknown as string[]).join(', ') : String(pet.chronicConditions)}
-                                  </span>
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                      <div className="flex items-start gap-3.5">
+                        <div
+                          data-testid={`pet-avatar-${pet.id}`}
+                          className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 shadow-inner"
+                        >
+                          <SpeciesIcon species={pet.species} className="w-6 h-6 text-emerald-700" />
                         </div>
 
-                        {/* Action Buttons: Edit + Dossier + Consultation */}
-                        <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-1.5">
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3
+                              className="font-extrabold text-[#06241D] text-base tracking-tight truncate"
+                              data-testid={`pet-name-${pet.id}`}
+                            >
+                              {pet.name}
+                            </h3>
+                            <span
+                              data-testid={`pet-badge-${pet.id}`}
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0"
+                            >
+                              {pet.species}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-600 font-medium">
+                            {pet.breed || 'Raza mestiza / sin especificar'}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500">
+                            {pet.sex && (
+                              <span
+                                data-testid={`pet-sex-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md font-semibold"
+                              >
+                                {pet.sex}
+                              </span>
+                            )}
+                            {pet.weightKg && (
+                              <span
+                                data-testid={`pet-weight-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md font-semibold"
+                              >
+                                <Scale className="w-3 h-3 text-amber-600" />
+                                {pet.weightKg} kg
+                              </span>
+                            )}
+                            {pet.microchip && (
+                              <span
+                                className="inline-flex items-center gap-1 bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold"
+                                data-testid={`pet-microchip-${pet.id}`}
+                              >
+                                <QrCode className="w-3 h-3 text-sky-600" />
+                                ISO: {pet.microchip}
+                              </span>
+                            )}
+                            {pet.allergies && (
+                              <span
+                                data-testid={`pet-allergies-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-amber-100/70 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold max-w-[170px] truncate"
+                                title={Array.isArray(pet.allergies as unknown) ? (pet.allergies as unknown as string[]).join(', ') : String(pet.allergies)}
+                              >
+                                <AlertTriangle className="w-2.5 h-2.5 text-amber-700 shrink-0" />
+                                <span className="truncate">
+                                  Alergias: {Array.isArray(pet.allergies as unknown) ? (pet.allergies as unknown as string[]).join(', ') : String(pet.allergies)}
+                                </span>
+                              </span>
+                            )}
+                            {pet.chronicConditions && (
+                              <span
+                                data-testid={`pet-chronic-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-rose-100/70 text-rose-900 border border-rose-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold max-w-[170px] truncate"
+                                title={Array.isArray(pet.chronicConditions as unknown) ? (pet.chronicConditions as unknown as string[]).join(', ') : String(pet.chronicConditions)}
+                              >
+                                <AlertCircle className="w-2.5 h-2.5 text-rose-700 shrink-0" />
+                                <span className="truncate">
+                                  Crónico: {Array.isArray(pet.chronicConditions as unknown) ? (pet.chronicConditions as unknown as string[]).join(', ') : String(pet.chronicConditions)}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Footer: Edit + Dossier on left, Request Consultation on right */}
+                      <div className="mt-3.5 pt-3 border-t border-[#E8E2D5]/70 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             data-testid={`pet-edit-btn-${pet.id}`}
                             onClick={() => handleOpenEditPet(pet)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition-all cursor-pointer shadow-2xs"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-300 transition-all cursor-pointer shadow-2xs"
                             title="Editar datos y antecedentes declarados de la mascota"
                           >
                             <Pencil className="w-3.5 h-3.5 text-slate-600" />
@@ -485,27 +486,27 @@ export const DashboardClient: React.FC = () => {
                             type="button"
                             data-testid={`pet-dossier-btn-${pet.id}`}
                             onClick={() => setSelectedDossierPet(pet)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 transition-all cursor-pointer shadow-2xs"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-700 border border-stone-300 transition-all cursor-pointer shadow-2xs"
                             title="Ver e imprimir expediente clínico oficial"
                           >
                             <FileText className="w-3.5 h-3.5 text-stone-600" />
                             <span>Expediente</span>
                           </button>
-
-                          <button
-                            type="button"
-                            data-testid={`pet-request-consultation-btn-${pet.id}`}
-                            onClick={() => handleQuickTriage(pet.id)}
-                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-emerald-600 text-white shadow-sm'
-                                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
-                            }`}
-                          >
-                            <span>{isSelected ? 'Seleccionado' : 'Pedir Consulta'}</span>
-                            <ArrowRight className="w-3 h-3" />
-                          </button>
                         </div>
+
+                        <button
+                          type="button"
+                          data-testid={`pet-request-consultation-btn-${pet.id}`}
+                          onClick={() => handleQuickTriage(pet.id)}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200'
+                          }`}
+                        >
+                          <span>{isSelected ? 'Seleccionado' : 'Pedir Consulta'}</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -593,8 +594,9 @@ export const DashboardClient: React.FC = () => {
                   </div>
                 ) : (
                   consultations.map((c) => {
-                    const isUrgent = c.notes?.includes('ROJO');
-                    const isModerate = c.notes?.includes('AMARILLO');
+                    const { cleanNotes, cancellationReason, priority: parsedPriority } = parseConsultationNotes(c.notes);
+                    const isUrgent = parsedPriority === 'ROJO' || c.notes?.includes('ROJO');
+                    const isModerate = parsedPriority === 'AMARILLO' || c.notes?.includes('AMARILLO');
 
                     return (
                       <div
@@ -630,9 +632,14 @@ export const DashboardClient: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-600 line-clamp-2 max-w-md font-medium">
-                            {c.notes}
+                          <p className="text-xs text-slate-600 line-clamp-2 max-w-md font-medium" data-testid={`consultation-notes-${c.id}`}>
+                            {cleanNotes}
                           </p>
+                          {cancellationReason && c.status === 'CANCELLED' && (
+                            <p className="text-[11px] text-rose-700 font-semibold bg-rose-50 border border-rose-200/80 rounded-md px-2 py-0.5 inline-block" data-testid={`consultation-cancel-reason-${c.id}`}>
+                              {cancellationReason}
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end shrink-0">
@@ -814,7 +821,7 @@ export const DashboardClient: React.FC = () => {
                 <div className="pt-2 border-t border-[#E8E2D5] space-y-3">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-[#06241D]">
                     <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    <span>Antecedentes Médicos Declarados (ADR-029)</span>
+                    <span>Antecedentes Médicos Declarados por el Tutor</span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-tight">
                     Información biológica visible por los veterinarios de guardia para prevenir contraindicaciones.

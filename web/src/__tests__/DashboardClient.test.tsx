@@ -286,4 +286,48 @@ describe('DashboardClient Page', () => {
       );
     });
   });
+
+  it('should render clean consultation notes and friendly cancellation reason without system tags (ADR-030)', async () => {
+    const mockConsultations = [
+      {
+        id: 'cons-cancelled-1',
+        clientId: 'u1',
+        petId: 'pet-123',
+        status: 'CANCELLED',
+        notes: '[Prioridad: ROJO] tiene vacunas [CANCELLED_TIMEOUT_NO_VET_AVAILABLE]',
+        pet: { name: 'Firulais' },
+      },
+    ];
+
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/api/pets') {
+        return Promise.resolve({ data: { success: true, data: [] } } as any);
+      }
+      if (url === '/api/consultations/mine') {
+        return Promise.resolve({ data: { success: true, data: mockConsultations } } as any);
+      }
+      return Promise.reject(new Error('Not found'));
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardClient />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('consultation-card-cons-cancelled-1')).toBeDefined();
+    });
+
+    // Notes must be clean without technical tags
+    const notesElem = screen.getByTestId('consultation-notes-cons-cancelled-1');
+    expect(notesElem.textContent).toBe('tiene vacunas');
+    expect(notesElem.textContent).not.toContain('[Prioridad: ROJO]');
+    expect(notesElem.textContent).not.toContain('CANCELLED_TIMEOUT_NO_VET_AVAILABLE');
+
+    // Friendly cancellation reason
+    expect(
+      screen.getByTestId('consultation-cancel-reason-cons-cancelled-1').textContent
+    ).toBe('Tiempo de espera agotado: sin veterinarios disponibles en guardia.');
+  });
 });

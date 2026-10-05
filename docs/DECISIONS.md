@@ -37,6 +37,7 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
 | **ADR-027** | Blindaje Regulatorio Integral, Marco Legal (Leyes 25.326, 24.240 y 14.072), Gestión de Cookies e Inclusión Accesible WCAG 2.1 AA | Aprobado | Legal / Compliance |
 | **ADR-028** | Triage Clínico Asistido por IA (AI-First Intake) y Desacoplamiento de la Prioridad del Tutor | Aprobado | Clínico / AI-First / UX |
 | **ADR-029** | Desacoplamiento entre Ficha Declarativa de Mascota (Editable por Tutor) y Expediente Clínico Inmutable (Auditoría Médica) | Aprobado | Clínico / Paciente / Legal |
+| **ADR-030** | Sanitización de Metadatos de Sistema en Notas Clínicas y Reorganización Responsiva de Acciones en Tarjetas de Paciente | Aprobado | UX / Frontend / Clínico |
 
 ---
 
@@ -277,6 +278,30 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
   - Resolución definitiva de la incongruencia de "Sin alergias declaradas" cuando el tutor en realidad deseaba reportarlas.
   - Blindaje clínico del acto médico: el veterinario de guardia accede inmediatamente a las alergias del animal al momento de prescribir, previniendo reacciones adversas graves.
   - Cero riesgo de adulteración del historial clínico, preservando la trazabilidad de SENASA y la validez probatoria de las recetas emitidas con QR.
+
+### ADR-030: Sanitización de Metadatos de Sistema en Notas Clínicas y Reorganización Responsiva de Acciones en Tarjetas de Paciente
+- **Contexto:** En la auditoría integral de la interfaz de usuario del portal del tutor (`http://localhost:5173/client/dashboard`) se detectaron dos fricciones de usabilidad y fidelidad visual:
+  1. *Desbordamiento de botones de acción:* En la columna de mascotas del tutor (`DashboardClient.tsx`, `lg:col-span-5`), la fila horizontal que agrupaba `Editar`, `Expediente` y `Pedir Consulta` excedía el ancho disponible del contenedor en resoluciones estándar (1280px a 1440px), provocando que el botón principal `Pedir Consulta ->` sobresaliera del margen derecho de la tarjeta.
+  2. *Fuga de metadatos de sistema en el historial de consultas:* El campo `notes` de las consultas en base de datos almacena determinísticamente prefijos de triaje (`[Prioridad: ROJO]`, `[Triage IA: X/10]`) y sufijos de máquina de estados (`[CANCELLED_TIMEOUT_NO_VET_AVAILABLE]`). Al renderizarse directamente en la tarjeta de consulta reciente, el tutor visualizaba cadenas crudas como `[Prioridad: ROJO] tiene vacunas [CANCELLED_TIMEOUT_NO_VET_AVAILABLE]`, duplicando la prioridad que ya figuraba en el badge superior y exponiendo códigos de error internos en lugar de un motivo claro y empático.
+  3. *Filtrado de tags internos en copy de producción:* Se detectaron referencias a identificadores de arquitectura (`ADR-028`, `ADR-029`) en títulos y subtítulos del formulario de admisión y modal de mascota visibles por el usuario.
+- **Decisión:**
+  1. **Barra de Acciones Inferior Integrada en `PetCard`:**
+     - Se reorganiza el layout de cada tarjeta de paciente trasladando los botones a un footer inferior integrado (`mt-3.5 pt-3 border-t border-[#E8E2D5]/70 flex flex-wrap items-center justify-between gap-2`).
+     - A la izquierda se agrupan las acciones de gestión (`Editar` y `Expediente`); a la derecha se alinea el CTA de atención (`Pedir Consulta ->`).
+     - Garantiza cero desbordamiento horizontal en cualquier resolución de pantalla (desktop, tablet y móvil).
+  2. **Sanitización Determinista de Notas Clínicas (`parseConsultationNotes`):**
+     - Se implementa una utilidad puramente tipada para el cliente que remueve las etiquetas técnicas del sistema:
+       - Remueve `[Prioridad: ROJO|AMARILLO|VERDE]` (la prioridad se representa visualmente con el badge semántico).
+       - Remueve `[Triage IA: X/10]`.
+       - Remueve `[CANCELLED_TIMEOUT_NO_VET_AVAILABLE]` y cualquier etiqueta `[CANCELLED_...]`.
+     - Retorna el texto limpio ingresado por el usuario (ej. `"tiene vacunas"`).
+     - Si la consulta fue cancelada por tiempo de espera sin veterinario disponible, se presenta un mensaje contextual legible y empático ("Tiempo de espera agotado: sin veterinarios disponibles en guardia.").
+  3. **Erradicación de Referencias a ADRs en Textos de Usuario:**
+     - Eliminación de "(ADR-028)" y "(ADR-029)" de los encabezados de formularios y modales, manteniendo copys orientados 100% al tutor.
+- **Consecuencias:**
+  - Cero desbordamiento visual en las tarjetas de pacientes.
+  - Presentación clínica limpia y profesional sin exposición de códigos internos.
+  - Comunicación clara al tutor cuando una consulta finaliza por timeout de guardia.
 
 
 

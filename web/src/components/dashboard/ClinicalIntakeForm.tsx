@@ -100,7 +100,7 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
             Solicitar Teleconsulta Médica
           </h2>
           <p className="text-xs text-slate-500">
-            Ingreso asistido a guardia virtual veterinaria 24hs (ADR-028)
+            Ingreso asistido a guardia virtual veterinaria 24hs
           </p>
         </div>
       </div>
