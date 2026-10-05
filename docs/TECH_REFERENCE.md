@@ -127,8 +127,7 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 
 ### 2.3 Consultas & Telemedicina (`/api/consultations`)
 | Método | Endpoint | Descripción | Acceso |
-|---|---|---|---|
-| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min). Convención UI: la prioridad elegida (`ROJO`\|`AMARILLO`\|`VERDE`) se antepone en `notes` como `[Prioridad: ${priority}] ${notes}` | CLIENT |
+| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min). **AI-First Triage (ADR-028):** El tutor ya no selecciona la prioridad manual; envía `petId`, `notes` (descripción), `symptoms` (chips clínicos) y `duration`. El motor de triaje clínico de backend infiere la severidad (`ROJO`\|`AMARILLO`\|`VERDE`) y formatea `notes` con el prefijo de prioridad clínica y banderas rojas para la consola médica. | CLIENT |
 | `GET`  | `/api/consultations/mine`| **CLIENT:** Devuelve sus propias consultas activas/pendientes. **VET:** Devuelve sus consultas asignadas MÁS todas las consultas en estado `WAITING` de la cola de guardia (sin requerir query params). | Autenticado |
 | `GET` | `/api/consultations/:id`| Obtener detalle completo de consulta e historial | Participantes / ADMIN |
 | `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o auto-asignación FIFO | VET (Approved) / ADMIN |

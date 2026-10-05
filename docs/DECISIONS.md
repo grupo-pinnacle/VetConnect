@@ -34,6 +34,8 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
 | **ADR-024** | Máquina de Estados Finita (FSM) en Consultas, Timeout de Triage (15 min) y Ventana de Reconexión WebRTC (3 min) | Aprobado | Backend / FSM |
 | **ADR-025** | Jerarquía Inmutable de Verdad (SSOT) y Neutralización del Split-Brain Documental | Aprobado | Gobernanza / AI-First |
 | **ADR-026** | Adopción Segura de Capacidades Clínicas y Señalización WebRTC (GlobalCallListener, Ficha Médica y Verificación SENASA) | Aprobado | Frontend / Telemedicina |
+| **ADR-027** | Blindaje Regulatorio Integral, Marco Legal (Leyes 25.326, 24.240 y 14.072), Gestión de Cookies e Inclusión Accesible WCAG 2.1 AA | Aprobado | Legal / Compliance |
+| **ADR-028** | Triage Clínico Asistido por IA (AI-First Intake) y Desacoplamiento de la Prioridad del Tutor | Aprobado | Clínico / AI-First / UX |
 
 ---
 
@@ -218,4 +220,38 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
   5. **Transparencia Societaria e Identidad del Prestador:** Incorporación de razón social responsable (**Pinnacle Group S.A.**), CUIT **30-71234567-8**, domicilio legal en CABA, canales de contacto dedicados y atribución de derechos de autor de iconografía (Lucide Icons bajo licencia MIT).
   6. **Cumplimiento WCAG 2.1 AA:** Garantía de contraste tipográfico $\ge 4.5:1$, soporte completo de navegación por teclado (`Tab`, `Enter`, `focus-visible:ring-2`), enlaces semánticos y compatibilidad con tecnologías de asistencia.
 - **Consecuencias:** Neutralización exhaustiva de riesgos legales y pasivos contingentes; conformidad regulatoria con SENASA, AAIP y Defensa del Consumidor; experiencia de usuario ética y transparente sin reclamos por publicidad engañosa; y ampliación de la cobertura de pruebas unitarias a 167 tests automatizados en verde.
+
+### ADR-028: Triage Clínico Asistido por IA (AI-First Intake) y Desacoplamiento de la Prioridad del Tutor
+- **Contexto:** En el diseño inicial del portal de clientes (`DashboardClient.tsx`), el tutor de la mascota seleccionaba explícitamente el nivel de urgencia clínico (`VERDE`, `AMARILLO`, `ROJO`) mediante el componente `TriageSelector`. Esta práctica introduce graves distorsiones clínicas y operativas:
+  1. *Incentivo perverso de autoservicio (Tragedy of the Commons):* Ante situaciones de ansiedad o el deseo de atención inmediata, una alta proporción de usuarios selecciona "ROJO — Urgencia Vital" sin importar el cuadro real, colapsando la guardia médica y desvirtuando la cola de espera FIFO/priorizada.
+  2. *Sesgo por desconocimiento clínico y riesgo de falsos negativos:* Un tutor sin formación médica veterinaria suele subestimar urgencias letales (ej. obstrucción urinaria felina, dilatación gástrica en caninos) catalogándolas como "VERDE", o sobreestimar cuadros banales con sangre visible catalogándolos como "ROJO".
+  3. *Incompatibilidad con el estándar médico de triaje:* En medicina de urgencia veterinaria (Veterinary Triage Index - VTI) y humana (Manchester Triage System - MTS), el triaje es un acto asistencial y de admisión estructurado, nunca una decisión delegada al paciente o su acompañante.
+  4. *Diferenciación médica:* Es crucial distinguir entre *Diagnóstico Médico* (acto reservado por la Ley Nacional 14.072 al médico veterinario matriculado) y *Admisión y Triaje Asistido* (estratificación de agudeza clínica y ordenamiento de sala de espera).
+- **Decisión:**
+  1. **Desacoplar la prioridad clínica del tutor (Cero selectores de color en el cliente):**
+     - Se elimina de la vista del tutor (`/client/dashboard`) el componente `TriageSelector` y cualquier selector manual de severidad (`ROJO`, `AMARILLO`, `VERDE`).
+     - El tutor únicamente interactúa con un **Intake Clínico Guiado** (`ClinicalIntakeForm`):
+       a) Selección de la Mascota registrada.
+       b) **Signos clínicos observables (chips de selección rápida):** Dificultad respiratoria, vómitos/diarrea, heridas/sangrado, claudicación/cojera, decaimiento/apatía, convulsión/desmayo, conducta anormal, control general.
+       c) **Tiempo aproximado de evolución:** Menos de 2 horas (`LESS_THAN_2_HOURS`), hoy / 2-12 horas (`HOURS_2_TO_12`), 1 a 2 días (`DAYS_1_TO_2`), más de 2 días (`MORE_THAN_2_DAYS`).
+       d) **Descripción en lenguaje natural:** Relato guiado de los síntomas observados.
+  2. **Motor de Triaje Clínico AI-First en Backend (Pipeline de Ingesta):**
+     - Al invocar `POST /api/consultations`, el backend procesa el intake a través del **Evaluador de Triaje Clínico** (`clinical-triage.engine`).
+     - El motor combina:
+       a) Parámetros fisiológicos de la mascota (especie, raza, edad, peso, condiciones crónicas preexistentes).
+       b) Signos clínicos declarados y ventana de evolución.
+       c) Procesamiento semántico del motivo de consulta.
+     - El motor computa de forma determinista la prioridad clínica interna (`ROJO` | `AMARILLO` | `VERDE`), un índice numérico de criticidad (1 a 10) y genera un **Resumen Clínico Pre-Consulta con Banderas Rojas (Red Flags)** para el médico veterinario.
+     - La consulta ingresa a la cola de guardia (`WAITING`) ordenada prioritariamente por severidad clínica y antigüedad.
+  3. **Protocolo de Derivación Física Inmediata (Red Flags Críticas):**
+     - Si el intake detecta riesgo de vida inminente irreversible por telemedicina (ej. paro respiratorio, politraumatismo con shock, hemorragia exanguinante masiva, convulsión status epilepticus), el sistema activa un banner de alerta crítica en la UI del tutor: *"Cuadro de riesgo vital inminente detectado. Mientras te contacta el médico de guardia, trasladá inmediatamente al paciente al centro veterinario de urgencias 24hs más cercano"*.
+  4. **Visualización Restringida al Ecosistema Médico:**
+     - La clasificación de triaje (`ROJO`, `AMARILLO`, `VERDE`), el resumen de banderas rojas y el tiempo de espera transcurrido se exhiben **exclusivamente en la consola del médico veterinario (`DashboardVet.tsx`)** y en auditorías administrativas.
+     - El médico veterinario actuante conserva la facultad indelegable de reclasificar o ajustar el nivel de triaje durante la atención.
+- **Consecuencias:**
+  - Erradicación definitiva de la sobre-priorización arbitraria por parte de tutores.
+  - Tiempos de respuesta reducidos para emergencias reales en la cola de guardia.
+  - Conformidad estricta con la Ley 14.072 (el sistema asiste en la admisión y priorización, mientras el médico retiene el diagnóstico clínico y prescripción).
+  - Experiencia de usuario empática y libre de tecnicismos para el tutor en crisis.
+
 

@@ -9,6 +9,7 @@ import {
   CancelConsultationDTO,
   ReviewConsultationDTO,
 } from './consultations.schemas';
+import { evaluateClinicalTriage } from './clinicalTriage.engine';
 
 const userSelectFields = {
   id: true,
@@ -64,12 +65,19 @@ export class ConsultationsService {
     const status = availableVet ? ConsultationStatus.ACTIVE : ConsultationStatus.WAITING;
     const startedAt = availableVet ? new Date() : null;
 
+    const triageResult = evaluateClinicalTriage({
+      pet,
+      notes: dto.notes,
+      symptoms: dto.symptoms,
+      duration: dto.duration,
+    });
+
     const consultation = await prisma.consultation.create({
       data: {
         clientId,
         vetId: availableVet ? availableVet.id : null,
         petId: dto.petId,
-        notes: dto.notes,
+        notes: triageResult.formattedNotes,
         status,
         startedAt,
       },

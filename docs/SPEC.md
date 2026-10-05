@@ -416,9 +416,10 @@ El frontend web modela formalmente los 4 ciclos clínicos críticos de la aplica
 ```mermaid
 stateDiagram-v2
     [*] --> Idle: Usuario autenticado
-    Idle --> TriageIniciado: Tutor selecciona mascota y redacta síntomas
-    TriageIniciado --> EsperandoGuardia: Envío exitoso POST /api/consultations (Prioridad ROJO/AMARILLO/VERDE)
-    EsperandoGuardia --> Asignado: Veterinario reclama caso en FIFO (PATCH /assign)
+    Idle --> TriageIniciado: Tutor selecciona mascota e ingresa intake de síntomas
+    TriageIniciado --> EvaluandoTriajeIA: Envío exitoso POST /api/consultations (chips signos + duración + relato)
+    EvaluandoTriajeIA --> EsperandoGuardia: Motor de triaje infiere severidad (ROJO/AMARILLO/VERDE) y pre-triage
+    EsperandoGuardia --> Asignado: Veterinario reclama caso en cola de guardia (PATCH /assign)
     EsperandoGuardia --> Cancelado: TTL 15 min expirado o cancelación del tutor
     Asignado --> EnConsultaWebRTC: Handshake LiveKit SFU completado en /call/:id
     EnConsultaWebRTC --> RecetaEmitida: Veterinario emite prescripción con QR
@@ -427,8 +428,8 @@ stateDiagram-v2
     ReseñaPendiente --> [*]
 ```
 
-1. **Ciclo de Triage (Tutor):** Selección de mascota $\to$ Formulario de síntomas $\to$ Asignación de prioridad $\to$ Cola de espera con temporizador de 15 minutos.
-2. **Cola de Guardia FIFO (Veterinario):** Lista en vivo ordenada por hora de ingreso y prioridad cromática $\to$ Reclamo atómico (`PATCH /api/consultations/:id/assign`) $\to$ Redirección inmediata a `/call/:id`.
+1. **Ciclo de Intake y Triaje Clínico AI-First (ADR-028):** Selección de mascota $\to$ Formulario guiado de signos clínicos y evolución $\to$ Clasificación interna de severidad y detección de banderas rojas $\to$ Cola de guardia con temporizador de 15 minutos.
+2. **Cola de Guardia Priorizada (Veterinario):** Lista en vivo ordenada por severidad clínica calculada por IA y hora de ingreso $\to$ Reclamo atómico (`PATCH /api/consultations/:id/assign`) $\to$ Redirección inmediata a `/call/:id`.
 3. **Sala de Consulta Híbrida (`ConsultationRoom`):** PreJoin de periféricos $\to$ Montaje WebRTC sin duplicar audio $\to$ Chat sincronizado por WebSockets $\to$ PostMessage `page:ready` si corre en WebView móvil.
 4. **Emisión de Receta Oficial:** Redacción estructurada $\to$ Envío `POST /prescriptions` $\to$ Generación de QR en Base64 $\to$ Impresión formateada vía `@media print`.
 

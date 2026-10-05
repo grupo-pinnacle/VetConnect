@@ -170,19 +170,24 @@ describe('DashboardClient Page', () => {
     fireEvent.click(screen.getByTestId('join-call-button-cons-456'));
     expect(mockNavigate).toHaveBeenCalledWith('/call/cons-456');
 
-    // Test Triage Form submission
-    fireEvent.change(screen.getByTestId('select-pet-dropdown'), { target: { value: 'pet-123' } });
-    fireEvent.change(screen.getByTestId('select-triage-priority'), { target: { value: 'ROJO' } });
-    fireEvent.change(screen.getByTestId('input-consultation-notes'), {
+    // Test Clinical Intake Form submission (ADR-028)
+    fireEvent.change(screen.getByTestId('intake-pet-select'), { target: { value: 'pet-123' } });
+    fireEvent.click(screen.getByTestId('symptom-chip-respiratory_distress'));
+    fireEvent.change(screen.getByTestId('intake-notes-textarea'), {
       target: { value: 'Tiene dificultad para respirar' },
     });
 
-    fireEvent.click(screen.getByTestId('submit-triage-button'));
+    // Check emergency warning banner appears when selecting critical symptom
+    expect(screen.getByTestId('intake-emergency-banner')).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('intake-submit-button'));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/api/consultations', {
         petId: 'pet-123',
-        notes: '[Prioridad: ROJO] Tiene dificultad para respirar',
+        notes: 'Tiene dificultad para respirar',
+        symptoms: ['respiratory_distress'],
+        duration: 'HOURS_2_TO_12',
       });
       expect(mockNavigate).toHaveBeenCalledWith('/call/new-cons-789');
     });

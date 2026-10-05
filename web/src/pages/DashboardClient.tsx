@@ -2,11 +2,12 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Pet, Consultation, ApiResponse } from '../types';
+import { Pet, Consultation, ApiResponse, ClinicalIntakeData } from '../types';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { PetCardSkeleton } from '../components/ui/Skeleton';
 import { SpeciesIcon } from '../components/icons/SpeciesIcons';
 import PetDossierModal from '../components/dashboard/PetDossierModal';
+import { ClinicalIntakeForm } from '../components/dashboard/ClinicalIntakeForm';
 import {
   Heart,
   Stethoscope,
@@ -50,8 +51,6 @@ export const DashboardClient: React.FC = () => {
 
   // Triage Request Form State
   const [selectedPetId, setSelectedPetId] = useState('');
-  const [notes, setNotes] = useState('');
-  const [triagePriority, setTriagePriority] = useState<'ROJO' | 'AMARILLO' | 'VERDE'>('VERDE');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Clinical Dossier & View Mode State
@@ -110,24 +109,18 @@ export const DashboardClient: React.FC = () => {
     }
   };
 
-  const handleCreateConsultation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPetId || !notes.trim()) {
-      alert('Por favor seleccione una mascota e ingrese el motivo de consulta');
-      return;
-    }
-
+  const handleClinicalIntakeSubmit = async (data: ClinicalIntakeData) => {
     setIsSubmitting(true);
     try {
-      const formattedNotes = `[Prioridad: ${triagePriority}] ${notes.trim()}`;
       const res = await api.post<ApiResponse<Consultation>>('/api/consultations', {
-        petId: selectedPetId,
-        notes: formattedNotes,
+        petId: data.petId,
+        notes: data.notes,
+        symptoms: data.symptoms,
+        duration: data.duration,
       });
 
       if (res.data.success && res.data.data) {
         setConsultations((prev) => [res.data.data!, ...prev]);
-        setNotes('');
         navigate(`/call/${res.data.data.id}`);
       }
     } catch (err: unknown) {
@@ -138,14 +131,12 @@ export const DashboardClient: React.FC = () => {
     }
   };
 
-  const handleQuickTriage = (petId: string, priority?: 'ROJO' | 'AMARILLO' | 'VERDE') => {
+  const handleQuickTriage = (petId: string) => {
     setSelectedPetId(petId);
-    if (priority) setTriagePriority(priority);
     triageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleEmergencyClick = () => {
-    setTriagePriority('ROJO');
     if (pets.length > 0 && !selectedPetId) {
       setSelectedPetId(pets[0].id);
     }
@@ -432,162 +423,17 @@ export const DashboardClient: React.FC = () => {
           {/* Right Column: Triage Request Form & Consultations (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             {/* Consultation Triage Request */}
-            <section
-              ref={triageRef}
-              className="bg-white/95 backdrop-blur-md p-6 sm:p-7 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5] relative overflow-hidden"
-              data-testid="triage-section"
-            >
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-[#00875A] to-emerald-700" />
-
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                  <Stethoscope className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-extrabold text-[#06241D]" data-testid="triage-title">
-                    Solicitar Teleconsulta Médica
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Ingresá a la guardia virtual con atención y evaluación clínica en tiempo real
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleCreateConsultation} className="space-y-5" data-testid="triage-form">
-                {/* Pet Selection */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Paciente / Mascota *
-                  </label>
-                  <select
-                    data-testid="select-pet-dropdown"
-                    value={selectedPetId}
-                    onChange={(e) => setSelectedPetId(e.target.value)}
-                    required
-                    className="w-full px-3.5 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl bg-white text-sm font-medium text-slate-800 transition-all cursor-pointer"
-                  >
-                    <option value="">Seleccione una mascota</option>
-                    {pets.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.species})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Priority Selection */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Nivel de Urgencia Clínico (Triage) *
-                  </label>
-
-                  {/* Interactive Visual Priority Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setTriagePriority('VERDE')}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                        triagePriority === 'VERDE'
-                          ? 'bg-emerald-50/90 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20'
-                          : 'bg-white hover:bg-slate-50 border-[#E8E2D5]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-800 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        Verde — Control
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
-                        Dudas generales, control post-quirúrgico, conducta o vacunas.
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setTriagePriority('AMARILLO')}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                        triagePriority === 'AMARILLO'
-                          ? 'bg-amber-50/90 border-amber-500 shadow-sm ring-2 ring-amber-500/20'
-                          : 'bg-white hover:bg-slate-50 border-[#E8E2D5]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold text-xs text-amber-800 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500" />
-                        Amarillo — Moderado
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
-                        Vómitos leves, claudicación o heridas menores sin sangrado activo.
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setTriagePriority('ROJO')}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                        triagePriority === 'ROJO'
-                          ? 'bg-rose-50/90 border-rose-500 shadow-sm ring-2 ring-rose-500/20 animate-pulse'
-                          : 'bg-white hover:bg-slate-50 border-[#E8E2D5]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold text-xs text-rose-800 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-rose-500" />
-                        Rojo — Urgencia Vital
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
-                        Dificultad respiratoria, abdomen duro, convulsiones o traumatismo severo.
-                      </p>
-                    </button>
-                  </div>
-
-                  {/* Canonical Select preserved for tests & accessible form controls */}
-                  <select
-                    data-testid="select-triage-priority"
-                    value={triagePriority}
-                    onChange={(e) => setTriagePriority(e.target.value as 'ROJO' | 'AMARILLO' | 'VERDE')}
-                    className="w-full px-3.5 py-2 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl bg-white text-xs font-semibold text-slate-700"
-                  >
-                    <option value="VERDE">VERDE — Consulta General / Leve</option>
-                    <option value="AMARILLO">AMARILLO — Urgencia Moderada</option>
-                    <option value="ROJO">ROJO — Emergencia Severa</option>
-                  </select>
-                </div>
-
-                {/* Consultation Notes */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Motivo / Síntomas Observados *
-                  </label>
-                  <textarea
-                    data-testid="input-consultation-notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    required
-                    rows={3}
-                    placeholder="Describí los síntomas con claridad: cuándo comenzaron, apetito, decaimiento o cambios de conducta..."
-                    className="w-full px-3.5 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 leading-relaxed transition-all"
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  data-testid="submit-triage-button"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-md shadow-emerald-700/20 hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Ingresando a Triage Clínico...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Stethoscope className="w-4 h-4" />
-                      <span>Ingresar a Cola de Triage</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </section>
+            {/* Consultation Triage Request — Clinical Intake Form (ADR-028) */}
+            <div ref={triageRef as React.RefObject<HTMLDivElement>} data-testid="triage-section">
+              <ClinicalIntakeForm
+                pets={pets}
+                selectedPetId={selectedPetId}
+                onSelectPet={setSelectedPetId}
+                onSubmit={handleClinicalIntakeSubmit}
+                isSubmitting={isSubmitting}
+                data-testid="triage-form"
+              />
+            </div>
 
             {/* Active / Recent Consultations List */}
             <section

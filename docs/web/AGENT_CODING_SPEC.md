@@ -72,12 +72,12 @@ interface User {
 }
 ```
 
-### Triage — Convención de Almacenamiento
-- Prioridad almacenada en **español** en el campo `notes` de `Consultation`
-- Formato exacto: `[Prioridad: ROJO] descripción...` / `[Prioridad: AMARILLO] ...` / `[Prioridad: VERDE] ...`
-- `DashboardVet.tsx` detecta la prioridad buscando estas cadenas exactas en `notes`
-- Conversión bilingüe: `TRIAGE_EN_TO_ES` y `TRIAGE_ES_TO_EN` en `web/src/types/index.ts`
-- `TriageSelector` acepta ÚNICAMENTE español (`'ROJO' | 'AMARILLO' | 'VERDE'`); la normalización EN→ES ocurre en el contenedor antes de pasar el valor
+### Triage Clínico — Desacoplamiento & Convención de Almacenamiento (ADR-028)
+- **Desacoplamiento del Tutor:** En el portal del tutor (`DashboardClient.tsx`), el usuario **NO selecciona ni visualiza colores de prioridad (`ROJO`, `AMARILLO`, `VERDE`)**. En su lugar, completa el intake clínico guiado (`ClinicalIntakeForm`) seleccionando signos observables (chips), tiempo de evolución y descripción del cuadro.
+- **Inferencia en Backend / Ingesta:** El motor de triaje clínico de backend clasifica la severidad médica internamente en base a los signos, antecedentes de la mascota y tiempo de evolución.
+- **Formato en Base de Datos:** Para mantener compatibilidad estricta con la FSM y los componentes médicos sin alterar el esquema relacional, el backend persiste en `notes` el prefijo determinista: `[Prioridad: ROJO] descripción...` / `[Prioridad: AMARILLO] ...` / `[Prioridad: VERDE] ...`.
+- **Consola del Veterinario (`DashboardVet.tsx`):** Detecta la prioridad calculada buscando estas cadenas en `notes` y renderiza los badges de urgencia (`ROJO — EMERGENCIA`, `AMARILLO — URGENCIA`, `VERDE — REGULAR`) para ordenar la sala de espera de guardia.
+- **Banderas Rojas y Derivación:** Si el intake detecta riesgo vital inminente, se despliega en pantalla la recomendación mandatoria de traslado a clínica física 24hs.
 
 ---
 
@@ -99,7 +99,7 @@ interface User {
 | PATCH | `/api/pets/:id` | `DashboardClient.tsx` | ⏳ Pendiente de consumo en código |
 | DELETE | `/api/pets/:id` | `DashboardClient.tsx` | Soft-delete (`deletedAt = now`). ⏳ Pendiente: implementar modal de confirmación |
 | GET  | `/api/consultations/mine` | `DashboardClient.tsx`, `DashboardVet.tsx` | Sin query params |
-| POST | `/api/consultations` | `DashboardClient.tsx` (Triage) | Body: `{ petId, notes }` donde notes incluye `[Prioridad: X]` |
+| POST | `/api/consultations` | `DashboardClient.tsx` (Intake Clínico) | Body: `{ petId, notes, symptoms?, duration? }`. Backend computa internamente `[Prioridad: X]` según ADR-028 |
 | GET  | `/api/consultations/:id` | `ConsultationRoom.tsx` | Usado para polling de WAITING→ACTIVE |
 | PATCH | `/api/consultations/:id/assign` | `DashboardVet.tsx` | Solo rol VET APPROVED |
 | PATCH | `/api/consultations/:id/cancel` | `DashboardClient.tsx`, `ConsultationRoom.tsx` | CLIENT y ADMIN |
