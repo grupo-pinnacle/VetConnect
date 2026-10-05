@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api, { getApiErrorMessage } from '../../../src/lib/api';
 import { ApiResponse, Pet, Consultation, TriagePriority } from '../../../src/types';
 import { TRIAGE_PRIORITIES, TRIAGE_LABELS, buildTriageNotes } from '../../../src/lib/triage';
+import { PrimaryButton } from '../../../src/components/PrimaryButton';
 import { triageColors, colors } from '../../../src/theme/tokens';
 
 export default function NewConsultationScreen() {
@@ -103,21 +105,29 @@ export default function NewConsultationScreen() {
 
       <Text style={styles.label}>Prioridad (Triage) *</Text>
       <View style={styles.priorityRow}>
-        {TRIAGE_PRIORITIES.map((p) => (
-          <TouchableOpacity
-            key={p}
-            style={[
-              styles.priorityBtn,
-              priority === p && { backgroundColor: triageColors[p], borderColor: triageColors[p] },
-            ]}
-            onPress={() => setPriority(p)}
-            testID={`triage-priority-${p}`}
-          >
-            <Text style={[styles.priorityText, priority === p && styles.priorityTextActive]}>
-              {TRIAGE_LABELS[p]}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {TRIAGE_PRIORITIES.map((p) => {
+          const active = priority === p;
+          return (
+            <TouchableOpacity
+              key={p}
+              style={[
+                styles.priorityBtn,
+                active && { backgroundColor: triageColors[p], borderColor: triageColors[p] },
+              ]}
+              onPress={() => setPriority(p)}
+              testID={`triage-priority-${p}`}
+            >
+              <Ionicons
+                name={active ? 'radio-button-on' : 'radio-button-off'}
+                size={22}
+                color={active ? '#FFF' : triageColors[p]}
+              />
+              <Text style={[styles.priorityText, active && styles.priorityTextActive]}>
+                {TRIAGE_LABELS[p]}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <Text style={styles.label}>Motivo de Consulta / Síntomas *</Text>
@@ -131,18 +141,13 @@ export default function NewConsultationScreen() {
         testID="triage-notes"
       />
 
-      <TouchableOpacity
-        style={[styles.submitBtn, isSubmitting && styles.submitDisabled]}
+      <PrimaryButton
+        title="Solicitar Triage"
+        icon="medkit"
         onPress={handleSubmit}
-        disabled={isSubmitting}
+        loading={isSubmitting}
         testID="triage-submit"
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="#FFF" />
-        ) : (
-          <Text style={styles.submitText}>Solicitar Triage</Text>
-        )}
-      </TouchableOpacity>
+      />
     </ScrollView>
   );
 }
@@ -160,12 +165,9 @@ const styles = StyleSheet.create({
   petBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   petBtnText: { color: colors.body, fontWeight: 'bold' },
   petBtnTextActive: { color: '#FFF' },
-  priorityRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  priorityBtn: { flex: 1, padding: 10, borderWidth: 1, borderColor: colors.lineDark, borderRadius: 8, alignItems: 'center' },
-  priorityText: { color: colors.body, fontWeight: 'bold', fontSize: 11, textAlign: 'center' },
+  priorityRow: { gap: 8, marginBottom: 16 },
+  priorityBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderWidth: 1.5, borderColor: colors.line, borderRadius: 12, backgroundColor: colors.card },
+  priorityText: { color: colors.body, fontWeight: '700', fontSize: 14, flex: 1 },
   priorityTextActive: { color: '#FFF' },
-  textArea: { borderWidth: 1, borderColor: colors.lineDark, borderRadius: 8, padding: 12, height: 100, textAlignVertical: 'top', marginBottom: 20 },
-  submitBtn: { backgroundColor: colors.primary, padding: 16, borderRadius: 8, alignItems: 'center' },
-  submitDisabled: { opacity: 0.7 },
-  submitText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  textArea: { borderWidth: 1, borderColor: colors.lineDark, borderRadius: 12, padding: 12, height: 100, textAlignVertical: 'top', marginBottom: 20, backgroundColor: colors.card },
 });

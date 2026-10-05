@@ -4,7 +4,9 @@ import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity } fr
 import { useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView as RNWebView, WebViewProps, WebViewMessageEvent } from 'react-native-webview';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../src/lib/authStore';
+import { PrimaryButton } from '../../../src/components/PrimaryButton';
 import { evaluateCallPermissions } from '../../../src/lib/callPermissions';
 import { buildAuthSeedScript, isLoopbackUrl, resolveWebCallUrl } from '../../../src/lib/webviewBridge';
 import { colors, radius, spacing } from '../../../src/theme/tokens';
@@ -120,20 +122,22 @@ export default function CallScreen() {
   if (permissionState === 'denied') {
     return (
       <View style={styles.centerContainer} testID="permission-denied-screen">
+        <View style={styles.permissionIcon}>
+          <Ionicons name="videocam-off-outline" size={36} color={colors.primary} />
+        </View>
         <Text style={styles.title}>Permisos de Cámara y Micrófono Requeridos</Text>
         <Text style={styles.body}>
           Para llevar a cabo la videoconsulta médica en vivo, VetConnect necesita acceso a la cámara y al micrófono de tu dispositivo.
         </Text>
-        <TouchableOpacity
-          testID="request-permission-button"
-          style={styles.permissionButton}
-          disabled={isPermissionRequestInFlight}
-          onPress={handleRequestPermissions}
-        >
-          <Text style={styles.permissionButtonText}>
-            {isPermissionRequestInFlight ? 'Solicitando...' : 'Habilitar Permisos'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.permissionAction}>
+          <PrimaryButton
+            testID="request-permission-button"
+            title={isPermissionRequestInFlight ? 'Solicitando...' : 'Habilitar Permisos'}
+            icon="shield-checkmark"
+            loading={isPermissionRequestInFlight}
+            onPress={handleRequestPermissions}
+          />
+        </View>
         <TouchableOpacity
           testID="cancel-call-button"
           style={styles.cancelButton}
@@ -232,14 +236,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     lineHeight: 20,
   },
-  permissionButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
-    marginBottom: spacing.md,
+  permissionIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.primaryTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
-  permissionButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  permissionAction: { width: '100%', maxWidth: 320, marginBottom: spacing.md },
   cancelButton: { paddingVertical: 10, paddingHorizontal: spacing.lg },
   cancelButtonText: { color: colors.muted, fontSize: 14, fontWeight: '600' },
   overlayLoading: {

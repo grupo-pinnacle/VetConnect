@@ -2,11 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Pet, Consultation, ApiResponse } from '../types';
+import { Pet, Consultation, ApiResponse, ClinicalIntakeData } from '../types';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { PetCardSkeleton } from '../components/ui/Skeleton';
 import { SpeciesIcon } from '../components/icons/SpeciesIcons';
 import PetDossierModal from '../components/dashboard/PetDossierModal';
+import { ClinicalIntakeForm } from '../components/dashboard/ClinicalIntakeForm';
+import { parseConsultationNotes } from '../lib/consultationNotes';
 import {
   Heart,
   Stethoscope,
@@ -26,6 +28,7 @@ import {
   X,
   Calendar,
   LayoutGrid,
+  Pencil,
 } from 'lucide-react';
 
 export const DashboardClient: React.FC = () => {
@@ -38,20 +41,22 @@ export const DashboardClient: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // New Pet Form State
+  // Pet Form State (Create & Edit — ADR-029)
   const [showPetModal, setShowPetModal] = useState(false);
+  const [editingPetId, setEditingPetId] = useState<string | null>(null);
   const [petForm, setPetForm] = useState({
     name: '',
     species: 'Canine',
     breed: '',
     weightKg: '',
+    sex: '',
     microchip: '',
+    allergies: '',
+    chronicConditions: '',
   });
 
   // Triage Request Form State
   const [selectedPetId, setSelectedPetId] = useState('');
-  const [notes, setNotes] = useState('');
-  const [triagePriority, setTriagePriority] = useState<'ROJO' | 'AMARILLO' | 'VERDE'>('VERDE');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Clinical Dossier & View Mode State
@@ -84,50 +89,98 @@ export const DashboardClient: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleCreatePet = async (e: React.FormEvent) => {
+  const handleOpenCreatePet = () => {
+    setEditingPetId(null);
+    setPetForm({
+      name: '',
+      species: 'Canine',
+      breed: '',
+      weightKg: '',
+      sex: '',
+      microchip: '',
+      allergies: '',
+      chronicConditions: '',
+    });
+    setShowPetModal(true);
+  };
+
+  const handleOpenEditPet = (pet: Pet) => {
+    setEditingPetId(pet.id);
+    setPetForm({
+      name: pet.name || '',
+      species: pet.species || 'Canine',
+      breed: pet.breed || '',
+      weightKg: pet.weightKg != null ? String(pet.weightKg) : '',
+      sex: pet.sex || '',
+      microchip: pet.microchip || '',
+      allergies: Array.isArray(pet.allergies as unknown)
+        ? (pet.allergies as unknown as string[]).join(', ')
+        : pet.allergies || '',
+      chronicConditions: Array.isArray(pet.chronicConditions as unknown)
+        ? (pet.chronicConditions as unknown as string[]).join(', ')
+        : pet.chronicConditions || '',
+    });
+    setShowPetModal(true);
+  };
+
+  const handleClosePetModal = () => {
+    setShowPetModal(false);
+    setEditingPetId(null);
+  };
+
+  const handleSavePet = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
       const payload = {
-        name: petForm.name,
+        name: petForm.name.trim(),
         species: petForm.species,
-        breed: petForm.breed,
+        breed: petForm.breed.trim(),
         weightKg: petForm.weightKg ? parseFloat(petForm.weightKg) : undefined,
+        sex: petForm.sex.trim() ? petForm.sex.trim() : undefined,
         microchip: petForm.microchip.trim() ? petForm.microchip.trim() : undefined,
+        allergies: petForm.allergies.trim() ? petForm.allergies.trim() : undefined,
+        chronicConditions: petForm.chronicConditions.trim() ? petForm.chronicConditions.trim() : undefined,
       };
 
-      const res = await api.post<ApiResponse<Pet>>('/api/pets', payload);
-      if (res.data.success && res.data.data) {
-        setPets((prev) => [res.data.data!, ...prev]);
-        setShowPetModal(false);
-        setPetForm({ name: '', species: 'Canine', breed: '', weightKg: '', microchip: '' });
+      if (editingPetId) {
+        const res = await api.patch<ApiResponse<Pet>>(`/api/pets/${editingPetId}`, payload);
+        if (res.data.success && res.data.data) {
+          const updated = res.data.data;
+          setPets((prev) => prev.map((p) => (p.id === editingPetId ? updated : p)));
+          setSelectedDossierPet((prev) => (prev?.id === editingPetId ? updated : prev));
+          handleClosePetModal();
+        }
+      } else {
+        const res = await api.post<ApiResponse<Pet>>('/api/pets', payload);
+        if (res.data.success && res.data.data) {
+          setPets((prev) => [res.data.data!, ...prev]);
+          handleClosePetModal();
+        }
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
-      alert(apiErr.response?.data?.error?.message || 'Error al registrar mascota');
+      alert(
+        apiErr.response?.data?.error?.message ||
+          (editingPetId ? 'Error al actualizar mascota' : 'Error al registrar mascota')
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCreateConsultation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPetId || !notes.trim()) {
-      alert('Por favor seleccione una mascota e ingrese el motivo de consulta');
-      return;
-    }
-
+  const handleClinicalIntakeSubmit = async (data: ClinicalIntakeData) => {
     setIsSubmitting(true);
     try {
-      const formattedNotes = `[Prioridad: ${triagePriority}] ${notes.trim()}`;
       const res = await api.post<ApiResponse<Consultation>>('/api/consultations', {
-        petId: selectedPetId,
-        notes: formattedNotes,
+        petId: data.petId,
+        notes: data.notes,
+        symptoms: data.symptoms,
+        duration: data.duration,
       });
 
       if (res.data.success && res.data.data) {
         setConsultations((prev) => [res.data.data!, ...prev]);
-        setNotes('');
         navigate(`/call/${res.data.data.id}`);
       }
     } catch (err: unknown) {
@@ -138,14 +191,12 @@ export const DashboardClient: React.FC = () => {
     }
   };
 
-  const handleQuickTriage = (petId: string, priority?: 'ROJO' | 'AMARILLO' | 'VERDE') => {
+  const handleQuickTriage = (petId: string) => {
     setSelectedPetId(petId);
-    if (priority) setTriagePriority(priority);
     triageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleEmergencyClick = () => {
-    setTriagePriority('ROJO');
     if (pets.length > 0 && !selectedPetId) {
       setSelectedPetId(pets[0].id);
     }
@@ -289,7 +340,7 @@ export const DashboardClient: React.FC = () => {
               </div>
               <button
                 data-testid="add-pet-button"
-                onClick={() => setShowPetModal(true)}
+                onClick={handleOpenCreatePet}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-700/20 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" aria-hidden="true" />
@@ -314,7 +365,7 @@ export const DashboardClient: React.FC = () => {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setShowPetModal(true)}
+                    onClick={handleOpenCreatePet}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm shadow-emerald-700/20 hover:shadow-md transition-all cursor-pointer"
                   >
                     <Plus className="w-4 h-4" aria-hidden="true" />
@@ -328,99 +379,134 @@ export const DashboardClient: React.FC = () => {
                     <div
                       key={pet.id}
                       data-testid={`pet-card-${pet.id}`}
-                      className={`p-4 rounded-xl border transition-all duration-200 relative group ${
+                      className={`p-4 rounded-xl border transition-all duration-200 relative group flex flex-col justify-between ${
                         isSelected
                           ? 'bg-emerald-50/70 border-emerald-400 shadow-sm'
                           : 'bg-white hover:bg-[#F8F5EE]/60 border-[#E8E2D5] hover:border-emerald-300 shadow-[0_2px_8px_-2px_rgba(6,36,29,0.04)]'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3.5">
-                          <div
-                            data-testid={`pet-avatar-${pet.id}`}
-                            className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 shadow-inner"
-                          >
-                            <SpeciesIcon species={pet.species} className="w-6 h-6 text-emerald-700" />
-                          </div>
-
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h3
-                                className="font-extrabold text-[#06241D] text-base tracking-tight"
-                                data-testid={`pet-name-${pet.id}`}
-                              >
-                                {pet.name}
-                              </h3>
-                              <span
-                                data-testid={`pet-badge-${pet.id}`}
-                                className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200"
-                              >
-                                {pet.species}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-slate-600 font-medium">
-                              {pet.breed || 'Raza mestiza / sin especificar'}
-                            </p>
-
-                            <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500">
-                              {pet.weightKg && (
-                                <span
-                                  data-testid={`pet-weight-${pet.id}`}
-                                  className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md font-semibold"
-                                >
-                                  <Scale className="w-3 h-3 text-amber-600" />
-                                  {pet.weightKg} kg
-                                </span>
-                              )}
-                              {pet.microchip && (
-                                <span
-                                  className="inline-flex items-center gap-1 bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold"
-                                  data-testid={`pet-microchip-${pet.id}`}
-                                >
-                                  <QrCode className="w-3 h-3 text-sky-600" />
-                                  ISO: {pet.microchip}
-                                </span>
-                              )}
-                              {pet.allergies && pet.allergies.length > 0 && (
-                                <span
-                                  data-testid={`pet-allergies-${pet.id}`}
-                                  className="inline-flex items-center gap-1 bg-amber-100/70 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold"
-                                >
-                                  Alergias: {pet.allergies.length}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                      <div className="flex items-start gap-3.5">
+                        <div
+                          data-testid={`pet-avatar-${pet.id}`}
+                          className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 shadow-inner"
+                        >
+                          <SpeciesIcon species={pet.species} className="w-6 h-6 text-emerald-700" />
                         </div>
 
-                        {/* Action Buttons: Dossier + Consultation */}
-                        <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-1.5">
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3
+                              className="font-extrabold text-[#06241D] text-base tracking-tight truncate"
+                              data-testid={`pet-name-${pet.id}`}
+                            >
+                              {pet.name}
+                            </h3>
+                            <span
+                              data-testid={`pet-badge-${pet.id}`}
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0"
+                            >
+                              {pet.species}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-600 font-medium">
+                            {pet.breed || 'Raza mestiza / sin especificar'}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500">
+                            {pet.sex && (
+                              <span
+                                data-testid={`pet-sex-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md font-semibold"
+                              >
+                                {pet.sex}
+                              </span>
+                            )}
+                            {pet.weightKg && (
+                              <span
+                                data-testid={`pet-weight-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md font-semibold"
+                              >
+                                <Scale className="w-3 h-3 text-amber-600" />
+                                {pet.weightKg} kg
+                              </span>
+                            )}
+                            {pet.microchip && (
+                              <span
+                                className="inline-flex items-center gap-1 bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold"
+                                data-testid={`pet-microchip-${pet.id}`}
+                              >
+                                <QrCode className="w-3 h-3 text-sky-600" />
+                                ISO: {pet.microchip}
+                              </span>
+                            )}
+                            {pet.allergies && (
+                              <span
+                                data-testid={`pet-allergies-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-amber-100/70 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold max-w-[170px] truncate"
+                                title={Array.isArray(pet.allergies as unknown) ? (pet.allergies as unknown as string[]).join(', ') : String(pet.allergies)}
+                              >
+                                <AlertTriangle className="w-2.5 h-2.5 text-amber-700 shrink-0" />
+                                <span className="truncate">
+                                  Alergias: {Array.isArray(pet.allergies as unknown) ? (pet.allergies as unknown as string[]).join(', ') : String(pet.allergies)}
+                                </span>
+                              </span>
+                            )}
+                            {pet.chronicConditions && (
+                              <span
+                                data-testid={`pet-chronic-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-rose-100/70 text-rose-900 border border-rose-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold max-w-[170px] truncate"
+                                title={Array.isArray(pet.chronicConditions as unknown) ? (pet.chronicConditions as unknown as string[]).join(', ') : String(pet.chronicConditions)}
+                              >
+                                <AlertCircle className="w-2.5 h-2.5 text-rose-700 shrink-0" />
+                                <span className="truncate">
+                                  Crónico: {Array.isArray(pet.chronicConditions as unknown) ? (pet.chronicConditions as unknown as string[]).join(', ') : String(pet.chronicConditions)}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Footer: Edit + Dossier on left, Request Consultation on right */}
+                      <div className="mt-3.5 pt-3 border-t border-[#E8E2D5]/70 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            data-testid={`pet-edit-btn-${pet.id}`}
+                            onClick={() => handleOpenEditPet(pet)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-300 transition-all cursor-pointer shadow-2xs"
+                            title="Editar datos y antecedentes declarados de la mascota"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-slate-600" />
+                            <span>Editar</span>
+                          </button>
+
                           <button
                             type="button"
                             data-testid={`pet-dossier-btn-${pet.id}`}
                             onClick={() => setSelectedDossierPet(pet)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 transition-all cursor-pointer shadow-2xs"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-700 border border-stone-300 transition-all cursor-pointer shadow-2xs"
                             title="Ver e imprimir expediente clínico oficial"
                           >
                             <FileText className="w-3.5 h-3.5 text-stone-600" />
                             <span>Expediente</span>
                           </button>
-
-                          <button
-                            type="button"
-                            data-testid={`pet-request-consultation-btn-${pet.id}`}
-                            onClick={() => handleQuickTriage(pet.id)}
-                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-emerald-600 text-white shadow-sm'
-                                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
-                            }`}
-                          >
-                            <span>{isSelected ? 'Seleccionado' : 'Pedir Consulta'}</span>
-                            <ArrowRight className="w-3 h-3" />
-                          </button>
                         </div>
+
+                        <button
+                          type="button"
+                          data-testid={`pet-request-consultation-btn-${pet.id}`}
+                          onClick={() => handleQuickTriage(pet.id)}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200'
+                          }`}
+                        >
+                          <span>{isSelected ? 'Seleccionado' : 'Pedir Consulta'}</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -432,162 +518,17 @@ export const DashboardClient: React.FC = () => {
           {/* Right Column: Triage Request Form & Consultations (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             {/* Consultation Triage Request */}
-            <section
-              ref={triageRef}
-              className="bg-white/95 backdrop-blur-md p-6 sm:p-7 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5] relative overflow-hidden"
-              data-testid="triage-section"
-            >
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-[#00875A] to-emerald-700" />
-
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                  <Stethoscope className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-extrabold text-[#06241D]" data-testid="triage-title">
-                    Solicitar Teleconsulta Médica
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Ingresá a la guardia virtual con atención y evaluación clínica en tiempo real
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleCreateConsultation} className="space-y-5" data-testid="triage-form">
-                {/* Pet Selection */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Paciente / Mascota *
-                  </label>
-                  <select
-                    data-testid="select-pet-dropdown"
-                    value={selectedPetId}
-                    onChange={(e) => setSelectedPetId(e.target.value)}
-                    required
-                    className="w-full px-3.5 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl bg-white text-sm font-medium text-slate-800 transition-all cursor-pointer"
-                  >
-                    <option value="">Seleccione una mascota</option>
-                    {pets.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.species})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Priority Selection */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Nivel de Urgencia Clínico (Triage) *
-                  </label>
-
-                  {/* Interactive Visual Priority Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setTriagePriority('VERDE')}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                        triagePriority === 'VERDE'
-                          ? 'bg-emerald-50/90 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20'
-                          : 'bg-white hover:bg-slate-50 border-[#E8E2D5]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-800 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        Verde — Control
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
-                        Dudas generales, control post-quirúrgico, conducta o vacunas.
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setTriagePriority('AMARILLO')}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                        triagePriority === 'AMARILLO'
-                          ? 'bg-amber-50/90 border-amber-500 shadow-sm ring-2 ring-amber-500/20'
-                          : 'bg-white hover:bg-slate-50 border-[#E8E2D5]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold text-xs text-amber-800 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500" />
-                        Amarillo — Moderado
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
-                        Vómitos leves, claudicación o heridas menores sin sangrado activo.
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setTriagePriority('ROJO')}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                        triagePriority === 'ROJO'
-                          ? 'bg-rose-50/90 border-rose-500 shadow-sm ring-2 ring-rose-500/20 animate-pulse'
-                          : 'bg-white hover:bg-slate-50 border-[#E8E2D5]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold text-xs text-rose-800 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-rose-500" />
-                        Rojo — Urgencia Vital
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">
-                        Dificultad respiratoria, abdomen duro, convulsiones o traumatismo severo.
-                      </p>
-                    </button>
-                  </div>
-
-                  {/* Canonical Select preserved for tests & accessible form controls */}
-                  <select
-                    data-testid="select-triage-priority"
-                    value={triagePriority}
-                    onChange={(e) => setTriagePriority(e.target.value as 'ROJO' | 'AMARILLO' | 'VERDE')}
-                    className="w-full px-3.5 py-2 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl bg-white text-xs font-semibold text-slate-700"
-                  >
-                    <option value="VERDE">VERDE — Consulta General / Leve</option>
-                    <option value="AMARILLO">AMARILLO — Urgencia Moderada</option>
-                    <option value="ROJO">ROJO — Emergencia Severa</option>
-                  </select>
-                </div>
-
-                {/* Consultation Notes */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Motivo / Síntomas Observados *
-                  </label>
-                  <textarea
-                    data-testid="input-consultation-notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    required
-                    rows={3}
-                    placeholder="Describí los síntomas con claridad: cuándo comenzaron, apetito, decaimiento o cambios de conducta..."
-                    className="w-full px-3.5 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 leading-relaxed transition-all"
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  data-testid="submit-triage-button"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-md shadow-emerald-700/20 hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Ingresando a Triage Clínico...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Stethoscope className="w-4 h-4" />
-                      <span>Ingresar a Cola de Triage</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </section>
+            {/* Consultation Triage Request — Clinical Intake Form (ADR-028) */}
+            <div ref={triageRef as React.RefObject<HTMLDivElement>} data-testid="triage-section">
+              <ClinicalIntakeForm
+                pets={pets}
+                selectedPetId={selectedPetId}
+                onSelectPet={setSelectedPetId}
+                onSubmit={handleClinicalIntakeSubmit}
+                isSubmitting={isSubmitting}
+                data-testid="triage-form"
+              />
+            </div>
 
             {/* Active / Recent Consultations List */}
             <section
@@ -653,8 +594,9 @@ export const DashboardClient: React.FC = () => {
                   </div>
                 ) : (
                   consultations.map((c) => {
-                    const isUrgent = c.notes?.includes('ROJO');
-                    const isModerate = c.notes?.includes('AMARILLO');
+                    const { cleanNotes, cancellationReason, priority: parsedPriority } = parseConsultationNotes(c.notes);
+                    const isUrgent = parsedPriority === 'ROJO' || c.notes?.includes('ROJO');
+                    const isModerate = parsedPriority === 'AMARILLO' || c.notes?.includes('AMARILLO');
 
                     return (
                       <div
@@ -690,9 +632,14 @@ export const DashboardClient: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-600 line-clamp-2 max-w-md font-medium">
-                            {c.notes}
+                          <p className="text-xs text-slate-600 line-clamp-2 max-w-md font-medium" data-testid={`consultation-notes-${c.id}`}>
+                            {cleanNotes}
                           </p>
+                          {cancellationReason && c.status === 'CANCELLED' && (
+                            <p className="text-[11px] text-rose-700 font-semibold bg-rose-50 border border-rose-200/80 rounded-md px-2 py-0.5 inline-block" data-testid={`consultation-cancel-reason-${c.id}`}>
+                              {cancellationReason}
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end shrink-0">
@@ -753,23 +700,27 @@ export const DashboardClient: React.FC = () => {
               <div className="bg-gradient-to-r from-[#06241D] to-[#0B3B30] text-white p-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-emerald-300" />
+                    {editingPetId ? <Pencil className="w-5 h-5 text-emerald-300" /> : <Heart className="w-5 h-5 text-emerald-300" />}
                   </div>
                   <div>
-                    <h2 className="text-base font-extrabold tracking-tight">Nueva Mascota</h2>
-                    <p className="text-[11px] text-emerald-200/80">Registro en padrón clínico veterinario</p>
+                    <h2 className="text-base font-extrabold tracking-tight" data-testid="pet-modal-title">
+                      {editingPetId ? 'Editar Mascota' : 'Nueva Mascota'}
+                    </h2>
+                    <p className="text-[11px] text-emerald-200/80">
+                      {editingPetId ? 'Actualización de datos declarativos y antecedentes' : 'Registro en padrón clínico veterinario'}
+                    </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowPetModal(false)}
+                  onClick={handleClosePetModal}
                   className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleCreatePet} className="p-6 space-y-4" data-testid="add-pet-form">
+              <form onSubmit={handleSavePet} className="p-6 space-y-4" data-testid="add-pet-form">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Nombre del Paciente *
@@ -821,6 +772,22 @@ export const DashboardClient: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Sexo
+                    </label>
+                    <select
+                      data-testid="select-pet-sex"
+                      value={petForm.sex}
+                      onChange={(e) => setPetForm({ ...petForm, sex: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm bg-white font-medium transition-all cursor-pointer"
+                    >
+                      <option value="">Sin especificar</option>
+                      <option value="Macho">Macho</option>
+                      <option value="Hembra">Hembra</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                       Peso (Kg)
                     </label>
                     <input
@@ -833,18 +800,58 @@ export const DashboardClient: React.FC = () => {
                       className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-medium transition-all"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Microchip ISO
+                  </label>
+                  <input
+                    data-testid="input-pet-microchip"
+                    type="text"
+                    maxLength={15}
+                    placeholder="15 dígitos numéricos"
+                    value={petForm.microchip}
+                    onChange={(e) => setPetForm({ ...petForm, microchip: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-mono transition-all"
+                  />
+                </div>
+
+                {/* Antecedentes Clínicos Declarados (ADR-029) */}
+                <div className="pt-2 border-t border-[#E8E2D5] space-y-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#06241D]">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <span>Antecedentes Médicos Declarados por el Tutor</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-tight">
+                    Información biológica visible por los veterinarios de guardia para prevenir contraindicaciones.
+                  </p>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      Microchip ISO
+                      Alergias Clínicas Conocidas
                     </label>
                     <input
-                      data-testid="input-pet-microchip"
+                      data-testid="input-pet-allergies"
                       type="text"
-                      placeholder="15 dígitos"
-                      value={petForm.microchip}
-                      onChange={(e) => setPetForm({ ...petForm, microchip: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-mono transition-all"
+                      placeholder="Ej. Penicilina, pulgas, pollo (separar con comas)"
+                      value={petForm.allergies}
+                      onChange={(e) => setPetForm({ ...petForm, allergies: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-medium transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Condiciones Crónicas / Preexistentes
+                    </label>
+                    <input
+                      data-testid="input-pet-chronic-conditions"
+                      type="text"
+                      placeholder="Ej. Cardiopatía, insuficiencia renal, diabetes"
+                      value={petForm.chronicConditions}
+                      onChange={(e) => setPetForm({ ...petForm, chronicConditions: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-medium transition-all"
                     />
                   </div>
                 </div>
@@ -853,7 +860,7 @@ export const DashboardClient: React.FC = () => {
                   <button
                     type="button"
                     data-testid="cancel-add-pet-button"
-                    onClick={() => setShowPetModal(false)}
+                    onClick={handleClosePetModal}
                     className="flex-1 py-2.5 px-4 border border-[#E8E2D5] rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer"
                   >
                     Cancelar
@@ -864,7 +871,7 @@ export const DashboardClient: React.FC = () => {
                     disabled={isSubmitting}
                     className="flex-1 py-2.5 px-4 bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-extrabold shadow-sm shadow-emerald-700/20 transition-all disabled:opacity-50 cursor-pointer"
                   >
-                    {isSubmitting ? 'Guardando...' : 'Guardar Mascota'}
+                    {isSubmitting ? 'Guardando...' : editingPetId ? 'Guardar Cambios' : 'Guardar Mascota'}
                   </button>
                 </div>
               </form>

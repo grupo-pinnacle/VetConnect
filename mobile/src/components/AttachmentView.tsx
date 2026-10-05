@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchMediaDataUrl } from '../services/media.service';
 import { colors } from '../theme/tokens';
 
@@ -37,7 +38,7 @@ export function AttachmentView({ attachmentId, testID }: { attachmentId: string;
         {busy ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <Text style={styles.chipText}>📎 Ver adjunto</Text>
+          <View style={styles.chipRow}><Ionicons name="attach" size={16} color={colors.primary} /><Text style={styles.chipText}>Ver adjunto</Text></View>
         )}
       </TouchableOpacity>
       {!!error && <Text style={styles.error}>{error}</Text>}
@@ -59,6 +60,7 @@ export function AttachmentView({ attachmentId, testID }: { attachmentId: string;
 }
 
 const styles = StyleSheet.create({
+  chipRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chip: {
     marginTop: 6,
     alignSelf: 'flex-start',

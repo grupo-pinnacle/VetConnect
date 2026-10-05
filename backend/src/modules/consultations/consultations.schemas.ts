@@ -3,6 +3,10 @@ import { z } from 'zod';
 export const createConsultationSchema = z.object({
   petId: z.string().min(1, 'El ID de la mascota es requerido'),
   notes: z.string().min(1, 'El motivo de consulta es requerido').max(1000),
+  symptoms: z.array(z.string()).optional(),
+  duration: z
+    .enum(['LESS_THAN_2_HOURS', 'HOURS_2_TO_12', 'DAYS_1_TO_2', 'MORE_THAN_2_DAYS'])
+    .optional(),
 });
 
 export const assignConsultationSchema = z.object({

@@ -120,16 +120,15 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `GET` | `/api/pets` | Listar mascotas del usuario autenticado | CLIENT / ADMIN |
-| `POST` | `/api/pets` | Crear nueva ficha de mascota (microchip ISO opcional) | CLIENT / ADMIN |
+| `POST` | `/api/pets` | Crear nueva ficha de mascota (nombre, especie, raza, peso, sexo, microchip ISO, alergias conocidas y condiciones crónicas) (ADR-029) | CLIENT / ADMIN |
 | `GET` | `/api/pets/:id` | Obtener detalle e historial clínico de una mascota | Dueño / Vet asignado / ADMIN |
-| `PATCH`| `/api/pets/:id` | Modificar datos de la mascota | Dueño / ADMIN |
+| `PATCH`| `/api/pets/:id` | Modificar ficha declarativa de mascota (peso, nombre, alergias, condiciones crónicas, etc. sin alterar el expediente clínico inmutable) (ADR-029) | Dueño / ADMIN |
 | `DELETE`| `/api/pets/:id` | Soft-delete de mascota (`deletedAt`) | Dueño / ADMIN |
 
 ### 2.3 Consultas & Telemedicina (`/api/consultations`)
 | Método | Endpoint | Descripción | Acceso |
-|---|---|---|---|
-| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min). Convención UI: la prioridad elegida (`ROJO`\|`AMARILLO`\|`VERDE`) se antepone en `notes` como `[Prioridad: ${priority}] ${notes}` | CLIENT |
-| `GET`  | `/api/consultations/mine`| **CLIENT:** Devuelve sus propias consultas activas/pendientes. **VET:** Devuelve sus consultas asignadas MÁS todas las consultas en estado `WAITING` de la cola de guardia (sin requerir query params). | Autenticado |
+| `POST` | `/api/consultations` | Crear consulta e ingresar en cola de triage (`WAITING`, TTL 15 min). **AI-First Triage (ADR-028):** El tutor ya no selecciona la prioridad manual; envía `petId`, `notes` (descripción), `symptoms` (chips clínicos) y `duration`. El motor de triaje clínico de backend infiere la severidad (`ROJO`\|`AMARILLO`\|`VERDE`) y formatea `notes` con el prefijo de prioridad clínica y banderas rojas para la consola médica. | CLIENT |
+| `GET`  | `/api/consultations/mine`| **CLIENT:** Devuelve sus propias consultas activas/pendientes. **VET:** Devuelve sus consultas asignadas MÁS todas las consultas en estado `WAITING` de la cola de guardia (sin requerir query params). **Sanitización (ADR-030):** En interfaces de usuario, los clientes deben sanitizar `notes` para remover tags de sistema (`[Prioridad: ...]`, `[Triage IA: ...]`, `[CANCELLED_...]`) antes de renderizar la descripción del síntoma. | Autenticado |
 | `GET` | `/api/consultations/:id`| Obtener detalle completo de consulta e historial | Participantes / ADMIN |
 | `PATCH`| `/api/consultations/:id/assign` | Toma directa de guardia o auto-asignación FIFO | VET (Approved) / ADMIN |
 | `PATCH`| `/api/consultations/:id/cancel` | Cancelar consulta telemática (transición a `CANCELLED`) | Participantes / ADMIN |
@@ -280,7 +279,14 @@ npm run build-storybook -w web
 - **Reportes:** Grabaciones de video, capturas de pantalla, trazas de red y diagnósticos automáticos de causa raíz ante anomalías.
 - **Referencia Canónica:** [`docs/web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md`](web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md).
 
-### 4.5 Verificación de Integración Continua y Pre-Despliegue
+### 4.5 Resolución de Singletons en Bundler Metro (ADR-031 — Mobile Expo SDK 54)
+- **Desafío:** Coexistencia de React 18.3.1 (Web LTS) y React 19.1.0 / React Native 0.81.4 (Expo SDK 54) en el monorepo.
+- **Mecanismo:** En `mobile/metro.config.js`:
+  1. `config.resolver.blockList`: Exclusión de rutas hoisted de React en el root (`VetConnect/node_modules/react` y `VetConnect/node_modules/react-dom`).
+  2. `config.resolver.resolveRequest`: Intercepción en tiempo de resolución para redirigir `react`, `react/*`, `react-dom`, `react-dom/*`, `react-native` y `react-native/*` estrictamente a `mobile/node_modules/`.
+- **Resultado:** Prevención absoluta de fallos de dispatchers nulos (`Cannot read property 'useId' of null`) e invalid hook calls al ejecutar Expo Go.
+
+### 4.6 Verificación de Integración Continua y Pre-Despliegue
 ```bash
 # 1. Verificación semántica y de gobernanza (40 PBs ↔ 20 TASKs ↔ 10 Modelos)
 npm run check:governance

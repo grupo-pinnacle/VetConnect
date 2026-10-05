@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, TouchableOpacity, Share } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import api from '../../../src/lib/api';
+import { Ionicons } from '@expo/vector-icons';
+import { PrimaryButton } from '../../../src/components/PrimaryButton';
+import { colors, radius } from '../../../src/theme/tokens';
 import { Prescription, ApiResponse } from '../../../src/types';
 
 export default function PrescriptionScreen() {
@@ -65,9 +68,12 @@ export default function PrescriptionScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} testID="prescription-mobile-screen">
-      {/* High Contrast Header Box */}
+      {/* High Contrast Passport/Clinical Header Box */}
       <View style={styles.headerBox} testID="rx-header">
-        <Text style={styles.badgeText}>DOCUMENTO OFICIAL FIRMADO SENASA</Text>
+        <View style={styles.badgeRow}>
+          <Ionicons name="shield-checkmark" size={16} color={colors.okLight} />
+          <Text style={styles.badgeText}>DOCUMENTO OFICIAL FIRMADO SENASA</Text>
+        </View>
         <Text style={styles.headerTitle}>Receta Médica Digital</Text>
         <Text style={styles.prescriptionId}>ID: {prescription.id}</Text>
       </View>
@@ -116,7 +122,10 @@ export default function PrescriptionScreen() {
         </View>
 
         <View style={styles.indicationsBox}>
-          <Text style={styles.indicationsTitle}>Indicaciones Clínicas:</Text>
+          <View style={styles.indicationsHeader}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.indicationsInk} />
+            <Text style={styles.indicationsTitle}>Indicaciones Clínicas:</Text>
+          </View>
           <Text style={styles.indicationsText}>{prescription.indications}</Text>
         </View>
       </View>
@@ -135,46 +144,56 @@ export default function PrescriptionScreen() {
 
       {/* Actions */}
       <View style={styles.actionsRow}>
-        <TouchableOpacity testID="rx-share-button" style={styles.shareButton} onPress={handleShare}>
-          <Text style={styles.shareButtonText}>Compartir</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity testID="rx-close-button" style={styles.closeButton} onPress={() => router.back()}>
-          <Text style={styles.closeButtonText}>Cerrar</Text>
-        </TouchableOpacity>
+        <View style={styles.actionBtn}>
+          <PrimaryButton
+            testID="rx-share-button"
+            title="Compartir"
+            icon="share-social-outline"
+            onPress={handleShare}
+          />
+        </View>
+        <View style={styles.actionBtn}>
+          <PrimaryButton
+            testID="rx-close-button"
+            title="Cerrar"
+            variant="secondary"
+            onPress={() => router.back()}
+          />
+        </View>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: colors.canvas },
   contentContainer: { padding: 20 },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#475569' },
-  errorText: { fontSize: 14, color: '#EF4444', marginBottom: 16, textAlign: 'center' },
-  headerBox: { backgroundColor: '#0284C7', borderRadius: 16, padding: 20, marginBottom: 16 },
-  badgeText: { color: '#BAE6FD', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5, marginBottom: 4 },
-  headerTitle: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
-  prescriptionId: { color: '#E0F2FE', fontSize: 11, fontFamily: 'monospace', marginTop: 4 },
-  infoCard: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas, padding: 24 },
+  loadingText: { marginTop: 12, fontSize: 14, color: colors.muted },
+  errorText: { fontSize: 14, color: colors.danger, marginBottom: 16, textAlign: 'center' },
+  headerBox: { backgroundColor: colors.passport, borderRadius: radius.pass, padding: 20, marginBottom: 16 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  badgeText: { color: colors.okLight, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  headerTitle: { color: '#FFF', fontSize: 22, fontWeight: '800' },
+  prescriptionId: { color: colors.faint, fontSize: 12, marginTop: 4 },
+  infoCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 16, borderWidth: 1, borderColor: colors.line, marginBottom: 16 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  infoLabel: { fontSize: 12, color: '#64748B', flex: 1 },
-  infoValue: { fontSize: 12, fontWeight: 'bold', color: '#1E293B', flex: 1, textAlign: 'right' },
-  medicationCard: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
-  cardSectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#0F172A', marginBottom: 12 },
+  infoLabel: { fontSize: 13, color: colors.muted, flex: 1 },
+  infoValue: { fontSize: 13, fontWeight: '700', color: colors.ink, flex: 1, textAlign: 'right' },
+  medicationCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 16, borderWidth: 1, borderColor: colors.line, marginBottom: 16 },
+  cardSectionTitle: { fontSize: 15, fontWeight: '800', color: colors.ink, marginBottom: 12 },
   medRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  medLabel: { fontSize: 12, color: '#64748B', flex: 1 },
-  medValue: { fontSize: 12, fontWeight: 'bold', color: '#0284C7', flex: 1, textAlign: 'right' },
-  indicationsBox: { backgroundColor: '#FEF3C7', padding: 12, borderRadius: 8, marginTop: 12 },
-  indicationsTitle: { fontSize: 11, fontWeight: 'bold', color: '#92400E', marginBottom: 2 },
-  indicationsText: { fontSize: 12, color: '#78350F', lineHeight: 18 },
-  qrContainer: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 20 },
+  medLabel: { fontSize: 13, color: colors.muted, flex: 1 },
+  medValue: { fontSize: 13, fontWeight: '700', color: colors.primary, flex: 1, textAlign: 'right' },
+  indicationsBox: { backgroundColor: colors.indicationsBg, padding: 12, borderRadius: radius.md, marginTop: 12 },
+  indicationsHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  indicationsTitle: { fontSize: 12, fontWeight: '700', color: colors.indicationsInk },
+  indicationsText: { fontSize: 13, color: colors.indicationsInk, lineHeight: 18 },
+  qrContainer: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.line, marginBottom: 20 },
   qrImage: { width: 140, height: 140, marginBottom: 8 },
-  qrInstruction: { fontSize: 11, color: '#64748B', textAlign: 'center' },
-  actionsRow: { flexDirection: 'row', gap: 12 },
-  shareButton: { flex: 1, backgroundColor: '#059669', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  shareButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
-  closeButton: { flex: 1, backgroundColor: '#475569', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  closeButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  qrInstruction: { fontSize: 12, color: colors.muted, textAlign: 'center' },
+  actionsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  actionBtn: { flex: 1 },
+  closeButton: { paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  closeButtonText: { color: colors.muted, fontWeight: 'bold', fontSize: 14 },
 });

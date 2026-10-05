@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Switch, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useConsultations } from '../hooks/useConsultations';
 import { useProfile } from '../hooks/useProfile';
 import { assignConsultation } from '../services/consultations.service';
@@ -65,11 +66,18 @@ export function VetWorkspace() {
       )}
 
       <View style={styles.onlineCard} testID="vet-online-card">
-        <View>
-          <Text style={styles.onlineTitle}>Disponible para triage</Text>
-          <Text style={styles.onlineSub}>
-            {user?.isOnline ? 'Recibiendo casos de la cola' : 'En pausa — actívate para atender'}
-          </Text>
+        <View style={styles.onlineInfo}>
+          <Ionicons
+            name={user?.isOnline ? 'radio' : 'pause-circle-outline'}
+            size={24}
+            color={user?.isOnline ? colors.ok : colors.muted}
+          />
+          <View style={styles.onlineText}>
+            <Text style={styles.onlineTitle}>Disponible para triage</Text>
+            <Text style={styles.onlineSub}>
+              {user?.isOnline ? 'Recibiendo casos de la cola' : 'En pausa — actívate para atender'}
+            </Text>
+          </View>
         </View>
         <Switch
           value={!!user?.isOnline}
@@ -98,6 +106,7 @@ export function VetWorkspace() {
               <View style={styles.takeBtn}>
                 <PrimaryButton
                   title="Tomar caso"
+                  icon="hand-left"
                   onPress={() => handleTake(item)}
                   loading={takingId === item.id}
                   testID={`vet-take-${item.id}`}
@@ -146,6 +155,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   onlineTitle: { fontSize: 15, fontWeight: 'bold', color: colors.ink },
+  onlineInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 },
+  onlineText: { flex: 1 },
   onlineSub: { fontSize: 12, color: colors.muted, marginTop: 2 },
   section: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginTop: 14, marginBottom: 8 },
   card: { backgroundColor: '#FFF', padding: 14, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: colors.lineDark },

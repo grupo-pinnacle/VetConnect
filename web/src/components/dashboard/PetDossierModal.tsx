@@ -121,7 +121,7 @@ export const PetDossierModal: React.FC<PetDossierModalProps> = ({ pet, isOpen, o
           </div>
 
           {/* Biological & Physical Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E2D5]">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Especie</span>
               <span className="text-sm font-extrabold text-[#06241D] capitalize">{pet.species}</span>
@@ -130,6 +130,13 @@ export const PetDossierModal: React.FC<PetDossierModalProps> = ({ pet, isOpen, o
             <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E2D5]">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Raza</span>
               <span className="text-sm font-extrabold text-[#06241D] truncate block">{pet.breed || 'Mestizo'}</span>
+            </div>
+
+            <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E2D5]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Sexo</span>
+              <span className="text-sm font-extrabold text-[#06241D] block" data-testid="dossier-sex">
+                {pet.sex || 'Sin especificar'}
+              </span>
             </div>
 
             <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E2D5]">

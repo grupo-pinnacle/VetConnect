@@ -250,6 +250,43 @@ export interface TriageSelectorProps extends BaseComponentProps {
   disabled?: boolean;
 }
 
+// ============================================================
+// CLINICAL INTAKE (ADR-028 AI-FIRST TRIAGE)
+// ============================================================
+
+export type ClinicalSymptomKey =
+  | 'respiratory_distress'
+  | 'seizures'
+  | 'severe_trauma'
+  | 'massive_bleeding'
+  | 'persistent_vomiting'
+  | 'acute_lameness'
+  | 'deep_wound'
+  | 'lethargy'
+  | 'eye_injury'
+  | 'routine_checkup';
+
+export type SymptomDuration =
+  | 'LESS_THAN_2_HOURS'
+  | 'HOURS_2_TO_12'
+  | 'DAYS_1_TO_2'
+  | 'MORE_THAN_2_DAYS';
+
+export interface ClinicalIntakeData {
+  petId: string;
+  notes: string;
+  symptoms: ClinicalSymptomKey[];
+  duration: SymptomDuration;
+}
+
+export interface ClinicalIntakeFormProps extends BaseComponentProps {
+  pets: Pet[];
+  selectedPetId: string;
+  onSelectPet: (petId: string) => void;
+  onSubmit: (data: ClinicalIntakeData) => Promise<void>;
+  isSubmitting?: boolean;
+}
+
 /** Breadcrumbs — hierarchical navigation trail */
 export interface BreadcrumbItem {
   label: string;

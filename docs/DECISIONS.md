@@ -34,6 +34,11 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
 | **ADR-024** | Máquina de Estados Finita (FSM) en Consultas, Timeout de Triage (15 min) y Ventana de Reconexión WebRTC (3 min) | Aprobado | Backend / FSM |
 | **ADR-025** | Jerarquía Inmutable de Verdad (SSOT) y Neutralización del Split-Brain Documental | Aprobado | Gobernanza / AI-First |
 | **ADR-026** | Adopción Segura de Capacidades Clínicas y Señalización WebRTC (GlobalCallListener, Ficha Médica y Verificación SENASA) | Aprobado | Frontend / Telemedicina |
+| **ADR-027** | Blindaje Regulatorio Integral, Marco Legal (Leyes 25.326, 24.240 y 14.072), Gestión de Cookies e Inclusión Accesible WCAG 2.1 AA | Aprobado | Legal / Compliance |
+| **ADR-028** | Triage Clínico Asistido por IA (AI-First Intake) y Desacoplamiento de la Prioridad del Tutor | Aprobado | Clínico / AI-First / UX |
+| **ADR-029** | Desacoplamiento entre Ficha Declarativa de Mascota (Editable por Tutor) y Expediente Clínico Inmutable (Auditoría Médica) | Aprobado | Clínico / Paciente / Legal |
+| **ADR-030** | Sanitización de Metadatos de Sistema en Notas Clínicas y Reorganización Responsiva de Acciones en Tarjetas de Paciente | Aprobado | UX / Frontend / Clínico |
+| **ADR-031** | Resolución de Singleton de React y Metro Resolver Pinning en Monorepo Expo SDK 54 | Aprobado | Mobile / Bundler / Arquitectura |
 
 ---
 
@@ -218,4 +223,114 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
   5. **Transparencia Societaria e Identidad del Prestador:** Incorporación de razón social responsable (**Pinnacle Group S.A.**), CUIT **30-71234567-8**, domicilio legal en CABA, canales de contacto dedicados y atribución de derechos de autor de iconografía (Lucide Icons bajo licencia MIT).
   6. **Cumplimiento WCAG 2.1 AA:** Garantía de contraste tipográfico $\ge 4.5:1$, soporte completo de navegación por teclado (`Tab`, `Enter`, `focus-visible:ring-2`), enlaces semánticos y compatibilidad con tecnologías de asistencia.
 - **Consecuencias:** Neutralización exhaustiva de riesgos legales y pasivos contingentes; conformidad regulatoria con SENASA, AAIP y Defensa del Consumidor; experiencia de usuario ética y transparente sin reclamos por publicidad engañosa; y ampliación de la cobertura de pruebas unitarias a 167 tests automatizados en verde.
+
+### ADR-028: Triage Clínico Asistido por IA (AI-First Intake) y Desacoplamiento de la Prioridad del Tutor
+- **Contexto:** En el diseño inicial del portal de clientes (`DashboardClient.tsx`), el tutor de la mascota seleccionaba explícitamente el nivel de urgencia clínico (`VERDE`, `AMARILLO`, `ROJO`) mediante el componente `TriageSelector`. Esta práctica introduce graves distorsiones clínicas y operativas:
+  1. *Incentivo perverso de autoservicio (Tragedy of the Commons):* Ante situaciones de ansiedad o el deseo de atención inmediata, una alta proporción de usuarios selecciona "ROJO — Urgencia Vital" sin importar el cuadro real, colapsando la guardia médica y desvirtuando la cola de espera FIFO/priorizada.
+  2. *Sesgo por desconocimiento clínico y riesgo de falsos negativos:* Un tutor sin formación médica veterinaria suele subestimar urgencias letales (ej. obstrucción urinaria felina, dilatación gástrica en caninos) catalogándolas como "VERDE", o sobreestimar cuadros banales con sangre visible catalogándolos como "ROJO".
+  3. *Incompatibilidad con el estándar médico de triaje:* En medicina de urgencia veterinaria (Veterinary Triage Index - VTI) y humana (Manchester Triage System - MTS), el triaje es un acto asistencial y de admisión estructurado, nunca una decisión delegada al paciente o su acompañante.
+  4. *Diferenciación médica:* Es crucial distinguir entre *Diagnóstico Médico* (acto reservado por la Ley Nacional 14.072 al médico veterinario matriculado) y *Admisión y Triaje Asistido* (estratificación de agudeza clínica y ordenamiento de sala de espera).
+- **Decisión:**
+  1. **Desacoplar la prioridad clínica del tutor (Cero selectores de color en el cliente):**
+     - Se elimina de la vista del tutor (`/client/dashboard`) el componente `TriageSelector` y cualquier selector manual de severidad (`ROJO`, `AMARILLO`, `VERDE`).
+     - El tutor únicamente interactúa con un **Intake Clínico Guiado** (`ClinicalIntakeForm`):
+       a) Selección de la Mascota registrada.
+       b) **Signos clínicos observables (chips de selección rápida):** Dificultad respiratoria, vómitos/diarrea, heridas/sangrado, claudicación/cojera, decaimiento/apatía, convulsión/desmayo, conducta anormal, control general.
+       c) **Tiempo aproximado de evolución:** Menos de 2 horas (`LESS_THAN_2_HOURS`), hoy / 2-12 horas (`HOURS_2_TO_12`), 1 a 2 días (`DAYS_1_TO_2`), más de 2 días (`MORE_THAN_2_DAYS`).
+       d) **Descripción en lenguaje natural:** Relato guiado de los síntomas observados.
+  2. **Motor de Triaje Clínico AI-First en Backend (Pipeline de Ingesta):**
+     - Al invocar `POST /api/consultations`, el backend procesa el intake a través del **Evaluador de Triaje Clínico** (`clinical-triage.engine`).
+     - El motor combina:
+       a) Parámetros fisiológicos de la mascota (especie, raza, edad, peso, condiciones crónicas preexistentes).
+       b) Signos clínicos declarados y ventana de evolución.
+       c) Procesamiento semántico del motivo de consulta.
+     - El motor computa de forma determinista la prioridad clínica interna (`ROJO` | `AMARILLO` | `VERDE`), un índice numérico de criticidad (1 a 10) y genera un **Resumen Clínico Pre-Consulta con Banderas Rojas (Red Flags)** para el médico veterinario.
+     - La consulta ingresa a la cola de guardia (`WAITING`) ordenada prioritariamente por severidad clínica y antigüedad.
+  3. **Protocolo de Derivación Física Inmediata (Red Flags Críticas):**
+     - Si el intake detecta riesgo de vida inminente irreversible por telemedicina (ej. paro respiratorio, politraumatismo con shock, hemorragia exanguinante masiva, convulsión status epilepticus), el sistema activa un banner de alerta crítica en la UI del tutor: *"Cuadro de riesgo vital inminente detectado. Mientras te contacta el médico de guardia, trasladá inmediatamente al paciente al centro veterinario de urgencias 24hs más cercano"*.
+  4. **Visualización Restringida al Ecosistema Médico:**
+     - La clasificación de triaje (`ROJO`, `AMARILLO`, `VERDE`), el resumen de banderas rojas y el tiempo de espera transcurrido se exhiben **exclusivamente en la consola del médico veterinario (`DashboardVet.tsx`)** y en auditorías administrativas.
+     - El médico veterinario actuante conserva la facultad indelegable de reclasificar o ajustar el nivel de triaje durante la atención.
+- **Consecuencias:**
+  - Erradicación definitiva de la sobre-priorización arbitraria por parte de tutores.
+  - Tiempos de respuesta reducidos para emergencias reales en la cola de guardia.
+  - Conformidad estricta con la Ley 14.072 (el sistema asiste en la admisión y priorización, mientras el médico retiene el diagnóstico clínico y prescripción).
+  - Experiencia de usuario empática y libre de tecnicismos para el tutor en crisis.
+
+### ADR-029: Desacoplamiento entre Ficha Declarativa de Mascota (Editable por Tutor) y Expediente Clínico Inmutable (Auditoría Médica)
+- **Contexto:** En la auditoría integral de la interfaz de usuario del tutor se detectó una inconsistencia de diseño en la gestión de pacientes y su historia médica:
+  1. *Campos omitidos en el alta:* El modal "Expediente Clínico" (`PetDossierModal.tsx`) y el drawer del veterinario (`VetPatientProfile.tsx`) reservan secciones destacadas para *"Alergias Clínicas Declaradas"* y *"Condiciones Crónicas / Preexistentes"*. Sin embargo, el modal de creación de mascota (`DashboardClient.tsx`) omitía estos campos, impidiendo al tutor declarar antecedentes críticos (ej. intolerancia a penicilina, cardiopatías, diabetes o insuficiencia renal).
+  2. *Ausencia de edición para el tutor:* Una vez creada la mascota, el tutor no disponía de ninguna interfaz para actualizar datos biológicos que cambian naturalmente en la vida del animal (peso, nuevas alergias diagnosticadas, microchip recientemente implantado), a pesar de que el backend ya soportaba el endpoint canónico `PATCH /api/pets/:id`.
+  3. *Límite ético y legal de edición:* Resulta jurídicamente inviable y contrario a las Leyes 25.326 y 14.072 que un tutor pueda alterar diagnósticos, prescripciones o notas médicas previas consignadas en el expediente clínico por profesionales matriculados.
+- **Decisión:**
+  1. **Separación Conceptual Inmutable:**
+     - **Ficha Declarativa del Paciente (`Pet`):** Datos de filiación y antecedentes provistos por el tutor (`name`, `species`, `breed`, `weightKg`, `sex`, `microchip`, `allergies`, `chronicConditions`). **100% editable por el tutor** mediante el modal de gestión de mascota (`PATCH /api/pets/:id`).
+     - **Expediente e Historia Clínica (`Consultation`, `diagnosisNotes`, `Prescription`, `Call`):** Registro médico-legal oficial. **100% inmutable para el tutor**. Únicamente los veterinarios matriculados actuantes pueden incorporar evoluciones médicas y emitir recetas.
+  2. **Enriquecimiento del Modal de Mascota (`PetModal`):**
+     - Se unifica el formulario de mascota en `DashboardClient.tsx` para operar en modo **Creación** (`POST /api/pets`) y modo **Edición** (`PATCH /api/pets/:id`).
+     - Se incorporan los campos:
+       a) `sex`: Sexo biológico ('Macho' | 'Hembra').
+       b) `allergies`: Alergias clínicas conocidas declaradas por el tutor (ej. "Alérgico a penicilina, picadura de pulga").
+       c) `chronicConditions`: Patologías o antecedentes crónicos preexistentes (ej. "Soplo cardíaco grado 2, hipotiroidismo").
+  3. **Activación del Botón de Edición en el Portal del Tutor:**
+     - Cada tarjeta de mascota en `DashboardClient.tsx` incorpora el botón accesible *"Editar Datos"*, abriendo el modal precargado con la información actual de la mascota.
+     - La actualización invoca `PATCH /api/pets/:id` e invalida la caché de `api.get('/api/pets')`, actualizando en tiempo real la ficha médica, el dossier imprimible y el perfil visualizado por el veterinario de guardia.
+- **Consecuencias:**
+  - Resolución definitiva de la incongruencia de "Sin alergias declaradas" cuando el tutor en realidad deseaba reportarlas.
+  - Blindaje clínico del acto médico: el veterinario de guardia accede inmediatamente a las alergias del animal al momento de prescribir, previniendo reacciones adversas graves.
+  - Cero riesgo de adulteración del historial clínico, preservando la trazabilidad de SENASA y la validez probatoria de las recetas emitidas con QR.
+
+### ADR-030: Sanitización de Metadatos de Sistema en Notas Clínicas y Reorganización Responsiva de Acciones en Tarjetas de Paciente
+- **Contexto:** En la auditoría integral de la interfaz de usuario del portal del tutor (`http://localhost:5173/client/dashboard`) se detectaron dos fricciones de usabilidad y fidelidad visual:
+  1. *Desbordamiento de botones de acción:* En la columna de mascotas del tutor (`DashboardClient.tsx`, `lg:col-span-5`), la fila horizontal que agrupaba `Editar`, `Expediente` y `Pedir Consulta` excedía el ancho disponible del contenedor en resoluciones estándar (1280px a 1440px), provocando que el botón principal `Pedir Consulta ->` sobresaliera del margen derecho de la tarjeta.
+  2. *Fuga de metadatos de sistema en el historial de consultas:* El campo `notes` de las consultas en base de datos almacena determinísticamente prefijos de triaje (`[Prioridad: ROJO]`, `[Triage IA: X/10]`) y sufijos de máquina de estados (`[CANCELLED_TIMEOUT_NO_VET_AVAILABLE]`). Al renderizarse directamente en la tarjeta de consulta reciente, el tutor visualizaba cadenas crudas como `[Prioridad: ROJO] tiene vacunas [CANCELLED_TIMEOUT_NO_VET_AVAILABLE]`, duplicando la prioridad que ya figuraba en el badge superior y exponiendo códigos de error internos en lugar de un motivo claro y empático.
+  3. *Filtrado de tags internos en copy de producción:* Se detectaron referencias a identificadores de arquitectura (`ADR-028`, `ADR-029`) en títulos y subtítulos del formulario de admisión y modal de mascota visibles por el usuario.
+- **Decisión:**
+  1. **Barra de Acciones Inferior Integrada en `PetCard`:**
+     - Se reorganiza el layout de cada tarjeta de paciente trasladando los botones a un footer inferior integrado (`mt-3.5 pt-3 border-t border-[#E8E2D5]/70 flex flex-wrap items-center justify-between gap-2`).
+     - A la izquierda se agrupan las acciones de gestión (`Editar` y `Expediente`); a la derecha se alinea el CTA de atención (`Pedir Consulta ->`).
+     - Garantiza cero desbordamiento horizontal en cualquier resolución de pantalla (desktop, tablet y móvil).
+  2. **Sanitización Determinista de Notas Clínicas (`parseConsultationNotes`):**
+     - Se implementa una utilidad puramente tipada para el cliente que remueve las etiquetas técnicas del sistema:
+       - Remueve `[Prioridad: ROJO|AMARILLO|VERDE]` (la prioridad se representa visualmente con el badge semántico).
+       - Remueve `[Triage IA: X/10]`.
+       - Remueve `[CANCELLED_TIMEOUT_NO_VET_AVAILABLE]` y cualquier etiqueta `[CANCELLED_...]`.
+     - Retorna el texto limpio ingresado por el usuario (ej. `"tiene vacunas"`).
+     - Si la consulta fue cancelada por tiempo de espera sin veterinario disponible, se presenta un mensaje contextual legible y empático ("Tiempo de espera agotado: sin veterinarios disponibles en guardia.").
+  3. **Erradicación de Referencias a ADRs en Textos de Usuario:**
+     - Eliminación de "(ADR-028)" y "(ADR-029)" de los encabezados de formularios y modales, manteniendo copys orientados 100% al tutor.
+- **Consecuencias:**
+  - Cero desbordamiento visual en las tarjetas de pacientes.
+  - Presentación clínica limpia y profesional sin exposición de códigos internos.
+  - Comunicación clara al tutor cuando una consulta finaliza por timeout de guardia.
+
+### ADR-031: Resolución de Singleton de React y Metro Resolver Pinning en Monorepo Expo SDK 54
+- **Contexto:**
+  - Al compilar y ejecutar el bundle de la aplicación móvil (`@vetconnect/mobile`) mediante Expo Go en entorno de desarrollo local, Metro emitía un fallo catastrófico en tiempo de ejecución:
+    ```
+    ERROR Warning: Invalid hook call. Hooks can only be called inside of the body of a function component.
+    1. You might have mismatching versions of React and the renderer (such as React DOM)
+    2. You might be breaking the Rules of Hooks
+    3. You might have more than one copy of React in the same app
+    ERROR [TypeError: Cannot read property 'useId' of null]
+    ```
+  - **Diagnóstico y Causa Raíz:**
+    1. *Coexistencia de versiones heterogéneas de React en el Monorepo:* El workspace web (`@vetconnect/web`) requiere React 18.3.1 (LTS) por compatibilidad de peer-dependencies con LiveKit Components y testing libraries (ADR-008 y AGENTS.md §4.3). Por ello, `node_modules/react` en la raíz del monorepo contiene **React 18.3.1**. En contraste, `@vetconnect/mobile` utiliza Expo SDK 54, cuya arquitectura exige **React 19.1.0** y **React Native 0.81.4**.
+    2. *Resolución permisiva ascendente en Metro:* En la configuración previa de `mobile/metro.config.js`, `config.resolver.blockList` excluía copias duplicadas de `react-native`, pero no bloqueaba las rutas de `react` o `react-dom` del monorepo raíz.
+    3. *Fallo de Dispatcher nulo:* Dependencias hoisted en la raíz (ej. `expo-keep-awake`, `@expo/metro-runtime`) resolvían sus imports a través de `VetConnect/node_modules/react` (React 18). Al ejecutarse dentro del renderer de React Native Fabric (montado con el dispatcher de React 19), la invocación de `useKeepAwake` -> `useId` accedía al dispatcher de la copia de React 18 (`ReactCurrentDispatcher.current`), el cual permanecía en `null`, disparando `Cannot read property 'useId' of null`.
+- **Decisión:**
+  1. **Aislamiento Estricto mediante `blockList`:**
+     - Se incorporan a la lista de exclusión de Metro (`config.resolver.blockList`) las rutas de `node_modules/react` y `node_modules/react-dom` de la raíz del monorepo y paquetes secundarios (`nativewind`).
+  2. **Intercepción Determinista en `resolveRequest` (Singleton Pinning):**
+     - Se implementa un hook de resolución personalizada en Metro (`config.resolver.resolveRequest`) que intercepta cualquier resolución de `react`, `react/*`, `react-dom`, `react-dom/*`, `react-native` y `react-native/*`.
+     - Todos los módulos que requieran React se redirigen de manera determinista e inmutable al path local de la copia canónica: `mobile/node_modules/react` y `mobile/node_modules/react-native`.
+  3. **Preservación del Ecosistema Web en React 18.3.1:**
+     - Se mantiene el frontend web aislado en React 18.3.1, garantizando que ninguna actualización de bundler en mobile vulnere la estabilidad de la telemedicina WebRTC de LiveKit en la web.
+- **Consecuencias:**
+  - Garantía absoluta de copia única (singleton) de React 19.1.0 durante el bundling y hot-reloading de Expo Go.
+  - Eliminación definitiva del error `Invalid hook call` y `Cannot read property 'useId' of null`.
+  - Respeto del principio de no-regresión en el workspace web.
+
+
+
 

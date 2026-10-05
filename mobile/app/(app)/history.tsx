@@ -8,8 +8,9 @@ import { LoadingView, ErrorBox, EmptyView } from '../../src/components/ScreenSta
 import { StatusBadge, TriageBadge } from '../../src/components/StatusBadge';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { Field } from '../../src/components/Field';
+import { Ionicons } from '@expo/vector-icons';
 import { Consultation, ConsultationStatus } from '../../src/types';
-import { colors } from '../../src/theme/tokens';
+import { colors, radius } from '../../src/theme/tokens';
 
 const FILTERS: Array<'ALL' | ConsultationStatus> = ['ALL', 'WAITING', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
 
@@ -69,7 +70,12 @@ function HistoryCard({
       {!!error && <ErrorBox message={error} testID={`history-cancel-error-${item.id}`} />}
 
       {cancellable && !confirming && (
-        <TouchableOpacity onPress={() => setConfirming(true)} testID={`history-cancel-${item.id}`}>
+        <TouchableOpacity
+          style={styles.cancelLinkRow}
+          onPress={() => setConfirming(true)}
+          testID={`history-cancel-${item.id}`}
+        >
+          <Ionicons name="close-circle-outline" size={16} color={colors.danger} />
           <Text style={styles.cancelLink}>Cancelar consulta</Text>
         </TouchableOpacity>
       )}
@@ -164,18 +170,19 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas, padding: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', color: colors.ink, marginBottom: 12, marginTop: 40 },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  chip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: colors.lineDark, backgroundColor: '#FFF' },
+  title: { fontSize: 22, fontWeight: '800', color: colors.ink, marginBottom: 16, marginTop: 40 },
+  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: radius.full, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontSize: 12, fontWeight: 'bold', color: colors.body },
+  chipText: { fontSize: 13, fontWeight: '700', color: colors.muted },
   chipTextActive: { color: '#FFF' },
-  card: { backgroundColor: '#FFF', padding: 14, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: colors.lineDark },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  date: { fontSize: 11, color: colors.faint, marginLeft: 'auto' },
-  pet: { fontSize: 15, fontWeight: 'bold', color: colors.ink },
-  notes: { fontSize: 13, color: colors.body, marginTop: 2 },
-  cancelLink: { color: colors.danger, fontSize: 13, fontWeight: 'bold', marginTop: 10 },
-  confirmRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  card: { backgroundColor: colors.card, padding: 16, borderRadius: radius.lg, marginBottom: 12, borderWidth: 1, borderColor: colors.line },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  date: { fontSize: 12, color: colors.faint, marginLeft: 'auto' },
+  pet: { fontSize: 17, fontWeight: '800', color: colors.ink },
+  notes: { fontSize: 14, color: colors.body, marginTop: 4 },
+  cancelLinkRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  cancelLink: { color: colors.danger, fontSize: 13, fontWeight: '700' },
+  confirmRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   confirmBtn: { flex: 1 },
 });
