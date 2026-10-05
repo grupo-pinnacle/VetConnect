@@ -38,6 +38,7 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
 | **ADR-028** | Triage Clínico Asistido por IA (AI-First Intake) y Desacoplamiento de la Prioridad del Tutor | Aprobado | Clínico / AI-First / UX |
 | **ADR-029** | Desacoplamiento entre Ficha Declarativa de Mascota (Editable por Tutor) y Expediente Clínico Inmutable (Auditoría Médica) | Aprobado | Clínico / Paciente / Legal |
 | **ADR-030** | Sanitización de Metadatos de Sistema en Notas Clínicas y Reorganización Responsiva de Acciones en Tarjetas de Paciente | Aprobado | UX / Frontend / Clínico |
+| **ADR-031** | Resolución de Singleton de React y Metro Resolver Pinning en Monorepo Expo SDK 54 | Aprobado | Mobile / Bundler / Arquitectura |
 
 ---
 
@@ -302,6 +303,34 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
   - Cero desbordamiento visual en las tarjetas de pacientes.
   - Presentación clínica limpia y profesional sin exposición de códigos internos.
   - Comunicación clara al tutor cuando una consulta finaliza por timeout de guardia.
+
+### ADR-031: Resolución de Singleton de React y Metro Resolver Pinning en Monorepo Expo SDK 54
+- **Contexto:**
+  - Al compilar y ejecutar el bundle de la aplicación móvil (`@vetconnect/mobile`) mediante Expo Go en entorno de desarrollo local, Metro emitía un fallo catastrófico en tiempo de ejecución:
+    ```
+    ERROR Warning: Invalid hook call. Hooks can only be called inside of the body of a function component.
+    1. You might have mismatching versions of React and the renderer (such as React DOM)
+    2. You might be breaking the Rules of Hooks
+    3. You might have more than one copy of React in the same app
+    ERROR [TypeError: Cannot read property 'useId' of null]
+    ```
+  - **Diagnóstico y Causa Raíz:**
+    1. *Coexistencia de versiones heterogéneas de React en el Monorepo:* El workspace web (`@vetconnect/web`) requiere React 18.3.1 (LTS) por compatibilidad de peer-dependencies con LiveKit Components y testing libraries (ADR-008 y AGENTS.md §4.3). Por ello, `node_modules/react` en la raíz del monorepo contiene **React 18.3.1**. En contraste, `@vetconnect/mobile` utiliza Expo SDK 54, cuya arquitectura exige **React 19.1.0** y **React Native 0.81.4**.
+    2. *Resolución permisiva ascendente en Metro:* En la configuración previa de `mobile/metro.config.js`, `config.resolver.blockList` excluía copias duplicadas de `react-native`, pero no bloqueaba las rutas de `react` o `react-dom` del monorepo raíz.
+    3. *Fallo de Dispatcher nulo:* Dependencias hoisted en la raíz (ej. `expo-keep-awake`, `@expo/metro-runtime`) resolvían sus imports a través de `VetConnect/node_modules/react` (React 18). Al ejecutarse dentro del renderer de React Native Fabric (montado con el dispatcher de React 19), la invocación de `useKeepAwake` -> `useId` accedía al dispatcher de la copia de React 18 (`ReactCurrentDispatcher.current`), el cual permanecía en `null`, disparando `Cannot read property 'useId' of null`.
+- **Decisión:**
+  1. **Aislamiento Estricto mediante `blockList`:**
+     - Se incorporan a la lista de exclusión de Metro (`config.resolver.blockList`) las rutas de `node_modules/react` y `node_modules/react-dom` de la raíz del monorepo y paquetes secundarios (`nativewind`).
+  2. **Intercepción Determinista en `resolveRequest` (Singleton Pinning):**
+     - Se implementa un hook de resolución personalizada en Metro (`config.resolver.resolveRequest`) que intercepta cualquier resolución de `react`, `react/*`, `react-dom`, `react-dom/*`, `react-native` y `react-native/*`.
+     - Todos los módulos que requieran React se redirigen de manera determinista e inmutable al path local de la copia canónica: `mobile/node_modules/react` y `mobile/node_modules/react-native`.
+  3. **Preservación del Ecosistema Web en React 18.3.1:**
+     - Se mantiene el frontend web aislado en React 18.3.1, garantizando que ninguna actualización de bundler en mobile vulnere la estabilidad de la telemedicina WebRTC de LiveKit en la web.
+- **Consecuencias:**
+  - Garantía absoluta de copia única (singleton) de React 19.1.0 durante el bundling y hot-reloading de Expo Go.
+  - Eliminación definitiva del error `Invalid hook call` y `Cannot read property 'useId' of null`.
+  - Respeto del principio de no-regresión en el workspace web.
+
 
 
 

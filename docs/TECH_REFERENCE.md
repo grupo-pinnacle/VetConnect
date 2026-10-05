@@ -279,7 +279,14 @@ npm run build-storybook -w web
 - **Reportes:** Grabaciones de video, capturas de pantalla, trazas de red y diagnósticos automáticos de causa raíz ante anomalías.
 - **Referencia Canónica:** [`docs/web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md`](web/11_INTEGRACION_STORYBOOK_Y_TESTSPRITE_QA.md).
 
-### 4.5 Verificación de Integración Continua y Pre-Despliegue
+### 4.5 Resolución de Singletons en Bundler Metro (ADR-031 — Mobile Expo SDK 54)
+- **Desafío:** Coexistencia de React 18.3.1 (Web LTS) y React 19.1.0 / React Native 0.81.4 (Expo SDK 54) en el monorepo.
+- **Mecanismo:** En `mobile/metro.config.js`:
+  1. `config.resolver.blockList`: Exclusión de rutas hoisted de React en el root (`VetConnect/node_modules/react` y `VetConnect/node_modules/react-dom`).
+  2. `config.resolver.resolveRequest`: Intercepción en tiempo de resolución para redirigir `react`, `react/*`, `react-dom`, `react-dom/*`, `react-native` y `react-native/*` estrictamente a `mobile/node_modules/`.
+- **Resultado:** Prevención absoluta de fallos de dispatchers nulos (`Cannot read property 'useId' of null`) e invalid hook calls al ejecutar Expo Go.
+
+### 4.6 Verificación de Integración Continua y Pre-Despliegue
 ```bash
 # 1. Verificación semántica y de gobernanza (40 PBs ↔ 20 TASKs ↔ 10 Modelos)
 npm run check:governance
