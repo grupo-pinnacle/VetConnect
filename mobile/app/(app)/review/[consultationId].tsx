@@ -3,7 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { postReview } from '../../../src/services/consultations.service';
 import { getApiErrorMessage } from '../../../src/lib/api';
-import { colors } from '../../../src/theme/tokens';
+import { Ionicons } from '@expo/vector-icons';
+import { PrimaryButton } from '../../../src/components/PrimaryButton';
+import { colors, radius } from '../../../src/theme/tokens';
 
 export default function ReviewScreen() {
   const { consultationId } = useLocalSearchParams<{ consultationId: string }>();
@@ -58,7 +60,11 @@ export default function ReviewScreen() {
             onPress={() => setRating(s)}
             testID={`review-star-${s}`}
           >
-            <Text style={[styles.starText, s <= rating && styles.starTextActive]}>★</Text>
+            <Ionicons
+              name={s <= rating ? 'star' : 'star-outline'}
+              size={22}
+              color={s <= rating ? '#FFF' : colors.faint}
+            />
           </TouchableOpacity>
         ))}
       </View>
@@ -75,32 +81,28 @@ export default function ReviewScreen() {
         testID="review-comment"
       />
 
-      <TouchableOpacity
-        style={[styles.btn, submitting && styles.btnDisabled]}
+      <PrimaryButton
+        title="Enviar calificación"
+        icon="star"
         onPress={submit}
-        disabled={submitting}
+        loading={submitting}
         testID="review-submit"
-      >
-        {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>Enviar calificación</Text>}
-      </TouchableOpacity>
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF', padding: 20 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#FFF' },
-  title: { fontSize: 20, fontWeight: 'bold', color: colors.ink, marginBottom: 20, marginTop: 40, textAlign: 'center' },
-  errorBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: colors.danger, borderRadius: 8, padding: 12, marginBottom: 16 },
-  errorText: { color: colors.danger, fontSize: 14, textAlign: 'center' },
-  label: { fontSize: 14, fontWeight: 'bold', color: colors.body, marginBottom: 8 },
+  container: { flex: 1, backgroundColor: colors.canvas, padding: 20 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: colors.canvas },
+  title: { fontSize: 22, fontWeight: '800', color: colors.ink, marginBottom: 20, marginTop: 40, textAlign: 'center' },
+  errorBox: { backgroundColor: colors.dangerTint, borderWidth: 1, borderColor: colors.danger, borderRadius: radius.md, padding: 12, marginBottom: 16 },
+  errorText: { color: colors.danger, fontSize: 13, textAlign: 'center' },
+  label: { fontSize: 13, fontWeight: '700', color: colors.body, marginBottom: 8 },
   stars: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  star: { flex: 1, padding: 12, borderWidth: 1, borderColor: colors.lineDark, borderRadius: 8, alignItems: 'center' },
+  star: { flex: 1, padding: 12, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, alignItems: 'center', backgroundColor: colors.card },
   starActive: { backgroundColor: colors.amber, borderColor: colors.amber },
-  starText: { fontSize: 22, color: colors.faint },
-  starTextActive: { color: '#FFF' },
-  textArea: { borderWidth: 1, borderColor: colors.lineDark, borderRadius: 8, padding: 12, height: 90, textAlignVertical: 'top', marginBottom: 20 },
-  btn: { backgroundColor: colors.primary, padding: 15, borderRadius: 8, alignItems: 'center' },
-  btnDisabled: { opacity: 0.7 },
+  textArea: { borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, padding: 12, height: 90, textAlignVertical: 'top', marginBottom: 24, backgroundColor: colors.card },
+  btn: { backgroundColor: colors.primary, padding: 15, borderRadius: radius.md, alignItems: 'center' },
   btnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
 });
