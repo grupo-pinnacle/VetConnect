@@ -94,9 +94,9 @@ interface User {
 | GET  | `/api/auth/me` | `AuthContext.tsx` | Carga el perfil al iniciar sesión |
 | PATCH | `/api/users/profile` | `DashboardVet.tsx` | Body: `{ isOnline?, bio?, photoUrl? }` |
 | GET  | `/api/pets` | `DashboardClient.tsx` | Lista mascotas del usuario autenticado |
-| POST | `/api/pets` | `DashboardClient.tsx` | Crea mascota; `breed` min 1 char |
-| GET  | `/api/pets/:id` | `DashboardClient.tsx` | ⏳ Pendiente de consumo en código |
-| PATCH | `/api/pets/:id` | `DashboardClient.tsx` | ⏳ Pendiente de consumo en código |
+| POST | `/api/pets` | `DashboardClient.tsx` | Crea mascota con campos de filiación y salud: `name, species, breed, weightKg, sex?, microchip?, allergies?, chronicConditions?` (ADR-029) |
+| GET  | `/api/pets/:id` | `DashboardClient.tsx` | Detalle de mascota y expediente |
+| PATCH | `/api/pets/:id` | `DashboardClient.tsx` | Edita ficha declarativa de mascota (peso, alergias, patologías crónicas, etc.) vía modal de edición sin alterar el expediente clínico inmutable (ADR-029) |
 | DELETE | `/api/pets/:id` | `DashboardClient.tsx` | Soft-delete (`deletedAt = now`). ⏳ Pendiente: implementar modal de confirmación |
 | GET  | `/api/consultations/mine` | `DashboardClient.tsx`, `DashboardVet.tsx` | Sin query params |
 | POST | `/api/consultations` | `DashboardClient.tsx` (Intake Clínico) | Body: `{ petId, notes, symptoms?, duration? }`. Backend computa internamente `[Prioridad: X]` según ADR-028 |

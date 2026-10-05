@@ -27,6 +27,7 @@ import {
   X,
   Calendar,
   LayoutGrid,
+  Pencil,
 } from 'lucide-react';
 
 export const DashboardClient: React.FC = () => {
@@ -39,14 +40,18 @@ export const DashboardClient: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // New Pet Form State
+  // Pet Form State (Create & Edit — ADR-029)
   const [showPetModal, setShowPetModal] = useState(false);
+  const [editingPetId, setEditingPetId] = useState<string | null>(null);
   const [petForm, setPetForm] = useState({
     name: '',
     species: 'Canine',
     breed: '',
     weightKg: '',
+    sex: '',
     microchip: '',
+    allergies: '',
+    chronicConditions: '',
   });
 
   // Triage Request Form State
@@ -83,27 +88,81 @@ export const DashboardClient: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleCreatePet = async (e: React.FormEvent) => {
+  const handleOpenCreatePet = () => {
+    setEditingPetId(null);
+    setPetForm({
+      name: '',
+      species: 'Canine',
+      breed: '',
+      weightKg: '',
+      sex: '',
+      microchip: '',
+      allergies: '',
+      chronicConditions: '',
+    });
+    setShowPetModal(true);
+  };
+
+  const handleOpenEditPet = (pet: Pet) => {
+    setEditingPetId(pet.id);
+    setPetForm({
+      name: pet.name || '',
+      species: pet.species || 'Canine',
+      breed: pet.breed || '',
+      weightKg: pet.weightKg != null ? String(pet.weightKg) : '',
+      sex: pet.sex || '',
+      microchip: pet.microchip || '',
+      allergies: Array.isArray(pet.allergies as unknown)
+        ? (pet.allergies as unknown as string[]).join(', ')
+        : pet.allergies || '',
+      chronicConditions: Array.isArray(pet.chronicConditions as unknown)
+        ? (pet.chronicConditions as unknown as string[]).join(', ')
+        : pet.chronicConditions || '',
+    });
+    setShowPetModal(true);
+  };
+
+  const handleClosePetModal = () => {
+    setShowPetModal(false);
+    setEditingPetId(null);
+  };
+
+  const handleSavePet = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
       const payload = {
-        name: petForm.name,
+        name: petForm.name.trim(),
         species: petForm.species,
-        breed: petForm.breed,
+        breed: petForm.breed.trim(),
         weightKg: petForm.weightKg ? parseFloat(petForm.weightKg) : undefined,
+        sex: petForm.sex.trim() ? petForm.sex.trim() : undefined,
         microchip: petForm.microchip.trim() ? petForm.microchip.trim() : undefined,
+        allergies: petForm.allergies.trim() ? petForm.allergies.trim() : undefined,
+        chronicConditions: petForm.chronicConditions.trim() ? petForm.chronicConditions.trim() : undefined,
       };
 
-      const res = await api.post<ApiResponse<Pet>>('/api/pets', payload);
-      if (res.data.success && res.data.data) {
-        setPets((prev) => [res.data.data!, ...prev]);
-        setShowPetModal(false);
-        setPetForm({ name: '', species: 'Canine', breed: '', weightKg: '', microchip: '' });
+      if (editingPetId) {
+        const res = await api.patch<ApiResponse<Pet>>(`/api/pets/${editingPetId}`, payload);
+        if (res.data.success && res.data.data) {
+          const updated = res.data.data;
+          setPets((prev) => prev.map((p) => (p.id === editingPetId ? updated : p)));
+          setSelectedDossierPet((prev) => (prev?.id === editingPetId ? updated : prev));
+          handleClosePetModal();
+        }
+      } else {
+        const res = await api.post<ApiResponse<Pet>>('/api/pets', payload);
+        if (res.data.success && res.data.data) {
+          setPets((prev) => [res.data.data!, ...prev]);
+          handleClosePetModal();
+        }
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
-      alert(apiErr.response?.data?.error?.message || 'Error al registrar mascota');
+      alert(
+        apiErr.response?.data?.error?.message ||
+          (editingPetId ? 'Error al actualizar mascota' : 'Error al registrar mascota')
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -280,7 +339,7 @@ export const DashboardClient: React.FC = () => {
               </div>
               <button
                 data-testid="add-pet-button"
-                onClick={() => setShowPetModal(true)}
+                onClick={handleOpenCreatePet}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-700/20 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" aria-hidden="true" />
@@ -305,7 +364,7 @@ export const DashboardClient: React.FC = () => {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setShowPetModal(true)}
+                    onClick={handleOpenCreatePet}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm shadow-emerald-700/20 hover:shadow-md transition-all cursor-pointer"
                   >
                     <Plus className="w-4 h-4" aria-hidden="true" />
@@ -355,6 +414,14 @@ export const DashboardClient: React.FC = () => {
                             </p>
 
                             <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-500">
+                              {pet.sex && (
+                                <span
+                                  data-testid={`pet-sex-${pet.id}`}
+                                  className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md font-semibold"
+                                >
+                                  {pet.sex}
+                                </span>
+                              )}
                               {pet.weightKg && (
                                 <span
                                   data-testid={`pet-weight-${pet.id}`}
@@ -373,20 +440,47 @@ export const DashboardClient: React.FC = () => {
                                   ISO: {pet.microchip}
                                 </span>
                               )}
-                              {pet.allergies && pet.allergies.length > 0 && (
+                              {pet.allergies && (
                                 <span
                                   data-testid={`pet-allergies-${pet.id}`}
-                                  className="inline-flex items-center gap-1 bg-amber-100/70 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold"
+                                  className="inline-flex items-center gap-1 bg-amber-100/70 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold max-w-[170px] truncate"
+                                  title={Array.isArray(pet.allergies as unknown) ? (pet.allergies as unknown as string[]).join(', ') : String(pet.allergies)}
                                 >
-                                  Alergias: {pet.allergies.length}
+                                  <AlertTriangle className="w-2.5 h-2.5 text-amber-700 shrink-0" />
+                                  <span className="truncate">
+                                    Alergias: {Array.isArray(pet.allergies as unknown) ? (pet.allergies as unknown as string[]).join(', ') : String(pet.allergies)}
+                                  </span>
+                                </span>
+                              )}
+                              {pet.chronicConditions && (
+                                <span
+                                  data-testid={`pet-chronic-${pet.id}`}
+                                  className="inline-flex items-center gap-1 bg-rose-100/70 text-rose-900 border border-rose-300 px-1.5 py-0.5 rounded-md text-[10px] font-semibold max-w-[170px] truncate"
+                                  title={Array.isArray(pet.chronicConditions as unknown) ? (pet.chronicConditions as unknown as string[]).join(', ') : String(pet.chronicConditions)}
+                                >
+                                  <AlertCircle className="w-2.5 h-2.5 text-rose-700 shrink-0" />
+                                  <span className="truncate">
+                                    Crónico: {Array.isArray(pet.chronicConditions as unknown) ? (pet.chronicConditions as unknown as string[]).join(', ') : String(pet.chronicConditions)}
+                                  </span>
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
 
-                        {/* Action Buttons: Dossier + Consultation */}
+                        {/* Action Buttons: Edit + Dossier + Consultation */}
                         <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-1.5">
+                          <button
+                            type="button"
+                            data-testid={`pet-edit-btn-${pet.id}`}
+                            onClick={() => handleOpenEditPet(pet)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition-all cursor-pointer shadow-2xs"
+                            title="Editar datos y antecedentes declarados de la mascota"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-slate-600" />
+                            <span>Editar</span>
+                          </button>
+
                           <button
                             type="button"
                             data-testid={`pet-dossier-btn-${pet.id}`}
@@ -599,23 +693,27 @@ export const DashboardClient: React.FC = () => {
               <div className="bg-gradient-to-r from-[#06241D] to-[#0B3B30] text-white p-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-emerald-300" />
+                    {editingPetId ? <Pencil className="w-5 h-5 text-emerald-300" /> : <Heart className="w-5 h-5 text-emerald-300" />}
                   </div>
                   <div>
-                    <h2 className="text-base font-extrabold tracking-tight">Nueva Mascota</h2>
-                    <p className="text-[11px] text-emerald-200/80">Registro en padrón clínico veterinario</p>
+                    <h2 className="text-base font-extrabold tracking-tight" data-testid="pet-modal-title">
+                      {editingPetId ? 'Editar Mascota' : 'Nueva Mascota'}
+                    </h2>
+                    <p className="text-[11px] text-emerald-200/80">
+                      {editingPetId ? 'Actualización de datos declarativos y antecedentes' : 'Registro en padrón clínico veterinario'}
+                    </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowPetModal(false)}
+                  onClick={handleClosePetModal}
                   className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleCreatePet} className="p-6 space-y-4" data-testid="add-pet-form">
+              <form onSubmit={handleSavePet} className="p-6 space-y-4" data-testid="add-pet-form">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Nombre del Paciente *
@@ -667,6 +765,22 @@ export const DashboardClient: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Sexo
+                    </label>
+                    <select
+                      data-testid="select-pet-sex"
+                      value={petForm.sex}
+                      onChange={(e) => setPetForm({ ...petForm, sex: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm bg-white font-medium transition-all cursor-pointer"
+                    >
+                      <option value="">Sin especificar</option>
+                      <option value="Macho">Macho</option>
+                      <option value="Hembra">Hembra</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                       Peso (Kg)
                     </label>
                     <input
@@ -679,18 +793,58 @@ export const DashboardClient: React.FC = () => {
                       className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-medium transition-all"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Microchip ISO
+                  </label>
+                  <input
+                    data-testid="input-pet-microchip"
+                    type="text"
+                    maxLength={15}
+                    placeholder="15 dígitos numéricos"
+                    value={petForm.microchip}
+                    onChange={(e) => setPetForm({ ...petForm, microchip: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-mono transition-all"
+                  />
+                </div>
+
+                {/* Antecedentes Clínicos Declarados (ADR-029) */}
+                <div className="pt-2 border-t border-[#E8E2D5] space-y-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#06241D]">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <span>Antecedentes Médicos Declarados (ADR-029)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-tight">
+                    Información biológica visible por los veterinarios de guardia para prevenir contraindicaciones.
+                  </p>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      Microchip ISO
+                      Alergias Clínicas Conocidas
                     </label>
                     <input
-                      data-testid="input-pet-microchip"
+                      data-testid="input-pet-allergies"
                       type="text"
-                      placeholder="15 dígitos"
-                      value={petForm.microchip}
-                      onChange={(e) => setPetForm({ ...petForm, microchip: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-mono transition-all"
+                      placeholder="Ej. Penicilina, pulgas, pollo (separar con comas)"
+                      value={petForm.allergies}
+                      onChange={(e) => setPetForm({ ...petForm, allergies: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-medium transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Condiciones Crónicas / Preexistentes
+                    </label>
+                    <input
+                      data-testid="input-pet-chronic-conditions"
+                      type="text"
+                      placeholder="Ej. Cardiopatía, insuficiencia renal, diabetes"
+                      value={petForm.chronicConditions}
+                      onChange={(e) => setPetForm({ ...petForm, chronicConditions: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-medium transition-all"
                     />
                   </div>
                 </div>
@@ -699,7 +853,7 @@ export const DashboardClient: React.FC = () => {
                   <button
                     type="button"
                     data-testid="cancel-add-pet-button"
-                    onClick={() => setShowPetModal(false)}
+                    onClick={handleClosePetModal}
                     className="flex-1 py-2.5 px-4 border border-[#E8E2D5] rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer"
                   >
                     Cancelar
@@ -710,7 +864,7 @@ export const DashboardClient: React.FC = () => {
                     disabled={isSubmitting}
                     className="flex-1 py-2.5 px-4 bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-extrabold shadow-sm shadow-emerald-700/20 transition-all disabled:opacity-50 cursor-pointer"
                   >
-                    {isSubmitting ? 'Guardando...' : 'Guardar Mascota'}
+                    {isSubmitting ? 'Guardando...' : editingPetId ? 'Guardar Cambios' : 'Guardar Mascota'}
                   </button>
                 </div>
               </form>

@@ -36,6 +36,7 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
 | **ADR-026** | Adopción Segura de Capacidades Clínicas y Señalización WebRTC (GlobalCallListener, Ficha Médica y Verificación SENASA) | Aprobado | Frontend / Telemedicina |
 | **ADR-027** | Blindaje Regulatorio Integral, Marco Legal (Leyes 25.326, 24.240 y 14.072), Gestión de Cookies e Inclusión Accesible WCAG 2.1 AA | Aprobado | Legal / Compliance |
 | **ADR-028** | Triage Clínico Asistido por IA (AI-First Intake) y Desacoplamiento de la Prioridad del Tutor | Aprobado | Clínico / AI-First / UX |
+| **ADR-029** | Desacoplamiento entre Ficha Declarativa de Mascota (Editable por Tutor) y Expediente Clínico Inmutable (Auditoría Médica) | Aprobado | Clínico / Paciente / Legal |
 
 ---
 
@@ -253,5 +254,29 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
   - Tiempos de respuesta reducidos para emergencias reales en la cola de guardia.
   - Conformidad estricta con la Ley 14.072 (el sistema asiste en la admisión y priorización, mientras el médico retiene el diagnóstico clínico y prescripción).
   - Experiencia de usuario empática y libre de tecnicismos para el tutor en crisis.
+
+### ADR-029: Desacoplamiento entre Ficha Declarativa de Mascota (Editable por Tutor) y Expediente Clínico Inmutable (Auditoría Médica)
+- **Contexto:** En la auditoría integral de la interfaz de usuario del tutor se detectó una inconsistencia de diseño en la gestión de pacientes y su historia médica:
+  1. *Campos omitidos en el alta:* El modal "Expediente Clínico" (`PetDossierModal.tsx`) y el drawer del veterinario (`VetPatientProfile.tsx`) reservan secciones destacadas para *"Alergias Clínicas Declaradas"* y *"Condiciones Crónicas / Preexistentes"*. Sin embargo, el modal de creación de mascota (`DashboardClient.tsx`) omitía estos campos, impidiendo al tutor declarar antecedentes críticos (ej. intolerancia a penicilina, cardiopatías, diabetes o insuficiencia renal).
+  2. *Ausencia de edición para el tutor:* Una vez creada la mascota, el tutor no disponía de ninguna interfaz para actualizar datos biológicos que cambian naturalmente en la vida del animal (peso, nuevas alergias diagnosticadas, microchip recientemente implantado), a pesar de que el backend ya soportaba el endpoint canónico `PATCH /api/pets/:id`.
+  3. *Límite ético y legal de edición:* Resulta jurídicamente inviable y contrario a las Leyes 25.326 y 14.072 que un tutor pueda alterar diagnósticos, prescripciones o notas médicas previas consignadas en el expediente clínico por profesionales matriculados.
+- **Decisión:**
+  1. **Separación Conceptual Inmutable:**
+     - **Ficha Declarativa del Paciente (`Pet`):** Datos de filiación y antecedentes provistos por el tutor (`name`, `species`, `breed`, `weightKg`, `sex`, `microchip`, `allergies`, `chronicConditions`). **100% editable por el tutor** mediante el modal de gestión de mascota (`PATCH /api/pets/:id`).
+     - **Expediente e Historia Clínica (`Consultation`, `diagnosisNotes`, `Prescription`, `Call`):** Registro médico-legal oficial. **100% inmutable para el tutor**. Únicamente los veterinarios matriculados actuantes pueden incorporar evoluciones médicas y emitir recetas.
+  2. **Enriquecimiento del Modal de Mascota (`PetModal`):**
+     - Se unifica el formulario de mascota en `DashboardClient.tsx` para operar en modo **Creación** (`POST /api/pets`) y modo **Edición** (`PATCH /api/pets/:id`).
+     - Se incorporan los campos:
+       a) `sex`: Sexo biológico ('Macho' | 'Hembra').
+       b) `allergies`: Alergias clínicas conocidas declaradas por el tutor (ej. "Alérgico a penicilina, picadura de pulga").
+       c) `chronicConditions`: Patologías o antecedentes crónicos preexistentes (ej. "Soplo cardíaco grado 2, hipotiroidismo").
+  3. **Activación del Botón de Edición en el Portal del Tutor:**
+     - Cada tarjeta de mascota en `DashboardClient.tsx` incorpora el botón accesible *"Editar Datos"*, abriendo el modal precargado con la información actual de la mascota.
+     - La actualización invoca `PATCH /api/pets/:id` e invalida la caché de `api.get('/api/pets')`, actualizando en tiempo real la ficha médica, el dossier imprimible y el perfil visualizado por el veterinario de guardia.
+- **Consecuencias:**
+  - Resolución definitiva de la incongruencia de "Sin alergias declaradas" cuando el tutor en realidad deseaba reportarlas.
+  - Blindaje clínico del acto médico: el veterinario de guardia accede inmediatamente a las alergias del animal al momento de prescribir, previniendo reacciones adversas graves.
+  - Cero riesgo de adulteración del historial clínico, preservando la trazabilidad de SENASA y la validez probatoria de las recetas emitidas con QR.
+
 
 

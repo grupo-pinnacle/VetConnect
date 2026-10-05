@@ -120,9 +120,9 @@ El esquema inicial del MVP v2.0 comprende **exactamente 10 modelos principales**
 | Método | Endpoint | Descripción | Acceso |
 |---|---|---|---|
 | `GET` | `/api/pets` | Listar mascotas del usuario autenticado | CLIENT / ADMIN |
-| `POST` | `/api/pets` | Crear nueva ficha de mascota (microchip ISO opcional) | CLIENT / ADMIN |
+| `POST` | `/api/pets` | Crear nueva ficha de mascota (nombre, especie, raza, peso, sexo, microchip ISO, alergias conocidas y condiciones crónicas) (ADR-029) | CLIENT / ADMIN |
 | `GET` | `/api/pets/:id` | Obtener detalle e historial clínico de una mascota | Dueño / Vet asignado / ADMIN |
-| `PATCH`| `/api/pets/:id` | Modificar datos de la mascota | Dueño / ADMIN |
+| `PATCH`| `/api/pets/:id` | Modificar ficha declarativa de mascota (peso, nombre, alergias, condiciones crónicas, etc. sin alterar el expediente clínico inmutable) (ADR-029) | Dueño / ADMIN |
 | `DELETE`| `/api/pets/:id` | Soft-delete de mascota (`deletedAt`) | Dueño / ADMIN |
 
 ### 2.3 Consultas & Telemedicina (`/api/consultations`)

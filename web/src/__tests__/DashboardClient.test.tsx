@@ -18,6 +18,7 @@ vi.mock('../services/api', () => ({
   default: {
     get: vi.fn(),
     post: vi.fn(),
+    patch: vi.fn(),
   },
 }));
 
@@ -76,7 +77,7 @@ describe('DashboardClient Page', () => {
     expect(screen.getByTestId('input-pet-name')).toBeDefined();
   });
 
-  it('should submit pet registration form and post to /api/pets', async () => {
+  it('should submit pet registration form and post to /api/pets with clinical history fields', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } } as any);
     vi.mocked(api.post).mockResolvedValue({
       data: {
@@ -99,6 +100,8 @@ describe('DashboardClient Page', () => {
 
     fireEvent.change(screen.getByTestId('input-pet-name'), { target: { value: 'Max' } });
     fireEvent.change(screen.getByTestId('input-pet-breed'), { target: { value: 'Labrador' } });
+    fireEvent.change(screen.getByTestId('input-pet-allergies'), { target: { value: 'Penicilina' } });
+    fireEvent.change(screen.getByTestId('input-pet-chronic-conditions'), { target: { value: 'Cardiopatía leve' } });
 
     fireEvent.click(screen.getByTestId('save-pet-button'));
 
@@ -108,6 +111,8 @@ describe('DashboardClient Page', () => {
         expect.objectContaining({
           name: 'Max',
           breed: 'Labrador',
+          allergies: 'Penicilina',
+          chronicConditions: 'Cardiopatía leve',
         })
       );
     });
@@ -190,6 +195,95 @@ describe('DashboardClient Page', () => {
         duration: 'HOURS_2_TO_12',
       });
       expect(mockNavigate).toHaveBeenCalledWith('/call/new-cons-789');
+    });
+  });
+
+  it('should open Edit Pet modal with pre-populated data and submit updates via PATCH /api/pets/:id (ADR-029)', async () => {
+    const mockPets = [
+      {
+        id: 'pet-edit-1',
+        name: 'Milo',
+        species: 'Feline',
+        breed: 'Siamés',
+        weightKg: 4.2,
+        sex: 'Macho',
+        microchip: '981098123456789',
+        allergies: 'Polen',
+        chronicConditions: 'Asma felina',
+      },
+    ];
+
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/api/pets') {
+        return Promise.resolve({ data: { success: true, data: mockPets } } as any);
+      }
+      if (url === '/api/consultations/mine') {
+        return Promise.resolve({ data: { success: true, data: [] } } as any);
+      }
+      return Promise.reject(new Error('Not found'));
+    });
+
+    vi.mocked(api.patch).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          id: 'pet-edit-1',
+          name: 'Milo Updated',
+          species: 'Feline',
+          breed: 'Siamés',
+          weightKg: 4.5,
+          sex: 'Macho',
+          microchip: '981098123456789',
+          allergies: 'Polen, Penicilina',
+          chronicConditions: 'Asma felina controlada',
+        },
+      },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <DashboardClient />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('pet-card-pet-edit-1')).toBeDefined();
+      expect(screen.getByTestId('pet-edit-btn-pet-edit-1')).toBeDefined();
+    });
+
+    // Verify sex, allergies and chronic badges rendered on card
+    expect(screen.getByTestId('pet-sex-pet-edit-1').textContent).toBe('Macho');
+    expect(screen.getByTestId('pet-allergies-pet-edit-1')).toBeDefined();
+    expect(screen.getByTestId('pet-chronic-pet-edit-1')).toBeDefined();
+
+    // Click Edit button
+    fireEvent.click(screen.getByTestId('pet-edit-btn-pet-edit-1'));
+
+    expect(screen.getByTestId('add-pet-modal')).toBeDefined();
+    expect(screen.getByTestId('pet-modal-title').textContent).toBe('Editar Mascota');
+
+    const nameInput = screen.getByTestId('input-pet-name') as HTMLInputElement;
+    expect(nameInput.value).toBe('Milo');
+
+    const allergiesInput = screen.getByTestId('input-pet-allergies') as HTMLInputElement;
+    expect(allergiesInput.value).toBe('Polen');
+
+    // Update weight and allergies
+    fireEvent.change(nameInput, { target: { value: 'Milo Updated' } });
+    fireEvent.change(screen.getByTestId('input-pet-weight'), { target: { value: '4.5' } });
+    fireEvent.change(allergiesInput, { target: { value: 'Polen, Penicilina' } });
+
+    fireEvent.click(screen.getByTestId('save-pet-button'));
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledWith(
+        '/api/pets/pet-edit-1',
+        expect.objectContaining({
+          name: 'Milo Updated',
+          weightKg: 4.5,
+          allergies: 'Polen, Penicilina',
+        })
+      );
     });
   });
 });
