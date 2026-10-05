@@ -1,5 +1,6 @@
 @echo off
 setlocal
+set NODE_OPTIONS=--use-system-ca
 title VetConnect v2.0 - Entorno de Desarrollo
 
 echo ======================================================================
