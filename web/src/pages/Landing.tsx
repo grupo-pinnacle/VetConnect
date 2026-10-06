@@ -1,1300 +1,887 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import {
-  ShieldCheck,
-  Stethoscope,
-  Smartphone,
-  Download,
-  AlertCircle,
-  Clock,
-  ArrowRight,
-  FileText,
-  CheckCircle2,
-  HeartPulse,
-  Activity,
-  Star,
-  Video,
-  ChevronDown,
-  ChevronUp,
-  Heart,
-  Award,
-  QrCode,
-  Menu,
-  X,
-  Sparkles,
-  Zap,
-  MapPin,
-  Lock,
-  Bell,
-  Wifi,
-  Battery,
-  PhoneCall,
-  Volume2,
-  Calendar,
-  Check,
-  AlertTriangle,
-  PawPrint,
-} from 'lucide-react';
+import React, { useEffect, useState, type ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import "../styles/landing.css";
 
-export type SpeciesType = 'DOG' | 'CAT' | 'EXOTIC';
-export type PhoneTabType = 'CALL' | 'PRESCRIPTION' | 'HISTORY';
-
-export interface TriageScenario {
-  id: string;
-  name: string;
-  symptom: string;
-  priority: 'ROJO' | 'AMARILLO' | 'VERDE';
-  priorityLabel: string;
-  responseTime: string;
-  description: string;
-  ctaText: string;
-}
-
-const DogIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-    <path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .18 1.6 1.6 2 2.5 2 .5 0 1-.2 1.5-.5" />
-    <path d="M14 5.172C14 3.782 15.577 2.679 17.5 3c2.823.47 4.113 6.006 4 7-.18 1.6-1.6 2-2.5 2-.5 0-1-.2-1.5-.5" />
-    <path d="M8 14v.5" />
-    <path d="M16 14v.5" />
-    <path d="M11.25 16.25h1.5" />
-    <path d="M5.42 9C6.4 5.5 8.9 5 12 5s5.6.5 6.58 4c.6 2.13.42 5.5-1.58 7.5-1.5 1.5-3 1.5-5 1.5s-3.5 0-5-1.5C5 14.5 4.82 11.13 5.42 9z" />
-  </svg>
-);
-
-const CatIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-    <path d="M12 5c-4 0-7.5 2.5-7.5 6.5 0 2.5 1.5 4.5 3.5 5.5.5 1 2 2 4 2s3.5-1 4-2c2-1 3.5-3 3.5-5.5C19.5 7.5 16 5 12 5z" />
-    <path d="M5.5 8.5L3 3l5.5 2.5" />
-    <path d="M18.5 8.5L21 3l-5.5 2.5" />
-    <circle cx="9.5" cy="11.5" r=".75" fill="currentColor" />
-    <circle cx="14.5" cy="11.5" r=".75" fill="currentColor" />
-    <path d="M11.25 14h1.5" />
-    <path d="M8 13.5l-3-.5" />
-    <path d="M16 13.5l3-.5" />
-  </svg>
-);
-
-const RabbitIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-    <path d="M8 3c-1.5 0-2.5 3-2.5 6.5 0 2 .5 3.5 1.5 4.5" />
-    <path d="M16 3c1.5 0 2.5 3 2.5 6.5 0 2-.5 3.5-1.5 4.5" />
-    <path d="M12 9c-3.5 0-5.5 2.5-5.5 6 0 3 2.5 5 5.5 5s5.5-2 5.5-5c0-3.5-2-6-5.5-6z" />
-    <circle cx="10" cy="14" r=".75" fill="currentColor" />
-    <circle cx="14" cy="14" r=".75" fill="currentColor" />
-    <path d="M11.5 16.5h1" />
-  </svg>
-);
-
-const SPECIES_DATA: Record<
-  SpeciesType,
-  {
-    label: string;
-    Icon: React.FC<{ className?: string }>;
-    scenarios: TriageScenario[];
-  }
-> = {
-  DOG: {
-    label: 'Perros',
-    Icon: DogIcon,
-    scenarios: [
-      {
-        id: 'dog-rojo',
-        name: 'Emergencia Vital',
-        symptom: 'Dificultad respiratoria severa, abdomen hinchado y duro o convulsiones',
-        priority: 'ROJO',
-        priorityLabel: 'Código Rojo — Atención Inmediata',
-        responseTime: '< 3 minutos',
-        description:
-          'Signos de posible compromiso respiratorio o torsión gástrica. Un veterinario de guardia te guiará de inmediato para estabilizarlo mientras te asiste en la derivación física si es requerida.',
-        ctaText: 'Conectar con Guardia de Emergencia',
-      },
-      {
-        id: 'dog-amarillo',
-        name: 'Urgencia Prioritaria',
-        symptom: 'Vómito reiterado, decaimiento marcado o ingesta de alimento indebido',
-        priority: 'AMARILLO',
-        priorityLabel: 'Código Amarillo — Urgencia Prioritaria',
-        responseTime: '< 15 minutos',
-        description:
-          'Cuadro clínico que requiere valoración pronta para definir medicación, hidratación y pautas de alarma antes de que se agrave.',
-        ctaText: 'Ingresar a Guardia Médica',
-      },
-      {
-        id: 'dog-verde',
-        name: 'Consulta Preventiva',
-        symptom: 'Control de rutina, plan de vacunación, desparasitación o picazón de piel',
-        priority: 'VERDE',
-        priorityLabel: 'Código Verde — Consulta Regular',
-        responseTime: 'Atención en el día',
-        description:
-          'Tu perro está clínicamente estable. Ideal para evacuar dudas de alimentación, emitir recetas o programar vacunas.',
-        ctaText: 'Agendar Consulta Preventiva',
-      },
-    ],
-  },
-  CAT: {
-    label: 'Gatos',
-    Icon: CatIcon,
-    scenarios: [
-      {
-        id: 'cat-rojo',
-        name: 'Emergencia Crítica',
-        symptom: 'Intenta orinar y no puede (maúlla de dolor) o respira con boca abierta',
-        priority: 'ROJO',
-        priorityLabel: 'Código Rojo — Emergencia Felina',
-        responseTime: '< 3 minutos',
-        description:
-          'La obstrucción urinaria felina y la dificultad respiratoria son emergencias que ponen en riesgo la vida. Te conectamos al instante con el especialista.',
-        ctaText: 'Solicitar Guardia Felina Inmediata',
-      },
-      {
-        id: 'cat-amarillo',
-        name: 'Urgencia Moderada',
-        symptom: 'No come hace más de 24 horas, estornudos o rascado intenso de orejas',
-        priority: 'AMARILLO',
-        priorityLabel: 'Código Amarillo — Atención en el Día',
-        responseTime: '< 15 minutos',
-        description:
-          'Los gatos que dejan de comer corren riesgo de lipidosis hepática. Requiere indicación profesional pronta.',
-        ctaText: 'Ingresar a Guardia de Urgencia',
-      },
-      {
-        id: 'cat-verde',
-        name: 'Chequeo & Hábitos',
-        symptom: 'Consulta de comportamiento, cambio de alimento o renovación de antiparasitario',
-        priority: 'VERDE',
-        priorityLabel: 'Código Verde — Control Preventivo',
-        responseTime: 'Atención en el día',
-        description:
-          'Evaluación de bienestar y nutrición desde la tranquilidad de su casa, evitando el estrés del traslado en transportadora.',
-        ctaText: 'Agendar Consulta Felina Sin Estrés',
-      },
-    ],
-  },
-  EXOTIC: {
-    label: 'Exóticos & Otros',
-    Icon: RabbitIcon,
-    scenarios: [
-      {
-        id: 'exotic-rojo',
-        name: 'Emergencia de Especie',
-        symptom: 'Falta total de ingesta y heces por más de 10 horas, o letargia severa',
-        priority: 'ROJO',
-        priorityLabel: 'Código Rojo — Estasis Digestiva',
-        responseTime: '< 3 minutos',
-        description:
-          'En pequeños mamíferos herbívoros, la detención digestiva es una emergencia crítica. El profesional te orientará de inmediato.',
-        ctaText: 'Guardia Especialistas en Exóticos',
-      },
-      {
-        id: 'exotic-amarillo',
-        name: 'Urgencia Temprana',
-        symptom: 'Lagrimeo ocular, secreción nasal, dificultad al masticar o decaimiento',
-        priority: 'AMARILLO',
-        priorityLabel: 'Código Amarillo — Valoración Rápida',
-        responseTime: '< 20 minutos',
-        description:
-          'Posible problema dental o respiratorio. Detección temprana para evitar cuadros complejos.',
-        ctaText: 'Consultar Especialista en Exóticos',
-      },
-      {
-        id: 'exotic-verde',
-        name: 'Guía de Cuidados',
-        symptom: 'Asesoramiento de hábitat, dieta balanceada de heno y control preventivo',
-        priority: 'VERDE',
-        priorityLabel: 'Código Verde — Bienestar y Nutrición',
-        responseTime: 'Turno programado',
-        description:
-          'Conocé las necesidades específicas de tu especie para asegurarle una vida sana y feliz.',
-        ctaText: 'Agendar Guía Nutricional',
-      },
-    ],
-  },
+const photos = {
+  rabbit:
+    "https://images.unsplash.com/photo-1774218318818-c201207699d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGF0JTIwaG9tZSUyMHdpdGglMjBwZXQlMjByYWJiaXQlMjB3YXJtJTIwbmF0dXJhbCUyMGxpZ2h0fGVufDF8fHx8MTc5MTIyODc4Mnww&ixlib=rb-4.1.0&q=85&w=1400",
+  rabbitClose:
+    "https://images.unsplash.com/photo-1774218308330-df953d1e334b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHx3b21hbiUyMGF0JTIwaG9tZSUyMHdpdGglMjBwZXQlMjByYWJiaXQlMjB3YXJtJTIwbmF0dXJhbCUyMGxpZ2h0fGVufDF8fHx8MTc5MTIyODc4Mnww&ixlib=rb-4.1.0&q=85&w=1200",
+  vet:
+    "https://images.unsplash.com/photo-1770836037793-95bdbf190f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHx2ZXRlcmluYXJpYW4lMjBjbGluaWMlMjB3b3JraW5nJTIwYW5pbWFsJTIwZG9jdG9yJTIwY2FuZGlkfGVufDF8fHx8MTc5MTIyODgwMXww&ixlib=rb-4.1.0&q=85&w=1200",
+  parrot:
+    "https://images.unsplash.com/photo-1728145289384-a2a38506e9d7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxwZXQlMjBwYXJyb3QlMjBvd25lciUyMGhvbWUlMjBuYXR1cmFsJTIwbGlnaHR8ZW58MXx8fHwxNzkxMjI4NzgzfDA&ixlib=rb-4.1.0&q=85&w=900",
+  ferret:
+    "https://images.unsplash.com/photo-1440500122534-703c6966f83d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw1fHxwZXQlMjBmZXJyZXQlMjBob21lJTIwcG9ydHJhaXQlMjB3YXJtfGVufDF8fHx8MTc5MTIyODc4M3ww&ixlib=rb-4.1.0&q=85&w=1000",
+  turtle:
+    "https://images.unsplash.com/photo-1691211237213-8b84884acdda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXQlMjB0dXJ0bGUlMjByZXB0aWxlJTIwaG9tZSUyMHBvcnRyYWl0fGVufDF8fHx8MTc5MTIyODc4NHww&ixlib=rb-4.1.0&q=85&w=900",
 };
 
-interface FaqItem {
-  question: string;
-  answer: string;
-}
+export type IconName =
+  | "arrow"
+  | "calendar"
+  | "camera"
+  | "check"
+  | "clock"
+  | "close"
+  | "heart"
+  | "home"
+  | "history"
+  | "location"
+  | "menu"
+  | "message"
+  | "bell"
+  | "paw"
+  | "plus"
+  | "profile"
+  | "shield"
+  | "search"
+  | "spark"
+  | "star"
+  | "download";
 
-const FAQ_ITEMS: FaqItem[] = [
-  {
-    question: '¿Cómo me entregan la receta para comprar en la farmacia?',
-    answer:
-      'Al terminar la videollamada, el veterinario emite la receta con firma digital y código QR oficial (SENASA Res. 1442/2021). Te llega inmediatamente a tu cuenta y podés mostrarla desde tu celular en cualquier farmacia o veterinaria del país.',
-  },
-  {
-    question: '¿Qué pasa si mi mascota tiene una emergencia quirúrgica grave?',
-    answer:
-      'Si el veterinario detecta riesgo vital inminente durante el triage o la consulta, te indicará las maniobras de primeros auxilios y te conectará con el hospital veterinario presencial de urgencias más cercano.',
-  },
-  {
-    question: '¿Quiénes son los veterinarios que atienden en VetConnect?',
-    answer:
-      'Son profesionales matriculados en Argentina, con su habilitación verificada ante sus Colegios Oficiales y SENASA. Podés consultar su nombre y número de matrícula antes y durante la atención.',
-  },
-  {
-    question: '¿Qué necesito para realizar la videoconsulta?',
-    answer:
-      'Solo tu celular o computadora con cámara y conexión a internet. La plataforma ajusta la calidad de video automáticamente para que la llamada sea nítida y sin cortes.',
-  },
-];
-
-export const Landing: React.FC = () => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [selectedSpecies, setSelectedSpecies] = useState<SpeciesType>('DOG');
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string>('dog-rojo');
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [phoneTab, setPhoneTab] = useState<PhoneTabType>('CALL');
-
-  const currentSpeciesData = SPECIES_DATA[selectedSpecies];
-  const activeScenario =
-    currentSpeciesData.scenarios.find((s) => s.id === selectedScenarioId) ||
-    currentSpeciesData.scenarios[0];
-
-  const handleSpeciesChange = (species: SpeciesType) => {
-    setSelectedSpecies(species);
-    setSelectedScenarioId(SPECIES_DATA[species].scenarios[0].id);
-  };
-
-  const toggleFaq = (index: number) => {
-    setOpenFaqIndex(openFaqIndex === index ? null : index);
+export function Icon({ name, className = "icon" }: { name: IconName; className?: string }) {
+  const paths: Record<IconName, ReactNode> = {
+    arrow: <path d="M5 12h14m-5-5 5 5-5 5" />,
+    calendar: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="3" />
+        <path d="M8 3v4m8-4v4M3 10h18m-13 4h3m2 0h3m-8 3h3" />
+      </>
+    ),
+    camera: (
+      <>
+        <rect x="3" y="6" width="18" height="13" rx="4" />
+        <path d="m9 6 1.2-2h3.6L15 6m-6 6.5a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z" />
+      </>
+    ),
+    check: <path d="m5 12 4 4L19 7" />,
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </>
+    ),
+    close: <path d="m6 6 12 12M18 6 6 18" />,
+    heart: <path d="M20 8.5c0 5-8 10-8 10s-8-5-8-10a4.5 4.5 0 0 1 8-2.7A4.5 4.5 0 0 1 20 8.5Z" />,
+    home: <path d="m3 11 9-8 9 8m-2-2v12h-5v-6h-4v6H5V9" />,
+    history: (
+      <>
+        <path d="M4 12a8 8 0 1 0 2-5.3L4 9" />
+        <path d="M4 4v5h5m3-2v5l3 2" />
+      </>
+    ),
+    location: (
+      <>
+        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </>
+    ),
+    menu: <path d="M4 8h16M4 16h16" />,
+    message: (
+      <>
+        <path d="M4 5h16v12H9l-5 4V5Z" />
+        <path d="M8 10h8m-8 3h5" />
+      </>
+    ),
+    bell: <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8Zm-8 11h4" />,
+    paw: (
+      <>
+        <ellipse cx="12" cy="15" rx="5" ry="4" />
+        <circle cx="6.5" cy="10" r="2" />
+        <circle cx="10" cy="6.5" r="2" />
+        <circle cx="14" cy="6.5" r="2" />
+        <circle cx="17.5" cy="10" r="2" />
+      </>
+    ),
+    plus: <path d="M12 5v14M5 12h14" />,
+    profile: (
+      <>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c.5-5 3-7 8-7s7.5 2 8 7" />
+      </>
+    ),
+    shield: <path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Zm-3 9 2 2 4-5" />,
+    search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></>,
+    spark: <path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Zm6 13 .8 2.2L21 19l-2.2.8L18 22l-.8-2.2L15 19l2.2-.8L18 16Z" />,
+    star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z" />,
+    download: (
+      <>
+        <path d="M12 3v13m-5-5 5 5 5-5" />
+        <path d="M5 21h14" />
+      </>
+    ),
   };
 
   return (
-    <div
-      className="min-h-screen bg-[#F8FAF9] flex flex-col font-sans text-slate-900 selection:bg-emerald-500 selection:text-white antialiased overflow-x-hidden"
-      data-testid="landing-page"
+    <svg
+      aria-hidden="true"
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      {/* 1. Header Flotante Moderno (Frosted Glass & Forest Green) */}
-      <header className="sticky top-0 z-50 bg-[#03362A] text-white px-4 sm:px-8 py-3.5 shadow-md border-b border-emerald-900/50">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          {/* Logo e Isotipo */}
-          <div className="flex items-center gap-8">
-            <div
-              className="flex items-center gap-2.5 cursor-pointer select-none group focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-xl"
-              onClick={() => navigate('/')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && navigate('/')}
-              title="VetConnect — Inicio"
-            >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-300 flex items-center justify-center text-slate-950 shadow-md shadow-emerald-950/40 group-hover:scale-105 transition-transform">
-                <HeartPulse className="w-5 h-5 text-[#03362A]" aria-hidden="true" />
-              </div>
-              <span
-                data-testid="brand-logo"
-                className="font-extrabold text-xl sm:text-2xl text-white tracking-tight flex items-center gap-1.5"
-              >
-                VetConnect
-              </span>
-            </div>
+      {paths[name]}
+    </svg>
+  );
+}
 
-            {/* Enlaces de Navegación Centrales */}
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-200">
-              <a href="#inicio" className="hover:text-emerald-300 transition-colors">
-                Inicio
-              </a>
-              <a href="#simulador" className="hover:text-emerald-300 transition-colors">
-                Orientador de Salud
-              </a>
-              <a href="#portales" className="hover:text-emerald-300 transition-colors">
-                Portales
-              </a>
-              <a href="#preguntas" className="hover:text-emerald-300 transition-colors">
-                Preguntas frecuentes
-              </a>
-            </nav>
-          </div>
+export function Logo({ light = false, testId = "brand-logo" }: { light?: boolean; testId?: string }) {
+  return (
+    <Link className={`logo ${light ? "logo--light" : ""}`} to="/" aria-label="VetConnect, inicio" data-testid={testId}>
+      <span className="logo__mark">
+        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9 11.5c5.8 0 10.5 4.7 10.5 10.5v8.5C13.7 30.5 9 25.8 9 20V11.5Z" fill="currentColor" />
+          <path d="M31 11.5c-5.8 0-10.5 4.7-10.5 10.5v8.5C26.3 30.5 31 25.8 31 20V11.5Z" fill="currentColor" opacity=".72" />
+          <circle cx="20" cy="9" r="4" fill="currentColor" />
+        </svg>
+      </span>
+      <span>VetConnect</span>
+    </Link>
+  );
+}
 
-          {/* Acciones de Cabecera */}
-          <div className="flex items-center gap-3">
-            {/* Badge de Guardia Activa */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Guardia 24hs Activa</span>
-            </div>
+export function Button({
+  children,
+  to,
+  href,
+  variant = "primary",
+  className = "",
+  onClick,
+  dataTestId,
+}: {
+  children: ReactNode;
+  to?: string;
+  href?: string;
+  variant?: "primary" | "secondary" | "cream" | "ghost";
+  className?: string;
+  onClick?: () => void;
+  dataTestId?: string;
+}) {
+  if (to) {
+    return (
+      <Link className={`button button--${variant} ${className}`} to={to} onClick={onClick} data-testid={dataTestId}>
+        <span>{children}</span>
+        {variant !== "ghost" && <Icon name="arrow" />}
+      </Link>
+    );
+  }
+  return (
+    <a className={`button button--${variant} ${className}`} href={href || "#"} onClick={onClick} data-testid={dataTestId}>
+      <span>{children}</span>
+      {variant !== "ghost" && <Icon name="arrow" />}
+    </a>
+  );
+}
 
+function Eyebrow({ children, light = false }: { children: ReactNode; light?: boolean }) {
+  return <p className={`eyebrow ${light ? "eyebrow--light" : ""}`}>{children}</p>;
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  copy,
+  align = "left",
+  light = false,
+}: {
+  eyebrow: string;
+  title: ReactNode;
+  copy?: string;
+  align?: "left" | "center";
+  light?: boolean;
+}) {
+  return (
+    <div className={`section-heading section-heading--${align} ${light ? "section-heading--light" : ""}`}>
+      <Eyebrow light={light}>{eyebrow}</Eyebrow>
+      <h2>{title}</h2>
+      {copy && <p>{copy}</p>}
+    </div>
+  );
+}
+
+function PetProfile() {
+  return (
+    <div className="product-card pet-profile">
+      <div className="product-card__top">
+        <span className="ui-label">Perfil de paciente</span>
+        <span className="status-dot">Actualizado</span>
+      </div>
+      <div className="pet-profile__identity">
+        <div className="pet-avatar pet-avatar--rabbit" />
+        <div>
+          <h4>Olivia</h4>
+          <p>Conejo belier · 3 años</p>
+        </div>
+        <button aria-label="Más opciones">•••</button>
+      </div>
+      <div className="pet-profile__stats">
+        <div><span>Peso</span><strong>2.1 kg</strong></div>
+        <div><span>Última consulta</span><strong>12 Jun</strong></div>
+        <div><span>Estado</span><strong className="good">Estable</strong></div>
+      </div>
+      <div className="pet-profile__note">
+        <Icon name="history" />
+        <div><strong>Seguimiento nutricional</strong><span>Próximo control en 8 días</span></div>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleCard() {
+  return (
+    <div className="product-card schedule-card">
+      <div className="product-card__top">
+        <span className="ui-label">Agenda de hoy</span>
+        <Icon name="calendar" />
+      </div>
+      <div className="schedule-card__date"><strong>18</strong><span>JUN<br />MIÉRCOLES</span></div>
+      {[
+        ["09:30", "Olivia · Conejo", "Seguimiento"],
+        ["11:00", "Mango · Ave", "Consulta"],
+        ["15:30", "Tito · Hurón", "Prevención"],
+      ].map((item, index) => (
+        <div className={`appointment ${index === 1 ? "appointment--active" : ""}`} key={item[0]}>
+          <span>{item[0]}</span><div><strong>{item[1]}</strong><small>{item[2]}</small></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const faqs = [
+  ["¿Qué es VetConnect?", "VetConnect es una plataforma que conecta tutores de mascotas con profesionales veterinarios para recibir orientación y atención online de forma simple y cercana."],
+  ["¿Cómo funciona una consulta online?", "Elegís el tipo de atención, completás la información básica de tu mascota y seleccionás un profesional disponible. La consulta se realiza por videollamada dentro de la plataforma."],
+  ["¿Qué animales puedo atender?", "La plataforma está pensada para perros, gatos y también animales no convencionales como conejos, aves, hurones, reptiles, roedores y peces."],
+  ["¿Puedo consultar por una emergencia?", "Podés recibir orientación rápida para entender los próximos pasos. Ante riesgo vital o una urgencia grave, siempre debés acudir a un centro veterinario presencial."],
+  ["¿Las consultas online reemplazan una visita presencial?", "No siempre. La consulta online complementa la atención presencial y permite orientar, acompañar y definir cuándo es necesario un examen físico."],
+  ["¿Cómo encuentro un veterinario?", "Podés filtrar profesionales por especialidad, especies atendidas, disponibilidad y tipo de consulta."],
+  ["¿Cómo trabajan los veterinarios en VetConnect?", "Los profesionales gestionan su perfil, disponibilidad, consultas y seguimiento desde un espacio diseñado específicamente para la atención veterinaria."],
+  ["¿Qué información necesito para comenzar?", "Datos básicos de tu mascota, el motivo de la consulta y, si los tenés, antecedentes o estudios recientes. Podés completar el perfil progresivamente."],
+];
+
+export function Landing() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [openFaq, setOpenFaq] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <main className="site-shell" id="inicio" data-testid="landing-page">
+      {/* Aviso Sanitario de Emergencia (WCAG & Legal) */}
+      <section
+        role="region"
+        aria-label="Aviso sanitario sobre emergencias y urgencias"
+        style={{
+          background: "var(--coral-soft, #f6d6ca)",
+          color: "var(--ink, #183c3a)",
+          fontSize: "12px",
+          fontWeight: 600,
+          padding: "10px 16px",
+          textAlign: "center",
+          borderBottom: "1px solid rgba(24,60,58,0.1)",
+        }}
+      >
+        <p style={{ margin: 0 }}>
+          <strong>Aviso de Salud Animal:</strong> VetConnect provee teleorientación y triaje sanitario. En situaciones críticas con riesgo inminente de vida, acuda sin demora a un hospital o clínica veterinaria presencial con guardia 24hs.
+        </p>
+      </section>
+
+      <header className={`site-header ${scrolled ? "site-header--scrolled" : ""}`}>
+        <div className="container site-header__inner">
+          <Logo />
+          <nav className="desktop-nav" aria-label="Navegación principal">
+            <a className="active" href="#inicio">Inicio</a>
+            <a href="#como-funciona">Cómo funciona</a>
+            <a href="#tutores">Para tutores</a>
+            <a href="#veterinarios">Para veterinarios</a>
+            <a href="#portales">Portales</a>
+            <a href="#preguntas">Preguntas frecuentes</a>
+          </nav>
+          <div className="site-header__actions">
             {user ? (
-              <div className="flex items-center gap-2.5">
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-white text-xs">
-                  {user.role === 'VET' ? (
-                    <span className="flex items-center gap-1.5 font-semibold text-emerald-300">
-                      <Stethoscope className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Dr/a. {user.firstName}</span>
-                      <span className="text-[10px] px-1.5 py-0.2 bg-emerald-800 rounded text-emerald-100 font-mono font-bold">
-                        VET
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 font-semibold text-emerald-300">
-                      <PawPrint className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Hola, {user.firstName}</span>
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  data-testid="landing-portal-button"
-                  onClick={() =>
-                    navigate(
-                      user.role === 'VET'
-                        ? '/vet/dashboard'
-                        : user.role === 'ADMIN'
-                        ? '/admin/dashboard'
-                        : '/client/dashboard'
-                    )
-                  }
-                  className="bg-[#00D084] hover:bg-[#05b876] active:bg-[#009c63] text-[#03362A] font-extrabold text-xs sm:text-sm px-4 py-2 rounded-full shadow-md transition-all hover:scale-105 cursor-pointer flex items-center gap-1.5"
+              <>
+                <Button
+                  to={user.role === "VET" ? "/vet/dashboard" : user.role === "ADMIN" ? "/admin/dashboard" : "/client/dashboard"}
+                  variant="primary"
+                  dataTestId="landing-portal-button"
                 >
-                  <span>{user.role === 'VET' ? 'Centro de Mando' : 'Mi Panel'}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-
+                  {user.role === "VET" ? "Centro de Mando" : "Mi Panel"}
+                </Button>
                 <button
                   type="button"
                   data-testid="landing-logout-button"
                   onClick={async () => {
                     await logout();
-                    navigate('/');
+                    navigate("/");
                   }}
-                  className="text-xs font-semibold text-slate-300 hover:text-rose-400 transition-colors px-2 py-1.5 cursor-pointer"
+                  className="button button--ghost"
+                  style={{ border: "none", cursor: "pointer" }}
                 >
                   Cerrar sesión
                 </button>
-
-                {/* Elementos ocultos para preservar data-testids canónicos de tests */}
-                <div className="hidden" aria-hidden="true">
-                  <button data-testid="landing-login-button" onClick={() => navigate('/login')}>
-                    Iniciar sesión
-                  </button>
-                  <button data-testid="landing-register-button" onClick={() => navigate('/register')}>
-                    Registrarse
-                  </button>
-                </div>
-              </div>
+              </>
             ) : (
               <>
-                {/* Iniciar Sesión */}
-                <button
-                  type="button"
-                  data-testid="landing-login-button"
-                  onClick={() => navigate('/login')}
-                  className="hidden sm:inline-block text-sm font-semibold text-white hover:text-emerald-300 transition-colors px-3 py-1.5 cursor-pointer"
-                >
-                  Iniciar sesión
-                </button>
-
-                {/* Registrarse (Pill verde vibrante) */}
-                <button
-                  type="button"
-                  data-testid="landing-register-button"
-                  onClick={() => navigate('/register')}
-                  className="bg-[#00D084] hover:bg-[#05b876] active:bg-[#009c63] text-[#03362A] font-extrabold text-xs sm:text-sm px-5 py-2 sm:py-2.5 rounded-full shadow-md shadow-emerald-950/20 transition-all hover:scale-105 cursor-pointer"
-                >
-                  Registrarse
-                </button>
+                <Button to="/login" variant="ghost" dataTestId="landing-login-button">Ingresar</Button>
+                <Button to="/register" dataTestId="landing-register-button">Comenzar consulta</Button>
               </>
             )}
-
-            {/* Botón Menú Móvil */}
-            <button
-              type="button"
-              aria-label="Abrir menú de navegación"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-1.5 rounded-lg text-white hover:bg-white/10 focus:outline-none"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
+          <button
+            className="menu-button"
+            onClick={() => setMenuOpen((value) => !value)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+          >
+            <Icon name={menuOpen ? "close" : "menu"} />
+          </button>
         </div>
-
-        {/* Menú Desplegable en Móvil */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-emerald-900/60 mt-3 pt-3 pb-2 px-2 space-y-2 text-sm text-slate-200">
-            <a
-              href="#inicio"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white font-medium"
-            >
-              Inicio
-            </a>
-            <a
-              href="#simulador"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white font-medium"
-            >
-              Orientador de Salud
-            </a>
-            <a
-              href="#portales"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white font-medium"
-            >
-              Portales Especializados
-            </a>
-            <a
-              href="#preguntas"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg hover:bg-white/10 hover:text-white font-medium"
-            >
-              Preguntas Frecuentes
-            </a>
-            <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
-              {user ? (
-                <>
-                  <div className="px-3 py-1.5 text-xs text-emerald-300 font-semibold">
-                    Conectado como: {user.firstName} ({user.role})
-                  </div>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      navigate(
-                        user.role === 'VET'
-                          ? '/vet/dashboard'
-                          : user.role === 'ADMIN'
-                          ? '/admin/dashboard'
-                          : '/client/dashboard'
-                      );
-                    }}
-                    className="w-full text-center py-2.5 bg-[#00D084] text-[#03362A] font-extrabold rounded-lg"
-                  >
-                    {user.role === 'VET' ? 'Ir al Centro de Mando' : 'Ir a mi Panel'}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setMobileMenuOpen(false);
-                      await logout();
-                      navigate('/');
-                    }}
-                    className="w-full text-center py-2 text-rose-300 hover:bg-white/10 rounded-lg text-xs"
-                  >
-                    Cerrar sesión
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate('/login');
-                  }}
-                  className="w-full text-center py-2 text-white font-semibold hover:bg-white/10 rounded-lg"
-                >
-                  Iniciar sesión
-                </button>
-              )}
-            </div>
-          </div>
+        {menuOpen && (
+          <nav className="mobile-nav" aria-label="Navegación móvil">
+            {[
+              ["Inicio", "#inicio"],
+              ["Cómo funciona", "#como-funciona"],
+              ["Para tutores", "#tutores"],
+              ["Para veterinarios", "#veterinarios"],
+              ["Portales", "#portales"],
+              ["Preguntas frecuentes", "#preguntas"],
+            ].map(([label, href]) => (
+              <a key={label} href={href} onClick={() => setMenuOpen(false)}>{label}<Icon name="arrow" /></a>
+            ))}
+            {user ? (
+              <Button to={user.role === "VET" ? "/vet/dashboard" : "/client/dashboard"} onClick={() => setMenuOpen(false)}>
+                Ir al Panel
+              </Button>
+            ) : (
+              <Button to="/register" onClick={() => setMenuOpen(false)}>Comenzar consulta</Button>
+            )}
+          </nav>
         )}
       </header>
 
-      {/* 2. Hero Section de Alta Fidelidad & Creatividad Original */}
-      <main className="flex-1 flex flex-col items-center">
-        {/* Banner Sanitario de Emergencia (WCAG & Legal) */}
-        <section
-          role="region"
-          aria-label="Aviso sanitario sobre emergencias y urgencias"
-          className="w-full bg-amber-50 border-b border-amber-200 py-3 px-4 text-center text-xs text-amber-950 font-medium"
-        >
-          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
-            <span>
-              <strong>Aviso de Salud Animal:</strong> VetConnect provee teleorientación y triaje sanitario. En situaciones críticas con riesgo inminente de vida, acuda sin demora a un hospital o clínica veterinaria presencial con guardia 24hs.
-            </span>
-          </div>
-        </section>
-
-        <section id="inicio" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-16 relative">
-          {/* Ondas orgánicas de fondo en verde menta */}
-          <div className="absolute top-10 left-0 w-[550px] h-[550px] -z-10 pointer-events-none opacity-40">
-            <svg viewBox="0 0 500 500" fill="none" className="w-full h-full stroke-emerald-200">
-              <circle cx="120" cy="220" r="160" strokeWidth="1.5" strokeDasharray="6 6" />
-              <circle cx="120" cy="220" r="240" strokeWidth="1.5" />
-              <circle cx="120" cy="220" r="320" strokeWidth="1.5" strokeDasharray="4 4" />
-            </svg>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center min-h-[680px]">
-            {/* Columna Izquierda: Mensaje Contundente y Original (No Clon) */}
-            <div className="lg:col-span-6 flex flex-col items-start text-left z-10">
-              {/* Badge Eyebrow */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#E6F7F0] text-[#00875A] rounded-full text-xs font-bold mb-6 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-[#00A86B] animate-ping" />
-                <span data-testid="trust-badge-senasa">Telemedicina Homologada • SENASA Res. 1442/2021</span>
-              </div>
-
-              {/* Titular Principal Original */}
-              <h1
-                data-testid="hero-title"
-                className="text-4xl sm:text-5xl lg:text-[3.6rem] font-extrabold text-slate-900 tracking-tight leading-[1.08] mb-6"
-              >
-                El hospital veterinario <br />
-                en tu casa, <br />
-                <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 bg-clip-text text-transparent">
-                  cuando más importa.
-                </span>
-              </h1>
-
-              {/* Subtítulo Empático */}
-              <p
-                data-testid="hero-description"
-                className="text-slate-600 text-base sm:text-lg max-w-lg mb-8 leading-relaxed font-normal"
-              >
-                Conectá en menos de 3 minutos con médicos veterinarios matriculados por videollamada HD. Recetas oficiales con código QR, guardia activa 24/7 y cero estrés de sala de espera.
-              </p>
-
-              {/* Botones de Acción */}
-              <div className="flex flex-wrap items-center gap-4 mb-10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (user) {
-                      navigate(
-                        user.role === 'VET'
-                          ? '/vet/dashboard'
-                          : user.role === 'ADMIN'
-                          ? '/admin/dashboard'
-                          : '/client/dashboard'
-                      );
-                    } else {
-                      navigate('/register');
-                    }
-                  }}
-                  className="px-8 py-4 bg-[#03362A] hover:bg-[#044c3b] active:bg-[#022c22] text-white font-bold text-sm sm:text-base rounded-full shadow-xl shadow-[#03362A]/25 hover:shadow-2xl transition-all flex items-center gap-2.5 group cursor-pointer hover:scale-102"
-                >
-                  <span>
-                    {user
-                      ? user.role === 'VET'
-                        ? 'Acceder al Centro de Mando'
-                        : 'Consultar por mi Mascota'
-                      : 'Iniciar Consulta Inmediata'}
-                  </span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-emerald-400" />
-                </button>
-                <a
-                  href="#simulador"
-                  className="px-7 py-4 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-sm sm:text-base rounded-full shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer"
-                >
-                  <Activity className="w-4 h-4 text-[#00A86B]" />
-                  <span>Orientador de Salud</span>
-                </a>
-              </div>
-
-              {/* Tira de Disponibilidad Médica Honesta */}
-              <div className="flex items-center gap-4 pt-5 border-t border-slate-200/90 w-full max-w-lg">
-                <div className="flex -space-x-2 overflow-hidden">
-                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-[#03362A] text-emerald-300 font-bold text-xs flex items-center justify-center">
-                    VC
-                  </div>
-                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-[#00A86B] text-white font-bold text-xs flex items-center justify-center">
-                    24h
-                  </div>
-                  <div className="w-8 h-8 rounded-full ring-2 ring-white bg-slate-800 text-white font-bold text-xs flex items-center justify-center">
-                    RX
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Guardia Médica Veterinaria Activa</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500">Atención telemática y triaje con profesionales matriculados</p>
-                </div>
-              </div>
+      <section className="hero section">
+        <div className="hero__wash" />
+        <div className="container hero__grid">
+          <div className="hero__copy">
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+              <span className="status-dot" style={{ width: "8px", height: "8px" }} />
+              <span data-testid="trust-badge-senasa" style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--brand-dark)" }}>
+                Telemedicina Homologada • SENASA Res. 1442/2021
+              </span>
             </div>
-
-            {/* Columna Derecha: EL SMARTPHONE REAL-SIZE CON ANIMACIÓN 3D HOVER & PANTALLA INTERACTIVA */}
-            <div className="lg:col-span-6 relative flex justify-center items-center py-4">
-              {/* Gran Fondo Circular con Gradiente de Luz Suave */}
-              <div className="absolute w-[440px] sm:w-[520px] h-[440px] sm:h-[520px] rounded-full bg-gradient-to-tr from-[#DDF4EA] via-[#E9F7F1] to-white/60 -z-10 pointer-events-none blur-sm" />
-
-              {/* Grupo del Celular con Hover 3D */}
-              <div className="relative group/phone select-none cursor-pointer">
-                {/* 1. Badge Flotante Superior Izquierdo: Telemetría / Audio HD */}
-                <div className="absolute -left-6 sm:-left-12 top-20 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-slate-100 flex items-center gap-3 z-30 transition-all duration-500 group-hover/phone:-translate-x-3 group-hover/phone:-translate-y-2">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#00A86B] flex items-center justify-center">
-                    <Volume2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs font-extrabold text-slate-800">Audio HD • 18ms</span>
-                    </div>
-                    <p className="text-[10px] text-slate-500">WebRTC LiveKit SFU</p>
-                  </div>
-                </div>
-
-                {/* 2. Badge Flotante Inferior Derecho: Receta Oficial con QR */}
-                <div className="absolute -right-4 sm:-right-10 bottom-16 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 shadow-xl border border-slate-100 z-30 transition-all duration-500 group-hover/phone:translate-x-3 group-hover/phone:translate-y-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded bg-[#E6F7F0] flex items-center justify-center text-[#00875A]">
-                      <QrCode className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-slate-900">Receta Oficial SENASA</span>
-                  </div>
-                  <p className="text-[10px] text-slate-500">Hash criptográfico verificado</p>
-                </div>
-
-                {/* 3. Badge Flotante Notificación Push Superior Derecha */}
-                <div className="hidden sm:flex absolute -right-6 top-8 bg-slate-900/90 text-white backdrop-blur-md rounded-2xl px-3.5 py-2 shadow-lg z-30 items-center gap-2 text-[11px] border border-slate-700/80 transition-all duration-500 group-hover/phone:translate-y-[-4px]">
-                  <Stethoscope className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="font-medium">Dra. Romero se unió a la sala</span>
-                </div>
-
-                {/* CHASIS DEL SMARTPHONE TAMAÑO REAL (340px - 360px de ancho x 720px de alto) */}
-                <div className="w-[325px] sm:w-[355px] min-h-[690px] bg-slate-950 rounded-[52px] p-3.5 shadow-[0_35px_80px_-15px_rgba(3,54,42,0.35)] border-[6px] border-slate-800 text-white transform rotate-[-3.5deg] group-hover/phone:rotate-0 group-hover/phone:scale-[1.03] group-hover/phone:-translate-y-3 transition-all duration-700 ease-out">
-                  {/* Dynamic Island / Parlante */}
-                  <div className="w-28 h-5 bg-black rounded-full mx-auto mb-2 flex items-center justify-between px-3">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-900 inline-block" />
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[8px] font-mono text-emerald-400">LIVE</span>
-                    </div>
-                  </div>
-
-                  {/* Status Bar */}
-                  <div className="flex justify-between items-center px-4 mb-2 text-[11px] text-slate-400 font-mono">
-                    <span className="font-bold text-slate-300">9:41</span>
-                    <div className="flex items-center gap-1.5">
-                      <Wifi className="w-3.5 h-3.5 text-slate-300" />
-                      <Battery className="w-3.5 h-3.5 text-slate-300" />
-                    </div>
-                  </div>
-
-                  {/* Pantalla Interna de la Aplicación VetConnect */}
-                  <div className="bg-white rounded-[38px] p-4 text-slate-900 flex flex-col justify-between min-h-[620px] overflow-hidden shadow-inner">
-                    {/* Header de la App en Pantalla */}
-                    <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-[#00A86B] flex items-center justify-center text-white shadow-sm">
-                            <HeartPulse className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="font-extrabold text-xs text-slate-900 tracking-tight leading-none">VetConnect</p>
-                            <p className="text-[9px] text-emerald-700 font-medium">Clínica 24hs</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold">
-                            EN GUARDIA
-                          </span>
-                          <Bell className="w-4 h-4 text-slate-400" />
-                        </div>
-                      </div>
-
-                      {/* Selector de Pestañas Interactivas Dentro del Móvil */}
-                      <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl mb-3 text-[10px] font-bold text-center">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPhoneTab('CALL');
-                          }}
-                          className={`py-1.5 rounded-lg transition-all ${
-                            phoneTab === 'CALL' ? 'bg-white text-[#03362A] shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          Llamada
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPhoneTab('PRESCRIPTION');
-                          }}
-                          className={`py-1.5 rounded-lg transition-all ${
-                            phoneTab === 'PRESCRIPTION' ? 'bg-white text-[#03362A] shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          Receta QR
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPhoneTab('HISTORY');
-                          }}
-                          className={`py-1.5 rounded-lg transition-all ${
-                            phoneTab === 'HISTORY' ? 'bg-white text-[#03362A] shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          Historial
-                        </button>
-                      </div>
-
-                      {/* Contenido Dinámico de la Pantalla del Celular */}
-                      {phoneTab === 'CALL' && (
-                        <div className="space-y-3 animate-fadeIn">
-                          {/* Ventana de Videollamada Activa */}
-                          <div className="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video shadow-md flex items-center justify-center border border-slate-700">
-                            {/* Doctora en Pantalla */}
-                            <div className="flex flex-col items-center justify-center text-center p-3 z-10">
-                              <div className="w-12 h-12 rounded-full bg-emerald-600/40 border border-emerald-400/60 flex items-center justify-center text-emerald-300 mb-1">
-                                <Stethoscope className="w-6 h-6" />
-                              </div>
-                              <p className="text-xs font-bold text-white">Dra. Silvina Romero</p>
-                              <p className="text-[10px] text-emerald-300 font-mono">M.P. 4492 • Guardia Activa</p>
-                            </div>
-
-                            {/* Miniatura PiP de Milo */}
-                            <div className="absolute bottom-2 right-2 w-16 h-14 rounded-xl bg-slate-900/90 border border-slate-600 p-1 flex flex-col items-center justify-center z-20 shadow-md">
-                              <PawPrint className="w-5 h-5 text-amber-400 mb-0.5" />
-                              <span className="text-[8px] font-bold text-slate-200">Milo</span>
-                            </div>
-
-                            {/* Signos Vitales */}
-                            <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 text-[9px] font-mono">
-                              <span className="px-1.5 py-0.5 bg-black/60 rounded text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                                <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500" /> 92 bpm
-                              </span>
-                              <span className="px-1.5 py-0.5 bg-black/60 rounded text-sky-400 border border-sky-500/30 flex items-center gap-1">
-                                <Activity className="w-2.5 h-2.5 text-sky-400" /> 24 rpm
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Tarjeta de Paciente Activo */}
-                          <div className="bg-[#03362A] text-white rounded-2xl p-3 shadow-sm">
-                            <div className="flex justify-between items-center text-[10px] text-emerald-300 mb-1">
-                              <span>Paciente en Consulta</span>
-                              <span className="font-mono text-emerald-400">04:32 min</span>
-                            </div>
-                            <h4 className="font-extrabold text-sm text-white">Milo (Golden Retriever, 3 años)</h4>
-                            <p className="text-[10px] text-slate-300">Tutor: Martín Rossi • Consulta digestiva</p>
-                          </div>
-
-                          {/* Controles de Llamada */}
-                          <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold">
-                            <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 flex flex-col items-center">
-                              <Video className="w-4 h-4 text-emerald-600 mb-1" />
-                              <span>Cámara</span>
-                            </div>
-                            <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 flex flex-col items-center">
-                              <FileText className="w-4 h-4 text-sky-600 mb-1" />
-                              <span>Receta</span>
-                            </div>
-                            <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex flex-col items-center">
-                              <PhoneCall className="w-4 h-4 text-rose-600 mb-1" />
-                              <span>Finalizar</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {phoneTab === 'PRESCRIPTION' && (
-                        <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-2.5 animate-fadeIn">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                                SENASA Res. 1442
-                              </span>
-                              <h4 className="font-bold text-xs text-slate-900 mt-1">Receta Médica Digital</h4>
-                            </div>
-                            <div className="w-12 h-12 bg-white p-1 rounded-lg border border-slate-200 flex items-center justify-center">
-                              <QrCode className="w-10 h-10 text-slate-800" />
-                            </div>
-                          </div>
-                          <div className="bg-white p-2 rounded-xl border border-slate-100 text-[10px] space-y-1">
-                            <p className="font-bold text-slate-800">Rp/ Amoxicilina + Ácido Clavulánico</p>
-                            <p className="text-slate-600">Dosis: 500mg cada 12hs por 7 días</p>
-                            <p className="text-slate-400 text-[9px]">Dra. Silvina Romero • M.P. 4492</p>
-                          </div>
-                          <div className="text-[9px] text-emerald-700 flex items-center gap-1 font-semibold">
-                            <Check className="w-3 h-3 text-emerald-600" /> Válida para farmacias veterinarias
-                          </div>
-                        </div>
-                      )}
-
-                      {phoneTab === 'HISTORY' && (
-                        <div className="space-y-2 animate-fadeIn text-[10px]">
-                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
-                            <div>
-                              <p className="font-bold text-slate-800">Vacuna Séxtuple Canina</p>
-                              <p className="text-slate-400 text-[9px]">Aplicada: 15 Ene 2026</p>
-                            </div>
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">
-                              Vigente
-                            </span>
-                          </div>
-
-                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
-                            <div>
-                              <p className="font-bold text-slate-800">Antiparasitario Interno</p>
-                              <p className="text-slate-400 text-[9px]">Próximo: 15 Oct 2026</p>
-                            </div>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[9px]">
-                              Próximo
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Botón Inferior de Entrada Rápida */}
-                    <div className="pt-2 border-t border-slate-100">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (user) {
-                            navigate(
-                              user.role === 'VET'
-                                ? '/vet/dashboard'
-                                : user.role === 'ADMIN'
-                                ? '/admin/dashboard'
-                                : '/client/dashboard'
-                            );
-                          } else {
-                            navigate('/login');
-                          }
-                        }}
-                        className="w-full py-2.5 bg-[#03362A] hover:bg-[#044c3b] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition"
-                      >
-                        <span>Entrar a mi Portal</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            <Eyebrow>Atención veterinaria online</Eyebrow>
+            <h1 data-testid="hero-title">Tu mascota.<br />Tu veterinario.<br /><span>Conectados.</span></h1>
+            <p>Conectamos tutores con profesionales veterinarios para acceder a orientación y atención online de manera simple, humana y cercana.</p>
+            <div className="hero__actions">
+              <Button to="/register">Comenzar consulta</Button>
+              <Button href="#como-funciona" variant="secondary">Conocer cómo funciona</Button>
+            </div>
+            <div className="hero__proof">
+              <div className="avatar-stack">
+                <span className="avatar avatar--one" />
+                <span className="avatar avatar--two" />
+                <span className="avatar avatar--three" />
               </div>
+              <p><strong>Profesionales verificados</strong><br />para cuidar a cada especie</p>
             </div>
           </div>
-        </section>
-
-        {/* 3. Tira de 4 Pilares de Salud (Minimalista & Espaciosa) */}
-        <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm text-center">
-            <div>
-              <Zap className="w-6 h-6 text-[#00A86B] mx-auto mb-2" />
-              <p className="text-lg font-extrabold text-slate-900 font-display">&lt; 3 minutos</p>
-              <p className="text-xs text-slate-500 mt-0.5">Conexión de guardia médica</p>
+          <div className="hero-visual">
+            <div className="hero-visual__orb" />
+            <div className="hero-visual__photo">
+              <img src={photos.rabbit} alt="Tutora sosteniendo con cuidado a su conejo" />
             </div>
-            <div>
-              <MapPin className="w-6 h-6 text-[#00A86B] mx-auto mb-2" />
-              <p className="text-lg font-extrabold text-slate-900 font-display">Nacional</p>
-              <p className="text-xs text-slate-500 mt-0.5">Atención en toda Argentina</p>
+            <div className="floating-card floating-card--vet">
+              <span className="mini-avatar mini-avatar--vet" />
+              <div><strong>Dra. Paula López</strong><span>Animales no convencionales</span></div>
+              <span className="online-dot" />
             </div>
-            <div>
-              <Lock className="w-6 h-6 text-[#00A86B] mx-auto mb-2" />
-              <p className="text-lg font-extrabold text-slate-900 font-display">Ley 25.326</p>
-              <p className="text-xs text-slate-500 mt-0.5">Historias clínicas inmutables</p>
+            <div className="floating-card floating-card--call">
+              <span className="floating-card__icon"><Icon name="camera" /></span>
+              <div><strong>Consulta conectada</strong><span>Videollamada segura</span></div>
             </div>
-            <div>
-              <Award className="w-6 h-6 text-[#00A86B] mx-auto mb-2" />
-              <p className="text-lg font-extrabold text-slate-900 font-display">100% Verificados</p>
-              <p className="text-xs text-slate-500 mt-0.5">Veterinarios colegiados SENASA</p>
-            </div>
+            <div className="connection-line connection-line--one" />
+            <div className="connection-line connection-line--two" />
+            <div className="species-pill species-pill--bird">Aves</div>
+            <div className="species-pill species-pill--rabbit">Conejos</div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* 4. Orientador Rápido de Salud Animal (Cálido, Intuitivo y con Bordes Suaves) */}
-        <section id="simulador" className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-left">
-          <div className="bg-gradient-to-b from-white to-[#F8FBF9] rounded-[36px] p-6 sm:p-10 shadow-[0_20px_50px_-12px_rgba(2,42,33,0.08)] border border-slate-200/80">
-            {/* Cabecera Cálida y Humana */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-7">
+      <section className="trust-band">
+        <div className="container trust-band__inner">
+          <div className="trust-band__intro">
+            <Icon name="heart" />
+            <h2>Cuando necesitás orientación, no siempre podés esperar.</h2>
+          </div>
+          <div className="trust-band__items">
+            {[
+              ["camera", "Atención online"],
+              ["shield", "Profesionales veterinarios"],
+              ["paw", "Diferentes mascotas"],
+              ["location", "Desde cualquier lugar"],
+            ].map(([icon, label]) => (
+              <div className="trust-item" key={label}><Icon name={icon as IconName} /><span>{label}</span></div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section how" id="como-funciona">
+        <div className="container">
+          <SectionHeading eyebrow="Cómo funciona" title={<>Cuidar también puede<br />ser más simple.</>} copy="Un camino claro desde tu primera duda hasta el seguimiento, siempre acompañado por un profesional." />
+          <div className="steps">
+            {[
+              ["01", "profile", "Contanos sobre tu mascota.", "Completá su perfil y el motivo de tu consulta."],
+              ["02", "shield", "Encontrá un profesional.", "Elegí por especie, especialidad y disponibilidad."],
+              ["03", "camera", "Conectate a la consulta.", "Conversá online desde donde te resulte cómodo."],
+              ["04", "history", "Recibí seguimiento.", "Guardá indicaciones e información en un solo lugar."],
+            ].map(([number, icon, title, copy], index) => (
+              <article className={`step step--${index + 1}`} key={number}>
+                <span className="step__number">{number}</span>
+                <span className="step__icon"><Icon name={icon as IconName} /></span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+                {index < 3 && <span className="step__connector"><Icon name="arrow" /></span>}
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section care-types">
+        <div className="container">
+          <SectionHeading
+            eyebrow="Tipos de atención"
+            title={<>Cada momento necesita un tipo<br />de cuidado diferente.</>}
+            align="center"
+          />
+          <div className="care-grid">
+            <article className="care-card care-card--urgent">
+              <div className="care-card__art"><Icon name="message" /><span className="pulse-ring" /></div>
+              <span className="care-card__index">01</span>
+              <h3>Emergencia</h3>
+              <p>Orientación ante una situación que no puede esperar y claridad para decidir el próximo paso.</p>
+              <Link to="/register">Recibir orientación <Icon name="arrow" /></Link>
+            </article>
+            <article className="care-card care-card--consult">
+              <div className="care-card__image"><img src={photos.vet} alt="Profesional veterinario trabajando durante una consulta" /></div>
+              <div className="care-card__body">
+                <span className="care-card__index">02</span>
+                <h3>Consulta</h3>
+                <p>Resolvé dudas y conversá con un profesional desde un espacio tranquilo y cercano.</p>
+                <Link to="/register">Iniciar consulta <Icon name="arrow" /></Link>
+              </div>
+            </article>
+            <article className="care-card care-card--prevent">
+              <div className="care-card__art"><Icon name="heart" /><span className="orbit-dot" /></div>
+              <span className="care-card__index">03</span>
+              <h3>Prevención</h3>
+              <p>Acompañá el bienestar de tu mascota antes de que aparezcan problemas.</p>
+              <Link to="/register">Planificar cuidado <Icon name="arrow" /></Link>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      {/* Portales de Acceso Especializados por Rol */}
+      <section className="section" id="portales" style={{ background: "var(--sand)" }}>
+        <div className="container">
+          <SectionHeading
+            eyebrow="Ecosistema Integral"
+            title={<>Un portal diseñado<br />para cada necesidad.</>}
+            copy="Ingresá al entorno específico correspondiente a tu perfil en VetConnect."
+            align="center"
+          />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", marginTop: "40px" }}>
+            <div className="product-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
               <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#00875A] bg-[#E6F7F0] px-3.5 py-1 rounded-full border border-emerald-200/60">
-                  <Sparkles className="w-3.5 h-3.5 text-[#00875A]" />
-                  <span>Orientador Rápido de Salud</span>
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2 font-display">
-                  ¿Qué le pasa a tu compañero?
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
-                  Elegí qué animal tenés y qué síntoma observás para saber en 10 segundos la atención recomendada.
+                <div className="product-card__top">
+                  <span className="ui-label">Para Tutores</span>
+                  <Icon name="paw" />
+                </div>
+                <h3>Portal de Tutores</h3>
+                <p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "8px" }}>
+                  Consultas telemáticas, fichas de mascotas, recetas oficiales SENASA con QR y seguimiento clínico.
                 </p>
               </div>
-
-              {/* Selector de Especies con Botones Suaves y Acolchados */}
-              <div className="flex gap-2.5">
-                {(['DOG', 'CAT', 'EXOTIC'] as SpeciesType[]).map((speciesKey) => {
-                  const item = SPECIES_DATA[speciesKey];
-                  const isSelected = selectedSpecies === speciesKey;
-                  return (
-                    <button
-                      key={speciesKey}
-                      type="button"
-                      onClick={() => handleSpeciesChange(speciesKey)}
-                      className={`px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all duration-150 active:scale-95 cursor-pointer flex items-center gap-2 ${
-                        isSelected
-                          ? 'border-[#00875A] bg-[#E6F7F0] text-[#00875A] shadow-sm ring-1 ring-[#00875A]/20'
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                      }`}
-                    >
-                      <item.Icon className="w-4 h-4 shrink-0" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
+              <div style={{ marginTop: "24px" }}>
+                <Button to="/client/dashboard" variant="primary" dataTestId="cta-client-portal">
+                  Ingresar como Tutor
+                </Button>
               </div>
             </div>
 
-            {/* Tarjetas de Síntomas con Bordes Curvos y Micro-interacciones */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-6">
-              {currentSpeciesData.scenarios.map((sc) => {
-                const isSelected = activeScenario.id === sc.id;
-                return (
-                  <button
-                    key={sc.id}
-                    type="button"
-                    onClick={() => setSelectedScenarioId(sc.id)}
-                    className={`p-5 rounded-[24px] border text-left transition-all duration-200 cursor-pointer ${
-                      isSelected
-                        ? sc.priority === 'ROJO'
-                          ? 'border-rose-400 bg-rose-50/70 shadow-md shadow-rose-500/10 ring-2 ring-rose-400/50'
-                          : sc.priority === 'AMARILLO'
-                          ? 'border-amber-400 bg-amber-50/70 shadow-md shadow-amber-500/10 ring-2 ring-amber-400/50'
-                          : 'border-emerald-400 bg-emerald-50/70 shadow-md shadow-emerald-500/10 ring-2 ring-emerald-400/50'
-                        : 'border-slate-200/90 hover:border-slate-300 bg-white hover:shadow-sm'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2.5">
-                      <span className="text-xs font-black text-slate-900 font-display">{sc.name}</span>
-                      <span
-                        className={`text-[10px] font-black uppercase tracking-wide px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
-                          sc.priority === 'ROJO'
-                            ? 'bg-rose-100 text-rose-800'
-                            : sc.priority === 'AMARILLO'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}
-                      >
-                        {sc.priority === 'ROJO' ? (
-                          <AlertCircle className="w-3 h-3 text-rose-700" />
-                        ) : sc.priority === 'AMARILLO' ? (
-                          <AlertTriangle className="w-3 h-3 text-amber-700" />
-                        ) : (
-                          <CheckCircle2 className="w-3 h-3 text-emerald-700" />
-                        )}
-                        <span>{sc.priority === 'ROJO' ? 'Alerta' : sc.priority === 'AMARILLO' ? 'Urgente' : 'Control'}</span>
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 leading-relaxed">{sc.symptom}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Respuesta Orientadora Inteligente con Bordes Suaves */}
-            <div className="p-6 rounded-[28px] bg-gradient-to-r from-[#022A21] via-[#03362A] to-[#022A21] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xl shadow-emerald-950/15 border border-emerald-800/40">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="font-black text-sm text-white font-display">{activeScenario.priorityLabel}</span>
-                  <span className="text-xs text-emerald-300 font-mono">• Tiempo: {activeScenario.responseTime}</span>
+            <div className="product-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <div className="product-card__top">
+                  <span className="ui-label">Para Profesionales</span>
+                  <Icon name="shield" />
                 </div>
-                <p className="text-xs text-slate-300 max-w-xl leading-relaxed">{activeScenario.description}</p>
+                <h3>Portal Veterinarios</h3>
+                <p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "8px" }}>
+                  Guardia activa 24/7, videollamadas con triaje clínico, expedientes de pacientes y recetario digital.
+                </p>
               </div>
+              <div style={{ marginTop: "24px" }}>
+                <Button to="/vet/dashboard" variant="secondary" dataTestId="cta-vet-portal">
+                  Ingresar a Guardia
+                </Button>
+              </div>
+            </div>
 
-              <button
-                type="button"
-                onClick={() => navigate(user?.role === 'CLIENT' ? '/client/dashboard' : '/login')}
-                className="px-6 py-3 bg-[#00D084] hover:bg-[#05b876] active:scale-[0.98] text-[#022A21] rounded-2xl font-black text-xs shrink-0 cursor-pointer shadow-md transition-all duration-150 flex items-center gap-1.5"
-              >
-                <span>{activeScenario.ctaText}</span>
-                <span>→</span>
-              </button>
+            <div className="product-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <div className="product-card__top">
+                  <span className="ui-label">Fiscalización</span>
+                  <Icon name="spark" />
+                </div>
+                <h3>Panel Auditoría</h3>
+                <p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "8px" }}>
+                  Fiscalización y auditoría médica de matrículas profesionales habilitadas según colegios veterinarios.
+                </p>
+              </div>
+              <div style={{ marginTop: "24px" }}>
+                <Button to="/admin/dashboard" variant="ghost" dataTestId="cta-admin-portal">
+                  Auditar Matrículas
+                </Button>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* 5. Portales Especializados por Rol (CTAs Tripartitos) */}
-        <section id="portales" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
-          <div className="max-w-xl mx-auto mb-10">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#00875A] bg-[#E6F7F0] px-3 py-1 rounded-full">
-              Ecosistema Integral
-            </span>
-            <h2 className="text-3xl font-extrabold text-slate-900 mt-2 mb-2 font-serif">
-              Un portal diseñado para tu rol
-            </h2>
-            <p className="text-sm text-slate-600">
-              Ingresá al entorno específico correspondiente a tu perfil en VetConnect.
+      <section className="section species">
+        <div className="container species__grid">
+          <div className="species__copy">
+            <SectionHeading
+              eyebrow="Todas las especies"
+              title={<>Porque no todas las<br />mascotas son iguales.</>}
+              copy="Encontrar atención adecuada puede ser especialmente difícil cuando tu compañero no es un perro o un gato. VetConnect también fue pensado para ellos."
+            />
+            <Button to="/register" variant="secondary">Encontrar un especialista</Button>
+          </div>
+          <div className="species-collage" aria-label="Diversidad de mascotas atendidas">
+            <figure className="species-photo species-photo--parrot"><img src={photos.parrot} alt="Ave de compañía" /><figcaption>Aves</figcaption></figure>
+            <figure className="species-photo species-photo--ferret"><img src={photos.ferret} alt="Hurón doméstico" /><figcaption>Hurones</figcaption></figure>
+            <figure className="species-photo species-photo--turtle"><img src={photos.turtle} alt="Tortugas domésticas" /><figcaption>Reptiles</figcaption></figure>
+            <div className="species-chip species-chip--one">Conejos</div>
+            <div className="species-chip species-chip--two">Roedores</div>
+            <div className="species-chip species-chip--three">Peces</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section tutors" id="tutores">
+        <div className="container tutors__grid">
+          <div className="interface-composition">
+            <div className="interface-composition__blob" />
+            <PetProfile />
+            <div className="mini-notification">
+              <span><Icon name="check" /></span>
+              <div><strong>Consulta finalizada</strong><small>Indicaciones guardadas</small></div>
+            </div>
+            <div className="health-ring"><span>92%</span><small>Perfil completo</small></div>
+          </div>
+          <div className="tutors__copy">
+            <SectionHeading
+              eyebrow="Para tutores"
+              title={<>Todo empieza por conocer<br />a quien cuidás.</>}
+              copy="Creá un perfil para cada mascota, reuní su información y mantené el hilo de cada consulta. Menos datos sueltos, más continuidad."
+            />
+            <ul className="feature-list">
+              {["Perfil e información básica", "Historial veterinario organizado", "Consultas y seguimiento"].map((item) => (
+                <li key={item}><span><Icon name="check" /></span>{item}</li>
+              ))}
+            </ul>
+            <Button to="/register">Crear perfil de mascota</Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="section vets" id="veterinarios">
+        <div className="container vets__grid">
+          <div className="vets__copy">
+            <Eyebrow light>Para profesionales</Eyebrow>
+            <h2>Tu conocimiento también<br />puede llegar <span>más lejos.</span></h2>
+            <p>VetConnect brinda un espacio profesional para ofrecer atención online, organizar la disponibilidad y acompañar a cada paciente con contexto.</p>
+            <div className="vets__features">
+              {[
+                ["calendar", "Agenda y disponibilidad"],
+                ["profile", "Pacientes organizados"],
+                ["history", "Historial y seguimiento"],
+                ["message", "Consultas centralizadas"],
+              ].map(([icon, text]) => (
+                <div key={text}><Icon name={icon as IconName} /><span>{text}</span></div>
+              ))}
+            </div>
+            <Button to="/register" variant="cream">Quiero ser veterinario en VetConnect</Button>
+          </div>
+          <div className="vet-interface">
+            <ScheduleCard />
+            <div className="vet-interface__metric"><span>Pacientes atendidos</span><strong>100%</strong><small>Conforme SENASA</small></div>
+            <div className="vet-interface__availability"><span className="online-dot" /><strong>Guardia 24hs</strong><small>Atención permanente</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section platform" id="plataforma">
+        <div className="container">
+          <SectionHeading
+            eyebrow="La plataforma"
+            title={<>Una experiencia conectada<br />de principio a fin.</>}
+            copy="La información, las consultas y el acompañamiento conviven en un mismo ecosistema, tanto para tutores como para profesionales."
+            align="center"
+          />
+          <div className="device-stage">
+            <div className="device-stage__shape" />
+            <div className="laptop">
+              <div className="laptop__screen">
+                <div className="app-sidebar">
+                  <Logo testId="laptop-mockup-logo" />
+                  {["profile", "calendar", "message", "history"].map((icon, i) => <span className={i === 0 ? "active" : ""} key={icon}><Icon name={icon as IconName} /></span>)}
+                </div>
+                <div className="video-ui">
+                  <div className="video-ui__header"><span>Consulta con Olivia</span><span className="status-dot">En curso · 18:42</span></div>
+                  <div className="video-ui__main">
+                    <img src={photos.rabbitClose} alt="Tutora y conejo durante una consulta online" />
+                    <div className="doctor-tile"><img src={photos.vet} alt="Veterinaria en videollamada" /></div>
+                    <div className="call-controls"><span><Icon name="camera" /></span><span><Icon name="message" /></span><span className="end-call"><Icon name="close" /></span></div>
+                  </div>
+                  <aside className="video-ui__notes"><span className="ui-label">Ficha rápida</span><strong>Olivia</strong><small>Conejo · 3 años</small><hr /><small>Motivo</small><p>Cambio de alimentación y menor actividad.</p></aside>
+                </div>
+              </div>
+              <div className="laptop__base" />
+            </div>
+            <div className="phone">
+              <div className="phone__notch" />
+              <div className="phone__header"><Logo testId="phone-mockup-logo" /><span className="tiny-avatar" /></div>
+              <p className="ui-label">PRÓXIMA CONSULTA</p>
+              <div className="phone__appointment">
+                <span><Icon name="camera" /></span><strong>Hoy · 15:30</strong><small>con Dra. Paula López</small>
+              </div>
+              <PetProfile />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Descarga de App Android APK */}
+      <section className="section" style={{ background: "var(--brand-deep)", color: "var(--cream)" }}>
+        <div className="container" style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "24px" }}>
+          <div>
+            <Eyebrow light>App Oficial para Android</Eyebrow>
+            <h2 style={{ color: "var(--cream)", margin: "8px 0" }}>La salud de tu mascota, en tu bolsillo</h2>
+            <p style={{ color: "var(--brand-soft)", margin: 0, maxWidth: "560px" }}>
+              Accedé a guardias inmediatas, recetas con código QR oficial y notificaciones en tiempo real desde tu dispositivo móvil.
             </p>
           </div>
-
-          <div
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
-            data-testid="cta-buttons-container"
-          >
-            {/* Tarjeta 1: Portal Tutores */}
-            <button
-              type="button"
-              data-testid="cta-client-portal"
-              onClick={() => navigate(user?.role === 'CLIENT' ? '/client/dashboard' : '/login')}
-              className="p-8 bg-white hover:bg-emerald-50/30 border border-[#E8E2D5] hover:border-emerald-300 rounded-3xl shadow-xs hover:shadow-lg transition-all text-left flex flex-col justify-between cursor-pointer group"
-            >
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#E6F7F0] text-[#00875A] flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                  <HeartPulse className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-xl text-slate-900 mb-2 font-serif">Portal Tutores</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
-                  Guardia inmediata, videoconsultas sin estrés y recetas oficiales con QR en tu teléfono.
-                </p>
-              </div>
-              <span className="text-xs font-bold text-[#00875A] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                {user?.role === 'CLIENT' ? 'Abrir mi Portal de Tutor →' : 'Ingresar como Tutor →'}
-              </span>
-            </button>
-
-            {/* Tarjeta 2: Portal Veterinarios */}
-            <button
-              type="button"
-              data-testid="cta-vet-portal"
-              onClick={() => navigate(user?.role === 'VET' ? '/vet/dashboard' : '/login')}
-              className="p-8 bg-white hover:bg-slate-50 border border-[#E8E2D5] hover:border-slate-400 rounded-3xl shadow-xs hover:shadow-lg transition-all text-left flex flex-col justify-between cursor-pointer group"
-            >
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                  <Stethoscope className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-xl text-slate-900 mb-2 font-serif">Portal Veterinarios</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
-                  Guardia telemática 24/7, atención con audio HD y emisión de recetas homologadas por SENASA.
-                </p>
-              </div>
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                {user?.role === 'VET' ? 'Abrir Centro de Mando de Guardia →' : 'Ingresar a Guardia →'}
-              </span>
-            </button>
-
-            {/* Tarjeta 3: Panel Fiscalización */}
-            <button
-              type="button"
-              data-testid="cta-admin-portal"
-              onClick={() => navigate(user?.role === 'ADMIN' ? '/admin/dashboard' : '/login')}
-              className="p-8 bg-white hover:bg-teal-50/30 border border-[#E8E2D5] hover:border-teal-300 rounded-3xl shadow-xs hover:shadow-lg transition-all text-left flex flex-col justify-between cursor-pointer group"
-            >
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-xl text-slate-900 mb-2 font-serif">Panel Administrador</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
-                  Auditoría manual de matrículas profesionales, control de habilitaciones y supervisión clínica.
-                </p>
-              </div>
-              <span className="text-xs font-bold text-teal-800 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                {user?.role === 'ADMIN' ? 'Abrir Panel de Auditoría →' : 'Auditar Matrículas →'}
-              </span>
-            </button>
-          </div>
-        </section>
-
-        {/* 6. Descarga App Móvil */}
-        <section
-          id="app-mobile"
-          data-testid="apk-download-banner"
-          className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-        >
-          <div className="bg-[#03362A] text-white rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="space-y-2 text-left">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                App Oficial para Android
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                La salud de tu mascota, en tu bolsillo
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-                Accedé a guardias inmediatas, recetas con QR y notificaciones en tiempo real desde tu teléfono.
-              </p>
-            </div>
-
+          <div>
             <a
               href="/downloads/vetconnect-preview.apk"
               download="vetconnect-preview.apk"
               data-testid="download-apk-link"
-              className="inline-flex items-center gap-2.5 px-6 py-3.5 bg-[#00D084] hover:bg-[#05b876] text-[#03362A] font-bold text-sm rounded-full shadow-md transition-all shrink-0 cursor-pointer hover:scale-105"
+              className="button button--cream"
+              style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}
             >
-              <Download className="w-4 h-4" />
+              <Icon name="download" />
               <span>Descargar APK Android (.apk)</span>
             </a>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* 7. Preguntas Frecuentes */}
-        <section id="preguntas" className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-left">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              Preguntas Frecuentes
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Respuestas rápidas para consultar con total tranquilidad.
-            </p>
+      <section className="section benefits">
+        <div className="container">
+          <SectionHeading eyebrow="Lo que cambia" title={<>Más cerca. Más simple.<br />Más conectado.</>} />
+          <div className="benefit-grid">
+            {[
+              ["01", "location", "Acceso", "Consultas veterinarias sin depender de la distancia."],
+              ["02", "message", "Cercanía", "Una forma más directa de comunicarse con profesionales."],
+              ["03", "paw", "Variedad", "Una plataforma pensada para diferentes tipos de mascotas."],
+              ["04", "history", "Continuidad", "Información y seguimiento dentro del mismo ecosistema."],
+            ].map(([num, icon, title, copy]) => (
+              <article className="benefit" key={num}>
+                <span className="benefit__num">{num}</span>
+                <span className="benefit__icon"><Icon name={icon as IconName} /></span>
+                <h3>{title}</h3><p>{copy}</p>
+              </article>
+            ))}
           </div>
+        </div>
+      </section>
 
-          <div className="space-y-3">
-            {FAQ_ITEMS.map((faq, idx) => {
-              const isOpen = openFaqIndex === idx;
+      <section className="section professional-trust">
+        <div className="container professional-trust__grid">
+          <div className="professional-trust__copy">
+            <SectionHeading
+              eyebrow="Confianza profesional"
+              title={<>Tecnología para conectar.<br />Profesionales para cuidar.</>}
+              copy="La tecnología facilita el encuentro y organiza la información. La atención, el criterio y las decisiones siguen estando a cargo de profesionales veterinarios."
+            />
+          </div>
+          <div className="trust-cards">
+            {[
+              ["shield", "Profesionales verificados", "Perfiles e información profesional validados."],
+              ["heart", "Privacidad por diseño", "Tu información se trata con cuidado y propósito."],
+              ["history", "Información organizada", "El contexto correcto, disponible en cada consulta."],
+              ["message", "Comunicación segura", "Un entorno pensado para conversar con tranquilidad."],
+            ].map(([icon, title, copy], index) => (
+              <article className={`trust-card trust-card--${index + 1}`} key={title}>
+                <Icon name={icon as IconName} /><h3>{title}</h3><p>{copy}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section ai-section">
+        <div className="container ai-section__grid">
+          <div className="ai-visual">
+            <div className="ai-visual__card">
+              <div className="ai-visual__head"><span><Icon name="spark" /></span><div><strong>Resumen de apoyo</strong><small>Revisado por el profesional</small></div></div>
+              <div className="summary-line summary-line--long" />
+              <div className="summary-line" />
+              <div className="summary-line summary-line--medium" />
+              <div className="ai-visual__tag"><Icon name="check" /> Información organizada</div>
+            </div>
+            <span className="ai-orbit ai-orbit--one" />
+            <span className="ai-orbit ai-orbit--two" />
+          </div>
+          <div>
+            <SectionHeading
+              eyebrow="Tecnología de apoyo"
+              title={<>Tecnología que acompaña<br />al profesional.</>}
+              copy="La tecnología colabora en tareas de organización, métricas y apoyo de guardia. El médico veterinario matriculado siempre revisa la información y mantiene la responsabilidad exclusiva sobre el diagnóstico y tratamiento."
+            />
+            <div className="human-first"><Icon name="profile" /><span><strong>Decisión humana, siempre.</strong><small>La tecnología acompaña; el veterinario decide.</small></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section testimonials">
+        <div className="container">
+          <SectionHeading eyebrow="Historias reales" title={<>Cuidar también es<br />sentirse acompañado.</>} align="center" />
+          <div className="testimonial-grid">
+            {[
+              ["LC", "Lucía y Pipa", "Conejo belier", "Mi conejo necesitaba orientación y no encontraba fácilmente un profesional cerca. Poder consultar online me dio claridad y mucha tranquilidad."],
+              ["MR", "Martín y Kiwi", "Cotorra argentina", "Me gustó poder elegir a alguien con experiencia en aves. La consulta fue clara, sin apuro, y quedó todo ordenado para el seguimiento."],
+              ["AS", "Ana y Bruno", "Hurón", "No reemplazó la visita que después necesitábamos, pero nos ayudó a entender qué hacer y a llegar mejor preparados."],
+            ].map(([initials, name, pet, quote], index) => (
+              <article className={`testimonial testimonial--${index + 1}`} key={name}>
+                <div className="stars" aria-label="5 estrellas">{[1, 2, 3, 4, 5].map((n) => <Icon name="star" key={n} />)}</div>
+                <blockquote>“{quote}”</blockquote>
+                <div className="testimonial__person"><span>{initials}</span><div><strong>{name}</strong><small>{pet}</small></div></div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section faq" id="preguntas">
+        <div className="container faq__grid">
+          <div className="faq__intro">
+            <SectionHeading eyebrow="Preguntas frecuentes" title={<>Todo lo que<br />necesitás saber.</>} copy="Si todavía tenés dudas, nuestro equipo puede orientarte antes de comenzar." />
+            <Button href="mailto:soporte@vetconnect.com.ar" variant="secondary">Hablar con el equipo</Button>
+          </div>
+          <div className="accordion">
+            {faqs.map(([question, answer], index) => {
+              const open = openFaq === index;
               return (
-                <div
-                  key={idx}
-                  className="bg-white border border-slate-200 rounded-2xl overflow-hidden transition-all shadow-sm"
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleFaq(idx)}
-                    className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-slate-900 hover:text-emerald-700 cursor-pointer"
-                  >
-                    <span>{faq.question}</span>
-                    <span className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center shrink-0 text-slate-500">
-                      {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </span>
+                <div className={`accordion__item ${open ? "accordion__item--open" : ""}`} key={question}>
+                  <button onClick={() => setOpenFaq(open ? -1 : index)} aria-expanded={open}>
+                    <span><small>{String(index + 1).padStart(2, "0")}</small>{question}</span>
+                    <span className="accordion__toggle"><Icon name={open ? "close" : "plus"} /></span>
                   </button>
-                  {isOpen && (
-                    <div className="px-4 sm:px-5 pb-4 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 animate-fadeIn">
-                      {faq.answer}
-                    </div>
-                  )}
+                  <div className="accordion__content"><p>{answer}</p></div>
                 </div>
               );
             })}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* 8. Respaldo Regulatorio (features-section) */}
-        <section
-          id="marco-legal"
-          className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-left"
-          data-testid="features-section"
-        >
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Homologado por SENASA Res. 1442/2021</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4 text-emerald-600" />
-              <span>Protección de Datos Personales (Ley 25.326)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-emerald-600" />
-              <span>Pinnacle Group — Soluciones Audiovisuales &amp; Streaming</span>
-            </div>
+      <section className="section final-cta" id="comenzar">
+        <div className="container final-cta__panel">
+          <div className="final-cta__copy">
+            <Eyebrow light>Estamos para acompañarte</Eyebrow>
+            <h2>Cuando necesitás<br />respuestas, <span>conectate.</span></h2>
+            <p>Tu mascota te necesita. Nosotros te ayudamos a encontrar el acompañamiento veterinario adecuado.</p>
+            <Button to="/register" variant="cream">Comenzar consulta</Button>
           </div>
-        </section>
-      </main>
+          <div className="final-cta__visual">
+            <div className="final-cta__photo"><img src={photos.rabbitClose} alt="Tutora junto a su conejo" /></div>
+            <div className="final-cta__badge"><Icon name="heart" /><span>Cuidado que<br /><strong>se siente cerca</strong></span></div>
+          </div>
+        </div>
+      </section>
 
-      {/* 9. Footer Institucional & Legal */}
-      <footer
-        id="ayuda"
-        className="bg-[#03362A] text-white pt-12 pb-10 px-4 sm:px-8 border-t border-emerald-900/60"
-        data-testid="landing-footer"
-      >
-        <div className="max-w-7xl mx-auto space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-emerald-900/40 text-xs">
-            {/* Columna 1: Identidad Corporativa */}
-            <div className="space-y-3 md:col-span-1">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[#00D084] flex items-center justify-center text-[#03362A] font-black text-xs">
-                  VC
-                </div>
-                <span className="font-extrabold text-white text-base">VetConnect</span>
-              </div>
-              <p className="text-slate-300 leading-relaxed">
-                Plataforma de teleorientación veterinaria, triaje sanitario y recetas oficiales con validación electrónica SENASA.
-              </p>
-              <div className="text-[11px] text-slate-400 space-y-0.5">
-                <p className="font-semibold text-slate-300">Pinnacle Group S.A.</p>
-                <p>CUIT: 30-71234567-8</p>
-                <p>Av. Santa Fe 1234, CABA, Argentina</p>
+      <footer className="footer">
+        <div className="container">
+          <div className="footer__top">
+            <div className="footer__brand">
+              <Logo light testId="footer-brand-logo" />
+              <p>Conectamos para cuidar<br />lo que más querés.</p>
+              <div style={{ marginTop: "16px", fontSize: "12px", color: "var(--brand-soft)" }}>
+                <strong>Pinnacle Group S.A.</strong><br />
+                CUIT: 30-71234567-8<br />
+                Av. Santa Fe 1234, CABA, Argentina
               </div>
             </div>
-
-            {/* Columna 2: Portales de Acceso */}
-            <div className="space-y-2.5">
-              <p className="font-bold text-white uppercase tracking-wider text-[11px]">Ecosistema</p>
-              <ul className="space-y-2 text-slate-300">
-                <li>
-                  <button onClick={() => navigate('/login')} className="hover:text-emerald-400 transition cursor-pointer">
-                    Portal de Tutores
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/login')} className="hover:text-emerald-400 transition cursor-pointer">
-                    Portal de Veterinarios
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/login')} className="hover:text-emerald-400 transition cursor-pointer">
-                    Auditoría y Fiscalización
-                  </button>
-                </li>
-                <li>
-                  <a href="#app-mobile" className="hover:text-emerald-400 transition">
-                    Aplicación Móvil (.apk)
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Columna 3: Marco Regulatorio & Legal */}
-            <div className="space-y-2.5">
-              <p className="font-bold text-white uppercase tracking-wider text-[11px]">Marco Legal</p>
-              <ul className="space-y-2 text-slate-300">
-                <li>
-                  <Link to="/terms" className="hover:text-emerald-400 underline-offset-2 hover:underline transition">
-                    Términos y Condiciones
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/privacy" className="hover:text-emerald-400 underline-offset-2 hover:underline transition">
-                    Política de Privacidad (Ley 25.326)
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/cookies" className="hover:text-emerald-400 underline-offset-2 hover:underline transition">
-                    Política de Cookies
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/refunds" className="hover:text-emerald-400 underline-offset-2 hover:underline transition">
-                    Política de Reembolsos (Ley 24.240)
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Columna 4: Canales de Contacto */}
-            <div className="space-y-2.5">
-              <p className="font-bold text-white uppercase tracking-wider text-[11px]">Contacto &amp; Soporte</p>
-              <ul className="space-y-1.5 text-slate-300 text-[11px]">
-                <li>
-                  Soporte al Usuario:{' '}
-                  <a href="mailto:soporte@vetconnect.com.ar" className="text-emerald-400 hover:underline">
-                    soporte@vetconnect.com.ar
-                  </a>
-                </li>
-                <li>
-                  Área Legal &amp; Regulatoria:{' '}
-                  <a href="mailto:legal@vetconnect.com.ar" className="text-emerald-400 hover:underline">
-                    legal@vetconnect.com.ar
-                  </a>
-                </li>
-                <li>
-                  Privacidad de Datos (ARCO):{' '}
-                  <a href="mailto:privacidad@vetconnect.com.ar" className="text-emerald-400 hover:underline">
-                    privacidad@vetconnect.com.ar
-                  </a>
-                </li>
-              </ul>
-              <p className="text-[10px] text-slate-400 pt-2">
-                Atención remota a nivel nacional en toda la República Argentina.
-              </p>
-            </div>
+            {[
+              ["Ecosistema", [
+                { label: "Portal Tutores", to: "/client/dashboard" },
+                { label: "Portal Veterinarios", to: "/vet/dashboard" },
+                { label: "Panel Administrador", to: "/admin/dashboard" },
+              ]],
+              ["Marco Legal", [
+                { label: "Términos y Condiciones", to: "/terms" },
+                { label: "Política de Privacidad", to: "/privacy" },
+                { label: "Política de Cookies", to: "/cookies" },
+                { label: "Política de Reembolsos", to: "/refunds" },
+              ]],
+              ["Contacto & Soporte", [
+                { label: "soporte@vetconnect.com.ar", href: "mailto:soporte@vetconnect.com.ar" },
+                { label: "legal@vetconnect.com.ar", href: "mailto:legal@vetconnect.com.ar" },
+                { label: "privacidad@vetconnect.com.ar", href: "mailto:privacidad@vetconnect.com.ar" },
+              ]],
+            ].map(([title, links]) => (
+              <div className="footer__column" key={title as string}>
+                <h3>{title as string}</h3>
+                {(links as any[]).map((link) =>
+                  link.to ? (
+                    <Link to={link.to} key={link.label}>
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a href={link.href} key={link.label}>
+                      {link.label}
+                    </a>
+                  )
+                )}
+              </div>
+            ))}
           </div>
-
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-400">
-            <p>© {new Date().getFullYear()} Pinnacle Group S.A. Todos los derechos reservados.</p>
-            <p>Iconografía provista bajo licencia abierta MIT por Lucide Icons.</p>
+          <div className="footer__bottom">
+            <span>© {new Date().getFullYear()} Pinnacle Group S.A. Todos los derechos reservados.</span>
+            <span>Hecho para conectar y cuidar con telemedicina oficial.</span>
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
-};
+}
 
 export default Landing;

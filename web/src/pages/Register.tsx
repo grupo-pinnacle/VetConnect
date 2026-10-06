@@ -1,477 +1,430 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Role } from '../types';
-import {
-  ShieldCheck,
-  Lock,
-  AlertCircle,
-  ArrowRight,
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Radio,
-  Tv,
-  CheckCircle2,
-  UserCheck,
-  Heart,
-  Stethoscope,
-  PawPrint,
-} from 'lucide-react';
-import HamsterMascot from '../components/ui/HamsterMascot';
+import React, { useState, type ChangeEvent, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { Role } from "../types";
+import "../styles/auth.css";
 
-export const Register: React.FC = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
-    phone: '',
-    role: 'CLIENT' as Role,
-    licenseNumber: '',
-  });
+const authPhoto =
+  "https://images.unsplash.com/photo-1774218318818-c201207699d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGF0JTIwaG9tZSUyMHdpdGglMjBwZXQlMjByYWJiaXQlMjB3YXJtJTIwbmF0dXJhbCUyMGxpZ2h0fGVufDF8fHx8MTc5MTIyODc4Mnww&ixlib=rb-4.1.0&q=85&w=1400";
 
+function Icon({ name }: { name: string }) {
+  if (name === "arrow") {
+    return (
+      <svg className="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M5 12h14m-5-5 5 5-5 5" />
+      </svg>
+    );
+  }
+  if (name === "close") {
+    return (
+      <svg className="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m6 6 12 12M18 6 6 18" />
+      </svg>
+    );
+  }
+  if (name === "check") {
+    return (
+      <svg className="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m5 12 4 4L19 7" />
+      </svg>
+    );
+  }
+  if (name === "heart") {
+    return (
+      <svg className="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M20 8.5c0 5-8 10-8 10s-8-5-8-10a4.5 4.5 0 0 1 8-2.7A4.5 4.5 0 0 1 20 8.5Z" />
+      </svg>
+    );
+  }
+  if (name === "shield") {
+    return (
+      <svg className="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Zm-3 9 2 2 4-5" />
+      </svg>
+    );
+  }
+  return null;
+}
+
+function Logo() {
+  return (
+    <Link className="logo" to="/" aria-label="VetConnect, inicio" data-testid="brand-logo">
+      <span className="logo__mark">
+        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9 11.5c5.8 0 10.5 4.7 10.5 10.5v8.5C13.7 30.5 9 25.8 9 20V11.5Z" fill="currentColor" />
+          <path d="M31 11.5c-5.8 0-10.5 4.7-10.5 10.5v8.5C26.3 30.5 31 25.8 31 20V11.5Z" fill="currentColor" opacity=".72" />
+          <circle cx="20" cy="9" r="4" fill="currentColor" />
+        </svg>
+      </span>
+      <span>VetConnect</span>
+    </Link>
+  );
+}
+
+export function Register() {
+  const [role, setRole] = useState<Role>("CLIENT");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { user: currentUser, register } = useAuth();
   const navigate = useNavigate();
 
   React.useEffect(() => {
     if (currentUser) {
-      if (currentUser.role === 'VET') navigate('/vet/dashboard', { replace: true });
-      else if (currentUser.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
-      else navigate('/client/dashboard', { replace: true });
+      if (currentUser.role === "VET") navigate("/vet/dashboard", { replace: true });
+      else if (currentUser.role === "ADMIN") navigate("/admin/dashboard", { replace: true });
+      else navigate("/client/dashboard", { replace: true });
     }
   }, [currentUser, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    const nextErrors: Record<string, string> = {};
+
+    if (!firstName.trim()) nextErrors.firstName = "Ingresá tu nombre.";
+    if (!lastName.trim()) nextErrors.lastName = "Ingresá tu apellido.";
+    if (!email.trim()) {
+      nextErrors.email = "Ingresá tu email.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      nextErrors.email = "El email ingresado no es válido.";
+    }
+    if (!password) {
+      nextErrors.password = "Ingresá tu contraseña.";
+    } else if (password.length < 8) {
+      nextErrors.password = "La contraseña debe tener al menos 8 caracteres.";
+    }
+    if (role === "VET" && !licenseNumber.trim()) {
+      nextErrors.licenseNumber = "Ingresá tu número de matrícula profesional.";
+    }
 
     if (!acceptedTerms) {
-      setError('Debes aceptar los Términos y Condiciones y las Políticas de Privacidad y Reembolsos para registrarte.');
+      nextErrors.terms = "Debés aceptar los términos y condiciones.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
 
-    setIsSubmitting(true);
+    setServerError("");
+    setErrors({});
+    setLoading(true);
 
     try {
-      const user = await register(formData);
-      if (user.role === 'VET') {
-        navigate('/vet/dashboard');
+      const user = await register({
+        email,
+        password,
+        firstName,
+        lastName,
+        phone,
+        role,
+        licenseNumber: role === "VET" ? licenseNumber : undefined,
+      });
+
+      if (user.role === "VET") {
+        navigate("/vet/dashboard");
       } else {
-        navigate('/client/dashboard');
+        navigate("/client/dashboard");
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || 'Error al registrar usuario');
+        setServerError(err.message || "Error al crear la cuenta.");
       } else {
-        setError('Error al registrar usuario');
+        setServerError("Error al crear la cuenta.");
       }
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
+  const isVet = role === "VET";
+
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col lg:grid lg:grid-cols-12 text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
-      {/* Columna Izquierda: Acompañamiento Emocional & Respaldo Pinnacle Broadcast (Desktop) */}
-      <section className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#06241D] via-[#0A332A] to-[#041B15] text-white p-8 lg:p-12 flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#0D3E33] relative overflow-hidden">
-        {/* Halos cálidos sutiles de fondo (esmeralda y ámbar) */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
-
-        <div className="relative z-10">
-          {/* Switcher de Canal / Retorno a Inicio de Marca */}
-          <div className="mb-8">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] active:scale-[0.98] border border-white/[0.12] hover:border-emerald-400/50 shadow-md transition-all duration-200 group cursor-pointer"
-              title="Volver a la portada de VetConnect"
-            >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00D084] to-[#00A86B] flex items-center justify-center text-slate-950 shadow-sm">
-                <Tv className="w-4 h-4 text-[#021F18]" />
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black tracking-tight text-white font-display">VetConnect Live</span>
-                  <span className="text-[10px] font-bold text-emerald-300 flex items-center gap-0.5 group-hover:-translate-x-1 transition-transform">
-                    ← Volver
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400">Canal Oficial de Telemedicina</p>
-              </div>
-            </Link>
-          </div>
-
-          {/* Título y Conexión Emocional */}
-          <div className="space-y-3.5 max-w-lg mb-7">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-black tracking-wider uppercase backdrop-blur-sm">
-              <span className="w-2 h-2 rounded-full bg-[#00D084] animate-pulse" />
-              <span>ALTA DE CUENTA CLÍNICA &bull; 100% HOMOLOGADA</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight font-display">
-              Tu tranquilidad y la salud de tu mascota, en un solo lugar.
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-              Creá tu usuario en menos de un minuto como tutor o como médico veterinario colegiado. Consultas en alta definición, recetas oficiales SENASA con código QR y cero estrés para tus compañeros.
-            </p>
-          </div>
-
-          {/* Tarjeta de Garantías Humanas y Clínicas */}
-          <div className="p-4 rounded-3xl bg-[#031D17]/90 border border-emerald-800/40 shadow-xl backdrop-blur-xl space-y-3 max-w-md">
-            <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-white/[0.03]">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
-                <Heart className="w-4 h-4 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Atención con Cariño y Empatía</p>
-                <p className="text-[11px] text-slate-300 leading-snug">Cuidado médico cercano sin traslados traumáticos ni estrés de sala de espera</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-white/[0.03]">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-300" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Validación de Matrícula Profesional</p>
-                <p className="text-[11px] text-slate-300 leading-snug">Homologación ante SENASA Res. 1442/2021 para médicos veterinarios</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-white/[0.03]">
-              <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0 mt-0.5">
-                <Radio className="w-4 h-4 text-teal-300" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Transmisión Cifrada en Alta Definición</p>
-                <p className="text-[11px] text-slate-300 leading-snug">WebRTC SFU de grado broadcast provisto por Pinnacle Group</p>
-              </div>
-            </div>
-          </div>
+    <main className={`auth-shell ${isVet ? "auth-shell--professional" : ""}`}>
+      <section className="auth-visual" aria-label="VetConnect, registro oficial">
+        <Link className="auth-visual__back" to="/">
+          <Icon name="arrow" />
+          Volver al sitio
+        </Link>
+        <div className="auth-visual__copy">
+          <p className="eyebrow eyebrow--light">
+            {isVet ? "Un espacio para profesionales" : "Conexión + cuidado + cercanía"}
+          </p>
+          <h1>
+            {isVet ? (
+              <>
+                Tu experiencia.<br />
+                Más cerca.<br />
+                <span>Más conectada.</span>
+              </>
+            ) : (
+              <>
+                Tu mascota.<br />
+                Tu veterinario.<br />
+                <span>Conectados.</span>
+              </>
+            )}
+          </h1>
+          <p>
+            {isVet
+              ? "Plataforma oficial para organizar guardia telemática y acompañar a cada paciente."
+              : "Registrate en minutos y accedé a guardia veterinaria oficial las 24 horas."}
+          </p>
         </div>
-
-        {/* Respaldo Institucional Oficial Pinnacle Group */}
-        <div className="relative z-10 mt-8 pt-5 border-t border-emerald-900/60 flex items-center justify-between text-xs text-slate-400">
+        <div className="auth-visual__photo">
+          <img src={authPhoto} alt="Tutora y mascota" />
+        </div>
+        <div className="auth-visual__connection">
+          <span><Icon name={isVet ? "shield" : "heart"} /></span>
           <div>
-            <p className="font-black text-slate-100 font-display text-sm tracking-wide">PINNACLE GROUP</p>
-            <p className="text-[10px] text-slate-400">Sponsor Oficial de Tecnología Broadcast &amp; Streaming</p>
-          </div>
-          <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white font-mono font-bold text-xs">
-            PG
+            <strong>{isVet ? "Atención profesional homologada" : "Cuidado que se siente cerca"}</strong>
+            <small>{isVet ? "SENASA Res. 1442/2021" : "Profesionales matriculados para cada especie"}</small>
           </div>
         </div>
+        <span className="auth-visual__orb auth-visual__orb--one" />
+        <span className="auth-visual__orb auth-visual__orb--two" />
       </section>
 
-      {/* Columna Derecha: Tarjeta de Registro con Mascota Hamster Duolingo en Paleta Cálida */}
-      <section className="lg:col-span-7 bg-[#F8F5EE] border-t lg:border-t-0 lg:border-l border-[#E6E0D3] flex items-center justify-center p-6 sm:p-12 lg:p-14 relative">
-        <div className="w-full max-w-lg bg-white p-8 sm:p-11 rounded-[32px] shadow-[0_20px_60px_-15px_rgba(7,36,30,0.07)] border border-[#E8E2D6] transition-all duration-300 animate-fadeIn">
-          {/* Botón de retorno accesible */}
-          <div className="mb-7 flex justify-between items-center">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-xs font-bold text-[#5C564C] hover:text-[#0A342B] active:scale-[0.97] transition-all duration-150 group focus:outline-none focus:ring-2 focus:ring-[#0A342B] rounded-full px-3.5 py-1.5 bg-[#F2EDE2] hover:bg-[#E9E3D6] border border-[#DDD7CB] cursor-pointer"
-              title="Volver a la portada de VetConnect"
+      <section className="auth-panel">
+        <div className="auth-panel__mobile-brand"><Logo /></div>
+        <div className="auth-panel__content">
+          <header className="auth-header">
+            <Logo />
+            <h2>Registro en VetConnect</h2>
+            <p>Completá tus datos para crear tu cuenta oficial.</p>
+          </header>
+
+          {/* Selector de Rol */}
+          <div className="role-options" role="radiogroup" aria-label="Tipo de cuenta">
+            <button
+              className={`role-card ${role === "CLIENT" ? "role-card--selected" : ""}`}
+              type="button"
+              role="radio"
+              aria-checked={role === "CLIENT"}
+              onClick={() => setRole("CLIENT")}
             >
-              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform text-[#8C8578] group-hover:text-[#0A342B]" aria-hidden="true" />
-              <span>Volver al inicio</span>
-            </Link>
-
-            <span className="text-[11px] font-semibold text-[#8C8578] flex items-center gap-1">
-              <Lock className="w-3 h-3 text-[#0A342B]" />
-              <span>Alta Segura SSL</span>
-            </span>
-          </div>
-
-          {/* LA MASCOTA OFICIAL: HÁMSTER MINIMALISTA ESTILO DUOLINGO */}
-          {/* REGLA: isCoveringEyes se activa EXCLUSIVAMENTE al tocar el botón de ver contraseña */}
-          <div className="flex flex-col items-center justify-center mb-2">
-            <HamsterMascot
-              isCoveringEyes={showPassword}
-              isLookingAtInput={isInputFocused}
-              className="mb-1"
-            />
-          </div>
-
-          {/* Encabezado del Formulario */}
-          <div className="text-center mb-7">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF5F0] border border-emerald-200/90 text-[#0A342B] text-[11px] font-semibold mb-2">
-              <UserCheck className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Alta de Usuario Seguro</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-[#1E1C18] tracking-tight font-display">
-              Registro en VetConnect
-            </h2>
-            <p className="text-xs sm:text-sm text-[#6E675C] mt-1 font-normal">
-              Completá tus datos para ingresar al sistema de salud animal.
-            </p>
-          </div>
-
-          {/* Banner de Error Accesible */}
-          {error && (
-            <div
-              role="alert"
-              className="bg-red-50/90 border border-red-200 text-red-700 p-4 rounded-2xl text-xs sm:text-sm mb-5 flex items-start gap-2.5 animate-fadeIn shadow-sm"
+              <span className="role-card__icon"><Icon name="heart" /></span>
+              {role === "CLIENT" && <span className="role-card__check"><Icon name="check" /></span>}
+              <strong>Soy tutor</strong>
+              <small>Quiero cuidar y gestionar la atención de mi mascota.</small>
+            </button>
+            <button
+              className={`role-card role-card--professional ${role === "VET" ? "role-card--selected" : ""}`}
+              type="button"
+              role="radio"
+              aria-checked={role === "VET"}
+              onClick={() => setRole("VET")}
             >
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
-              <span className="font-medium">{error}</span>
+              <span className="role-card__icon"><Icon name="shield" /></span>
+              {role === "VET" && <span className="role-card__check"><Icon name="check" /></span>}
+              <strong>Soy veterinario</strong>
+              <small>Quiero ofrecer atención médica y gestionar consultas.</small>
+            </button>
+          </div>
+
+          {serverError && (
+            <div className="auth-alert auth-alert--error" role="alert">
+              <span><Icon name="close" /></span>
+              <div>
+                <strong>Error en el registro</strong>
+                <p>{serverError}</p>
+              </div>
             </div>
           )}
 
-          {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label
-                  htmlFor="register-firstname"
-                  className="block text-xs font-bold uppercase tracking-wider text-[#3D3A34] mb-1.5"
-                >
-                  Nombre
-                </label>
-                <input
-                  id="register-firstname"
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  onFocus={() => setIsInputFocused(true)}
-                  onBlur={() => setIsInputFocused(false)}
-                  required
-                  autoComplete="given-name"
-                  className="w-full px-4 py-3 bg-[#FAF8F4] border border-[#DCD5C8] rounded-2xl text-[#1E1C18] text-sm focus:outline-none focus:ring-4 focus:ring-[#0A342B]/10 focus:border-[#0A342B] focus:bg-white transition-all duration-200 placeholder:text-[#A39E93]"
-                  placeholder="Ej. Juan"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="register-lastname"
-                  className="block text-xs font-bold uppercase tracking-wider text-[#3D3A34] mb-1.5"
-                >
-                  Apellido
-                </label>
-                <input
-                  id="register-lastname"
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  onFocus={() => setIsInputFocused(true)}
-                  onBlur={() => setIsInputFocused(false)}
-                  required
-                  autoComplete="family-name"
-                  className="w-full px-4 py-3 bg-[#FAF8F4] border border-[#DCD5C8] rounded-2xl text-[#1E1C18] text-sm focus:outline-none focus:ring-4 focus:ring-[#0A342B]/10 focus:border-[#0A342B] focus:bg-white transition-all duration-200 placeholder:text-[#A39E93]"
-                  placeholder="Ej. Pérez"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="register-email"
-                className="block text-xs font-bold uppercase tracking-wider text-[#3D3A34] mb-1.5"
-              >
-                Correo Electrónico
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <label className={`auth-field ${errors.firstName ? "auth-field--error" : ""}`}>
+                <span className="auth-field__label">Nombre</span>
+                <span className="auth-field__control">
+                  <input
+                    name="firstName"
+                    type="text"
+                    placeholder="Ej. Lucía"
+                    value={firstName}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      setErrors((prev) => ({ ...prev, firstName: "" }));
+                    }}
+                    required
+                  />
+                </span>
+                {errors.firstName && <span className="auth-field__message"><Icon name="close" />{errors.firstName}</span>}
               </label>
-              <input
-                id="register-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                onFocus={() => setIsInputFocused(true)}
-                onBlur={() => setIsInputFocused(false)}
-                required
-                autoComplete="email"
-                className="w-full px-4 py-3 bg-[#FAF8F4] border border-[#DCD5C8] rounded-2xl text-[#1E1C18] text-sm focus:outline-none focus:ring-4 focus:ring-[#0A342B]/10 focus:border-[#0A342B] focus:bg-white transition-all duration-200 placeholder:text-[#A39E93]"
-                placeholder="ejemplo@vetconnect.com"
-              />
-            </div>
 
-            <div>
-              <label
-                htmlFor="register-password"
-                className="block text-xs font-bold uppercase tracking-wider text-[#3D3A34] mb-1.5"
-              >
-                Contraseña
+              <label className={`auth-field ${errors.lastName ? "auth-field--error" : ""}`}>
+                <span className="auth-field__label">Apellido</span>
+                <span className="auth-field__control">
+                  <input
+                    name="lastName"
+                    type="text"
+                    placeholder="Ej. Gómez"
+                    value={lastName}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      setErrors((prev) => ({ ...prev, lastName: "" }));
+                    }}
+                    required
+                  />
+                </span>
+                {errors.lastName && <span className="auth-field__message"><Icon name="close" />{errors.lastName}</span>}
               </label>
-              <div className="relative">
-                <input
-                  id="register-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  className="w-full pl-4 pr-12 py-3 bg-[#FAF8F4] border border-[#DCD5C8] rounded-2xl text-[#1E1C18] text-sm focus:outline-none focus:ring-4 focus:ring-[#0A342B]/10 focus:border-[#0A342B] focus:bg-white transition-all duration-200 placeholder:text-[#A39E93]"
-                  placeholder="Mínimo 8 caracteres"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-[#8C8578] hover:text-[#0A342B] hover:bg-[#EFE9DC] active:scale-90 transition-all duration-150 focus:outline-none cursor-pointer"
-                  title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-[#0A342B]" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="register-role"
-                className="block text-xs font-bold uppercase tracking-wider text-[#3D3A34] mb-1.5"
-              >
-                Tipo de Usuario
+            <label className={`auth-field ${errors.email ? "auth-field--error" : ""}`}>
+              <span className="auth-field__label">Email</span>
+              <span className="auth-field__control">
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  autoComplete="email"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrors((prev) => ({ ...prev, email: "" }));
+                  }}
+                  required
+                />
+              </span>
+              {errors.email && <span className="auth-field__message"><Icon name="close" />{errors.email}</span>}
+            </label>
+
+            <label className="auth-field">
+              <span className="auth-field__label">Teléfono (opcional)</span>
+              <span className="auth-field__control">
+                <input
+                  name="phone"
+                  type="tel"
+                  placeholder="+54 11 1234-5678"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </span>
+            </label>
+
+            {isVet && (
+              <label className={`auth-field ${errors.licenseNumber ? "auth-field--error" : ""}`}>
+                <span className="auth-field__label">Matrícula Profesional (MP / MN)</span>
+                <span className="auth-field__control">
+                  <input
+                    name="licenseNumber"
+                    type="text"
+                    placeholder="Ej. MP-8921"
+                    value={licenseNumber}
+                    onChange={(e) => {
+                      setLicenseNumber(e.target.value);
+                      setErrors((prev) => ({ ...prev, licenseNumber: "" }));
+                    }}
+                    required
+                  />
+                </span>
+                {errors.licenseNumber ? (
+                  <span className="auth-field__message"><Icon name="close" />{errors.licenseNumber}</span>
+                ) : (
+                  <span className="auth-field__helper">* Sujeto a verificación SENASA Res. 1442/2021</span>
+                )}
               </label>
-              <div className="grid grid-cols-2 gap-2.5 mb-2">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, role: 'CLIENT' })}
-                  className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold transition-all duration-150 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 ${
-                    formData.role === 'CLIENT'
-                      ? 'border-[#0A342B] bg-[#EAF5F0] text-[#0A342B] shadow-sm ring-1 ring-[#0A342B]/20'
-                      : 'border-[#DCD5C8] bg-[#FAF8F4] text-[#5C564C] hover:bg-[#F2ECE0]'
-                  }`}
-                >
-                  <PawPrint className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Tutor / Cliente</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, role: 'VET' })}
-                  className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold transition-all duration-150 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 ${
-                    formData.role === 'VET'
-                      ? 'border-[#0A342B] bg-[#EAF5F0] text-[#0A342B] shadow-sm ring-1 ring-[#0A342B]/20'
-                      : 'border-[#DCD5C8] bg-[#FAF8F4] text-[#5C564C] hover:bg-[#F2ECE0]'
-                  }`}
-                >
-                  <Stethoscope className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Veterinario</span>
-                </button>
-              </div>
-              <select
-                id="register-role"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as Role })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition-all sr-only"
-                aria-label="Seleccionar rol de usuario"
-              >
-                <option value="CLIENT">Tutor / Cliente</option>
-                <option value="VET">Veterinario</option>
-              </select>
-            </div>
-
-            {formData.role === 'VET' && (
-              <div className="p-4 bg-[#EAF5F0] border border-emerald-200/90 rounded-2xl space-y-1.5 animate-fadeIn">
-                <label
-                  htmlFor="register-license"
-                  className="block text-xs font-bold uppercase tracking-wider text-[#06241D] mb-1"
-                >
-                  Matrícula Profesional
-                </label>
-                <input
-                  id="register-license"
-                  type="text"
-                  value={formData.licenseNumber}
-                  onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
-                  onFocus={() => setIsInputFocused(true)}
-                  onBlur={() => setIsInputFocused(false)}
-                  required
-                  className="w-full px-4 py-2.5 bg-white border border-emerald-300 rounded-xl text-[#1E1C18] text-sm focus:outline-none focus:ring-4 focus:ring-[#0A342B]/10 focus:border-[#0A342B] placeholder:text-[#A39E93] transition-all duration-200"
-                  placeholder="Ej. MP-1234"
-                />
-                <p className="text-[11px] text-[#0A342B] mt-1">
-                  * Sujeto a verificación administrativa previa habilitación de consultas (SENASA Res. 1442/2021).
-                </p>
-              </div>
             )}
 
-            {/* Casilla de Consentimiento Informado & Aceptación Legal */}
-            <div className="pt-2">
-              <div className="flex items-start gap-3 p-3.5 bg-[#FAF8F4] border border-[#DCD5C8] rounded-2xl">
+            <label className={`auth-field ${errors.password ? "auth-field--error" : ""}`}>
+              <span className="auth-field__label">Contraseña</span>
+              <span className="auth-field__control">
                 <input
-                  id="register-terms"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Mínimo 8 caracteres"
+                  value={password}
+                  autoComplete="new-password"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrors((prev) => ({ ...prev, password: "" }));
+                  }}
+                  required
+                />
+                <button
+                  className="password-toggle"
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  <span className={`eye-icon ${showPassword ? "eye-icon--visible" : ""}`} />
+                </button>
+              </span>
+              {errors.password && <span className="auth-field__message"><Icon name="close" />{errors.password}</span>}
+            </label>
+
+            {/* Checkbox de Términos y Condiciones */}
+            <div style={{ marginTop: "8px", padding: "12px", background: "var(--sand)", borderRadius: "var(--radius-sm)" }}>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "12px", color: "var(--ink)", cursor: "pointer" }}>
+                <input
                   type="checkbox"
+                  id="register-terms"
                   checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    if (e.target.checked) setErrors((prev) => ({ ...prev, terms: "" }));
+                  }}
                   required
                   aria-required="true"
-                  className="mt-1 w-4 h-4 rounded border-[#DCD5C8] text-[#0A342B] focus:ring-[#0A342B] focus:ring-offset-0 cursor-pointer shrink-0"
+                  style={{ marginTop: "3px", cursor: "pointer" }}
                 />
-                <label
-                  htmlFor="register-terms"
-                  className="text-xs text-[#3D3A34] leading-relaxed cursor-pointer select-none"
-                >
-                  He leído y acepto los{' '}
-                  <Link
-                    to="/terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#0A342B] underline hover:text-[#0E463A] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#0A342B] rounded"
-                  >
+                <span>
+                  He leído y acepto los{" "}
+                  <Link to="/terms" target="_blank" style={{ fontWeight: 700, textDecoration: "underline" }}>
                     Términos y Condiciones
                   </Link>
-                  , la{' '}
-                  <Link
-                    to="/privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#0A342B] underline hover:text-[#0E463A] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#0A342B] rounded"
-                  >
+                  , la{" "}
+                  <Link to="/privacy" target="_blank" style={{ fontWeight: 700, textDecoration: "underline" }}>
                     Política de Privacidad
-                  </Link>{' '}
-                  y la{' '}
-                  <Link
-                    to="/refunds"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#0A342B] underline hover:text-[#0E463A] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#0A342B] rounded"
-                  >
+                  </Link>{" "}
+                  y la{" "}
+                  <Link to="/refunds" target="_blank" style={{ fontWeight: 700, textDecoration: "underline" }}>
                     Política de Reembolsos
                   </Link>
-                  . Comprendo que este servicio brinda teleorientación y triaje sanitario.
-                </label>
-              </div>
+                  .
+                </span>
+              </label>
+              {errors.terms && (
+                <p style={{ margin: "6px 0 0", fontSize: "11px", color: "var(--coral)", fontWeight: 600 }}>
+                  {errors.terms}
+                </p>
+              )}
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-[#0A342B] hover:bg-[#0E463A] active:bg-[#07241E] active:scale-[0.98] text-white py-3.5 px-5 rounded-2xl font-bold text-sm shadow-md shadow-[#0A342B]/20 hover:shadow-xl hover:shadow-[#0A342B]/25 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 group cursor-pointer mt-3"
-            >
-              <span>{isSubmitting ? 'Registrando...' : 'Crear Cuenta'}</span>
-              {!isSubmitting && (
-                <ArrowRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-1 transition-transform duration-200" aria-hidden="true" />
+            <button className="auth-submit" type="submit" disabled={loading} style={{ marginTop: "16px" }}>
+              {loading ? (
+                <>
+                  <span className="spinner" /> Creando cuenta...
+                </>
+              ) : (
+                <>
+                  Crear Cuenta <Icon name="arrow" />
+                </>
               )}
             </button>
           </form>
 
-          {/* Enlace a Login */}
-          <p className="text-center text-xs sm:text-sm text-[#5C564C] mt-6 pt-5 border-t border-[#EAE4D8]">
-            ¿Ya tenés cuenta?{' '}
-            <Link
-              to="/login"
-              className="text-[#0A342B] font-bold hover:text-[#0E463A] hover:underline transition-colors"
-            >
-              Iniciá sesión
-            </Link>
-          </p>
-
-          <p className="text-center text-[10px] text-[#8C8578] mt-4">
-            Infraestructura y streaming por <span className="font-semibold text-[#3D3A34]">Pinnacle Group</span>
+          <div className="auth-separator"><span>o</span></div>
+          <p className="auth-switch">
+            ¿Ya tenés una cuenta? <Link to="/login">Ingresar</Link>
           </p>
         </div>
+        <p className="auth-panel__legal">
+          © {new Date().getFullYear()} VetConnect · <Link to="/privacy">Privacidad</Link> · <Link to="/terms">Términos</Link>
+        </p>
       </section>
-    </div>
+    </main>
   );
-};
+}
 
 export default Register;
