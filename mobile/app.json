@@ -29,10 +29,12 @@
       "package": "com.vetconnect.app",
       "versionCode": 2,
       "permissions": [
-        "CAMERA",
-        "RECORD_AUDIO",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -58,6 +60,11 @@
           "color": "#0284C7"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e578295e-7fa0-4727-b57c-4c31b6df01aa"
+      }
+    }
   }
 }

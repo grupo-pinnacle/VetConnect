@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "e578295e-7fa0-4727-b57c-4c31b6df01aa"
+      }
+    },
+    "android": {
+      "package": "com.juan_mendoza.vetconnect"
+    }
+  }
+}
