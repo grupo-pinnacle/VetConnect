@@ -171,8 +171,12 @@ function Dashboard() {
     { label: "Finalizadas", value: String(done), sub: "hoy", icon: "check", to: "/vet/consultations" },
     { label: "Mensajes pendientes", value: String(unread), sub: unread ? `${threads.filter((t) => t.unread).length} conversaciones` : "Al día", icon: "message", to: "/vet/messages" },
   ];
+  const { user } = useAuth();
+  const vetName = user?.lastName ? `Dr. ${user.lastName}` : user?.firstName ? `Dr. ${user.firstName}` : "Dr. Mendoza";
+  const nowStr = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+
   return <>
-    <PageHeader eyebrow="Martes 15 de julio · 18:42" title="Hola, Dr. Mendoza" description="Esto es lo que necesita tu atención ahora."/>
+    <PageHeader eyebrow={nowStr.charAt(0).toUpperCase() + nowStr.slice(1)} title={`Hola, ${vetName}`} description="Esto es lo que necesita tu atención ahora."/>
     <section className={`v-status-card v-avail--${availSlug(avail)}`} aria-labelledby="avail-title">
       <div className="v-status-card__text"><span className="v-avail__dot v-avail__dot--lg"><Icon name={availOptions.find((o) => o.value === avail)!.icon} size={18}/></span><div><span className="eyebrow">Mi estado profesional</span><h2 id="avail-title">{heading}</h2><p>{availOptions.find((o) => o.value === avail)!.text}</p></div></div>
       <div className="v-segment" role="radiogroup" aria-label="Cambiar estado">

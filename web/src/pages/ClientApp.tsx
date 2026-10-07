@@ -14,9 +14,9 @@ const routes = [
   { label: "Mis mascotas", path: "/client/pets", icon: "paw" as IconName },
   { label: "Mis consultas", path: "/client/consultations", icon: "video" as IconName },
   { label: "Agenda", path: "/client/appointments", icon: "calendar" as IconName },
-  { label: "Mensajes", path: "/client/messages", icon: "message" as IconName, badge: "2" },
+  { label: "Mensajes", path: "/client/messages", icon: "message" as IconName },
   { label: "Recetas", path: "/client/prescriptions", icon: "file" as IconName },
-  { label: "Notificaciones", path: "/client/notifications", icon: "bell" as IconName, badge: "4" },
+  { label: "Notificaciones", path: "/client/notifications", icon: "bell" as IconName },
   { label: "Mi perfil", path: "/client/profile", icon: "user" as IconName },
 ];
 
@@ -131,7 +131,7 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
       <div className="sidebar__head"><Logo/><Button variant="icon" icon="close" onClick={() => setMenu(false)} ariaLabel="Cerrar menú" className="sidebar__close"/></div>
       <div className="sidebar__profile"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{roleName}</span></div></div>
       <nav className="sidebar__nav" aria-label="Navegación principal">
-        {routes.map((item) => <button key={item.path} className={`nav-item ${path.startsWith(item.path) ? "is-active" : ""}`} onClick={() => { go(item.path); setMenu(false); }}><Icon name={item.icon}/><span>{item.label}</span>{item.badge && <small>{item.badge}</small>}</button>)}
+        {routes.map((item) => <button key={item.path} className={`nav-item ${path.startsWith(item.path) ? "is-active" : ""}`} onClick={() => { go(item.path); setMenu(false); }}><Icon name={item.icon}/><span>{item.label}</span></button>)}
       </nav>
       <div className="sidebar__support"><span className="eyebrow">¿Necesitás ayuda?</span><strong>Estamos para acompañarte.</strong><button onClick={() => go("/client/triage")}>Necesito atención <Icon name="arrow" size={16}/></button></div>
       <button className={`nav-item ${path === "/client/settings" ? "is-active" : ""}`} onClick={() => go("/client/settings")}><Icon name="settings"/><span>Configuración</span></button>
@@ -149,7 +149,7 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
       <main className="content">{children}</main>
     </div>
     <nav className="mobile-nav" aria-label="Navegación móvil">
-      {mobileRoutes.map((item) => <button key={item.path} className={`${path.startsWith(item.path) ? "is-active" : ""} ${item.path === "/client/triage" ? "is-priority" : ""}`} onClick={() => go(item.path)}><Icon name={item.icon}/><span>{item.label.replace("Mis ", "")}</span>{"badge" in item && item.badge && <small>{item.badge}</small>}</button>)}
+      {mobileRoutes.map((item) => <button key={item.path} className={`${path.startsWith(item.path) ? "is-active" : ""} ${item.path === "/client/triage" ? "is-priority" : ""}`} onClick={() => go(item.path)}><Icon name={item.icon}/><span>{item.label.replace("Mis ", "")}</span></button>)}
     </nav>
   </div>;
 }
@@ -184,16 +184,16 @@ function useClientData() {
     },
   });
 
-  const petsList = (petsQuery.data && petsQuery.data.length > 0) ? petsQuery.data : INITIAL_PETS;
-  const consultationsList = (consultationsQuery.data && consultationsQuery.data.length > 0) ? consultationsQuery.data : INITIAL_CONSULTATIONS;
+  const petsList = petsQuery.data ?? [];
+  const consultationsList = consultationsQuery.data ?? [];
 
   return {
     pets: petsList,
     petsLoading: petsQuery.isLoading,
-    hasRealPets: !!(petsQuery.data && petsQuery.data.length > 0),
+    hasRealPets: petsList.length > 0,
     consultations: consultationsList,
     consultationsLoading: consultationsQuery.isLoading,
-    hasRealConsultations: !!(consultationsQuery.data && consultationsQuery.data.length > 0),
+    hasRealConsultations: consultationsList.length > 0,
     rawPetsData: petsQuery.data,
     rawConsultationsData: consultationsQuery.data,
   };
@@ -201,19 +201,69 @@ function useClientData() {
 
 function Dashboard() {
   const { user } = useAuth();
-  const firstName = user?.firstName || "Mariana";
-  const { pets, consultations } = useClientData();
-  const activeCall = consultations.find((c) => c.status === "Confirmada" || c.status === "Pendiente");
+  const firstName = user?.firstName || "Tobias";
+  const { pets, consultations, petsLoading, consultationsLoading } = useClientData();
+
+  // Active call only if there is a real ACTIVE or WAITING consultation in DB
+  const activeCall = consultations.find((c) => c.rawStatus === "ACTIVE" || c.rawStatus === "WAITING");
+  const nextConsultation = consultations.find((c) => c.rawStatus === "ACTIVE" || c.rawStatus === "WAITING" || c.status === "Confirmada" || c.status === "Pendiente");
 
   return <>
     <PageHeader eyebrow="Portal del tutor" title={`Hola, ${firstName}`} description="¿Cómo podemos ayudarte hoy?"/>
     <section className="attention-banner"><div className="attention-banner__icon"><Icon name="heart" size={28}/></div><div><span className="eyebrow">Orientación en pocos pasos</span><h2>¿Necesitás orientación veterinaria?</h2><p>Contanos qué está pasando y te ayudamos a encontrar el siguiente paso.</p></div><Button onClick={() => go("/client/triage")}>Necesito atención <Icon name="arrow" size={17}/></Button></section>
-    {activeCall && <section className="active-call"><div className="active-call__pulse"><Icon name="video"/></div><div><span className="eyebrow">Consulta en curso</span><h2>Tu consulta está por comenzar</h2><p>{`Estás esperando la conexión con ${activeCall.vet}.`}</p></div><div className="active-call__meta"><span>Tiempo estimado</span><strong>4 minutos</strong></div><Button variant="primary" onClick={() => go(`/call/${activeCall.id}?from=client`)}>Entrar a la consulta</Button></section>}
+    
+    {activeCall && (
+      <section className="active-call">
+        <div className="active-call__pulse"><Icon name="video"/></div>
+        <div>
+          <span className="eyebrow">{activeCall.rawStatus === "WAITING" ? "Consulta en espera" : "Consulta en curso"}</span>
+          <h2>{activeCall.rawStatus === "WAITING" ? "Esperando asignación de veterinario" : "Tu consulta está por comenzar"}</h2>
+          <p>{activeCall.rawStatus === "WAITING" ? "Un profesional de guardia tomará tu caso a la brevedad." : `Estás esperando la conexión con ${activeCall.vet}.`}</p>
+        </div>
+        <div className="active-call__meta"><span>Tiempo estimado</span><strong>{activeCall.rawStatus === "WAITING" ? "En cola" : "4 minutos"}</strong></div>
+        <Button variant="primary" onClick={() => go(`/call/${activeCall.id}?from=client`)}>Entrar a la consulta</Button>
+      </section>
+    )}
+
     <div className="dashboard-grid">
-      <section><div className="section-heading"><div><span className="eyebrow">Tu agenda</span><h2>Próxima consulta</h2></div><button onClick={() => go("/client/consultations")}>Ver todas <Icon name="arrow" size={16}/></button></div>{consultations[0] ? <ConsultationCard item={consultations[0]}/> : <div className="panel"><EmptyState icon="calendar" title="Sin consultas programadas" text="Cuando reserves un turno o pidas atención, aparecerá acá." action="Nueva consulta"/></div>}</section>
-      <aside className="care-note"><Icon name="shield" size={25}/><div><h3>Todo listo para hoy</h3><p>{`Tené a ${pets[0]?.name || "tu mascota"} cerca y buscá un lugar tranquilo con buena conexión.`}</p></div><button onClick={() => go("/client/triage")}>Ver cómo prepararme</button></aside>
+      <section>
+        <div className="section-heading"><div><span className="eyebrow">Tu agenda</span><h2>Próxima consulta</h2></div><button onClick={() => go("/client/consultations")}>Ver todas <Icon name="arrow" size={16}/></button></div>
+        {nextConsultation ? (
+          <ConsultationCard item={nextConsultation}/>
+        ) : (
+          <div className="panel"><EmptyState icon="calendar" title="Sin consultas programadas" text="Cuando reserves un turno o pidas atención, aparecerá acá." action="Nueva consulta"/></div>
+        )}
+      </section>
+
+      {nextConsultation ? (
+        <aside className="care-note">
+          <Icon name="shield" size={25}/>
+          <div>
+            <h3>Todo listo para hoy</h3>
+            <p>{`Tené a ${nextConsultation.pet || pets[0]?.name || "tu mascota"} cerca y buscá un lugar tranquilo con buena conexión.`}</p>
+          </div>
+          <button onClick={() => go("/client/triage")}>Ver cómo prepararme</button>
+        </aside>
+      ) : (
+        <aside className="care-note">
+          <Icon name="shield" size={25}/>
+          <div>
+            <h3>Cuidado preventivo</h3>
+            <p>Mantené la información médica de tus mascotas al día para agilizar la atención de guardia.</p>
+          </div>
+          <button onClick={() => go("/client/pets")}>Gestionar mascotas</button>
+        </aside>
+      )}
     </div>
-    <section><div className="section-heading"><div><span className="eyebrow">Su salud, en un solo lugar</span><h2>Tus mascotas</h2></div><button onClick={() => go("/client/pets")}>Ver todas <Icon name="arrow" size={16}/></button></div><div className="pet-grid pet-grid--dashboard">{pets.slice(0, 3).map((pet) => <PetCard pet={pet} compact key={pet.id}/>)}</div></section>
+
+    <section>
+      <div className="section-heading"><div><span className="eyebrow">Su salud, en un solo lugar</span><h2>Tus mascotas</h2></div><button onClick={() => go("/client/pets")}>Ver todas <Icon name="arrow" size={16}/></button></div>
+      {pets.length > 0 ? (
+        <div className="pet-grid pet-grid--dashboard">{pets.slice(0, 3).map((pet) => <PetCard pet={pet} compact key={pet.id}/>)}</div>
+      ) : (
+        <div className="panel"><EmptyState icon="paw" title="Todavía no agregaste ninguna mascota" text="Agregá tu primera mascota para organizar su información y solicitar atención." action="Agregar mascota"/></div>
+      )}
+    </section>
   </>;
 }
 
@@ -374,7 +424,7 @@ function AppointmentsPage() {
   const [modal, setModal] = useState(false);
   return <>
     <PageHeader eyebrow="Organizá tus turnos" title="Agenda" description="Consultas, controles y recordatorios para tus mascotas." action={<Button icon="plus" onClick={() => go("/client/triage")}>Reservar turno</Button>}/>
-    <div className="calendar-layout"><section className="panel calendar"><div className="calendar__head"><div><span className="eyebrow">Calendario</span><h2>Julio 2025</h2></div><div><Button variant="icon" icon="chevron" ariaLabel="Mes anterior"/><Button variant="icon" icon="chevron" ariaLabel="Mes siguiente"/></div></div><div className="calendar__week">{["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(d => <span key={d}>{d}</span>)}</div><div className="calendar__days">{Array.from({length:35},(_,i) => { const day=i-1; return <button className={`${day === 15 ? "is-today" : ""} ${day === 18 ? "has-event" : ""}`} key={i}>{day > 0 && day <= 31 ? day : ""}</button>;})}</div><div className="calendar__legend"><span><i className="teal-dot"/>Consulta confirmada</span><span><i className="amber-dot"/>Pendiente</span></div></section><aside className="panel agenda-list"><div className="panel__heading"><div><span className="eyebrow">Próximos</span><h2>Tus turnos</h2></div></div>{consultations.slice(0,2).map(item => <div className="agenda-item" key={item.id}><div><b>{item.date} · {item.time}</b><strong>{item.title}</strong><span>{item.pet} · {item.vet}</span></div><Status tone={item.status === "Pendiente" ? "amber" : "teal"}>{item.status}</Status><button onClick={() => setModal(true)}>Cancelar</button></div>)}</aside></div>
+    <div className="calendar-layout"><section className="panel calendar"><div className="calendar__head"><div><span className="eyebrow">Calendario</span><h2>Julio 2025</h2></div><div><Button variant="icon" icon="chevron" ariaLabel="Mes anterior"/><Button variant="icon" icon="chevron" ariaLabel="Mes siguiente"/></div></div><div className="calendar__week">{["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(d => <span key={d}>{d}</span>)}</div><div className="calendar__days">{Array.from({length:35},(_,i) => { const day=i-1; return <button className={`${day === 15 ? "is-today" : ""} ${day === 18 ? "has-event" : ""}`} key={i}>{day > 0 && day <= 31 ? day : ""}</button>;})}</div><div className="calendar__legend"><span><i className="teal-dot"/>Consulta confirmada</span><span><i className="amber-dot"/>Pendiente</span></div></section><aside className="panel agenda-list"><div className="panel__heading"><div><span className="eyebrow">Próximos</span><h2>Tus turnos</h2></div></div>{consultations.length > 0 ? consultations.slice(0,2).map(item => <div className="agenda-item" key={item.id}><div><b>{item.date} · {item.time}</b><strong>{item.title}</strong><span>{item.pet} · {item.vet}</span></div><Status tone={item.status === "Pendiente" ? "amber" : "teal"}>{item.status}</Status><button onClick={() => setModal(true)}>Cancelar</button></div>) : <p className="v-mini-empty" style={{ padding: 16 }}>No tenés turnos programados.</p>}</aside></div>
     {modal && <Modal title="Cancelar consulta" text="¿Seguro que querés cancelar esta consulta? El turno quedará disponible para otra persona." cancel="Volver" confirm="Cancelar consulta" destructive onClose={() => setModal(false)}/>}
   </>;
 }
@@ -393,23 +443,21 @@ function MessagesPage() {
     setToast(true);
     window.setTimeout(() => setToast(false), 3800);
   };
-  const conversations = [["SM", "Dr. Santiago Mendoza", "Milo", "Revisé las fotografías que enviaste.", "10:42", "2"], ["CL", "Dra. Camila López", "Luna", "Perfecto, nos vemos en el control.", "Ayer", ""], ["FM", "Dr. Federico Martín", "Nube", "La receta ya está disponible.", "Lun", ""]];
   return <>
     <PageHeader eyebrow="Chat clínico" title="Mensajes" description="Conversaciones vinculadas al cuidado de tus mascotas."/>
-    <div className="messages-layout">
-      <aside className="conversation-list" aria-label="Conversaciones"><div className="search-field"><Icon name="search" size={18}/><input aria-label="Buscar conversación" placeholder="Buscar conversación"/></div>{conversations.map((conversation, index) => <button className={index === 0 ? "is-active" : ""} key={conversation[1]}><span className="vet-avatar">{conversation[0]}</span><span><strong>{conversation[1]}</strong><small>{conversation[2]} · Consulta clínica</small><p>{conversation[3]}</p></span><time>{conversation[4]}</time>{conversation[5] && <b className="unread" aria-label={`${conversation[5]} mensajes sin leer`}>{conversation[5]}</b>}</button>)}</aside>
-      <section className="chat" aria-label="Conversación con el Dr. Santiago Mendoza"><header><span className="vet-avatar">SM</span><div><strong>Dr. Santiago Mendoza</strong><span><i/> Disponible · Consulta de Milo</span></div><Button variant="soft" icon="video" onClick={() => go("/client/consultations/seguimiento-milo")}>Ver consulta</Button></header><div className="chat__messages"><div className="day-label">Hoy</div><MessageBubble text="Hola, Mariana. Revisé las fotografías que enviaste." time="10:38"/><MessageBubble text="Por lo que observo, necesito hacerte algunas preguntas antes de continuar. ¿Notaste si Milo se rasca más durante la noche?" time="10:39"/><MessageBubble mine text="Sí, sobre todo después de volver del paseo. A la noche se calma un poco." time="10:41" state="read"/><MessageBubble text="Gracias. Eso me ayuda mucho. Por ahora continuá con la indicación anterior y lo vemos juntos en la consulta de hoy." time="10:42"/>{messages.map((message) => <MessageBubble key={message.id} mine text={message.text} time="Ahora" state={message.state}/>) }<div className="typing" role="status" aria-live="polite"><span/><span/><span/> Veterinario escribiendo…</div></div><footer><Button variant="icon" icon="paperclip" ariaLabel="Adjuntar archivo"/><input aria-label="Escribir mensaje" placeholder="Escribí un mensaje para el veterinario" value={text} onChange={(event) => setText(event.target.value)} onKeyDown={(event) => event.key === "Enter" && send()}/><Button variant="icon" icon="send" ariaLabel="Enviar mensaje" disabled={!text.trim()} onClick={send}/></footer></section>
+    <div className="panel">
+      <EmptyState icon="message" title="No tenés conversaciones activas" text="Cuando inicies una consulta o te comuniques con un veterinario, el chat aparecerá acá." action="Nueva consulta"/>
     </div>
     {toast && <Toast message="Mensaje enviado."/>}
   </>;
 }
 
 function NotificationsPage() {
-  const [allRead, setAllRead] = useState(false);
-  const items: [IconName,string,string,string][] = [["video","Nueva consulta","Tu consulta con el Dr. Mendoza comienza en 15 minutos.","Hace 2 min"],["file","Receta disponible","El Dr. Mendoza emitió una nueva receta para Milo.","Hace 1 h"],["heart","Seguimiento","Tu veterinario agregó una indicación al seguimiento de Luna.","Ayer"],["file","Nuevo documento","Se agregó un análisis de sangre a la ficha de Milo.","12 Jun"]];
   return <>
-    <PageHeader eyebrow="Novedades importantes" title="Notificaciones" description="Todo lo que necesitás saber sobre la salud de tus mascotas." action={<Button variant="secondary" onClick={() => setAllRead(true)}>Marcar todo como leído</Button>}/>
-    <div className="notification-list">{items.map((n,i) => <article className={`notification ${!allRead && i < 2 ? "is-unread" : ""}`} key={n[1]}><span className="notification__icon"><Icon name={n[0]}/></span><div><div><strong>{n[1]}</strong>{!allRead && i < 2 && <span>Nueva</span>}</div><p>{n[2]}</p><time>{n[3]}</time></div><button aria-label={`Abrir ${n[1]}`}><Icon name="chevron"/></button></article>)}</div>
+    <PageHeader eyebrow="Novedades importantes" title="Notificaciones" description="Todo lo que necesitás saber sobre la salud de tus mascotas."/>
+    <div className="panel">
+      <EmptyState icon="bell" title="Sin notificaciones pendientes" text="Te avisaremos acá cuando haya novedades sobre tus consultas o recetas."/>
+    </div>
   </>;
 }
 
@@ -418,7 +466,9 @@ function PrescriptionsPage() {
   return <>
     <PageHeader eyebrow="Indicaciones médicas" title="Recetas" description="Consultá tratamientos e indicaciones emitidas por tus veterinarios."/>
     <Tabs tabs={["Activas", "Anteriores"]} active={active} onChange={setActive}/>
-    <div className="prescription-grid">{(active === "Activas" ? [1,2] : [3]).map((n) => <article className="prescription-card" key={n}><div className="prescription-card__head"><span><Icon name="file"/></span><div><small>Receta veterinaria</small><h3>{n === 2 ? "Plan nutricional" : "Tratamiento dermatológico"}</h3></div><Status tone={n === 3 ? "gray" : "teal"}>{n === 3 ? "Finalizada" : "Activa"}</Status></div><div className="prescription-card__vet"><div className="vet-avatar">SM</div><div><strong>Dr. Santiago Mendoza</strong><span>Milo · {n === 3 ? "03 Abr 2025" : "12 Jun 2025"}</span></div></div><div className="medicine"><small>Medicamento</small><strong>{n === 2 ? "Alimento hipoalergénico" : "Oclacitinib 16 mg"}</strong><p>{n === 2 ? "Según plan adjunto durante 30 días." : "1 comprimido cada 24 horas durante 14 días."}</p></div><Button variant="secondary" onClick={() => go("/prescriptions/rx-sample")}>Ver receta completa <Icon name="arrow" size={16}/></Button></article>)}</div>
+    <div className="panel">
+      <EmptyState icon="file" title="No tenés recetas en esta sección." text="Cuando un veterinario emita una receta o plan de tratamiento para tus mascotas, aparecerá acá."/>
+    </div>
   </>;
 }
 

@@ -95,22 +95,22 @@ export function VetProvider({ children, forceEmpty }: { children: ReactNode; for
       });
   }, [vetConsultsQuery.data]);
 
-  const [queue, setQueue] = useState(forceEmpty ? [] : initialQueue);
-  const [consults, setConsults] = useState(forceEmpty ? [] : initialConsults);
-  const [threads, setThreads] = useState(forceEmpty ? [] : initialThreads);
-  const [events, setEvents] = useState(forceEmpty ? [] : initialEvents);
-  const [rx, setRx] = useState(forceEmpty ? [] : initialRx);
-  const [followUps, setFollowUps] = useState(forceEmpty ? [] : initialFollowUps);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [consults, setConsults] = useState<Consult[]>([]);
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [events, setEvents] = useState<AgendaEvent[]>([]);
+  const [rx, setRx] = useState<Rx[]>([]);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
 
   // Sync state when backend returns live rows
   useEffect(() => {
-    if (mappedRealQueue.length > 0 && !forceEmpty) {
+    if (!forceEmpty && mappedRealQueue) {
       setQueue(mappedRealQueue);
     }
   }, [mappedRealQueue, forceEmpty]);
 
   useEffect(() => {
-    if (mappedRealConsults.length > 0 && !forceEmpty) {
+    if (!forceEmpty && mappedRealConsults) {
       setConsults(mappedRealConsults);
     }
   }, [mappedRealConsults, forceEmpty]);
