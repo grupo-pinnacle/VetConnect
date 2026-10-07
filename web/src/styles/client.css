@@ -23,7 +23,7 @@
 
 * { box-sizing: border-box; }
 html { background: var(--cream); color: var(--ink); font-family: "Manrope", sans-serif; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--cream); }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--cream); color: var(--ink); }
 button, input { font: inherit; }
 button { color: inherit; }
 button:focus-visible, input:focus-visible { outline: 3px solid rgba(96,159,156,.35); outline-offset: 2px; }
@@ -38,7 +38,7 @@ p { color: var(--ink-soft); line-height: 1.6; }
 .eyebrow { display: block; margin-bottom: 8px; color: var(--teal-dark); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .muted { color: var(--ink-soft); }
 
-.app-shell { min-height: 100vh; }
+.app-shell { min-height: 100vh; background: var(--cream); }
 .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 30; display: flex; width: 260px; padding: 28px 20px 22px; flex-direction: column; background: var(--ink); color: var(--white); }
 .sidebar__head { display: flex; align-items: center; justify-content: space-between; padding: 0 7px 27px; }
 .logo { display: inline-flex; padding: 0; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font-size: 19px; font-weight: 800; letter-spacing: -.04em; }
