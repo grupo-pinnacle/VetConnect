@@ -167,3 +167,32 @@ describe('PetDossierModal Component (Ley 25.326 & SENASA Compliance)', () => {
     expect(screen.getByText(/¡Copiado!/i)).toBeDefined();
   });
 });
+
+describe('ClinicalIntakeForm Accessible Inline Validation', () => {
+  it('renders accessible inline error banner with role="alert" when submitting without required fields', async () => {
+    const { ClinicalIntakeForm } = await import('../components/dashboard/ClinicalIntakeForm');
+    const handleSubmit = vi.fn();
+
+    render(
+      <ClinicalIntakeForm
+        pets={[{ id: 'p1', name: 'Simba', species: 'Felino', breed: 'Común', ownerId: 'u1', createdAt: '', updatedAt: '' }]}
+        selectedPetId=""
+        onSelectPet={vi.fn()}
+        onSubmit={handleSubmit}
+      />
+    );
+
+    // Initial state: no error banner
+    expect(screen.queryByTestId('intake-form-error')).toBeNull();
+
+    // Submit without selecting a pet
+    fireEvent.click(screen.getByTestId('intake-submit-button'));
+
+    // Should display accessible alert banner instead of window.alert
+    const errorBanner = screen.getByTestId('intake-form-error');
+    expect(errorBanner).toBeDefined();
+    expect(errorBanner.getAttribute('role')).toBe('alert');
+    expect(errorBanner.textContent).toContain('Por favor seleccione una mascota para continuar');
+    expect(handleSubmit).not.toHaveBeenCalled();
+  });
+});

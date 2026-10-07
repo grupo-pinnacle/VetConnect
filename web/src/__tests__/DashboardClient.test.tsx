@@ -330,4 +330,77 @@ describe('DashboardClient Page', () => {
       screen.getByTestId('consultation-cancel-reason-cons-cancelled-1').textContent
     ).toBe('Tiempo de espera agotado: sin veterinarios disponibles en guardia.');
   });
+
+  it('should render accessible inline error banner inside Pet modal when POST /api/pets fails without window.alert', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } } as any);
+    vi.mocked(api.post).mockRejectedValueOnce({
+      response: { data: { error: { message: 'El microchip ingresado ya está registrado' } } },
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardClient />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('add-pet-button')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTestId('add-pet-button'));
+
+    const nameInput = screen.getByTestId('input-pet-name');
+    fireEvent.change(nameInput, { target: { value: 'Bobby' } });
+    const breedInput = screen.getByTestId('input-pet-breed');
+    fireEvent.change(breedInput, { target: { value: 'Labrador' } });
+
+    fireEvent.click(screen.getByTestId('save-pet-button'));
+
+    await waitFor(() => {
+      const errorBanner = screen.getByTestId('pet-modal-error');
+      expect(errorBanner).toBeDefined();
+      expect(errorBanner.getAttribute('role')).toBe('alert');
+      expect(errorBanner.textContent).toContain('El microchip ingresado ya está registrado');
+    });
+  });
+
+  it('should render accessible inline error banner when consultation intake submission fails without window.alert', async () => {
+    const mockPets = [{ id: 'p1', name: 'Milo', species: 'Canine', breed: 'Golden' }];
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/api/pets') return Promise.resolve({ data: { success: true, data: mockPets } } as any);
+      if (url === '/api/consultations/mine') return Promise.resolve({ data: { success: true, data: [] } } as any);
+      return Promise.reject(new Error('Not found'));
+    });
+    vi.mocked(api.post).mockRejectedValueOnce({
+      response: { data: { error: { message: 'Capacidad de guardia al límite. Intente en minutos.' } } },
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardClient />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('triage-section')).toBeDefined();
+    });
+
+    // Select the pet in intake form
+    const petSelect = screen.getByTestId('intake-pet-select');
+    fireEvent.change(petSelect, { target: { value: 'p1' } });
+
+    // Fill notes in triage
+    const notesInput = screen.getByTestId('intake-notes-textarea');
+    fireEvent.change(notesInput, { target: { value: 'Vómitos frecuentes desde anoche' } });
+
+    // Submit triage
+    fireEvent.click(screen.getByTestId('intake-submit-button'));
+
+    await waitFor(() => {
+      const errorAlert = screen.getByTestId('triage-submit-error');
+      expect(errorAlert).toBeDefined();
+      expect(errorAlert.getAttribute('role')).toBe('alert');
+      expect(errorAlert.textContent).toContain('Capacidad de guardia al límite');
+    });
+  });
 });

@@ -26,6 +26,7 @@ import {
   Timer,
   Sparkles,
   ClipboardList,
+  X,
 } from 'lucide-react';
 
 export const DashboardVet: React.FC = () => {
@@ -35,6 +36,7 @@ export const DashboardVet: React.FC = () => {
   const [queue, setQueue] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isOnline, setIsOnline] = useState<boolean>(user?.isOnline || false);
+  const [vetActionError, setVetActionError] = useState<string | null>(null);
 
   // Prescription Modal & Patient Profile Drawer State
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -70,6 +72,7 @@ export const DashboardVet: React.FC = () => {
   };
 
   const handleAssignAndJoin = async (consultationId: string) => {
+    setVetActionError(null);
     try {
       const res = await api.patch<ApiResponse<Consultation>>(
         `/api/consultations/${consultationId}/assign`
@@ -79,7 +82,7 @@ export const DashboardVet: React.FC = () => {
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
-      alert(apiErr.response?.data?.error?.message || 'Error al asignar consulta');
+      setVetActionError(apiErr.response?.data?.error?.message || 'Error al asignar consulta');
     }
   };
 
@@ -170,55 +173,57 @@ export const DashboardVet: React.FC = () => {
         />
 
         {/* 1. Header Clínico de Comando / Cockpit */}
-        <header className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5] mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#06241D] to-emerald-800 text-white flex items-center justify-center shadow-md">
-                <Stethoscope className="w-7 h-7 text-emerald-300" aria-hidden="true" />
-              </div>
-              <span
-                className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                  isOnline ? 'bg-emerald-500' : 'bg-slate-400'
-                }`}
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-3">
-                <h1
-                  className="text-xl sm:text-2xl font-extrabold text-[#06241D] tracking-tight"
-                  data-testid="header-vet-title"
-                >
-                  VetConnect — Tablero de Guardia Profesional
-                </h1>
+        <header className="bg-white/95 backdrop-blur-md p-4 sm:p-6 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5] mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full lg:w-auto">
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <div className="relative shrink-0">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#06241D] to-emerald-800 text-white flex items-center justify-center shadow-md">
+                  <Stethoscope className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-300" aria-hidden="true" />
+                </div>
                 <span
-                  data-testid="vet-status-badge"
-                  className={`inline-flex items-center gap-1.5 px-3 py-0.5 text-xs font-bold rounded-full border ${
-                    user?.vetStatus === 'APPROVED'
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      : 'bg-amber-50 text-amber-800 border-amber-300'
+                  className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                    isOnline ? 'bg-emerald-500' : 'bg-slate-400'
                   }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-                  Matrícula: {user?.vetStatus || 'PENDING'}
-                </span>
+                />
               </div>
 
-              <p className="text-xs sm:text-sm text-slate-600 mt-1" data-testid="vet-license-info">
-                Dr/a. {user?.firstName} {user?.lastName}{' '}
-                <span className="font-mono font-semibold text-slate-700">
-                  (Matrícula: {user?.licenseNumber || 'N/A'})
-                </span>{' '}
-                • Homologado SENASA Res. 1442/2021
-              </p>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1
+                    className="text-lg sm:text-2xl font-extrabold text-[#06241D] tracking-tight truncate"
+                    data-testid="header-vet-title"
+                  >
+                    VetConnect — Tablero de Guardia Profesional
+                  </h1>
+                  <span
+                    data-testid="vet-status-badge"
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] sm:text-xs font-bold rounded-full border shrink-0 ${
+                      user?.vetStatus === 'APPROVED'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        : 'bg-amber-50 text-amber-800 border-amber-300'
+                    }`}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                    Matrícula: {user?.vetStatus || 'PENDING'}
+                  </span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed break-words" data-testid="vet-license-info">
+                  Dr/a. {user?.firstName} {user?.lastName}{' '}
+                  <span className="font-mono font-semibold text-slate-700">
+                    (Matrícula: {user?.licenseNumber || 'N/A'})
+                  </span>{' '}
+                  • Homologado SENASA Res. 1442/2021
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
             {/* Tactile Switch Físico de Guardia */}
             <label
               htmlFor="presence-toggle-input"
-              className={`relative flex items-center gap-3 cursor-pointer select-none px-4 py-2.5 rounded-xl border transition-all duration-300 shadow-sm ${
+              className={`relative flex items-center justify-between sm:justify-start gap-3 min-h-[48px] cursor-pointer select-none px-4 py-2.5 rounded-xl border transition-all duration-300 shadow-sm w-full sm:w-auto ${
                 isOnline
                   ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950 hover:bg-emerald-100/90'
                   : 'bg-slate-100/90 border-slate-300 text-slate-700 hover:bg-slate-200/90'
@@ -270,7 +275,7 @@ export const DashboardVet: React.FC = () => {
             <button
               data-testid="vet-logout-button"
               onClick={logout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-[#E8E2D5] rounded-xl text-xs font-bold transition shadow-sm"
+              className="min-h-[48px] inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-[#E8E2D5] rounded-xl text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer"
               title="Cerrar sesión segura"
             >
               <LogOut className="w-4 h-4" aria-hidden="true" />
@@ -278,6 +283,29 @@ export const DashboardVet: React.FC = () => {
             </button>
           </div>
         </header>
+
+        {/* Inline Vet Action Error Banner */}
+        {vetActionError && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            data-testid="vet-action-error"
+            className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between gap-2.5 text-xs text-rose-800 mb-6 shadow-xs"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" aria-hidden="true" />
+              <span className="font-semibold">{vetActionError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setVetActionError(null)}
+              className="p-1 rounded-md hover:bg-rose-100 text-rose-600 transition cursor-pointer"
+              aria-label="Cerrar mensaje de error"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* 2. Bento Grid: KPIs del Turno en Vivo */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -533,7 +561,7 @@ export const DashboardVet: React.FC = () => {
                             type="button"
                             data-testid={`view-pet-profile-btn-${c.id}`}
                             onClick={() => setSelectedPetProfileId(c.petId)}
-                            className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                            className="min-h-[48px] px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                             title="Ver ficha clínica completa y antecedentes"
                           >
                             <ClipboardList className="w-4 h-4 text-stone-600" aria-hidden="true" />
@@ -544,7 +572,7 @@ export const DashboardVet: React.FC = () => {
                         <button
                           data-testid={`assign-patient-button-${c.id}`}
                           onClick={() => handleAssignAndJoin(c.id)}
-                          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer ${
+                          className={`min-h-[48px] px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer ${
                             isRed
                               ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
                               : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'

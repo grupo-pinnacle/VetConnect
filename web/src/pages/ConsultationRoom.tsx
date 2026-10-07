@@ -7,7 +7,7 @@ import CallRoom from '../components/call/CallRoom';
 import { ReviewModal } from '../components/ui/ReviewModal';
 import { PrescriptionModal } from '../components/ui/PrescriptionModal';
 import { Message, ApiResponse, Consultation } from '../types';
-import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X, FileText, CheckCircle, ShieldCheck, ClipboardList } from 'lucide-react';
+import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X, FileText, CheckCircle, ShieldCheck, ClipboardList, MessageSquare, Video } from 'lucide-react';
 import VetPatientProfile from '../components/dashboard/VetPatientProfile';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
@@ -30,6 +30,7 @@ export const ConsultationRoom: React.FC = () => {
   const [showReviewModal, setShowReviewModal] = useState<boolean>(true);
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
   const [consultation, setConsultation] = useState<Consultation | null>(null);
+  const [mobileTab, setMobileTab] = useState<'video' | 'chat'>('video');
 
   // --- Vet Clinical In-Call Actions ---
   const [showPrescriptionModal, setShowPrescriptionModal] = useState<boolean>(false);
@@ -37,6 +38,7 @@ export const ConsultationRoom: React.FC = () => {
   const [showPatientProfile, setShowPatientProfile] = useState<boolean>(false);
   const [diagnosisNotes, setDiagnosisNotes] = useState<string>('');
   const [isCompleting, setIsCompleting] = useState<boolean>(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
 
   // --- LiveKit credentials (only populated when phase === 'active') ---
   const [livekitToken, setLivekitToken] = useState<string | null>(null);
@@ -47,6 +49,7 @@ export const ConsultationRoom: React.FC = () => {
   const [inputMessage, setInputMessage] = useState<string>('');
   const [socket, setSocket] = useState<Socket | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState<boolean>(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -269,13 +272,14 @@ export const ConsultationRoom: React.FC = () => {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !consultationId || !socket) return;
+    setChatError(null);
 
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      alert('Solo se admiten imágenes en formato JPEG, PNG o WebP');
+      setChatError('Solo se admiten imágenes en formato JPEG, PNG o WebP');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      alert('La imagen no puede superar 10 MB');
+      setChatError('La imagen no puede superar 10 MB');
       return;
     }
 
@@ -304,7 +308,7 @@ export const ConsultationRoom: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error subiendo imagen clínica:', err);
-      alert(err.response?.data?.error?.message || 'Error al subir la imagen clínica');
+      setChatError(err.response?.data?.error?.message || 'Error al subir la imagen clínica');
     } finally {
       setUploadingPhoto(false);
       if (fileInputRef.current) {
@@ -335,8 +339,9 @@ export const ConsultationRoom: React.FC = () => {
   const handleCompleteConsultation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!consultationId) return;
+    setCompleteError(null);
     if (!diagnosisNotes.trim() || diagnosisNotes.trim().length < 2) {
-      alert('Por favor ingrese la evolución o diagnóstico clínico (mínimo 2 caracteres).');
+      setCompleteError('Por favor ingrese la evolución o diagnóstico clínico (mínimo 2 caracteres).');
       return;
     }
 
@@ -350,7 +355,7 @@ export const ConsultationRoom: React.FC = () => {
         setPhase('completed');
       }
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al completar la consulta');
+      setCompleteError(err.response?.data?.error?.message || 'Error al completar la consulta');
     } finally {
       setIsCompleting(false);
     }
@@ -363,7 +368,7 @@ export const ConsultationRoom: React.FC = () => {
   // --- Loading ---
   if (phase === 'loading') {
     return (
-      <div className="w-full h-screen bg-slate-900 text-white flex items-center justify-center">
+      <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex items-center justify-center">
         <p className="text-lg">Cargando información de la consulta...</p>
       </div>
     );
@@ -372,12 +377,12 @@ export const ConsultationRoom: React.FC = () => {
   // --- Error ---
   if (phase === 'error') {
     return (
-      <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex flex-col items-center justify-center p-4">
         <h2 className="text-xl font-bold text-red-400 mb-2">Error de Conexión</h2>
         <p className="text-slate-300 mb-6">{errorMsg || 'No se pudo obtener credenciales WebRTC'}</p>
         <button
           onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold"
+          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold cursor-pointer"
         >
           Volver
         </button>
@@ -388,7 +393,12 @@ export const ConsultationRoom: React.FC = () => {
   // --- Waiting (WAITING status — poll until ACTIVE) ---
   if (phase === 'waiting') {
     return (
-      <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 gap-6">
+      <div
+        role="region"
+        aria-live="polite"
+        aria-label="Estado de sala de espera"
+        className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex flex-col items-center justify-center p-6 gap-6"
+      >
         <div className="flex flex-col items-center gap-4 max-w-md text-center">
           <div className="w-16 h-16 rounded-full bg-sky-600/20 flex items-center justify-center animate-pulse">
             <Stethoscope className="w-8 h-8 text-sky-400" />
@@ -410,7 +420,7 @@ export const ConsultationRoom: React.FC = () => {
         </div>
         <button
           onClick={handleCancel}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold"
+          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold cursor-pointer"
         >
           Cancelar y volver
         </button>
@@ -421,12 +431,12 @@ export const ConsultationRoom: React.FC = () => {
   // --- Cancelled ---
   if (phase === 'cancelled') {
     return (
-      <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex flex-col items-center justify-center p-4">
         <h2 className="text-xl font-bold text-amber-400 mb-2">Consulta Cancelada</h2>
         <p className="text-slate-300 mb-6">Esta consulta fue cancelada. Podés iniciar una nueva desde tu panel.</p>
         <button
           onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold"
+          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold cursor-pointer"
         >
           Volver al panel
         </button>
@@ -437,7 +447,7 @@ export const ConsultationRoom: React.FC = () => {
   // --- Completed (show summary / review prompt) ---
   if (phase === 'completed') {
     return (
-      <div className="w-full h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex flex-col items-center justify-center p-4">
         <div className="bg-slate-800 rounded-xl p-8 max-w-md w-full text-center shadow-xl">
           <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2">
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
@@ -484,9 +494,39 @@ export const ConsultationRoom: React.FC = () => {
 
   // --- Active (ACTIVE status — render call room + chat) ---
   return (
-    <div className="w-full h-screen bg-slate-950 flex flex-col lg:flex-row overflow-hidden relative">
+    <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-950 flex flex-col lg:flex-row overflow-hidden relative">
+      {/* Mobile Tab Switcher (< 1024px) */}
+      <div className="lg:hidden z-30 bg-slate-900 border-b border-slate-800 px-3 py-1.5 flex items-center justify-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobileTab('video')}
+          aria-pressed={mobileTab === 'video'}
+          className={`flex-1 min-h-[44px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            mobileTab === 'video'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
+          }`}
+        >
+          <Video className="w-4 h-4" />
+          <span>Video Principal</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('chat')}
+          aria-pressed={mobileTab === 'chat'}
+          className={`flex-1 min-h-[44px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition relative cursor-pointer ${
+            mobileTab === 'chat'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Ver Chat ({messages.length})</span>
+        </button>
+      </div>
+
       {/* Main Video Call Area */}
-      <div className="flex-1 h-2/3 lg:h-full relative flex flex-col">
+      <div className={`flex-1 min-h-0 h-full relative flex flex-col ${mobileTab === 'video' ? 'flex' : 'hidden lg:flex'}`}>
         {/* Medical Command Header Bar */}
         <header className="absolute top-0 left-0 right-0 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white px-4 py-2.5 flex flex-wrap justify-between items-center gap-2 z-20 shadow-lg">
           <div className="flex items-center gap-3">
@@ -519,7 +559,7 @@ export const ConsultationRoom: React.FC = () => {
                     type="button"
                     data-testid="in-call-view-patient-profile-btn"
                     onClick={() => setShowPatientProfile(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-stone-200 hover:text-white text-xs font-semibold rounded-lg border border-slate-700 shadow-sm transition active:scale-95"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] bg-slate-800 hover:bg-slate-700 text-stone-200 hover:text-white text-xs font-semibold rounded-lg border border-slate-700 shadow-sm transition active:scale-95 cursor-pointer"
                     title="Ver ficha clínica del paciente y contacto de emergencia"
                   >
                     <ClipboardList className="w-3.5 h-3.5 text-emerald-400" />
@@ -530,7 +570,7 @@ export const ConsultationRoom: React.FC = () => {
                   type="button"
                   data-testid="in-call-emit-prescription-btn"
                   onClick={() => setShowPrescriptionModal(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00875A] hover:bg-[#00704A] text-white text-xs font-semibold rounded-lg shadow-sm transition active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] bg-[#00875A] hover:bg-[#00704A] text-white text-xs font-semibold rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   <span>Emitir Receta</span>
@@ -539,7 +579,7 @@ export const ConsultationRoom: React.FC = () => {
                   type="button"
                   data-testid="in-call-complete-consultation-btn"
                   onClick={() => setShowCompleteModal(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm transition active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
                 >
                   <CheckCircle className="w-3.5 h-3.5" />
                   <span>Finalizar Consulta</span>
@@ -549,7 +589,7 @@ export const ConsultationRoom: React.FC = () => {
 
             <button
               onClick={() => navigate(-1)}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold rounded-lg border border-slate-700 transition"
+              className="px-3 py-1.5 min-h-[40px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold rounded-lg border border-slate-700 transition cursor-pointer"
             >
               Salir
             </button>
@@ -573,8 +613,8 @@ export const ConsultationRoom: React.FC = () => {
       </div>
 
       {/* Live Chat Side Panel */}
-      <div className="w-full lg:w-84 h-1/3 lg:h-full bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col">
-        <div className="p-3 border-b border-slate-800 bg-slate-900/90 text-white font-semibold text-sm flex justify-between items-center">
+      <div className={`w-full lg:w-84 h-full min-h-0 bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col ${mobileTab === 'chat' ? 'flex flex-1' : 'hidden lg:flex'}`}>
+        <div className="p-3 border-b border-slate-800 bg-slate-900/90 text-white font-semibold text-sm flex justify-between items-center shrink-0">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Chat Clínico & Telemetría</span>
@@ -588,7 +628,20 @@ export const ConsultationRoom: React.FC = () => {
           )}
         </div>
 
-        <div className="flex-1 p-3 overflow-y-auto space-y-2.5">
+        {chatError && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="px-3 py-1.5 bg-rose-950/80 border-b border-rose-800 text-rose-300 text-[11px] flex items-center justify-between shrink-0"
+          >
+            <span>{chatError}</span>
+            <button type="button" onClick={() => setChatError(null)} className="text-rose-400 hover:text-white p-0.5 cursor-pointer">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1 min-h-0 p-3 overflow-y-auto space-y-2.5 overscroll-contain">
           {messages.map((msg) => {
             const isMine = msg.senderId === user?.id;
             const isVet = msg.sender?.role === 'VET';
@@ -641,7 +694,7 @@ export const ConsultationRoom: React.FC = () => {
           })}
         </div>
 
-        <form onSubmit={handleSendMessage} className="p-2.5 border-t border-slate-800 bg-slate-900/60 flex items-center gap-2">
+        <form onSubmit={handleSendMessage} className="p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] border-t border-slate-800 bg-slate-900/60 flex items-center gap-2 shrink-0">
           <input
             type="file"
             ref={fileInputRef}
@@ -654,7 +707,7 @@ export const ConsultationRoom: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingPhoto}
             title="Adjuntar macro-fotografía clínica"
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+            className="p-2 min-h-[44px] min-w-[44px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 disabled:opacity-50 transition-colors flex items-center justify-center cursor-pointer"
           >
             {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin text-emerald-400" /> : <Paperclip className="w-4 h-4 text-slate-300" />}
           </button>
@@ -664,12 +717,12 @@ export const ConsultationRoom: React.FC = () => {
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder={uploadingPhoto ? 'Subiendo imagen...' : 'Escriba un mensaje...'}
             disabled={uploadingPhoto}
-            className="flex-1 bg-slate-800 text-white text-xs px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500 transition"
+            className="flex-1 min-h-[44px] bg-slate-800 text-white text-xs px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500 transition"
           />
           <button
             type="submit"
             disabled={uploadingPhoto || !inputMessage.trim()}
-            className="bg-[#00875A] hover:bg-[#00704A] disabled:opacity-40 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95"
+            className="min-h-[44px] bg-[#00875A] hover:bg-[#00704A] disabled:opacity-40 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer"
           >
             Enviar
           </button>
@@ -742,6 +795,15 @@ export const ConsultationRoom: React.FC = () => {
             </div>
 
             <form onSubmit={handleCompleteConsultation} className="mt-4 space-y-4">
+              {completeError && (
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium"
+                >
+                  {completeError}
+                </div>
+              )}
               {consultation?.pet && (
                 <div className="p-3 bg-emerald-50/70 border border-emerald-200/60 rounded-xl text-xs text-emerald-900">
                   <span className="font-semibold">Paciente:</span> {consultation.pet.name} ({consultation.pet.species})

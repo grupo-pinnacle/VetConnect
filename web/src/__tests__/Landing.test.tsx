@@ -5,44 +5,42 @@ import { MemoryRouter } from 'react-router-dom';
 import { Landing } from '../pages/Landing';
 
 describe('Landing Page', () => {
-  it('should render brand logo and SENASA trust badge', () => {
+  it('should render brand logo, navigation and hero title', () => {
     render(
       <MemoryRouter>
         <Landing />
       </MemoryRouter>
     );
 
-    expect(screen.getByTestId('brand-logo')).toBeDefined();
-    expect(screen.getByTestId('trust-badge-senasa')).toBeDefined();
-    expect(screen.getByTestId('hero-title')).toBeDefined();
+    expect(screen.getAllByLabelText(/VetConnect, inicio/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Atención veterinaria online/i)).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
+    expect(screen.getByText(/Conectados\./i)).toBeDefined();
   });
 
-  it('should render all portal CTA buttons and mobile APK download link', () => {
+  it('should render CTA buttons for registration and login', () => {
     render(
       <MemoryRouter>
         <Landing />
       </MemoryRouter>
     );
 
-    expect(screen.getByTestId('cta-client-portal')).toBeDefined();
-    expect(screen.getByTestId('cta-vet-portal')).toBeDefined();
-    expect(screen.getByTestId('cta-admin-portal')).toBeDefined();
-    expect(screen.getByTestId('download-apk-link')).toBeDefined();
+    expect(screen.getAllByText(/Comenzar consulta/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Ingresar/i)).toBeDefined();
+    expect(screen.getAllByText(/Cómo funciona/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Para veterinarios/i).length).toBeGreaterThan(0);
   });
 
-  it('should render emergency health disclaimer and business legal entity details', () => {
+  it('should render footer sections, copyright and terms', () => {
     render(
       <MemoryRouter>
         <Landing />
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/Aviso de Salud Animal:/i)).toBeDefined();
-    expect(screen.getAllByText(/Pinnacle Group S\.A\./i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/30-71234567-8/i)).toBeDefined();
-    expect(screen.getByText(/Términos y Condiciones/i)).toBeDefined();
-    expect(screen.getByText(/Política de Privacidad/i)).toBeDefined();
-    expect(screen.getByText(/Política de Cookies/i)).toBeDefined();
-    expect(screen.getByText(/Política de Reembolsos/i)).toBeDefined();
+    expect(screen.getByText(/VetConnect\. Todos los derechos reservados\./i)).toBeDefined();
+    expect(screen.getByText(/Términos y condiciones/i)).toBeDefined();
+    expect(screen.getAllByText(/Privacidad/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Preguntas frecuentes/i).length).toBeGreaterThan(0);
   });
 });

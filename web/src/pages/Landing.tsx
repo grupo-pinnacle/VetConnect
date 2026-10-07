@@ -1,7 +1,4 @@
-import React, { useEffect, useState, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import "../styles/landing.css";
+import { useEffect, useState, type ReactNode } from "react";
 
 const photos = {
   rabbit:
@@ -38,8 +35,7 @@ export type IconName =
   | "shield"
   | "search"
   | "spark"
-  | "star"
-  | "download";
+  | "star";
 
 export function Icon({ name, className = "icon" }: { name: IconName; className?: string }) {
   const paths: Record<IconName, ReactNode> = {
@@ -106,12 +102,6 @@ export function Icon({ name, className = "icon" }: { name: IconName; className?:
     search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></>,
     spark: <path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Zm6 13 .8 2.2L21 19l-2.2.8L18 22l-.8-2.2L15 19l2.2-.8L18 16Z" />,
     star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z" />,
-    download: (
-      <>
-        <path d="M12 3v13m-5-5 5 5 5-5" />
-        <path d="M5 21h14" />
-      </>
-    ),
   };
 
   return (
@@ -130,9 +120,9 @@ export function Icon({ name, className = "icon" }: { name: IconName; className?:
   );
 }
 
-export function Logo({ light = false, testId = "brand-logo" }: { light?: boolean; testId?: string }) {
+export function Logo({ light = false }: { light?: boolean }) {
   return (
-    <Link className={`logo ${light ? "logo--light" : ""}`} to="/" aria-label="VetConnect, inicio" data-testid={testId}>
+    <a className={`logo ${light ? "logo--light" : ""}`} href="/#inicio" aria-label="VetConnect, inicio">
       <span className="logo__mark">
         <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9 11.5c5.8 0 10.5 4.7 10.5 10.5v8.5C13.7 30.5 9 25.8 9 20V11.5Z" fill="currentColor" />
@@ -141,37 +131,23 @@ export function Logo({ light = false, testId = "brand-logo" }: { light?: boolean
         </svg>
       </span>
       <span>VetConnect</span>
-    </Link>
+    </a>
   );
 }
 
 export function Button({
   children,
-  to,
-  href,
+  href = "#",
   variant = "primary",
   className = "",
-  onClick,
-  dataTestId,
 }: {
   children: ReactNode;
-  to?: string;
   href?: string;
   variant?: "primary" | "secondary" | "cream" | "ghost";
   className?: string;
-  onClick?: () => void;
-  dataTestId?: string;
 }) {
-  if (to) {
-    return (
-      <Link className={`button button--${variant} ${className}`} to={to} onClick={onClick} data-testid={dataTestId}>
-        <span>{children}</span>
-        {variant !== "ghost" && <Icon name="arrow" />}
-      </Link>
-    );
-  }
   return (
-    <a className={`button button--${variant} ${className}`} href={href || "#"} onClick={onClick} data-testid={dataTestId}>
+    <a className={`button button--${variant} ${className}`} href={href}>
       <span>{children}</span>
       {variant !== "ghost" && <Icon name="arrow" />}
     </a>
@@ -265,8 +241,6 @@ const faqs = [
 ];
 
 export function Landing() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
@@ -279,26 +253,7 @@ export function Landing() {
   }, []);
 
   return (
-    <main className="site-shell" id="inicio" data-testid="landing-page">
-      {/* Aviso Sanitario de Emergencia (WCAG & Legal) */}
-      <section
-        role="region"
-        aria-label="Aviso sanitario sobre emergencias y urgencias"
-        style={{
-          background: "var(--coral-soft, #f6d6ca)",
-          color: "var(--ink, #183c3a)",
-          fontSize: "12px",
-          fontWeight: 600,
-          padding: "10px 16px",
-          textAlign: "center",
-          borderBottom: "1px solid rgba(24,60,58,0.1)",
-        }}
-      >
-        <p style={{ margin: 0 }}>
-          <strong>Aviso de Salud Animal:</strong> VetConnect provee teleorientación y triaje sanitario. En situaciones críticas con riesgo inminente de vida, acuda sin demora a un hospital o clínica veterinaria presencial con guardia 24hs.
-        </p>
-      </section>
-
+    <main className="site-shell" id="inicio">
       <header className={`site-header ${scrolled ? "site-header--scrolled" : ""}`}>
         <div className="container site-header__inner">
           <Logo />
@@ -307,38 +262,11 @@ export function Landing() {
             <a href="#como-funciona">Cómo funciona</a>
             <a href="#tutores">Para tutores</a>
             <a href="#veterinarios">Para veterinarios</a>
-            <a href="#portales">Portales</a>
             <a href="#preguntas">Preguntas frecuentes</a>
           </nav>
           <div className="site-header__actions">
-            {user ? (
-              <>
-                <Button
-                  to={user.role === "VET" ? "/vet/dashboard" : user.role === "ADMIN" ? "/admin/dashboard" : "/client/dashboard"}
-                  variant="primary"
-                  dataTestId="landing-portal-button"
-                >
-                  {user.role === "VET" ? "Centro de Mando" : "Mi Panel"}
-                </Button>
-                <button
-                  type="button"
-                  data-testid="landing-logout-button"
-                  onClick={async () => {
-                    await logout();
-                    navigate("/");
-                  }}
-                  className="button button--ghost"
-                  style={{ border: "none", cursor: "pointer" }}
-                >
-                  Cerrar sesión
-                </button>
-              </>
-            ) : (
-              <>
-                <Button to="/login" variant="ghost" dataTestId="landing-login-button">Ingresar</Button>
-                <Button to="/register" dataTestId="landing-register-button">Comenzar consulta</Button>
-              </>
-            )}
+            <Button href="/login" variant="ghost">Ingresar</Button>
+            <Button href="/register">Comenzar consulta</Button>
           </div>
           <button
             className="menu-button"
@@ -356,18 +284,11 @@ export function Landing() {
               ["Cómo funciona", "#como-funciona"],
               ["Para tutores", "#tutores"],
               ["Para veterinarios", "#veterinarios"],
-              ["Portales", "#portales"],
               ["Preguntas frecuentes", "#preguntas"],
             ].map(([label, href]) => (
               <a key={label} href={href} onClick={() => setMenuOpen(false)}>{label}<Icon name="arrow" /></a>
             ))}
-            {user ? (
-              <Button to={user.role === "VET" ? "/vet/dashboard" : "/client/dashboard"} onClick={() => setMenuOpen(false)}>
-                Ir al Panel
-              </Button>
-            ) : (
-              <Button to="/register" onClick={() => setMenuOpen(false)}>Comenzar consulta</Button>
-            )}
+            <Button href="/register">Comenzar consulta</Button>
           </nav>
         )}
       </header>
@@ -376,17 +297,11 @@ export function Landing() {
         <div className="hero__wash" />
         <div className="container hero__grid">
           <div className="hero__copy">
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-              <span className="status-dot" style={{ width: "8px", height: "8px" }} />
-              <span data-testid="trust-badge-senasa" style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--brand-dark)" }}>
-                Telemedicina Homologada • SENASA Res. 1442/2021
-              </span>
-            </div>
             <Eyebrow>Atención veterinaria online</Eyebrow>
-            <h1 data-testid="hero-title">Tu mascota.<br />Tu veterinario.<br /><span>Conectados.</span></h1>
+            <h1>Tu mascota.<br />Tu veterinario.<br /><span>Conectados.</span></h1>
             <p>Conectamos tutores con profesionales veterinarios para acceder a orientación y atención online de manera simple, humana y cercana.</p>
             <div className="hero__actions">
-              <Button to="/register">Comenzar consulta</Button>
+              <Button href="/register">Comenzar consulta</Button>
               <Button href="#como-funciona" variant="secondary">Conocer cómo funciona</Button>
             </div>
             <div className="hero__proof">
@@ -474,7 +389,7 @@ export function Landing() {
               <span className="care-card__index">01</span>
               <h3>Emergencia</h3>
               <p>Orientación ante una situación que no puede esperar y claridad para decidir el próximo paso.</p>
-              <Link to="/register">Recibir orientación <Icon name="arrow" /></Link>
+              <a href="/register">Recibir orientación <Icon name="arrow" /></a>
             </article>
             <article className="care-card care-card--consult">
               <div className="care-card__image"><img src={photos.vet} alt="Profesional veterinario trabajando durante una consulta" /></div>
@@ -482,7 +397,7 @@ export function Landing() {
                 <span className="care-card__index">02</span>
                 <h3>Consulta</h3>
                 <p>Resolvé dudas y conversá con un profesional desde un espacio tranquilo y cercano.</p>
-                <Link to="/register">Iniciar consulta <Icon name="arrow" /></Link>
+                <a href="/register">Iniciar consulta <Icon name="arrow" /></a>
               </div>
             </article>
             <article className="care-card care-card--prevent">
@@ -490,75 +405,8 @@ export function Landing() {
               <span className="care-card__index">03</span>
               <h3>Prevención</h3>
               <p>Acompañá el bienestar de tu mascota antes de que aparezcan problemas.</p>
-              <Link to="/register">Planificar cuidado <Icon name="arrow" /></Link>
+              <a href="/register">Planificar cuidado <Icon name="arrow" /></a>
             </article>
-          </div>
-        </div>
-      </section>
-
-      {/* Portales de Acceso Especializados por Rol */}
-      <section className="section" id="portales" style={{ background: "var(--sand)" }}>
-        <div className="container">
-          <SectionHeading
-            eyebrow="Ecosistema Integral"
-            title={<>Un portal diseñado<br />para cada necesidad.</>}
-            copy="Ingresá al entorno específico correspondiente a tu perfil en VetConnect."
-            align="center"
-          />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", marginTop: "40px" }}>
-            <div className="product-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-              <div>
-                <div className="product-card__top">
-                  <span className="ui-label">Para Tutores</span>
-                  <Icon name="paw" />
-                </div>
-                <h3>Portal de Tutores</h3>
-                <p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "8px" }}>
-                  Consultas telemáticas, fichas de mascotas, recetas oficiales SENASA con QR y seguimiento clínico.
-                </p>
-              </div>
-              <div style={{ marginTop: "24px" }}>
-                <Button to="/client/dashboard" variant="primary" dataTestId="cta-client-portal">
-                  Ingresar como Tutor
-                </Button>
-              </div>
-            </div>
-
-            <div className="product-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-              <div>
-                <div className="product-card__top">
-                  <span className="ui-label">Para Profesionales</span>
-                  <Icon name="shield" />
-                </div>
-                <h3>Portal Veterinarios</h3>
-                <p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "8px" }}>
-                  Guardia activa 24/7, videollamadas con triaje clínico, expedientes de pacientes y recetario digital.
-                </p>
-              </div>
-              <div style={{ marginTop: "24px" }}>
-                <Button to="/vet/dashboard" variant="secondary" dataTestId="cta-vet-portal">
-                  Ingresar a Guardia
-                </Button>
-              </div>
-            </div>
-
-            <div className="product-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-              <div>
-                <div className="product-card__top">
-                  <span className="ui-label">Fiscalización</span>
-                  <Icon name="spark" />
-                </div>
-                <h3>Panel Auditoría</h3>
-                <p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "8px" }}>
-                  Fiscalización y auditoría médica de matrículas profesionales habilitadas según colegios veterinarios.
-                </p>
-              </div>
-              <div style={{ marginTop: "24px" }}>
-                <Button to="/admin/dashboard" variant="ghost" dataTestId="cta-admin-portal">
-                  Auditar Matrículas
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -571,7 +419,7 @@ export function Landing() {
               title={<>Porque no todas las<br />mascotas son iguales.</>}
               copy="Encontrar atención adecuada puede ser especialmente difícil cuando tu compañero no es un perro o un gato. VetConnect también fue pensado para ellos."
             />
-            <Button to="/register" variant="secondary">Encontrar un especialista</Button>
+            <Button href="/register" variant="secondary">Encontrar un especialista</Button>
           </div>
           <div className="species-collage" aria-label="Diversidad de mascotas atendidas">
             <figure className="species-photo species-photo--parrot"><img src={photos.parrot} alt="Ave de compañía" /><figcaption>Aves</figcaption></figure>
@@ -606,7 +454,7 @@ export function Landing() {
                 <li key={item}><span><Icon name="check" /></span>{item}</li>
               ))}
             </ul>
-            <Button to="/register">Crear perfil de mascota</Button>
+            <Button href="/register/tutor">Crear perfil de mascota</Button>
           </div>
         </div>
       </section>
@@ -627,12 +475,12 @@ export function Landing() {
                 <div key={text}><Icon name={icon as IconName} /><span>{text}</span></div>
               ))}
             </div>
-            <Button to="/register" variant="cream">Quiero ser veterinario en VetConnect</Button>
+            <Button href="/register/veterinarian" variant="cream">Quiero ser veterinario en VetConnect</Button>
           </div>
           <div className="vet-interface">
             <ScheduleCard />
-            <div className="vet-interface__metric"><span>Pacientes atendidos</span><strong>100%</strong><small>Conforme SENASA</small></div>
-            <div className="vet-interface__availability"><span className="online-dot" /><strong>Guardia 24hs</strong><small>Atención permanente</small></div>
+            <div className="vet-interface__metric"><span>Pacientes activos</span><strong>48</strong><small>+12% este mes</small></div>
+            <div className="vet-interface__availability"><span className="online-dot" /><strong>Disponible ahora</strong><small>Hasta las 18:00</small></div>
           </div>
         </div>
       </section>
@@ -650,7 +498,7 @@ export function Landing() {
             <div className="laptop">
               <div className="laptop__screen">
                 <div className="app-sidebar">
-                  <Logo testId="laptop-mockup-logo" />
+                  <Logo />
                   {["profile", "calendar", "message", "history"].map((icon, i) => <span className={i === 0 ? "active" : ""} key={icon}><Icon name={icon as IconName} /></span>)}
                 </div>
                 <div className="video-ui">
@@ -667,38 +515,13 @@ export function Landing() {
             </div>
             <div className="phone">
               <div className="phone__notch" />
-              <div className="phone__header"><Logo testId="phone-mockup-logo" /><span className="tiny-avatar" /></div>
+              <div className="phone__header"><Logo /><span className="tiny-avatar" /></div>
               <p className="ui-label">PRÓXIMA CONSULTA</p>
               <div className="phone__appointment">
                 <span><Icon name="camera" /></span><strong>Hoy · 15:30</strong><small>con Dra. Paula López</small>
               </div>
               <PetProfile />
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Descarga de App Android APK */}
-      <section className="section" style={{ background: "var(--brand-deep)", color: "var(--cream)" }}>
-        <div className="container" style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "24px" }}>
-          <div>
-            <Eyebrow light>App Oficial para Android</Eyebrow>
-            <h2 style={{ color: "var(--cream)", margin: "8px 0" }}>La salud de tu mascota, en tu bolsillo</h2>
-            <p style={{ color: "var(--brand-soft)", margin: 0, maxWidth: "560px" }}>
-              Accedé a guardias inmediatas, recetas con código QR oficial y notificaciones en tiempo real desde tu dispositivo móvil.
-            </p>
-          </div>
-          <div>
-            <a
-              href="/downloads/vetconnect-preview.apk"
-              download="vetconnect-preview.apk"
-              data-testid="download-apk-link"
-              className="button button--cream"
-              style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}
-            >
-              <Icon name="download" />
-              <span>Descargar APK Android (.apk)</span>
-            </a>
           </div>
         </div>
       </section>
@@ -764,9 +587,9 @@ export function Landing() {
             <SectionHeading
               eyebrow="Tecnología de apoyo"
               title={<>Tecnología que acompaña<br />al profesional.</>}
-              copy="La tecnología colabora en tareas de organización, métricas y apoyo de guardia. El médico veterinario matriculado siempre revisa la información y mantiene la responsabilidad exclusiva sobre el diagnóstico y tratamiento."
+              copy="La inteligencia artificial puede colaborar en tareas de organización, métricas y apoyo. El profesional veterinario siempre revisa la información y mantiene la responsabilidad sobre la atención."
             />
-            <div className="human-first"><Icon name="profile" /><span><strong>Decisión humana, siempre.</strong><small>La tecnología acompaña; el veterinario decide.</small></span></div>
+            <div className="human-first"><Icon name="profile" /><span><strong>Decisión humana, siempre.</strong><small>La tecnología acompaña; no reemplaza.</small></span></div>
           </div>
         </div>
       </section>
@@ -794,7 +617,7 @@ export function Landing() {
         <div className="container faq__grid">
           <div className="faq__intro">
             <SectionHeading eyebrow="Preguntas frecuentes" title={<>Todo lo que<br />necesitás saber.</>} copy="Si todavía tenés dudas, nuestro equipo puede orientarte antes de comenzar." />
-            <Button href="mailto:soporte@vetconnect.com.ar" variant="secondary">Hablar con el equipo</Button>
+            <Button href="mailto:hola@vetconnect.com" variant="secondary">Hablar con el equipo</Button>
           </div>
           <div className="accordion">
             {faqs.map(([question, answer], index) => {
@@ -819,7 +642,7 @@ export function Landing() {
             <Eyebrow light>Estamos para acompañarte</Eyebrow>
             <h2>Cuando necesitás<br />respuestas, <span>conectate.</span></h2>
             <p>Tu mascota te necesita. Nosotros te ayudamos a encontrar el acompañamiento veterinario adecuado.</p>
-            <Button to="/register" variant="cream">Comenzar consulta</Button>
+            <Button href="/register" variant="cream">Comenzar consulta</Button>
           </div>
           <div className="final-cta__visual">
             <div className="final-cta__photo"><img src={photos.rabbitClose} alt="Tutora junto a su conejo" /></div>
@@ -832,52 +655,23 @@ export function Landing() {
         <div className="container">
           <div className="footer__top">
             <div className="footer__brand">
-              <Logo light testId="footer-brand-logo" />
+              <Logo light />
               <p>Conectamos para cuidar<br />lo que más querés.</p>
-              <div style={{ marginTop: "16px", fontSize: "12px", color: "var(--brand-soft)" }}>
-                <strong>Pinnacle Group S.A.</strong><br />
-                CUIT: 30-71234567-8<br />
-                Av. Santa Fe 1234, CABA, Argentina
-              </div>
+              <div className="socials"><a href="#" aria-label="Instagram">ig</a><a href="#" aria-label="LinkedIn">in</a><a href="#" aria-label="Facebook">f</a></div>
             </div>
             {[
-              ["Ecosistema", [
-                { label: "Portal Tutores", to: "/client/dashboard" },
-                { label: "Portal Veterinarios", to: "/vet/dashboard" },
-                { label: "Panel Administrador", to: "/admin/dashboard" },
-              ]],
-              ["Marco Legal", [
-                { label: "Términos y Condiciones", to: "/terms" },
-                { label: "Política de Privacidad", to: "/privacy" },
-                { label: "Política de Cookies", to: "/cookies" },
-                { label: "Política de Reembolsos", to: "/refunds" },
-              ]],
-              ["Contacto & Soporte", [
-                { label: "soporte@vetconnect.com.ar", href: "mailto:soporte@vetconnect.com.ar" },
-                { label: "legal@vetconnect.com.ar", href: "mailto:legal@vetconnect.com.ar" },
-                { label: "privacidad@vetconnect.com.ar", href: "mailto:privacidad@vetconnect.com.ar" },
-              ]],
+              ["VetConnect", ["Inicio", "Cómo funciona", "Sobre nosotros"]],
+              ["Atención", ["Consultas", "Emergencias", "Prevención"]],
+              ["Profesionales", ["Para veterinarios", "Registrarse", "Información profesional"]],
+              ["Ayuda", ["Preguntas frecuentes", "Contacto", "Términos y condiciones", "Privacidad"]],
             ].map(([title, links]) => (
               <div className="footer__column" key={title as string}>
                 <h3>{title as string}</h3>
-                {(links as any[]).map((link) =>
-                  link.to ? (
-                    <Link to={link.to} key={link.label}>
-                      {link.label}
-                    </Link>
-                  ) : (
-                    <a href={link.href} key={link.label}>
-                      {link.label}
-                    </a>
-                  )
-                )}
+                {(links as string[]).map((link) => <a href="#" key={link}>{link}</a>)}
               </div>
             ))}
           </div>
-          <div className="footer__bottom">
-            <span>© {new Date().getFullYear()} Pinnacle Group S.A. Todos los derechos reservados.</span>
-            <span>Hecho para conectar y cuidar con telemedicina oficial.</span>
-          </div>
+          <div className="footer__bottom"><span>© 2025 VetConnect. Todos los derechos reservados.</span><span>Hecho para conectar y cuidar.</span></div>
         </div>
       </footer>
     </main>

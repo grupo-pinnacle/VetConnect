@@ -223,4 +223,43 @@ describe('DashboardVet Page', () => {
       expect(screen.getByText('"Excelente atención de la doctora, muy atenta y clara."')).toBeDefined();
     });
   });
+
+  it('should render accessible inline error banner when assign patient fails without window.alert', async () => {
+    const mockWaitingConsultation = {
+      id: 'c-err',
+      clientId: 'u1',
+      petId: 'p1',
+      status: 'WAITING',
+      notes: 'VERDE — Control',
+      createdAt: new Date().toISOString(),
+      pet: { name: 'Firulais', species: 'CANINE' },
+    };
+
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, data: [mockWaitingConsultation] },
+    } as any);
+
+    vi.mocked(api.patch).mockRejectedValueOnce({
+      response: { data: { error: { message: 'La consulta ya fue tomada por otro veterinario' } } },
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardVet />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('assign-patient-button-c-err')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTestId('assign-patient-button-c-err'));
+
+    await waitFor(() => {
+      const errorBanner = screen.getByTestId('vet-action-error');
+      expect(errorBanner).toBeDefined();
+      expect(errorBanner.getAttribute('role')).toBe('alert');
+      expect(errorBanner.textContent).toContain('La consulta ya fue tomada por otro veterinario');
+    });
+  });
 });

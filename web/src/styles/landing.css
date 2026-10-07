@@ -1,4 +1,15 @@
-/* Landing Styles from Multimedia Team */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+@theme {
+  --font-sans: "Manrope", sans-serif;
+  --color-brand: #609f9c;
+  --color-brand-dark: #315f5d;
+  --color-ink: #183c3a;
+  --color-cream: #fffbef;
+  --color-sand: #f2eddd;
+  --color-coral: #e98b70;
+  --color-lilac: #c9c1df;
+}
 
 :root {
   --brand: #609f9c;

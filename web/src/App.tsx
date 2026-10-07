@@ -1,37 +1,99 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './routes/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
-
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import NotFound from './pages/NotFound';
 import OfflineBanner from './components/common/OfflineBanner';
 import GlobalCallListener from './components/call/GlobalCallListener';
 import CookieConsentBanner from './components/common/CookieConsentBanner';
 
-// Code-Splitting: Lazy load heavy clinical rooms and dashboards to optimize Landing LCP
-const DashboardClient = React.lazy(() => import('./pages/DashboardClient'));
-const DashboardVet = React.lazy(() => import('./pages/DashboardVet'));
-const AdminVets = React.lazy(() => import('./pages/AdminVets'));
-const ConsultationRoom = React.lazy(() => import('./pages/ConsultationRoom'));
-const PrescriptionView = React.lazy(() => import('./pages/PrescriptionView'));
+import landingCss from './styles/landing.css?inline';
+import clientCss from './styles/client.css?inline';
+import authCss from './styles/auth.css?inline';
 
-// Legal & Compliance Pages
-const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
-const TermsConditions = React.lazy(() => import('./pages/TermsConditions'));
-const CookiePolicy = React.lazy(() => import('./pages/CookiePolicy'));
-const RefundPolicy = React.lazy(() => import('./pages/RefundPolicy'));
+import Landing from './pages/Landing';
+import AuthExperience from './pages/AuthExperience';
+const ClientApp = lazy(() => import('./pages/ClientApp'));
+const VetApp = lazy(() => import('./vet/VetApp'));
+const CallRoom = lazy(() => import('./vet/CallRoom'));
 
-const PageLoader: React.FC = () => (
-  <div className="w-full h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300">
-    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-    <p className="text-sm font-medium">Cargando...</p>
-  </div>
-);
+// Compliance & Extra Pages
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsConditions = lazy(() => import('./pages/TermsConditions'));
+const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
+const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
+const PrescriptionView = lazy(() => import('./pages/PrescriptionView'));
+
+export function ScopedStyle({ css, id }: { css: string; id: string }) {
+  useEffect(() => {
+    let style = document.getElementById(id) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = id;
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
+    return () => {
+      style?.remove();
+    };
+  }, [css, id]);
+  return null;
+}
+
+const LandingWrapper: React.FC = () => {
+  return (
+    <>
+      <ScopedStyle id="landing-style" css={landingCss} />
+      <Landing />
+    </>
+  );
+};
+
+const AuthWrapper: React.FC = () => {
+  return (
+    <>
+      <ScopedStyle id="landing-style" css={landingCss} />
+      <ScopedStyle id="auth-style" css={authCss} />
+      <AuthExperience />
+    </>
+  );
+};
+
+const ClientWrapper: React.FC = () => {
+  return (
+    <>
+      <ScopedStyle id="client-style" css={clientCss} />
+      <ClientApp />
+    </>
+  );
+};
+
+const VetWrapper: React.FC = () => {
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const onPop = () => setCurrentPath(window.location.pathname);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  return (
+    <>
+      <ScopedStyle id="client-style" css={clientCss} />
+      <VetApp path={currentPath} />
+    </>
+  );
+};
+
+const CallWrapper: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <>
+      <ScopedStyle id="client-style" css={clientCss} />
+      <CallRoom id={id || 'milo'} />
+    </>
+  );
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,42 +113,42 @@ export const App: React.FC = () => {
             <OfflineBanner />
             <GlobalCallListener />
             <CookieConsentBanner />
-            <React.Suspense fallback={<PageLoader />}>
+            <Suspense fallback={<div className="route-loading" role="status">Cargando...</div>}>
               <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                {/* 1. Landing & Inicio */}
+                <Route path="/" element={<LandingWrapper />} />
+
+                {/* 2. Autenticación (Login, Registro Tutores/Vets, Olvidé Contraseña) */}
+                <Route path="/login" element={<AuthWrapper />} />
+                <Route path="/register/*" element={<AuthWrapper />} />
+                <Route path="/register" element={<AuthWrapper />} />
+                <Route path="/forgot-password" element={<AuthWrapper />} />
+
+                {/* 3. Portal de Tutores (Cliente) */}
+                <Route path="/client/*" element={<ClientWrapper />} />
+                <Route path="/client" element={<ClientWrapper />} />
+
+                {/* 4. Portal Profesional (Veterinario) */}
+                <Route path="/vet/*" element={<VetWrapper />} />
+                <Route path="/vet" element={<VetWrapper />} />
+
+                {/* 5. Videoconsultas en vivo */}
+                <Route path="/call/:id" element={<CallWrapper />} />
+
+                {/* Recetas y verificaciones SENASA */}
                 <Route path="/prescriptions/:id" element={<PrescriptionView />} />
                 <Route path="/verify-rx" element={<PrescriptionView />} />
-                <Route path="/preview/admin" element={<AdminVets />} />
 
-                {/* Páginas Legales y Regulatorias */}
+                {/* Páginas Legales */}
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsConditions />} />
                 <Route path="/cookies" element={<CookiePolicy />} />
                 <Route path="/refunds" element={<RefundPolicy />} />
 
-                <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
-                  <Route path="/client/dashboard" element={<DashboardClient />} />
-                </Route>
-
-                <Route element={<ProtectedRoute allowedRoles={['VET']} />}>
-                  <Route path="/vet/dashboard" element={<DashboardVet />} />
-                </Route>
-
-                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-                  <Route path="/admin/vets" element={<AdminVets />} />
-                  <Route path="/admin/dashboard" element={<AdminVets />} />
-                </Route>
-
-                <Route element={<ProtectedRoute allowedRoles={['CLIENT', 'VET', 'ADMIN']} />}>
-                  <Route path="/call/:id" element={<ConsultationRoom />} />
-                </Route>
-
-                {/* Wildcard 404 Route */}
-                <Route path="*" element={<NotFound />} />
+                {/* Fallback */}
+                <Route path="*" element={<LandingWrapper />} />
               </Routes>
-            </React.Suspense>
+            </Suspense>
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>

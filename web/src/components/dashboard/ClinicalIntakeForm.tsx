@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ClinicalIntakeFormProps,
   ClinicalSymptomKey,
@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Eye,
   Bandage,
+  AlertCircle,
 } from 'lucide-react';
 
 interface SymptomChip {
@@ -56,8 +57,17 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
   const [selectedSymptoms, setSelectedSymptoms] = useState<ClinicalSymptomKey[]>([]);
   const [duration, setDuration] = useState<SymptomDuration>('HOURS_2_TO_12');
   const [notes, setNotes] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (formError && errorRef.current) {
+      errorRef.current.focus();
+    }
+  }, [formError]);
 
   const toggleSymptom = (key: ClinicalSymptomKey) => {
+    setFormError(null);
     setSelectedSymptoms((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
@@ -70,13 +80,14 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPetId) {
-      alert('Por favor seleccione una mascota');
+      setFormError('Por favor seleccione una mascota para continuar');
       return;
     }
     if (!notes.trim() && selectedSymptoms.length === 0) {
-      alert('Por favor describa los síntomas o seleccione al menos un signo clínico');
+      setFormError('Por favor describa los síntomas o seleccione al menos un signo clínico');
       return;
     }
+    setFormError(null);
     await onSubmit({
       petId: selectedPetId,
       notes: notes.trim(),
@@ -88,6 +99,7 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
+      noValidate
       data-testid={testId || 'clinical-intake-form'}
       className={`bg-white rounded-2xl border border-[#E8E2D5] p-5 sm:p-6 shadow-sm space-y-6 ${className}`}
     >
@@ -105,6 +117,21 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
         </div>
       </div>
 
+      {/* Inline Accessible Form Error Banner */}
+      {formError && (
+        <div
+          ref={errorRef}
+          tabIndex={-1}
+          role="alert"
+          aria-live="assertive"
+          data-testid="intake-form-error"
+          className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs text-rose-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-rose-400"
+        >
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" aria-hidden="true" />
+          <span className="font-medium">{formError}</span>
+        </div>
+      )}
+
       {/* 1. Selección de Mascota */}
       <div>
         <label
@@ -116,7 +143,10 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
         <select
           id="pet-select"
           value={selectedPetId}
-          onChange={(e) => onSelectPet(e.target.value)}
+          onChange={(e) => {
+            setFormError(null);
+            onSelectPet(e.target.value);
+          }}
           required
           data-testid="intake-pet-select"
           className="w-full px-3 py-2.5 bg-slate-50 border border-[#E8E2D5] rounded-xl text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#03362A]/20 transition"
@@ -155,7 +185,7 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
                 onClick={() => toggleSymptom(symptom.key)}
                 data-testid={`symptom-chip-${symptom.key}`}
                 aria-pressed={isSelected}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left text-xs font-medium transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3 py-2.5 min-h-[48px] rounded-xl border text-left text-xs font-medium transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#03362A] focus:ring-offset-1 ${
                   isSelected
                     ? symptom.isCritical
                       ? 'bg-rose-50 border-rose-400 text-rose-900 ring-1 ring-rose-400 shadow-sm'
@@ -211,7 +241,8 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
               type="button"
               onClick={() => setDuration(opt.value)}
               data-testid={`duration-${opt.value.toLowerCase()}`}
-              className={`py-2 px-2.5 text-center text-xs rounded-xl border transition cursor-pointer ${
+              aria-pressed={duration === opt.value}
+              className={`py-2 px-2.5 min-h-[48px] flex items-center justify-center text-center text-xs rounded-xl border transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#03362A] focus:ring-offset-1 ${
                 duration === opt.value
                   ? 'bg-slate-900 text-white border-slate-900 font-semibold shadow-sm'
                   : 'bg-white hover:bg-slate-50 border-[#E8E2D5] text-slate-600 font-medium'
@@ -235,7 +266,10 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
           id="intake-notes"
           rows={3}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => {
+            setFormError(null);
+            setNotes(e.target.value);
+          }}
           placeholder="Describí los síntomas con claridad: cuándo comenzaron, apetito, decaimiento o cambios de conducta..."
           data-testid="intake-notes-textarea"
           className="w-full px-3 py-2.5 bg-slate-50 border border-[#E8E2D5] rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#03362A]/20 transition resize-none"
@@ -245,9 +279,9 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
       {/* Botón de Envío */}
       <button
         type="submit"
-        disabled={isSubmitting || !selectedPetId}
+        disabled={isSubmitting}
         data-testid="intake-submit-button"
-        className="w-full py-3 px-4 bg-[#03362A] hover:bg-[#02241C] text-white rounded-xl text-sm font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+        className="w-full py-3 px-4 min-h-[48px] bg-[#03362A] hover:bg-[#02241C] text-white rounded-xl text-sm font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
       >
         <Stethoscope className="w-4 h-4" aria-hidden="true" />
         {isSubmitting ? 'Evaluando síntomas e ingresando a guardia...' : 'Ingresar a Sala de Triage'}

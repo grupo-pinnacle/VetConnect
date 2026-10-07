@@ -44,6 +44,7 @@ export const DashboardClient: React.FC = () => {
   // Pet Form State (Create & Edit — ADR-029)
   const [showPetModal, setShowPetModal] = useState(false);
   const [editingPetId, setEditingPetId] = useState<string | null>(null);
+  const [petModalError, setPetModalError] = useState<string | null>(null);
   const [petForm, setPetForm] = useState({
     name: '',
     species: 'Canine',
@@ -58,6 +59,7 @@ export const DashboardClient: React.FC = () => {
   // Triage Request Form State
   const [selectedPetId, setSelectedPetId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [triageSubmitError, setTriageSubmitError] = useState<string | null>(null);
 
   // Clinical Dossier & View Mode State
   const [viewMode, setViewMode] = useState<'cards' | 'timeline'>('cards');
@@ -91,6 +93,7 @@ export const DashboardClient: React.FC = () => {
 
   const handleOpenCreatePet = () => {
     setEditingPetId(null);
+    setPetModalError(null);
     setPetForm({
       name: '',
       species: 'Canine',
@@ -106,6 +109,7 @@ export const DashboardClient: React.FC = () => {
 
   const handleOpenEditPet = (pet: Pet) => {
     setEditingPetId(pet.id);
+    setPetModalError(null);
     setPetForm({
       name: pet.name || '',
       species: pet.species || 'Canine',
@@ -126,11 +130,13 @@ export const DashboardClient: React.FC = () => {
   const handleClosePetModal = () => {
     setShowPetModal(false);
     setEditingPetId(null);
+    setPetModalError(null);
   };
 
   const handleSavePet = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setPetModalError(null);
     try {
       const payload = {
         name: petForm.name.trim(),
@@ -160,7 +166,7 @@ export const DashboardClient: React.FC = () => {
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
-      alert(
+      setPetModalError(
         apiErr.response?.data?.error?.message ||
           (editingPetId ? 'Error al actualizar mascota' : 'Error al registrar mascota')
       );
@@ -171,6 +177,7 @@ export const DashboardClient: React.FC = () => {
 
   const handleClinicalIntakeSubmit = async (data: ClinicalIntakeData) => {
     setIsSubmitting(true);
+    setTriageSubmitError(null);
     try {
       const res = await api.post<ApiResponse<Consultation>>('/api/consultations', {
         petId: data.petId,
@@ -185,7 +192,7 @@ export const DashboardClient: React.FC = () => {
       }
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
-      alert(apiErr.response?.data?.error?.message || 'Error al solicitar consulta');
+      setTriageSubmitError(apiErr.response?.data?.error?.message || 'Error al solicitar consulta');
     } finally {
       setIsSubmitting(false);
     }
@@ -230,25 +237,25 @@ export const DashboardClient: React.FC = () => {
         />
 
         {/* 1. Header Clínico del Tutor */}
-        <header className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#06241D] to-emerald-800 text-white flex items-center justify-center shadow-md shrink-0">
-              <Heart className="w-7 h-7 text-emerald-300 fill-emerald-300/20" aria-hidden="true" />
+        <header className="bg-white/95 backdrop-blur-md p-4 sm:p-6 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#06241D] to-emerald-800 text-white flex items-center justify-center shadow-md shrink-0">
+              <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-300 fill-emerald-300/20" aria-hidden="true" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1
-                  className="text-xl sm:text-2xl font-extrabold text-[#06241D] tracking-tight"
+                  className="text-lg sm:text-2xl font-extrabold text-[#06241D] tracking-tight truncate"
                   data-testid="header-title"
                 >
                   VetConnect — Portal Tutor
                 </h1>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                   <ShieldCheck className="w-3 h-3 text-emerald-600" />
                   Tutor Verificado
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 mt-0.5" data-testid="welcome-message">
+              <p className="text-xs sm:text-sm text-slate-600 mt-0.5 truncate" data-testid="welcome-message">
                 Bienvenido/a, {user?.firstName} {user?.lastName}
               </p>
             </div>
@@ -257,7 +264,7 @@ export const DashboardClient: React.FC = () => {
           <button
             data-testid="logout-button"
             onClick={logout}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            className="w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <LogOut className="w-4 h-4 text-slate-500" />
             Cerrar Sesión
@@ -276,7 +283,7 @@ export const DashboardClient: React.FC = () => {
         )}
 
         {/* 2. Hero de Bienvenida y Guardia Inmediata */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#06241D] via-[#0B3B30] to-[#041E18] text-white p-6 sm:p-8 shadow-[0_20px_50px_-20px_rgba(6,36,29,0.3)] border border-emerald-900/40">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#06241D] via-[#0B3B30] to-[#041E18] text-white p-4 sm:p-6 lg:p-8 shadow-[0_20px_50px_-20px_rgba(6,36,29,0.3)] border border-emerald-900/40">
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="space-y-3 max-w-2xl">
@@ -313,7 +320,7 @@ export const DashboardClient: React.FC = () => {
               <button
                 type="button"
                 onClick={handleEmergencyClick}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl text-sm font-extrabold text-white bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:from-rose-800 active:to-rose-800 shadow-[0_10px_25px_-5px_rgba(225,29,72,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer border border-rose-400/30"
+                className="w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-2.5 px-4 sm:px-6 py-3.5 rounded-xl text-sm font-extrabold text-white bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:from-rose-800 active:to-rose-800 shadow-[0_10px_25px_-5px_rgba(225,29,72,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer border border-rose-400/30 text-center"
               >
                 <AlertTriangle className="w-5 h-5 text-rose-200 animate-pulse" />
                 <span>🚨 Solicitar Guardia Médica 24hs</span>
@@ -326,7 +333,7 @@ export const DashboardClient: React.FC = () => {
         <main className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Pets (5 cols) */}
           <section
-            className="lg:col-span-5 bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5] flex flex-col"
+            className="lg:col-span-5 bg-white/95 backdrop-blur-md p-4 sm:p-6 rounded-2xl shadow-[0_12px_40px_-15px_rgba(6,36,29,0.06)] border border-[#E8E2D5] flex flex-col"
             data-testid="pets-section"
           >
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#E8E2D5]">
@@ -341,9 +348,9 @@ export const DashboardClient: React.FC = () => {
               <button
                 data-testid="add-pet-button"
                 onClick={handleOpenCreatePet}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-700/20 cursor-pointer"
+                className="min-h-[48px] inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-700/20 cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                <Plus className="w-4 h-4" aria-hidden="true" />
                 <span>+ Nueva Mascota</span>
               </button>
             </div>
@@ -517,9 +524,29 @@ export const DashboardClient: React.FC = () => {
 
           {/* Right Column: Triage Request Form & Consultations (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Consultation Triage Request */}
             {/* Consultation Triage Request — Clinical Intake Form (ADR-028) */}
             <div ref={triageRef as React.RefObject<HTMLDivElement>} data-testid="triage-section">
+              {triageSubmitError && (
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  data-testid="triage-submit-error"
+                  className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium flex items-center justify-between gap-2.5 mb-3 shadow-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" aria-hidden="true" />
+                    <span>{triageSubmitError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTriageSubmitError(null)}
+                    className="text-rose-600 hover:text-rose-800 p-1 rounded-md hover:bg-rose-100 transition cursor-pointer"
+                    aria-label="Cerrar mensaje de error"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
               <ClinicalIntakeForm
                 pets={pets}
                 selectedPetId={selectedPetId}
@@ -721,6 +748,17 @@ export const DashboardClient: React.FC = () => {
               </div>
 
               <form onSubmit={handleSavePet} className="p-6 space-y-4" data-testid="add-pet-form">
+                {petModalError && (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    data-testid="pet-modal-error"
+                    className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium flex items-center gap-2.5"
+                  >
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" aria-hidden="true" />
+                    <span>{petModalError}</span>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Nombre del Paciente *
