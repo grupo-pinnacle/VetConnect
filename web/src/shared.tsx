@@ -147,8 +147,15 @@ export function Field({ label, value, editing }: { label: string; value: string;
   return <label className="field"><span>{label}</span><input value={value} readOnly={!editing}/></label>;
 }
 
-export function EmptyState({ icon, title, text, action }: { icon: IconName; title: string; text: string; action?: string }) {
-  return <div className="empty-state"><span><Icon name={icon} size={27}/></span><h2>{title}</h2><p>{text}</p>{action && <Button icon="plus" onClick={() => action === "Volver al inicio" && go("/client/dashboard")}>{action}</Button>}</div>;
+export function EmptyState({ icon, title, text, action, onAction }: { icon: IconName; title: string; text: string; action?: string; onAction?: () => void }) {
+  const handleClick = () => {
+    if (onAction) {
+      onAction();
+    } else if (action === "Volver al inicio") {
+      go("/client/dashboard");
+    }
+  };
+  return <div className="empty-state"><span><Icon name={icon} size={27}/></span><h2>{title}</h2><p>{text}</p>{action && <Button icon="plus" onClick={handleClick}>{action}</Button>}</div>;
 }
 
 export function Modal({ title, text, cancel, confirm, destructive, onClose, onConfirm }: { title: string; text: string; cancel: string; confirm: string; destructive?: boolean; onClose: () => void; onConfirm?: () => void }) {
