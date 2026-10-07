@@ -1,5 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Icon, MessageBubble, Modal, Status, Toast, go } from "../shared";
+import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import type { ApiResponse, Consultation as BackendConsultation, User } from "../types";
+import { parseConsultationNotes } from "../lib/consultationNotes";
 import {
   getPatient, initialConsults, initialEvents, initialFollowUps, initialQueue, initialRx, initialThreads, quickReplies, triageMeta,
   type AgendaEvent, type Consult, type FollowUp, type Msg, type Patient, type QueueItem, type Rx, type Thread, type Triage,
@@ -25,15 +30,20 @@ export const useVet = () => {
 };
 
 export function VetProvider({ children, forceEmpty }: { children: ReactNode; forceEmpty: boolean }) {
-  const [avail, setAvail] = useState<Avail>("Disponible");
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [avail, setAvail] = useState<Avail>(user?.isOnline ? "Disponible" : "Disponible");
   const [pending, setPending] = useState<Avail | null>(null);
   const [toast, setToast] = useState<{ msg: string; id: number } | null>(null);
-  const [queue, setQueue] = useState(forceEmpty ? [] : initialQueue);
-  const [consults, setConsults] = useState(forceEmpty ? [] : initialConsults);
-  const [threads, setThreads] = useState(forceEmpty ? [] : initialThreads);
-  const [events, setEvents] = useState(forceEmpty ? [] : initialEvents);
-  const [rx, setRx] = useState(forceEmpty ? [] : initialRx);
-  const [followUps, setFollowUps] = useState(forceEmpty ? [] : initialFollowUps);
+
+  // Backend query for consultations & queue
+  const vetConsultsQuery = useQuery({
+    queryKey: ['consultations', 'vet'],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<BackendConsultation[]>>('/api/consultations/mine');
+      return (res.data.success && res.data.data) ? res.data.data : [];
+    },
+  });
 
   const notify = useCallback((msg: string) => setToast({ msg, id: Date.now() }), []);
   useEffect(() => {
@@ -42,29 +52,116 @@ export function VetProvider({ children, forceEmpty }: { children: ReactNode; for
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  const apply = useCallback((next: Avail) => { setAvail(next); notify(`Tu estado ahora es: ${next}`); }, [notify]);
+  // Derived real queue from WAITING consultations in DB
+  const mappedRealQueue = useMemo((): QueueItem[] => {
+    if (!vetConsultsQuery.data || vetConsultsQuery.data.length === 0) return [];
+    return vetConsultsQuery.data
+      .filter((c) => c.status === "WAITING")
+      .map((c) => {
+        const parsed = parseConsultationNotes(c.notes);
+        const triageLevel: Triage = parsed.priority === "ROJO" ? "Crítico" : parsed.priority === "AMARILLO" ? "Prioritario" : "Moderado";
+        return {
+          id: c.id,
+          petId: c.petId || "milo",
+          reason: parsed.cleanNotes || "Consulta veterinaria",
+          triage: triageLevel,
+          wait: 120,
+          requested: new Date(c.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+          note: parsed.cleanNotes,
+        };
+      });
+  }, [vetConsultsQuery.data]);
+
+  // Derived real consults from ACTIVE / COMPLETED / CANCELLED in DB
+  const mappedRealConsults = useMemo((): Consult[] => {
+    if (!vetConsultsQuery.data || vetConsultsQuery.data.length === 0) return [];
+    return vetConsultsQuery.data
+      .filter((c) => c.status !== "WAITING")
+      .map((c) => {
+        const parsed = parseConsultationNotes(c.notes);
+        const triageLevel: Triage = parsed.priority === "ROJO" ? "Crítico" : parsed.priority === "AMARILLO" ? "Prioritario" : "Moderado";
+        const cStatus = c.status === "ACTIVE" ? "Activa" : c.status === "COMPLETED" ? "Finalizada" : "Cancelada";
+        return {
+          id: c.id,
+          petId: c.petId || "milo",
+          day: "Hoy",
+          date: new Date(c.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" }),
+          time: new Date(c.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+          reason: parsed.cleanNotes,
+          status: cStatus,
+          mode: "Videoconsulta",
+          triage: triageLevel,
+        };
+      });
+  }, [vetConsultsQuery.data]);
+
+  const [queue, setQueue] = useState(forceEmpty ? [] : initialQueue);
+  const [consults, setConsults] = useState(forceEmpty ? [] : initialConsults);
+  const [threads, setThreads] = useState(forceEmpty ? [] : initialThreads);
+  const [events, setEvents] = useState(forceEmpty ? [] : initialEvents);
+  const [rx, setRx] = useState(forceEmpty ? [] : initialRx);
+  const [followUps, setFollowUps] = useState(forceEmpty ? [] : initialFollowUps);
+
+  // Sync state when backend returns live rows
+  useEffect(() => {
+    if (mappedRealQueue.length > 0 && !forceEmpty) {
+      setQueue(mappedRealQueue);
+    }
+  }, [mappedRealQueue, forceEmpty]);
+
+  useEffect(() => {
+    if (mappedRealConsults.length > 0 && !forceEmpty) {
+      setConsults(mappedRealConsults);
+    }
+  }, [mappedRealConsults, forceEmpty]);
+
+  const apply = useCallback(async (next: Avail) => {
+    setAvail(next);
+    notify(`Tu estado ahora es: ${next}`);
+    try {
+      await api.patch('/api/users/profile', { isOnline: next === "Disponible" });
+    } catch {
+      // Background presence sync
+    }
+  }, [notify]);
+
   const requestAvail = useCallback((next: Avail) => {
     if (next === avail) return;
     if (next === "No disponible" && queue.length > 0) setPending(next);
     else apply(next);
   }, [avail, queue.length, apply]);
 
-  const accept = useCallback((id: string) => {
+  const accept = useCallback(async (id: string) => {
     const q = queue.find((item) => item.id === id);
     if (!q) return;
+
+    try {
+      await api.patch(`/api/consultations/${id}/assign`);
+      queryClient.invalidateQueries({ queryKey: ['consultations', 'vet'] });
+    } catch {
+      // Local optimistic fallback
+    }
+
     setQueue((list) => list.filter((item) => item.id !== id));
-    setConsults((list) => [{ id: q.id, petId: q.petId, day: "Hoy", date: "15 Jul", time: "18:43", reason: q.reason, status: "Activa", mode: "Videoconsulta", triage: q.triage }, ...list]);
+    setConsults((list) => [{ id: q.id, petId: q.petId, day: "Hoy", date: "Hoy", time: "Ahora", reason: q.reason, status: "Activa", mode: "Videoconsulta", triage: q.triage }, ...list]);
     setAvail("En consulta");
     notify(`Aceptaste la consulta de ${getPatient(q.petId).name}`);
-    go(`/vet/consultations/${q.id}`);
-  }, [queue, notify]);
+    go(`/call/${q.id}`);
+  }, [queue, notify, queryClient]);
 
-  const finish = useCallback((id: string) => {
+  const finish = useCallback(async (id: string) => {
+    try {
+      await api.patch(`/api/consultations/${id}/complete`, { diagnosisNotes: "Consulta telemática finalizada con éxito." });
+      queryClient.invalidateQueries({ queryKey: ['consultations', 'vet'] });
+    } catch {
+      // Local optimistic fallback
+    }
+
     const remaining = consults.filter((c) => c.status === "Activa" && c.id !== id).length;
     setConsults((list) => list.map((c) => c.id === id ? { ...c, status: "Finalizada" } : c));
     if (!remaining) setAvail("Disponible");
     notify("Consulta finalizada");
-  }, [consults, notify]);
+  }, [consults, notify, queryClient]);
 
   const send = useCallback((petId: string, msg: Omit<Msg, "id" | "mine" | "time">) => {
     const full: Msg = { ...msg, id: `m${Date.now()}`, mine: true, time: "Ahora" };
