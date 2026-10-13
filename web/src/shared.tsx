@@ -101,16 +101,26 @@ export function go(path: string) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-export function Button({ children, variant = "primary", icon, onClick, disabled = false, className = "", ariaLabel }: { children?: ReactNode; variant?: "primary" | "secondary" | "soft" | "danger" | "icon"; icon?: IconName; onClick?: () => void; disabled?: boolean; className?: string; ariaLabel?: string }) {
-  return <button className={`button button--${variant} ${className}`} onClick={onClick} disabled={disabled} aria-label={ariaLabel}>{icon && <Icon name={icon} size={18}/>} {children}</button>;
+export function Button({ children, variant = "primary", icon, onClick, disabled = false, className = "", ariaLabel, type = "button" }: { children?: ReactNode; variant?: "primary" | "secondary" | "soft" | "danger" | "icon"; icon?: IconName; onClick?: () => void; disabled?: boolean; className?: string; ariaLabel?: string; type?: "button" | "submit" | "reset" }) {
+  return <button type={type} className={`button button--${variant} ${className}`} onClick={onClick} disabled={disabled} aria-label={ariaLabel}>{icon && <Icon name={icon} size={18}/>} {children}</button>;
 }
 
 export function Status({ children, tone = "teal" }: { children: ReactNode; tone?: "teal" | "amber" | "gray" | "red" }) {
   return <span className={`status status--${tone}`}><span className="status__dot"/>{children}</span>;
 }
 
-export function Logo({ to = "/client/dashboard" }: { to?: string }) {
-  return <button className="logo" onClick={() => go(to)} aria-label="Ir al inicio"><span className="logo__mark"><Icon name="heart" size={20}/></span><span>VetConnect</span></button>;
+export function Logo({ to }: { to?: string }) {
+  let defaultTo = "/client/dashboard";
+  try {
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem("vetconnect_user") : null;
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u?.role === "VET") defaultTo = "/vet/dashboard";
+      else if (u?.role === "ADMIN") defaultTo = "/admin/dashboard";
+    }
+  } catch {}
+  const target = to || defaultTo;
+  return <button className="logo" onClick={() => go(target)} aria-label="Ir al inicio"><span className="logo__mark"><Icon name="heart" size={20}/></span><span>VetConnect</span></button>;
 }
 
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
@@ -143,8 +153,8 @@ export function Toast({ message, tone = "success", leaving = false }: { message:
   return <div className={`toast toast--${tone} ${leaving ? "is-leaving" : ""}`} role={tone === "error" ? "alert" : "status"} aria-live={tone === "error" ? "assertive" : "polite"}><Icon name={noticeIcons[tone]} size={17}/>{message}</div>;
 }
 
-export function Field({ label, value, editing }: { label: string; value: string; editing: boolean }) {
-  return <label className="field"><span>{label}</span><input value={value} readOnly={!editing}/></label>;
+export function Field({ label, value, editing, onChange, error }: { label: string; value: string; editing: boolean; onChange?: (value: string) => void; error?: string }) {
+  return <label className={`field ${error ? "has-error" : ""}`}><span>{label}</span><input value={value} readOnly={!editing} onChange={(event) => onChange?.(event.target.value)} aria-invalid={!!error}/>{error && <em role="alert">{error}</em>}</label>;
 }
 
 export function EmptyState({ icon, title, text, action, onAction }: { icon: IconName; title: string; text: string; action?: string; onAction?: () => void }) {
@@ -158,7 +168,7 @@ export function EmptyState({ icon, title, text, action, onAction }: { icon: Icon
   return <div className="empty-state"><span><Icon name={icon} size={27}/></span><h2>{title}</h2><p>{text}</p>{action && <Button icon="plus" onClick={handleClick}>{action}</Button>}</div>;
 }
 
-export function Modal({ title, text, cancel, confirm, destructive, onClose, onConfirm }: { title: string; text: string; cancel: string; confirm: string; destructive?: boolean; onClose: () => void; onConfirm?: () => void }) {
+export function Modal({ title, text, cancel, confirm, destructive, onClose, onConfirm, children }: { title: string; text: string; cancel: string; confirm: string; destructive?: boolean; onClose: () => void; onConfirm?: () => void; children?: ReactNode }) {
   const dialog = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLButtonElement>(null);
   const previous = useRef<HTMLElement | null>(null);
@@ -178,5 +188,5 @@ export function Modal({ title, text, cancel, confirm, destructive, onClose, onCo
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("keydown", onKey); previous.current?.focus(); };
   }, [onClose]);
-  return <div className="modal-layer" role="presentation"><button className="modal-scrim" onClick={onClose} aria-label="Cerrar modal"/><div ref={dialog} className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description"><button ref={close} className="button button--icon modal__close" onClick={onClose} aria-label="Cerrar"><Icon name="close" size={18}/></button><span className={`modal__icon ${destructive ? "is-danger" : ""}`}><Icon name={destructive ? "trash" : "file"}/></span><h2 id="modal-title">{title}</h2><p id="modal-description">{text}</p><div><Button variant="secondary" onClick={onClose}>{cancel}</Button><Button variant={destructive ? "danger" : "primary"} onClick={onConfirm ?? onClose}>{confirm}</Button></div></div></div>;
+  return <div className="modal-layer" role="presentation"><button className="modal-scrim" onClick={onClose} aria-label="Cerrar modal"/><div ref={dialog} className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description"><button ref={close} className="button button--icon modal__close" onClick={onClose} aria-label="Cerrar"><Icon name="close" size={18}/></button><span className={`modal__icon ${destructive ? "is-danger" : ""}`}><Icon name={destructive ? "trash" : "file"}/></span><h2 id="modal-title">{title}</h2><p id="modal-description">{text}</p>{children}<div><Button variant="secondary" onClick={onClose}>{cancel}</Button><Button variant={destructive ? "danger" : "primary"} onClick={onConfirm ?? onClose}>{confirm}</Button></div></div></div>;
 }

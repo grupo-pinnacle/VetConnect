@@ -1,7 +1,21 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiResponse } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+export const getApiUrl = () => {
+  if (typeof window !== 'undefined') {
+    const envApi = import.meta.env.VITE_API_URL;
+    if (envApi && !envApi.includes('localhost') && !envApi.includes('127.0.0.1')) {
+      return envApi;
+    }
+    // If accessed through Dev Tunnels or custom host, use current origin so Vite proxy forwards /api
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return window.location.origin;
+    }
+  }
+  return import.meta.env.VITE_API_URL || 'http://localhost:3001';
+};
+
+const API_URL = getApiUrl();
 
 let currentAccessToken: string | null = null;
 try {

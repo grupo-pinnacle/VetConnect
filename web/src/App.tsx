@@ -1,7 +1,7 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import OfflineBanner from './components/common/OfflineBanner';
 import GlobalCallListener from './components/call/GlobalCallListener';
@@ -23,6 +23,7 @@ const TermsConditions = lazy(() => import('./pages/TermsConditions'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
 const PrescriptionView = lazy(() => import('./pages/PrescriptionView'));
+const AdminApp = lazy(() => import('./pages/AdminApp'));
 
 export function ScopedStyle({ css, id }: { css: string; id: string }) {
   useEffect(() => {
@@ -60,6 +61,21 @@ const AuthWrapper: React.FC = () => {
 };
 
 const ClientWrapper: React.FC = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user?.role === 'VET') {
+      navigate('/vet/dashboard', { replace: true });
+    } else if (!loading && user?.role === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (!loading && (user?.role === 'VET' || user?.role === 'ADMIN')) {
+    return <div className="route-loading" role="status">Redirigiendo a tu consola…</div>;
+  }
+
   return (
     <>
       <ScopedStyle id="client-style" css={clientCss} />
@@ -69,18 +85,24 @@ const ClientWrapper: React.FC = () => {
 };
 
 const VetWrapper: React.FC = () => {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const onPop = () => setCurrentPath(window.location.pathname);
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
+    if (!loading && user?.role === 'CLIENT') {
+      navigate('/client/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (!loading && user?.role === 'CLIENT') {
+    return <div className="route-loading" role="status">Redirigiendo a tu portal de tutor…</div>;
+  }
 
   return (
     <>
       <ScopedStyle id="client-style" css={clientCss} />
-      <VetApp path={currentPath} />
+      <VetApp path={location.pathname} />
     </>
   );
 };
@@ -91,6 +113,15 @@ const CallWrapper: React.FC = () => {
     <>
       <ScopedStyle id="client-style" css={clientCss} />
       <CallRoom id={id || 'milo'} />
+    </>
+  );
+};
+
+const AdminWrapper: React.FC = () => {
+  return (
+    <>
+      <ScopedStyle id="client-style" css={clientCss} />
+      <AdminApp />
     </>
   );
 };
@@ -134,6 +165,10 @@ export const App: React.FC = () => {
 
                 {/* 5. Videoconsultas en vivo */}
                 <Route path="/call/:id" element={<CallWrapper />} />
+
+                {/* 6. Panel de Administración (Super Admin CRUD) */}
+                <Route path="/admin/*" element={<AdminWrapper />} />
+                <Route path="/admin" element={<AdminWrapper />} />
 
                 {/* Recetas y verificaciones SENASA */}
                 <Route path="/prescriptions/:id" element={<PrescriptionView />} />

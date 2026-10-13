@@ -1,24 +1,29 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { io, Socket } from "socket.io-client";
 import { Button, Icon, MessageBubble, Modal, Status, Toast, go } from "../shared";
-import api from "../services/api";
+import api, { getAccessToken } from "../services/api";
+import { getWsUrl, WhatsAppCheck } from "./CallRoom";
 import { useAuth } from "../context/AuthContext";
 import type { ApiResponse, Consultation as BackendConsultation, User } from "../types";
 import { parseConsultationNotes } from "../lib/consultationNotes";
 import {
   getPatient, initialConsults, initialEvents, initialFollowUps, initialQueue, initialRx, initialThreads, quickReplies, triageMeta,
+  registerPatient, getAllPatients,
   type AgendaEvent, type Consult, type FollowUp, type Msg, type Patient, type QueueItem, type Rx, type Thread, type Triage,
 } from "./data";
+import { mapConsultationToQueueItem, mapConsultationToConsult, mapBackendPetToPatient } from "./mappers";
 
 export type Avail = "Disponible" | "No disponible" | "En consulta";
 
 type Ctx = {
   avail: Avail; requestAvail: (next: Avail) => void; notify: (msg: string) => void;
   queue: QueueItem[]; accept: (id: string) => void;
-  consults: Consult[]; finish: (id: string) => void; threads: Thread[]; send: (petId: string, msg: Omit<Msg, "id" | "mine" | "time">) => void; markRead: (petId: string) => void; unread: number;
+  consults: Consult[]; finish: (id: string, notes?: string) => Promise<void> | void; threads: Thread[]; send: (petId: string, msg: Omit<Msg, "id" | "mine" | "time">) => void; markRead: (petId: string) => void; unread: number;
   events: AgendaEvent[]; setEvents: React.Dispatch<React.SetStateAction<AgendaEvent[]>>;
   rx: Rx[]; setRx: React.Dispatch<React.SetStateAction<Rx[]>>;
   followUps: FollowUp[]; setFollowUps: React.Dispatch<React.SetStateAction<FollowUp[]>>;
+  patientsList: Patient[];
   forceEmpty: boolean;
 };
 
@@ -32,74 +37,102 @@ export const useVet = () => {
 export function VetProvider({ children, forceEmpty }: { children: ReactNode; forceEmpty: boolean }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [avail, setAvail] = useState<Avail>(user?.isOnline ? "Disponible" : "Disponible");
+  const [avail, setAvail] = useState<Avail>("Disponible");
   const [pending, setPending] = useState<Avail | null>(null);
-  const [toast, setToast] = useState<{ msg: string; id: number } | null>(null);
+  const [toast, setToast] = useState<{ msg: string; id: number; leaving?: boolean } | null>(null);
 
-  // Backend query for consultations & queue
+  // Sync vet availability presence with backend on mount
+  useEffect(() => {
+    if (user?.role === "VET") {
+      api.patch('/api/users/profile', { isOnline: true }).catch(() => {});
+    }
+  }, [user?.role]);
+
+  // Backend query for consultations & queue with real-time polling
   const vetConsultsQuery = useQuery({
     queryKey: ['consultations', 'vet'],
     queryFn: async () => {
       const res = await api.get<ApiResponse<BackendConsultation[]>>('/api/consultations/mine');
       return (res.data.success && res.data.data) ? res.data.data : [];
     },
+    refetchInterval: 4000,
   });
 
   const notify = useCallback((msg: string) => setToast({ msg, id: Date.now() }), []);
   useEffect(() => {
     if (!toast) return;
-    const t = window.setTimeout(() => setToast(null), 3800);
-    return () => window.clearTimeout(t);
-  }, [toast]);
+    const leave = window.setTimeout(() => setToast((current) => current?.id === toast.id ? { ...current, leaving: true } : current), 3300);
+    const remove = window.setTimeout(() => setToast((current) => current?.id === toast.id ? null : current), 3800);
+    return () => { window.clearTimeout(leave); window.clearTimeout(remove); };
+  }, [toast?.id]);
+
+  // Real-time socket sync for incoming guard triage consultations
+  useEffect(() => {
+    if (!user || user.role !== "VET") return;
+    const wsUrl = getWsUrl();
+    const token = getAccessToken();
+    const socket = io(wsUrl, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+      auth: {
+        token: token ? `Bearer ${token}` : undefined,
+      },
+    });
+
+    socket.on("consultation:new", (newCons: BackendConsultation) => {
+      queryClient.invalidateQueries({ queryKey: ["consultations", "vet"] });
+      const petName = newCons?.pet?.name || "un paciente";
+      notify(`🚨 Nueva solicitud de guardia para ${petName}`);
+    });
+
+    return () => {
+      socket.off("consultation:new");
+      socket.disconnect();
+    };
+  }, [user, queryClient, notify]);
+
+  // Dynamically register real patients from DB consultations
+  useEffect(() => {
+    if (vetConsultsQuery.data) {
+      vetConsultsQuery.data.forEach((c) => {
+        if (c.pet) {
+          const patient = mapBackendPetToPatient(c.pet, c.client);
+          registerPatient(patient);
+        }
+      });
+    }
+  }, [vetConsultsQuery.data]);
 
   // Derived real queue from WAITING consultations in DB
   const mappedRealQueue = useMemo((): QueueItem[] => {
-    if (!vetConsultsQuery.data || vetConsultsQuery.data.length === 0) return [];
+    if (forceEmpty) return [];
+    if (!vetConsultsQuery.data) return [];
     return vetConsultsQuery.data
       .filter((c) => c.status === "WAITING")
-      .map((c) => {
-        const parsed = parseConsultationNotes(c.notes);
-        const triageLevel: Triage = parsed.priority === "ROJO" ? "Crítico" : parsed.priority === "AMARILLO" ? "Prioritario" : "Moderado";
-        return {
-          id: c.id,
-          petId: c.petId || "milo",
-          reason: parsed.cleanNotes || "Consulta veterinaria",
-          triage: triageLevel,
-          wait: 120,
-          requested: new Date(c.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
-          note: parsed.cleanNotes,
-        };
-      });
-  }, [vetConsultsQuery.data]);
+      .map(mapConsultationToQueueItem);
+  }, [vetConsultsQuery.data, forceEmpty]);
 
   // Derived real consults from ACTIVE / COMPLETED / CANCELLED in DB
   const mappedRealConsults = useMemo((): Consult[] => {
-    if (!vetConsultsQuery.data || vetConsultsQuery.data.length === 0) return [];
+    if (forceEmpty) return [];
+    if (!vetConsultsQuery.data) return [];
     return vetConsultsQuery.data
       .filter((c) => c.status !== "WAITING")
-      .map((c) => {
-        const parsed = parseConsultationNotes(c.notes);
-        const triageLevel: Triage = parsed.priority === "ROJO" ? "Crítico" : parsed.priority === "AMARILLO" ? "Prioritario" : "Moderado";
-        const cStatus = c.status === "ACTIVE" ? "Activa" : c.status === "COMPLETED" ? "Finalizada" : "Cancelada";
-        return {
-          id: c.id,
-          petId: c.petId || "milo",
-          day: "Hoy",
-          date: new Date(c.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" }),
-          time: new Date(c.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
-          reason: parsed.cleanNotes,
-          status: cStatus,
-          mode: "Videoconsulta",
-          triage: triageLevel,
-        };
-      });
-  }, [vetConsultsQuery.data]);
+      .map(mapConsultationToConsult);
+  }, [vetConsultsQuery.data, forceEmpty]);
 
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [consults, setConsults] = useState<Consult[]>([]);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [events, setEvents] = useState<AgendaEvent[]>([]);
-  const [rx, setRx] = useState<Rx[]>([]);
+  const [rx, setRx] = useState<Rx[]>(() => {
+    try {
+      const saved = localStorage.getItem("vetconnect_vet_rx");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
 
   // Sync state when backend returns live rows
@@ -112,6 +145,23 @@ export function VetProvider({ children, forceEmpty }: { children: ReactNode; for
   useEffect(() => {
     if (!forceEmpty && mappedRealConsults) {
       setConsults(mappedRealConsults);
+      if (mappedRealConsults.length > 0) {
+        setThreads((prev) => {
+          const mappedThreads: Thread[] = mappedRealConsults.map((c) => {
+            const existing = prev.find((t) => t.petId === c.petId);
+            return {
+              id: `t-${c.id}`,
+              petId: c.petId,
+              last: existing?.last || c.reason || "Consulta médica",
+              lastTime: existing?.lastTime || c.time || "Hoy",
+              unread: existing?.unread || 0,
+              online: true,
+              msgs: existing?.msgs || [],
+            };
+          });
+          return mappedThreads;
+        });
+      }
     }
   }, [mappedRealConsults, forceEmpty]);
 
@@ -121,7 +171,7 @@ export function VetProvider({ children, forceEmpty }: { children: ReactNode; for
     try {
       await api.patch('/api/users/profile', { isOnline: next === "Disponible" });
     } catch {
-      // Background presence sync
+      // Presence sync
     }
   }, [notify]);
 
@@ -133,35 +183,28 @@ export function VetProvider({ children, forceEmpty }: { children: ReactNode; for
 
   const accept = useCallback(async (id: string) => {
     const q = queue.find((item) => item.id === id);
-    if (!q) return;
-
     try {
       await api.patch(`/api/consultations/${id}/assign`);
-      queryClient.invalidateQueries({ queryKey: ['consultations', 'vet'] });
-    } catch {
-      // Local optimistic fallback
+      queryClient.invalidateQueries({ queryKey: ['consultations'] });
+      setAvail("En consulta");
+      notify(`Aceptaste la consulta de ${q ? getPatient(q.petId).name : "paciente"}`);
+      go(`/call/${id}`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message || "No se pudo asignar la consulta.";
+      notify(msg);
     }
-
-    setQueue((list) => list.filter((item) => item.id !== id));
-    setConsults((list) => [{ id: q.id, petId: q.petId, day: "Hoy", date: "Hoy", time: "Ahora", reason: q.reason, status: "Activa", mode: "Videoconsulta", triage: q.triage }, ...list]);
-    setAvail("En consulta");
-    notify(`Aceptaste la consulta de ${getPatient(q.petId).name}`);
-    go(`/call/${q.id}`);
   }, [queue, notify, queryClient]);
 
-  const finish = useCallback(async (id: string) => {
+  const finish = useCallback(async (id: string, notes?: string) => {
     try {
-      await api.patch(`/api/consultations/${id}/complete`, { diagnosisNotes: "Consulta telemática finalizada con éxito." });
+      await api.patch(`/api/consultations/${id}/complete`, { diagnosisNotes: notes || "Consulta telemática finalizada con éxito." });
       queryClient.invalidateQueries({ queryKey: ['consultations', 'vet'] });
+      setAvail("Disponible");
+      notify("Consulta finalizada con éxito");
     } catch {
-      // Local optimistic fallback
+      notify("No se pudo completar la consulta.");
     }
-
-    const remaining = consults.filter((c) => c.status === "Activa" && c.id !== id).length;
-    setConsults((list) => list.map((c) => c.id === id ? { ...c, status: "Finalizada" } : c));
-    if (!remaining) setAvail("Disponible");
-    notify("Consulta finalizada");
-  }, [consults, notify, queryClient]);
+  }, [notify, queryClient]);
 
   const send = useCallback((petId: string, msg: Omit<Msg, "id" | "mine" | "time">) => {
     const full: Msg = { ...msg, id: `m${Date.now()}`, mine: true, time: "Ahora" };
@@ -172,8 +215,12 @@ export function VetProvider({ children, forceEmpty }: { children: ReactNode; for
   const markRead = useCallback((petId: string) => setThreads((list) => list.some((t) => t.petId === petId && t.unread) ? list.map((t) => t.petId === petId ? { ...t, unread: 0 } : t) : list), []);
   const unread = threads.reduce((n, t) => n + t.unread, 0);
 
-  const value = useMemo(() => ({ avail, requestAvail, notify, queue, accept, consults, finish, threads, send, markRead, unread, events, setEvents, rx, setRx, followUps, setFollowUps, forceEmpty }),
-    [avail, requestAvail, notify, queue, accept, consults, finish, threads, send, markRead, unread, events, rx, followUps, forceEmpty]);
+  const patientsList = useMemo(() => {
+    return getAllPatients();
+  }, [vetConsultsQuery.data]);
+
+  const value = useMemo(() => ({ avail, requestAvail, notify, queue, accept, consults, finish, threads, send, markRead, unread, events, setEvents, rx, setRx, followUps, setFollowUps, patientsList, forceEmpty }),
+    [avail, requestAvail, notify, queue, accept, consults, finish, threads, send, markRead, unread, events, rx, followUps, patientsList, forceEmpty]);
 
   return <VetContext.Provider value={value}>
     {children}
@@ -249,75 +296,322 @@ export function Lightbox({ items, index, onIndex, onClose, pet, consult }: { ite
 
 export function Sheet({ eyebrow, title, onClose, children, footer }: { eyebrow?: string; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
   const ref = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLElement>(null);
+  const previous = useRef<HTMLElement | null>(null);
   useEffect(() => {
+    previous.current = document.activeElement as HTMLElement;
     ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key !== "Tab" || !dialog.current) return;
+      const focusable = [...dialog.current.querySelectorAll<HTMLElement>("button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])")];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); previous.current?.focus(); };
   }, [onClose]);
   return <div className="v-sheet-layer" role="presentation">
     <button className="modal-scrim" onClick={onClose} aria-label="Cerrar panel"/>
-    <aside className="v-sheet" role="dialog" aria-modal="true" aria-label={title}>
+    <aside ref={dialog} className="v-sheet" role="dialog" aria-modal="true" aria-label={title}>
       <span className="v-sheet__grip" aria-hidden="true"/>
       <header><div>{eyebrow && <span className="eyebrow">{eyebrow}</span>}<h2>{title}</h2></div><button ref={ref} className="button button--icon" onClick={onClose} aria-label="Cerrar"><Icon name="close" size={18}/></button></header>
       <div className="v-sheet__body">{children}</div>
-      {footer && <footer>{footer}</footer>}
+      {footer && <footer className="v-sheet__footer">{footer}</footer>}
     </aside>
   </div>;
 }
 
-export function ChatPanel({ petId, header = true, actions, onBack, consultLabel = "Conversación" }: { petId: string; header?: boolean; actions?: ReactNode; onBack?: () => void; consultLabel?: string }) {
-  const { threads, send, markRead, notify } = useVet();
+export function ChatPanel({
+  petId,
+  consultationId,
+  header = true,
+  actions,
+  onBack,
+  consultLabel = "Conversación",
+}: {
+  petId: string;
+  consultationId?: string;
+  header?: boolean;
+  actions?: ReactNode;
+  onBack?: () => void;
+  consultLabel?: string;
+}) {
+  const { user } = useAuth();
+  const { threads, send, markRead, notify, consults } = useVet();
   const pet = getPatient(petId);
   const thread = threads.find((t) => t.petId === petId);
+
+  // Resolve consultationId from props or consults
+  const activeConsultationId = consultationId || consults.find((c) => c.petId === petId || c.id === petId)?.id;
+
+  const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [quick, setQuick] = useState(false);
   const [box, setBox] = useState<number | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [connected, setConnected] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
-  const msgs = thread?.msgs ?? [];
-  useEffect(() => { markRead(petId); }, [petId, markRead, msgs.length]);
-  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [msgs.length, petId]);
-  const images = msgs.filter((m) => m.kind === "image");
-  const submit = () => { if (!text.trim()) return; send(petId, { text: text.trim() }); setText(""); setQuick(false); };
-  return <section className="chat v-chat" aria-label={`Conversación con ${pet.tutor}`}>
-    {header && <header>
-      {onBack && <Button variant="icon" icon="left" ariaLabel="Volver a conversaciones" onClick={onBack} className="v-chat__back"/>}
-      <span className="v-chat__avatar"><PetPhoto pet={pet} size={40}/></span>
-      <div><strong>{pet.tutor} · {pet.name}</strong><span><i className={thread?.online ? "is-online" : "is-offline"}/>{thread?.online ? "En línea" : "Sin conexión"} · {pet.kind}, {pet.breed}</span></div>
-      {actions}
-    </header>}
-    <div className="chat__messages">
-      {msgs.length === 0 && <div className="v-chat__empty"><Icon name="message" size={22}/><p>Todavía no hay mensajes con {pet.tutor}.</p></div>}
-      {msgs.map((m) => {
-        if (m.kind === "image") {
-          const idx = images.findIndex((i) => i.id === m.id);
-          return <div key={m.id} className={`message-bubble v-bubble-img ${m.mine ? "message-bubble--mine" : ""}`}>
-            <button onClick={() => setBox(idx)} aria-label={`Ampliar fotografía: ${m.name}`}><img src={m.src} alt={m.name} style={{ objectPosition: m.pos }} loading="lazy"/><span className="v-bubble-img__zoom"><Icon name="expand" size={14}/></span></button>
-            <span>{m.name} · {m.time}</span>
-          </div>;
+
+  // Mark read
+  useEffect(() => {
+    markRead(petId);
+  }, [petId, markRead, messages.length]);
+
+  // Load and sync real messages if activeConsultationId is available
+  useEffect(() => {
+    if (!activeConsultationId) {
+      if (thread?.msgs) {
+        setMessages(
+          thread.msgs.map((m) => ({
+            id: m.id,
+            content: m.text || m.name || "",
+            senderId: m.mine ? user?.id : "other",
+            createdAt: null,
+            timeStr: m.time,
+            kind: m.kind,
+            src: m.src,
+            name: m.name,
+            pos: m.pos,
+          }))
+        );
+      }
+      return;
+    }
+
+    const wsUrl = getWsUrl();
+    const token = getAccessToken();
+    const s = io(wsUrl, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+      auth: { token: token ? `Bearer ${token}` : undefined },
+    });
+    setSocket(s);
+
+    s.on("connect", () => {
+      setConnected(true);
+      s.emit("join:consultation", { consultationId: activeConsultationId });
+    });
+
+    s.on("disconnect", () => setConnected(false));
+
+    s.on("message:new", (msg: any) => {
+      setMessages((prev) => {
+        if (prev.some((m) => (m.id && m.id === msg.id) || (m.clientMsgId && m.clientMsgId === msg.clientMsgId))) {
+          return prev;
         }
-        if (m.kind === "doc") return <div key={m.id} className={`message-bubble v-bubble-doc ${m.mine ? "message-bubble--mine" : ""}`}>
-          <Icon name="file" size={20}/><div><strong>{m.name}</strong><small>{m.text}</small></div><button className="button button--icon" onClick={() => notify("Documento abierto (mock)")} aria-label={`Abrir ${m.name}`}><Icon name="download" size={16}/></button>
-          <span>{m.time}</span>
-        </div>;
-        return <MessageBubble key={m.id} mine={m.mine} text={m.text ?? ""} time={m.time} state={m.mine ? "read" : undefined}/>;
-      })}
-      {thread?.online && <div className="typing" role="status" aria-live="polite"><span/><span/><span/> Tutor escribiendo…</div>}
-      {!thread?.online && <div className="chat-offline" role="status"><Icon name="alert" size={14}/> Sin conexión. Los mensajes se enviarán cuando vuelva la conexión.</div>}
-      <div ref={endRef}/>
-    </div>
-    {quick && <div className="v-quick" role="menu" aria-label="Respuestas rápidas">
-      <span className="eyebrow">Respuestas rápidas</span>
-      {quickReplies.map((q) => <button role="menuitem" key={q} onClick={() => { setText(q); setQuick(false); }}>{q}</button>)}
-    </div>}
-    <footer>
-      <Button variant="icon" icon="paperclip" ariaLabel="Adjuntar archivo" onClick={() => notify("Adjuntos disponibles en la versión conectada")}/>
-      <button className={`button button--icon v-quick-toggle ${quick ? "is-open" : ""}`} onClick={() => setQuick(!quick)} aria-label="Respuestas rápidas" aria-expanded={quick}><Icon name="zap" size={18}/></button>
-      <input aria-label="Escribir mensaje" placeholder="Escribir al tutor…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()}/>
-      <Button variant="icon" icon="send" ariaLabel="Enviar mensaje" disabled={!text.trim()} onClick={submit}/>
-    </footer>
-    {box !== null && <Lightbox items={images.map((i) => ({ src: i.src!, caption: i.name!, pos: i.pos }))} index={box} onIndex={setBox} onClose={() => setBox(null)} pet={pet.name} consult={consultLabel}/>}
-  </section>;
+        return [...prev, msg];
+      });
+    });
+
+    api
+      .get<ApiResponse<any[]>>(`/api/consultations/${activeConsultationId}/messages`)
+      .then((res) => {
+        if (res.data.success && res.data.data) {
+          setMessages(res.data.data);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      s.disconnect();
+    };
+  }, [activeConsultationId, user?.id, thread?.msgs]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length, petId]);
+
+  const submit = async () => {
+    if (!text.trim()) return;
+    const content = text.trim();
+    setText("");
+    setQuick(false);
+
+    if (activeConsultationId) {
+      const clientMsgId = `vet-msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      if (socket && connected) {
+        socket.emit(
+          "message:send",
+          { consultationId: activeConsultationId, content, clientMsgId },
+          (res: any) => {
+            if (res?.success && res?.data) {
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === res.data.id || m.clientMsgId === clientMsgId)) return prev;
+                return [...prev, res.data];
+              });
+            }
+          }
+        );
+      } else {
+        try {
+          const res = await api.post<ApiResponse<any>>(`/api/consultations/${activeConsultationId}/messages`, {
+            content,
+            clientMsgId,
+          });
+          if (res.data.success && res.data.data) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === res.data.data.id || m.clientMsgId === clientMsgId)) return prev;
+              return [...prev, res.data.data];
+            });
+          }
+        } catch {
+          notify("No se pudo enviar el mensaje.");
+        }
+      }
+    } else {
+      send(petId, { text: content });
+      setMessages((prev) => [
+        ...prev,
+        { id: `local-${Date.now()}`, content, senderId: user?.id, createdAt: new Date().toISOString() },
+      ]);
+    }
+  };
+
+  const images = (thread?.msgs ?? []).filter((m) => m.kind === "image");
+
+  return (
+    <section className="wa-chat-pane v-chat" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#efeae2" }} aria-label={`Conversación con ${pet.tutor}`}>
+      {header && (
+        <header className="wa-chat-pane__header">
+          <div className="wa-chat-pane__header-contact">
+            {onBack && (
+              <button className="wa-icon-btn" onClick={onBack} aria-label="Volver a conversaciones">
+                <Icon name="left" size={18} />
+              </button>
+            )}
+            <div className="wa-chat-pane__header-avatar">
+              <PetPhoto pet={pet} size={40} />
+            </div>
+            <div className="wa-chat-pane__header-info">
+              <h2>{pet.tutor} · {pet.name}</h2>
+              <span className="is-online">
+                {connected || activeConsultationId ? "En línea" : "Conectado"} · {pet.kind}, {pet.breed}
+              </span>
+            </div>
+          </div>
+          <div className="wa-chat-pane__header-actions">
+            {actions}
+          </div>
+        </header>
+      )}
+
+      <div className="wa-chat-body" style={{ flex: 1, overflowY: "auto" }}>
+        <div className="wa-encryption-pill" style={{ alignSelf: "center", margin: "4px auto 8px" }}>
+          <span>🔒</span>
+          <span>Los mensajes y llamadas están cifrados de extremo a extremo · SENASA</span>
+        </div>
+        <div className="wa-date-pill" style={{ alignSelf: "center", margin: "0 auto 6px" }}>HOY</div>
+
+        {messages.length === 0 ? (
+          <div className="v-chat__empty" style={{ textAlign: "center", padding: "40px 16px", color: "var(--ink-soft)" }}>
+            <Icon name="message" size={24} />
+            <p style={{ marginTop: 8, fontSize: 13 }}>Todavía no hay mensajes con {pet.tutor}. Escribí abajo para comenzar.</p>
+          </div>
+        ) : (
+          messages.map((m) => {
+            const mine = m.senderId === user?.id || m.mine;
+            const time = m.createdAt
+              ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : m.timeStr || "Ahora";
+
+            if (m.kind === "image") {
+              const idx = images.findIndex((i) => i.id === m.id);
+              return (
+                <div key={m.id} className={`wa-bubble ${mine ? "wa-bubble--sent" : "wa-bubble--received"}`} style={{ maxWidth: 280 }}>
+                  <button onClick={() => setBox(idx)} style={{ border: 0, padding: 0, background: "none", borderRadius: 8, overflow: "hidden", display: "block", cursor: "pointer" }} aria-label={`Ampliar fotografía: ${m.name}`}>
+                    <img src={m.src} alt={m.name} style={{ width: "100%", height: 160, objectFit: "cover", objectPosition: m.pos, display: "block" }} loading="lazy" />
+                  </button>
+                  <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 4, fontSize: 10, color: "#667781" }}>
+                    <span>{m.name} · {time}</span>
+                    {mine && <WhatsAppCheck state="read" />}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={m.id || m.clientMsgId}
+                className={`wa-bubble ${mine ? "wa-bubble--sent" : "wa-bubble--received"}`}
+              >
+                {!mine && (
+                  <div className="wa-bubble__sender" style={{ fontSize: 11.5, fontWeight: 700, color: "#008069", marginBottom: 2 }}>
+                    {m.sender?.firstName || pet.tutor}
+                  </div>
+                )}
+                <p className="wa-bubble__text" style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: "#111b21" }}>
+                  {m.content}
+                </p>
+                <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 3, fontSize: 10, color: "#667781" }}>
+                  <span>{time}</span>
+                  {mine && <WhatsAppCheck state="read" />}
+                </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={endRef} />
+      </div>
+
+      {quick && (
+        <div className="v-quick" role="menu" aria-label="Respuestas rápidas">
+          <span className="eyebrow">Respuestas rápidas</span>
+          {quickReplies.map((q) => (
+            <button role="menuitem" key={q} onClick={() => { setText(q); setQuick(false); }}>
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <footer className="wa-chat-footer" style={{ padding: "8px 14px", background: "#f0f2f5", display: "flex", alignItems: "center", gap: 8, borderTop: "1px solid #e9edef" }}>
+        <button
+          className={`button button--icon v-quick-toggle ${quick ? "is-open" : ""}`}
+          onClick={() => setQuick(!quick)}
+          aria-label="Respuestas rápidas"
+          aria-expanded={quick}
+          title="Respuestas rápidas"
+          style={{ width: 38, height: 38, borderRadius: "50%" }}
+        >
+          <Icon name="zap" size={17} />
+        </button>
+        <div className="wa-input-pill" style={{ flex: 1, background: "#ffffff", borderRadius: 8, height: 40, display: "flex", alignItems: "center", padding: "0 14px" }}>
+          <input
+            aria-label="Escribir mensaje"
+            placeholder={`Escribir a ${pet.tutor}…`}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            style={{ width: "100%", border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#111b21" }}
+          />
+        </div>
+        <button
+          className="wa-send-btn"
+          disabled={!text.trim()}
+          onClick={submit}
+          aria-label="Enviar mensaje"
+          style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: text.trim() ? "#00a884" : "#8696a0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: text.trim() ? "pointer" : "default" }}
+        >
+          <Icon name="send" size={17} />
+        </button>
+      </footer>
+
+      {box !== null && (
+        <Lightbox
+          items={images.map((i) => ({ src: i.src!, caption: i.name!, pos: i.pos }))}
+          index={box}
+          onIndex={setBox}
+          onClose={() => setBox(null)}
+          pet={pet.name}
+          consult={consultLabel}
+        />
+      )}
+    </section>
+  );
 }
 
 export function FilterSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {

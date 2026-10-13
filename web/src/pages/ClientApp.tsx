@@ -2,9 +2,12 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, EmptyState, Field, Icon, Logo, MessageBubble, Modal, PageHeader, Status, Tabs, Toast, go, photos, type IconName, type MessageState } from "../shared";
 import { useAuth } from "../context/AuthContext";
-import api from "../services/api";
+import api, { getAccessToken } from "../services/api";
+import { io } from "socket.io-client";
+import { getWsUrl } from "../vet/CallRoom";
 import type { ApiResponse, Pet as BackendPet, Consultation as BackendConsultation, Prescription as BackendPrescription } from "../types";
 import { parseConsultationNotes } from "../lib/consultationNotes";
+import { SPECIES_LIST, getBreedsForSpecies, compressImageFile } from "../data/petBreeds";
 
 const VetApp = lazy(() => import("../vet/VetApp"));
 const CallRoom = lazy(() => import("../vet/CallRoom"));
@@ -39,6 +42,7 @@ export interface ClientViewPet {
   last: string;
   next: string;
   photo: string;
+  sex?: string;
   allergies?: string;
   chronicConditions?: string;
   microchip?: string;
@@ -72,11 +76,14 @@ const INITIAL_CONSULTATIONS: ClientViewConsultation[] = [
 ];
 
 function mapBackendPet(p: BackendPet): ClientViewPet {
-  const photo = p.species.toLowerCase().includes("cone") ? photos.luna
+  const customPhoto = typeof window !== "undefined" ? localStorage.getItem(`vetconnect_pet_photo_${p.id}`) : null;
+  const defaultPhoto = p.species.toLowerCase().includes("cone") ? photos.luna
     : p.species.toLowerCase().includes("gat") || p.species.toLowerCase().includes("fel") ? photos.nube
     : p.species.toLowerCase().includes("ave") || p.species.toLowerCase().includes("loro") ? photos.kiwi
     : p.species.toLowerCase().includes("hur") ? photos.toby
     : photos.milo;
+
+  const photo = customPhoto || defaultPhoto;
 
   return {
     id: p.id,
@@ -89,6 +96,7 @@ function mapBackendPet(p: BackendPet): ClientViewPet {
     last: new Date(p.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" }),
     next: "Sin turno próximo",
     photo,
+    sex: p.sex || "Macho",
     allergies: p.allergies || "Sin alergias conocidas",
     chronicConditions: p.chronicConditions || undefined,
     microchip: p.microchip || "No informado",
@@ -121,10 +129,15 @@ function mapBackendConsultation(c: BackendConsultation): ClientViewConsultation 
 function AppShell({ children, path }: { children: ReactNode; path: string }) {
   const [menu, setMenu] = useState(false);
   const { user, logout } = useAuth();
-  const displayName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Mariana López" : "Mariana López";
-  const firstName = user?.firstName || "Mariana";
-  const initials = user ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "ML" : "ML";
-  const roleName = user?.role === "VET" ? "Veterinario" : user?.role === "ADMIN" ? "Administrador" : "Tutora";
+  const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
+  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tobias";
+  const lastName = user?.lastName || (user ? "" : "Vera");
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+  const displayName = fullName || (user?.firstName ? user.firstName : (user?.email ? firstName : "Tobias Vera"));
+  const initials = user
+    ? `${user.firstName?.[0] || firstName[0] || ""}${user.lastName?.[0] || firstName[1] || ""}`.toUpperCase()
+    : "TV";
+  const roleName = user?.role === "VET" ? "Veterinario" : user?.role === "ADMIN" ? "Administrador" : "Tutor";
 
   return <div className="app-shell">
     <aside className={`sidebar ${menu ? "is-open" : ""}`}>
@@ -135,7 +148,15 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
       </nav>
       <div className="sidebar__support"><span className="eyebrow">¿Necesitás ayuda?</span><strong>Estamos para acompañarte.</strong><button onClick={() => go("/client/triage")}>Necesito atención <Icon name="arrow" size={16}/></button></div>
       <button className={`nav-item ${path === "/client/settings" ? "is-active" : ""}`} onClick={() => go("/client/settings")}><Icon name="settings"/><span>Configuración</span></button>
-      {user && <button className="nav-item" style={{ marginTop: 8 }} onClick={() => logout().then(() => { window.location.href = "/"; })}><Icon name="close"/><span>Cerrar sesión</span></button>}
+      {user ? (
+        <button className="nav-item" style={{ marginTop: 8, color: "var(--red, #ef4444)" }} onClick={() => logout().then(() => { window.location.href = "/login"; })}>
+          <Icon name="close"/><span>Cerrar sesión</span>
+        </button>
+      ) : (
+        <button className="nav-item" style={{ marginTop: 8, color: "var(--teal, #0d9488)" }} onClick={() => { window.location.href = "/login"; }}>
+          <Icon name="user"/><span>Iniciar sesión</span>
+        </button>
+      )}
     </aside>
     {menu && <button className="scrim" onClick={() => setMenu(false)} aria-label="Cerrar menú"/>}
     <div className="app-main">
@@ -199,48 +220,224 @@ function useClientData() {
   };
 }
 
-function Dashboard() {
-  const { user } = useAuth();
-  const firstName = user?.firstName || "Tobias";
-  const { pets, consultations, petsLoading, consultationsLoading } = useClientData();
+function NewPetModal({
+  open,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}) {
   const queryClient = useQueryClient();
-  const [modalOpen, setModalOpen] = useState(false);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("Perro");
-  const [breed, setBreed] = useState("");
+  const [sex, setSex] = useState("Macho");
+  const [breed, setBreed] = useState("Mestizo / Criollo");
+  const [customBreed, setCustomBreed] = useState("");
   const [weightKg, setWeightKg] = useState("");
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [microchip, setMicrochip] = useState("");
+  const [allergies, setAllergies] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const breeds = useMemo(() => getBreedsForSpecies(species), [species]);
+
+  const handleSpeciesChange = (newSpecies: string) => {
+    setSpecies(newSpecies);
+    const available = getBreedsForSpecies(newSpecies);
+    setBreed(available[0] || "Mestizo");
+    setCustomBreed("");
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImageFile(file);
+      setPhotoPreview(compressed);
+    } catch {
+      setErrorMsg("No se pudo procesar la imagen seleccionada.");
+    }
+  };
 
   const createPetMutation = useMutation({
-    mutationFn: async (payload: { name: string; species: string; breed: string; weightKg?: number }) => {
+    mutationFn: async (payload: {
+      name: string;
+      species: string;
+      breed: string;
+      weightKg?: number;
+      sex?: string;
+      microchip?: string;
+      allergies?: string;
+    }) => {
       const res = await api.post<ApiResponse<BackendPet>>('/api/pets', payload);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
-      setModalOpen(false);
+      if (data?.data?.id && photoPreview) {
+        try {
+          localStorage.setItem(`vetconnect_pet_photo_${data.data.id}`, photoPreview);
+        } catch {}
+      }
       setName("");
-      setBreed("");
+      setSpecies("Perro");
+      setSex("Macho");
+      setBreed("Mestizo / Criollo");
+      setCustomBreed("");
       setWeightKg("");
-      setToastMsg("Mascota agregada exitosamente");
-      setTimeout(() => setToastMsg(null), 3500);
+      setMicrochip("");
+      setAllergies("");
+      setPhotoPreview(null);
+      setErrorMsg(null);
+      onClose();
+      if (onSuccess) onSuccess();
     },
-    onError: () => {
-      setToastMsg("Error al registrar la mascota");
-      setTimeout(() => setToastMsg(null), 3500);
+    onError: (err: any) => {
+      if (err?.response?.status === 401) {
+        setErrorMsg("No hay una sesión iniciada o expiró tu sesión. Por favor iniciá sesión nuevamente.");
+      } else {
+        const msg = err?.response?.data?.error?.message || "Error al registrar la mascota";
+        setErrorMsg(msg);
+      }
     },
   });
 
+  if (!open) return null;
+
+  const isCustomBreedRequired = breed.startsWith("Otra") || breed.startsWith("Otro");
+
   const handleSavePet = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setErrorMsg("Por favor, ingresá el nombre de la mascota.");
+      return;
+    }
+
+    const cleanMicrochip = microchip.trim();
+    if (cleanMicrochip && cleanMicrochip.length !== 15) {
+      setErrorMsg("El microchip debe tener exactamente 15 dígitos numéricos (o dejalo vacío).");
+      return;
+    }
+
+    const finalBreed = isCustomBreedRequired && customBreed.trim() ? customBreed.trim() : breed;
+
     createPetMutation.mutate({
       name: name.trim(),
       species,
-      breed: breed.trim() || "Mestizo",
+      sex,
+      breed: finalBreed,
       weightKg: weightKg ? parseFloat(weightKg) : undefined,
+      microchip: cleanMicrochip || undefined,
+      allergies: allergies.trim() || undefined,
     });
   };
+
+  return (
+    <div className="modal-layer" role="presentation">
+      <button className="modal-scrim" onClick={onClose} aria-label="Cerrar modal"/>
+      <div className="modal" role="dialog" aria-modal="true" style={{ textAlign: "left", width: "min(500px, calc(100% - 32px))" }}>
+        <button className="button button--icon modal__close" onClick={onClose} aria-label="Cerrar"><Icon name="close" size={18}/></button>
+        <span className="modal__icon"><Icon name="paw"/></span>
+        <h2 style={{ textAlign: "center" }}>Nueva mascota</h2>
+        <p style={{ textAlign: "center", marginBottom: 20 }}>Ingresá los datos clínicos para abrir su expediente en VetConnect.</p>
+        
+        {errorMsg && (
+          <div style={{ background: "#fee2e2", border: "1px solid #f87171", color: "#991b1b", padding: "10px 14px", borderRadius: 8, fontSize: 13, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>{errorMsg}</span>
+            {errorMsg.includes("sesión") && (
+              <button
+                type="button"
+                onClick={() => go("/login")}
+                style={{ background: "#991b1b", color: "#fff", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 12, cursor: "pointer", marginLeft: 8, whiteSpace: "nowrap" }}
+              >
+                Iniciar sesión
+              </button>
+            )}
+          </div>
+        )}
+
+        <form onSubmit={handleSavePet}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+            {/* Foto de la mascota */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", background: "var(--surface-sunken, #f8fafc)", borderRadius: 10, border: "1px dashed var(--line, #cbd5e1)" }}>
+              <div style={{ width: 50, height: 50, borderRadius: 10, overflow: "hidden", background: "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Foto mascota" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <Icon name="paw" size={24} />
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, display: "block", color: "var(--ink, #1e293b)", marginBottom: 2 }}>Foto de la mascota (opcional)</span>
+                <label style={{ fontSize: 12, color: "var(--teal, #0d9488)", cursor: "pointer", textDecoration: "underline", display: "inline-block" }}>
+                  <span>{photoPreview ? "Cambiar foto elegida" : "Subir foto real de tu mascota"}</span>
+                  <input type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: "none" }} />
+                </label>
+                {photoPreview && (
+                  <button type="button" onClick={() => setPhotoPreview(null)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: 12, marginLeft: 10, cursor: "pointer" }}>
+                    Quitar
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <label className="field">
+              <span>Nombre de la mascota</span>
+              <input value={name} onChange={(e) => { setName(e.target.value); setErrorMsg(null); }} placeholder="Ej: Milo" required/>
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <label className="field"><span>Especie</span>
+                <select value={species} onChange={(e) => handleSpeciesChange(e.target.value)} style={{ width: "100%", height: 43, borderRadius: 10, border: "1px solid var(--line)", padding: "0 12px", background: "white", color: "var(--ink)" }}>
+                  {SPECIES_LIST.map((sp) => (
+                    <option key={sp} value={sp}>{sp}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="field"><span>Sexo</span>
+                <select value={sex} onChange={(e) => setSex(e.target.value)} style={{ width: "100%", height: 43, borderRadius: 10, border: "1px solid var(--line)", padding: "0 12px", background: "white", color: "var(--ink)" }}>
+                  <option value="Macho">Macho</option>
+                  <option value="Hembra">Hembra</option>
+                </select>
+              </label>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: isCustomBreedRequired ? "1fr 1fr" : "1fr 1fr", gap: 12 }}>
+              <label className="field"><span>Raza</span>
+                <select value={breed} onChange={(e) => setBreed(e.target.value)} style={{ width: "100%", height: 43, borderRadius: 10, border: "1px solid var(--line)", padding: "0 12px", background: "white", color: "var(--ink)" }}>
+                  {breeds.map((br) => (
+                    <option key={br} value={br}>{br}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="field"><span>Peso (kg)</span><input type="number" step="0.1" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Ej: 14.5"/></label>
+            </div>
+            {isCustomBreedRequired && (
+              <label className="field">
+                <span>Especificar raza</span>
+                <input value={customBreed} onChange={(e) => setCustomBreed(e.target.value)} placeholder="Escribí la raza de tu mascota" required/>
+              </label>
+            )}
+            <label className="field"><span>Microchip (15 dígitos ISO - Opcional)</span><input value={microchip} onChange={(e) => { setMicrochip(e.target.value.replace(/\D/g, '')); setErrorMsg(null); }} placeholder="Opcional: 15 dígitos numéricos" maxLength={15} inputMode="numeric"/></label>
+            <label className="field"><span>Alergias conocidas</span><input value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Ej: Polen / Penicilina / Ninguna"/></label>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
+            <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" variant="primary" disabled={createPetMutation.isPending}>{createPetMutation.isPending ? "Guardando..." : "Guardar mascota"}</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function Dashboard() {
+  const { user } = useAuth();
+  const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
+  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tobias";
+  const { pets, consultations, petsLoading, consultationsLoading } = useClientData();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Active call only if there is a real ACTIVE or WAITING consultation in DB
   const activeCall = consultations.find((c) => c.rawStatus === "ACTIVE" || c.rawStatus === "WAITING");
@@ -325,82 +522,22 @@ function Dashboard() {
       )}
     </section>
 
-    {modalOpen && (
-      <div className="modal-layer" role="presentation">
-        <button className="modal-scrim" onClick={() => setModalOpen(false)} aria-label="Cerrar modal"/>
-        <div className="modal" role="dialog" aria-modal="true" style={{ textAlign: "left", width: "min(480px, calc(100% - 32px))" }}>
-          <button className="button button--icon modal__close" onClick={() => setModalOpen(false)} aria-label="Cerrar"><Icon name="close" size={18}/></button>
-          <span className="modal__icon"><Icon name="paw"/></span>
-          <h2 style={{ textAlign: "center" }}>Nueva mascota</h2>
-          <p style={{ textAlign: "center", marginBottom: 20 }}>Ingresá los datos básicos para abrir su expediente clínico.</p>
-          <form onSubmit={handleSavePet}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <label className="field"><span>Nombre de la mascota</span><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Milo" required/></label>
-              <label className="field"><span>Especie</span>
-                <select value={species} onChange={(e) => setSpecies(e.target.value)} style={{ width: "100%", height: 43, borderRadius: 10, border: "1px solid var(--line)", padding: "0 12px", background: "white", color: "var(--ink)" }}>
-                  <option value="Perro">Perro</option>
-                  <option value="Gato">Gato</option>
-                  <option value="Conejo">Conejo</option>
-                  <option value="Ave">Ave</option>
-                  <option value="Hurón">Hurón</option>
-                  <option value="Otro">Otro animal de compañía</option>
-                </select>
-              </label>
-              <label className="field"><span>Raza</span><input value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="Ej: Mestizo / Golden Retriever"/></label>
-              <label className="field"><span>Peso (kg)</span><input type="number" step="0.1" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Ej: 14.5"/></label>
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24 }}>
-              <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancelar</Button>
-              <Button variant="primary" disabled={createPetMutation.isPending}>{createPetMutation.isPending ? "Guardando..." : "Guardar mascota"}</Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )}
+    <NewPetModal
+      open={modalOpen}
+      onClose={() => setModalOpen(false)}
+      onSuccess={() => {
+        setToastMsg("Mascota agregada exitosamente");
+        setTimeout(() => setToastMsg(null), 3500);
+      }}
+    />
     {toastMsg && <Toast message={toastMsg} tone={toastMsg.includes("Error") ? "error" : "success"}/>}
   </>;
 }
 
 function PetsPage() {
   const { pets } = useClientData();
-  const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [species, setSpecies] = useState("Perro");
-  const [breed, setBreed] = useState("");
-  const [weightKg, setWeightKg] = useState("");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-
-  const createPetMutation = useMutation({
-    mutationFn: async (payload: { name: string; species: string; breed: string; weightKg?: number }) => {
-      const res = await api.post<ApiResponse<BackendPet>>('/api/pets', payload);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pets'] });
-      setModalOpen(false);
-      setName("");
-      setBreed("");
-      setWeightKg("");
-      setToastMsg("Mascota agregada exitosamente");
-      setTimeout(() => setToastMsg(null), 3500);
-    },
-    onError: () => {
-      setToastMsg("Error al registrar la mascota");
-      setTimeout(() => setToastMsg(null), 3500);
-    },
-  });
-
-  const handleSavePet = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    createPetMutation.mutate({
-      name: name.trim(),
-      species,
-      breed: breed.trim() || "Mestizo",
-      weightKg: weightKg ? parseFloat(weightKg) : undefined,
-    });
-  };
 
   const isActuallyEmpty = pets.length === 0;
 
@@ -413,38 +550,14 @@ function PetsPage() {
       <div className="pet-grid">{pets.map((pet) => <PetCard pet={pet} key={pet.id}/>)}</div>
     )}
 
-    {modalOpen && (
-      <div className="modal-layer" role="presentation">
-        <button className="modal-scrim" onClick={() => setModalOpen(false)} aria-label="Cerrar modal"/>
-        <div className="modal" role="dialog" aria-modal="true" style={{ textAlign: "left", width: "min(480px, calc(100% - 32px))" }}>
-          <button className="button button--icon modal__close" onClick={() => setModalOpen(false)} aria-label="Cerrar"><Icon name="close" size={18}/></button>
-          <span className="modal__icon"><Icon name="paw"/></span>
-          <h2 style={{ textAlign: "center" }}>Nueva mascota</h2>
-          <p style={{ textAlign: "center", marginBottom: 20 }}>Ingresá los datos básicos para abrir su expediente clínico.</p>
-          <form onSubmit={handleSavePet}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <label className="field"><span>Nombre de la mascota</span><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Milo" required/></label>
-              <label className="field"><span>Especie</span>
-                <select value={species} onChange={(e) => setSpecies(e.target.value)} style={{ width: "100%", height: 43, borderRadius: 10, border: "1px solid var(--line)", padding: "0 12px", background: "white", color: "var(--ink)" }}>
-                  <option value="Perro">Perro</option>
-                  <option value="Gato">Gato</option>
-                  <option value="Conejo">Conejo</option>
-                  <option value="Ave">Ave</option>
-                  <option value="Hurón">Hurón</option>
-                  <option value="Otro">Otro animal de compañía</option>
-                </select>
-              </label>
-              <label className="field"><span>Raza</span><input value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="Ej: Mestizo / Golden Retriever"/></label>
-              <label className="field"><span>Peso (kg)</span><input type="number" step="0.1" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Ej: 14.5"/></label>
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24 }}>
-              <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancelar</Button>
-              <Button variant="primary" disabled={createPetMutation.isPending}>{createPetMutation.isPending ? "Guardando..." : "Guardar mascota"}</Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )}
+    <NewPetModal
+      open={modalOpen}
+      onClose={() => setModalOpen(false)}
+      onSuccess={() => {
+        setToastMsg("Mascota agregada exitosamente");
+        setTimeout(() => setToastMsg(null), 3500);
+      }}
+    />
     {toastMsg && <Toast message={toastMsg} tone={toastMsg.includes("Error") ? "error" : "success"}/>}
   </>;
 }
@@ -463,11 +576,45 @@ function PetDetail({ id }: { id: string }) {
   // Edit pet state
   const [editName, setEditName] = useState(pet?.name || "");
   const [editKind, setEditKind] = useState(pet?.kind || "Perro");
-  const [editBreed, setEditBreed] = useState(pet?.breed || "");
+  const [editBreed, setEditBreed] = useState(pet?.breed || "Mestizo / Criollo");
+  const [editCustomBreed, setEditCustomBreed] = useState("");
   const [editWeight, setEditWeight] = useState(pet?.weight ? pet.weight.replace(" kg", "").replace(" g", "").trim() : "");
   const [editSex, setEditSex] = useState("Macho");
   const [editMicrochip, setEditMicrochip] = useState(pet?.microchip && pet.microchip !== "No informado" ? pet.microchip : "");
   const [editAllergies, setEditAllergies] = useState(pet?.allergies && pet.allergies !== "Sin alergias conocidas" ? pet.allergies : "");
+
+  const [heroPhoto, setHeroPhoto] = useState<string>(() => {
+    if (typeof window !== "undefined" && pet?.id) {
+      const saved = localStorage.getItem(`vetconnect_pet_photo_${pet.id}`);
+      if (saved) return saved;
+    }
+    return pet?.photo || photos.milo;
+  });
+
+  const editBreeds = useMemo(() => getBreedsForSpecies(editKind), [editKind]);
+
+  const handleHeroPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pet?.id) return;
+    try {
+      const compressed = await compressImageFile(file);
+      setHeroPhoto(compressed);
+      localStorage.setItem(`vetconnect_pet_photo_${pet.id}`, compressed);
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
+      setToastMsg("Foto de mascota actualizada");
+      setTimeout(() => setToastMsg(null), 3500);
+    } catch {
+      setToastMsg("No se pudo cargar la foto");
+      setTimeout(() => setToastMsg(null), 3500);
+    }
+  };
+
+  const handleEditKindChange = (newKind: string) => {
+    setEditKind(newKind);
+    const available = getBreedsForSpecies(newKind);
+    setEditBreed(available[0] || "Mestizo");
+    setEditCustomBreed("");
+  };
 
   // Vaccines local storage / state per pet
   const [vaccines, setVaccines] = useState<{ id: string; name: string; date: string; nextDate: string; status: "Al día" | "Próxima" | "Vencida" }[]>(() => {
@@ -505,6 +652,8 @@ function PetDetail({ id }: { id: string }) {
       setEditMicrochip(pet.microchip && pet.microchip !== "No informado" ? pet.microchip : "");
       setEditAllergies(pet.allergies && pet.allergies !== "Sin alergias conocidas" ? pet.allergies : "");
       try {
+        const savedPhoto = localStorage.getItem(`vetconnect_pet_photo_${pet.id}`);
+        setHeroPhoto(savedPhoto || pet.photo);
         const storedV = localStorage.getItem(`vetconnect_vaccines_${pet.id}`);
         setVaccines(storedV ? JSON.parse(storedV) : []);
         const storedD = localStorage.getItem(`vetconnect_docs_${pet.id}`);
@@ -535,10 +684,12 @@ function PetDetail({ id }: { id: string }) {
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editName.trim()) return;
+    const isCustom = editBreed.startsWith("Otra") || editBreed.startsWith("Otro");
+    const finalBreed = isCustom && editCustomBreed.trim() ? editCustomBreed.trim() : editBreed;
     updatePetMutation.mutate({
       name: editName.trim(),
       species: editKind,
-      breed: editBreed.trim() || "Mestizo",
+      breed: finalBreed || "Mestizo",
       weightKg: editWeight ? parseFloat(editWeight) : undefined,
       sex: editSex,
       microchip: editMicrochip.trim() ? editMicrochip.trim() : undefined,
@@ -604,7 +755,13 @@ function PetDetail({ id }: { id: string }) {
   return <>
     <button className="back-link" onClick={() => go("/client/pets")}><Icon name="arrow" size={17}/> Volver a mis mascotas</button>
     <section className="pet-hero">
-      <img src={pet.photo} alt={pet.name}/>
+      <div style={{ position: "relative", width: 96, height: 96, flexShrink: 0 }}>
+        <img src={heroPhoto} alt={pet.name} style={{ width: 96, height: 96, borderRadius: 16, objectFit: "cover" }}/>
+        <label title="Cambiar foto de la mascota" style={{ position: "absolute", bottom: -4, right: -4, background: "#fff", border: "1px solid var(--line, #cbd5e1)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,0.15)" }}>
+          <Icon name="edit" size={14}/>
+          <input type="file" accept="image/*" onChange={handleHeroPhotoChange} style={{ display: "none" }}/>
+        </label>
+      </div>
       <div className="pet-hero__title">
         <span className="eyebrow">Ficha de mascota</span>
         <h1>{pet.name}</h1>
@@ -617,7 +774,14 @@ function PetDetail({ id }: { id: string }) {
         <span><small>Peso</small><strong>{pet.weight}</strong></span>
         <span><small>Microchip</small><strong>{pet.microchip || "No informado"}</strong></span>
       </div>
-      <Button variant="secondary" icon="edit" onClick={() => setEditModal(true)}>Editar ficha</Button>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <label className="button button--secondary" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, margin: 0 }}>
+          <Icon name="edit" size={16}/>
+          <span>Editar foto</span>
+          <input type="file" accept="image/*" onChange={handleHeroPhotoChange} style={{ display: "none" }}/>
+        </label>
+        <Button variant="secondary" icon="edit" onClick={() => setEditModal(true)}>Editar ficha</Button>
+      </div>
     </section>
 
     <Tabs tabs={tabs} active={tab} onChange={setTab}/>
@@ -739,16 +903,25 @@ function PetDetail({ id }: { id: string }) {
           <p style={{ textAlign: "center", marginBottom: 20 }}>Actualizá los datos de tu mascota en su historia clínica.</p>
           <form onSubmit={handleSaveEdit}>
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+              {/* Cambiar foto en el modal */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", background: "var(--surface-sunken, #f8fafc)", borderRadius: 10, border: "1px dashed var(--line, #cbd5e1)" }}>
+                <img src={heroPhoto} alt={pet.name} style={{ width: 48, height: 48, borderRadius: 10, objectFit: "cover" }} />
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, display: "block", color: "var(--ink, #1e293b)", marginBottom: 2 }}>Foto de la mascota</span>
+                  <label style={{ fontSize: 12, color: "var(--teal, #0d9488)", cursor: "pointer", textDecoration: "underline", display: "inline-block" }}>
+                    <span>Cambiar por una foto real</span>
+                    <input type="file" accept="image/*" onChange={handleHeroPhotoChange} style={{ display: "none" }} />
+                  </label>
+                </div>
+              </div>
+
               <label className="field"><span>Nombre</span><input value={editName} onChange={(e) => setEditName(e.target.value)} required/></label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label className="field"><span>Especie</span>
-                  <select value={editKind} onChange={(e) => setEditKind(e.target.value)} style={{ width: "100%", height: 43, borderRadius: 10, border: "1px solid var(--line)", padding: "0 12px", background: "white", color: "var(--ink)" }}>
-                    <option value="Perro">Perro</option>
-                    <option value="Gato">Gato</option>
-                    <option value="Conejo">Conejo</option>
-                    <option value="Ave">Ave</option>
-                    <option value="Hurón">Hurón</option>
-                    <option value="Otro">Otro</option>
+                  <select value={editKind} onChange={(e) => handleEditKindChange(e.target.value)} style={{ width: "100%", height: 43, borderRadius: 10, border: "1px solid var(--line)", padding: "0 12px", background: "white", color: "var(--ink)" }}>
+                    {SPECIES_LIST.map((sp) => (
+                      <option key={sp} value={sp}>{sp}</option>
+                    ))}
                   </select>
                 </label>
                 <label className="field"><span>Sexo</span>
@@ -759,15 +932,27 @@ function PetDetail({ id }: { id: string }) {
                 </label>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <label className="field"><span>Raza</span><input value={editBreed} onChange={(e) => setEditBreed(e.target.value)}/></label>
+                <label className="field"><span>Raza</span>
+                  <select value={editBreed} onChange={(e) => setEditBreed(e.target.value)} style={{ width: "100%", height: 43, borderRadius: 10, border: "1px solid var(--line)", padding: "0 12px", background: "white", color: "var(--ink)" }}>
+                    {editBreeds.map((br) => (
+                      <option key={br} value={br}>{br}</option>
+                    ))}
+                  </select>
+                </label>
                 <label className="field"><span>Peso (kg)</span><input type="number" step="0.1" value={editWeight} onChange={(e) => setEditWeight(e.target.value)}/></label>
               </div>
-              <label className="field"><span>Microchip (15 dígitos)</span><input value={editMicrochip} onChange={(e) => setEditMicrochip(e.target.value)} placeholder="Ej: 032884912000000"/></label>
+              {(editBreed.startsWith("Otra") || editBreed.startsWith("Otro")) && (
+                <label className="field">
+                  <span>Especificar raza</span>
+                  <input value={editCustomBreed} onChange={(e) => setEditCustomBreed(e.target.value)} placeholder="Escribí la raza de tu mascota" required/>
+                </label>
+              )}
+              <label className="field"><span>Microchip (15 dígitos ISO - Opcional)</span><input value={editMicrochip} onChange={(e) => setEditMicrochip(e.target.value.replace(/\D/g, ''))} placeholder="Opcional: 15 dígitos numéricos" maxLength={15} inputMode="numeric"/></label>
               <label className="field"><span>Alergias conocidas</span><input value={editAllergies} onChange={(e) => setEditAllergies(e.target.value)} placeholder="Ej: Polen estacional / Ninguna"/></label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
               <Button variant="secondary" onClick={() => setEditModal(false)}>Cancelar</Button>
-              <Button variant="primary" disabled={updatePetMutation.isPending}>{updatePetMutation.isPending ? "Guardando..." : "Guardar cambios"}</Button>
+              <Button type="submit" variant="primary" disabled={updatePetMutation.isPending}>{updatePetMutation.isPending ? "Guardando..." : "Guardar cambios"}</Button>
             </div>
           </form>
         </div>
@@ -799,7 +984,7 @@ function PetDetail({ id }: { id: string }) {
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
               <Button variant="secondary" onClick={() => setVaccineModal(false)}>Cancelar</Button>
-              <Button variant="primary">Guardar vacuna</Button>
+              <Button type="submit" variant="primary">Guardar vacuna</Button>
             </div>
           </form>
         </div>
@@ -873,12 +1058,23 @@ function ConsultationDetail() {
   const activeConsultation = consultations.find(c => c.id === pathId) || consultations[0];
   const [tab, setTab] = useState("Resumen");
 
+  if (!activeConsultation) {
+    return (
+      <>
+        <button className="back-link" onClick={() => go("/client/consultations")}><Icon name="arrow" size={17}/> Volver a mis consultas</button>
+        <div className="panel" style={{ marginTop: 20 }}>
+          <EmptyState icon="video" title="Consulta no encontrada" text="No encontramos la información de esta consulta." action="Ver mis consultas" onAction={() => go("/client/consultations")}/>
+        </div>
+      </>
+    );
+  }
+
   return <>
     <button className="back-link" onClick={() => go("/client/consultations")}><Icon name="arrow" size={17}/> Volver a mis consultas</button>
-    <PageHeader eyebrow={`Consulta ${activeConsultation?.status || "confirmada"}`} title={activeConsultation?.title || "Consulta veterinaria"} description={`${activeConsultation?.date || "Hoy"}, ${activeConsultation?.time || "19:30"} · Videoconsulta`} action={<Button icon="video" onClick={() => go(`/call/${activeConsultation?.id || "seguimiento-milo"}?from=client`)}>Entrar a videoconsulta</Button>}/>
-    <section className="consultation-summary"><div className="vet-avatar">SM</div><div><small>Profesional</small><strong>{activeConsultation?.vet || "Dr. Santiago Mendoza"}</strong><p>Clínica general · MP 12.884</p></div><div><small>Mascota</small><strong>{activeConsultation?.pet || pets[0]?.name || "Milo"}</strong><p>{pets[0]?.kind || "Canino"}</p></div><div><small>Motivo</small><strong>{activeConsultation?.reason || "Orientación médica"}</strong><p>Teleconsulta telemática</p></div><Status>{activeConsultation?.status || "Confirmada"}</Status></section>
+    <PageHeader eyebrow={`Consulta ${activeConsultation.status || "confirmada"}`} title={activeConsultation.title || "Consulta veterinaria"} description={`${activeConsultation.date || "Hoy"}, ${activeConsultation.time || "19:30"} · Videoconsulta`} action={<Button icon="video" onClick={() => go(`/call/${activeConsultation.id}?from=client`)}>Entrar a videoconsulta</Button>}/>
+    <section className="consultation-summary"><div className="vet-avatar">VC</div><div><small>Profesional</small><strong>{activeConsultation.vet || "Veterinario de guardia"}</strong><p>Clínica general</p></div><div><small>Mascota</small><strong>{activeConsultation.pet || pets[0]?.name || "Mascota"}</strong><p>{pets[0]?.kind || "Animal de compañía"}</p></div><div><small>Motivo</small><strong>{activeConsultation.reason || "Orientación médica"}</strong><p>Teleconsulta telemática</p></div><Status>{activeConsultation.status || "Confirmada"}</Status></section>
     <Tabs tabs={["Resumen", "Mensajes", "Historial", "Recetas", "Documentos"]} active={tab} onChange={setTab}/>
-    {tab === "Resumen" ? <div className="detail-grid"><section className="panel"><div className="panel__heading"><h2>Antes de la consulta</h2></div><div className="checklist"><p><Icon name="check"/> Tené a tu mascota cerca</p><p><Icon name="check"/> Buscá un lugar tranquilo</p><p><Icon name="check"/> Revisá tu conexión</p></div></section><section className="panel"><div className="panel__heading"><h2>Notas para el veterinario</h2></div><p className="muted">{activeConsultation?.reason || "Consulta médica general registrada en sistema."}</p><Button variant="soft" icon="edit" onClick={() => go("/client/triage")}>Editar consulta</Button></section></div> : <section className="panel"><EmptyState icon={tab === "Mensajes" ? "message" : "file"} title={tab} text={`La información de ${tab.toLowerCase()} de esta consulta aparecerá acá.`}/></section>}
+    {tab === "Resumen" ? <div className="detail-grid"><section className="panel"><div className="panel__heading"><h2>Antes de la consulta</h2></div><div className="checklist"><p><Icon name="check"/> Tené a tu mascota cerca</p><p><Icon name="check"/> Buscá un lugar tranquilo</p><p><Icon name="check"/> Revisá tu conexión</p></div></section><section className="panel"><div className="panel__heading"><h2>Notas para el veterinario</h2></div><p className="muted">{activeConsultation.reason || "Consulta médica general registrada en sistema."}</p><Button variant="soft" icon="edit" onClick={() => go("/client/triage")}>Editar consulta</Button></section></div> : <section className="panel"><EmptyState icon={tab === "Mensajes" ? "message" : "file"} title={tab} text={`La información de ${tab.toLowerCase()} de esta consulta aparecerá acá.`}/></section>}
   </>;
 }
 
@@ -1101,7 +1297,10 @@ interface WAChatConversation {
 
 function MessagesPage() {
   const { pets, consultations } = useClientData();
-  const petName = pets[0]?.name || "Milo";
+  const { user } = useAuth();
+  const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
+  const clientFirstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tobias";
+  const petName = pets[0]?.name || "tu mascota";
 
   const [activeChip, setActiveChip] = useState<string>("Todos");
   const [searchQuery, setSearchQuery] = useState("");
@@ -1133,7 +1332,7 @@ function MessagesPage() {
           id: "m-1",
           sender: "them",
           senderName: "Dr. Santiago Mendoza",
-          text: `¡Hola Mariana! Ya revisé la evolución clínica de ${petName} respecto al control dermatológico. El cuadro inflamatorio cedió notablemente y la piel está en excelente estado.`,
+          text: `¡Hola ${clientFirstName}! Ya revisé la evolución clínica de ${petName} respecto al control dermatológico. El cuadro inflamatorio cedió notablemente y la piel está en excelente estado.`,
           time: "12:30 p. m.",
           state: "read",
         },
@@ -1183,7 +1382,7 @@ function MessagesPage() {
           id: "c-1",
           sender: "them",
           senderName: "Dra. Camila López",
-          text: "Hola Mariana, ¿cómo viene tolerando Luna la transición al nuevo alimento balanceado húmedo?",
+          text: `Hola ${clientFirstName}, ¿cómo viene tolerando ${petName} la transición al nuevo alimento balanceado húmedo?`,
           time: "11:25 a. m.",
           state: "delivered",
         },
@@ -1242,7 +1441,7 @@ function MessagesPage() {
           id: "s-1",
           sender: "them",
           senderName: "Dr. Martín Silva",
-          text: "Mariana, te confirmo que los análisis prequirúrgicos están totalmente en regla para la intervención programada.",
+          text: `${clientFirstName}, te confirmo que los análisis prequirúrgicos están totalmente en regla para la intervención programada.`,
           time: "Lunes",
           state: "read",
         },
@@ -1279,6 +1478,131 @@ function MessagesPage() {
   useEffect(() => {
     scrollToBottom();
   }, [activeChatId, activeChat?.messages, isTyping]);
+
+  useEffect(() => {
+    if (consultations && consultations.length > 0) {
+      const realConvs: WAChatConversation[] = consultations.map((c) => {
+        const initials = c.vet
+          .split(" ")
+          .map((n) => n[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase() || "VC";
+        return {
+          id: c.id,
+          name: c.vet,
+          role: `Consulta de ${c.pet} · ${c.status}`,
+          avatarText: initials,
+          isOnline: c.rawStatus === "ACTIVE",
+          statusText: c.rawStatus === "ACTIVE" ? "en línea" : "consulta registrada",
+          lastTime: c.time || "Hoy",
+          preview: c.reason || "Consulta clínica",
+          isPinned: true,
+          category: "consults",
+          messages: [],
+        };
+      });
+
+      setConversations((prev) => {
+        const existingIds = new Set(prev.map((x) => x.id));
+        const toAdd = realConvs.filter((rc) => !existingIds.has(rc.id));
+        if (toAdd.length === 0) return prev;
+        return [...toAdd, ...prev];
+      });
+
+      setActiveChatId((curr) => {
+        if (curr === "santiago" && realConvs[0]) {
+          return realConvs[0].id;
+        }
+        return curr;
+      });
+    }
+  }, [consultations]);
+
+  useEffect(() => {
+    const matchingCons = consultations.find((c) => c.id === activeChatId);
+    if (!matchingCons) return;
+
+    const token = getAccessToken();
+    const wsUrl = getWsUrl();
+    const s = io(wsUrl, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+      auth: { token: token ? `Bearer ${token}` : undefined },
+    });
+
+    s.on("connect", () => {
+      s.emit("join:consultation", { consultationId: matchingCons.id });
+    });
+
+    s.on("message:new", (msg: any) => {
+      const isMine = msg.senderId === user?.id;
+      const time = msg.createdAt
+        ? new Date(msg.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+        : "Ahora";
+      const newWAMsg: WAMessageItem = {
+        id: msg.id || msg.clientMsgId,
+        sender: isMine ? "me" : "them",
+        senderName: msg.sender ? `${msg.sender.firstName} ${msg.sender.lastName || ""}`.trim() : matchingCons.vet,
+        text: msg.content,
+        time,
+        state: "read",
+      };
+
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (c.id === matchingCons.id) {
+            if (c.messages.some((m) => m.id === newWAMsg.id)) return c;
+            return {
+              ...c,
+              lastTime: time,
+              preview: isMine ? `✓✓ ${msg.content}` : msg.content,
+              messages: [...c.messages, newWAMsg],
+            };
+          }
+          return c;
+        })
+      );
+    });
+
+    api
+      .get<ApiResponse<any[]>>(`/api/consultations/${matchingCons.id}/messages`)
+      .then((res) => {
+        if (res.data.success && res.data.data) {
+          const mappedMsgs: WAMessageItem[] = res.data.data.map((m) => {
+            const isMine = m.senderId === user?.id;
+            const time = m.createdAt
+              ? new Date(m.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+              : "Ahora";
+            return {
+              id: m.id || m.clientMsgId,
+              sender: isMine ? "me" : "them",
+              senderName: m.sender ? `${m.sender.firstName} ${m.sender.lastName || ""}`.trim() : matchingCons.vet,
+              text: m.content,
+              time,
+              state: "read",
+            };
+          });
+
+          setConversations((prev) =>
+            prev.map((c) => {
+              if (c.id === matchingCons.id) {
+                return {
+                  ...c,
+                  messages: mappedMsgs.length > 0 ? mappedMsgs : c.messages,
+                };
+              }
+              return c;
+            })
+          );
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      s.disconnect();
+    };
+  }, [activeChatId, consultations, user?.id]);
 
   const handleSelectChat = (chatId: string) => {
     setActiveChatId(chatId);
@@ -1321,6 +1645,16 @@ function MessagesPage() {
     setShowEmojiMenu(false);
     setShowAttachMenu(false);
 
+    const matchingCons = consultations.find((c) => c.id === activeChat.id);
+    if (matchingCons) {
+      api
+        .post(`/api/consultations/${matchingCons.id}/messages`, {
+          content,
+          clientMsgId: newMsgId,
+        })
+        .catch((err) => console.error("Error sending real message:", err));
+    }
+
     // Transition ticks: sent -> delivered -> read
     setTimeout(() => {
       setConversations((prev) =>
@@ -1340,35 +1674,37 @@ function MessagesPage() {
       );
     }, 950);
 
-    // Simulated authentic reply from veterinarian
-    setTimeout(() => {
-      setIsTyping(true);
+    // Simulated reply only for mock/demo conversations (not real consultations)
+    if (!matchingCons) {
       setTimeout(() => {
-        setIsTyping(false);
-        const replyTime = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-        const replyMsg: WAMessageItem = {
-          id: `reply-${Date.now()}`,
-          sender: "them",
-          senderName: activeChat.name,
-          text: `Recibido Mariana. Cualquier cambio o consulta adicional que tengas con ${petName}, escribime por acá y lo monitoreamos en conjunto.`,
-          time: replyTime,
-          state: "read",
-        };
-        setConversations((prev) =>
-          prev.map((chat) => {
-            if (chat.id === activeChat.id) {
-              return {
-                ...chat,
-                lastTime: replyTime,
-                preview: replyMsg.text || "",
-                messages: [...chat.messages, replyMsg],
-              };
-            }
-            return chat;
-          })
-        );
-      }, 2000);
-    }, 1500);
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          const replyTime = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+          const replyMsg: WAMessageItem = {
+            id: `reply-${Date.now()}`,
+            sender: "them",
+            senderName: activeChat.name,
+            text: `Recibido ${clientFirstName}. Cualquier cambio o consulta adicional que tengas con ${petName}, escribime por acá y lo monitoreamos en conjunto.`,
+            time: replyTime,
+            state: "read",
+          };
+          setConversations((prev) =>
+            prev.map((chat) => {
+              if (chat.id === activeChat.id) {
+                return {
+                  ...chat,
+                  lastTime: replyTime,
+                  preview: replyMsg.text || "",
+                  messages: [...chat.messages, replyMsg],
+                };
+              }
+              return chat;
+            })
+          );
+        }, 2000);
+      }, 1500);
+    }
   };
 
   const handleAttachDoc = (docTitle: string) => {
@@ -1567,7 +1903,13 @@ function MessagesPage() {
         {/* RIGHT CHAT PANE */}
         <section className={`wa-chat-pane ${!mobileThreadOpen ? "is-hidden" : ""}`}>
           <header className="wa-chat-pane__header">
-            <div className="wa-chat-pane__header-contact" onClick={() => go(`/client/consultations/seguimiento-milo`)}>
+            <div
+              className="wa-chat-pane__header-contact"
+              onClick={() => {
+                if (consultations[0]) go(`/client/consultations/${consultations[0].id}`);
+                else go("/client/consultations");
+              }}
+            >
               <button
                 className="wa-icon-btn mobile-only-btn"
                 style={{ marginRight: -4 }}
@@ -1595,7 +1937,10 @@ function MessagesPage() {
               <button
                 className="wa-icon-btn"
                 title="Iniciar videoconsulta"
-                onClick={() => go(`/call/seguimiento-milo?from=client`)}
+                onClick={() => {
+                  if (consultations[0]) go(`/call/${consultations[0].id}?from=client`);
+                  else go("/client/triage");
+                }}
                 aria-label="Videollamada"
               >
                 <Icon name="video" size={20} />
@@ -1859,70 +2204,366 @@ function PrescriptionsPage() {
   </>;
 }
 
-function TriagePage() {
-  const { pets } = useClientData();
-  const [step, setStep] = useState(0);
-  const [answer, setAnswer] = useState("");
-  const critical = answer.includes("Dificultad para respirar") || answer.includes("Sangrado");
-  const options = ["Dificultad para respirar", "Vómitos", "Diarrea", "Herida", "Intoxicación", "Dolor", "Sangrado", "Otro"];
+type ClinicalTriageTier = "ROJO" | "AMARILLO" | "VERDE";
 
-  if (step === 3) return <TriageResult critical={critical} fullAnswer={answer} onRestart={() => { setStep(0); setAnswer(""); }}/>;
-
-  return <div className="triage-page"><div className="triage-top"><Logo/><button onClick={() => go("/client/dashboard")}><Icon name="close"/> Salir</button></div><div className="triage-progress"><span style={{width:`${(step + 1) * 33}%`}}/><small>Paso {step + 1} de 3 · Cerca de 60 segundos</small></div><main className="triage-card"><span className="triage-icon"><Icon name={step === 0 ? "heart" : step === 1 ? "paw" : "clock"} size={28}/></span><span className="eyebrow">Orientación inicial</span><h1>{step === 0 ? "¿Qué está pasando?" : step === 1 ? "¿A quién vamos a ayudar?" : "¿Cuándo empezó?"}</h1><p>{step === 0 ? "Elegí la opción que mejor describa lo que ves. No hace falta que tengas toda la información." : step === 1 ? "Seleccioná una de tus mascotas para que podamos orientarte mejor." : "Esta información nos ayuda a estimar el nivel de atención."}</p><div className={step === 0 ? "option-grid" : "option-list"}>{step === 0 && options.map((option) => <button className={answer === option ? "is-selected" : ""} onClick={() => setAnswer(option)} key={option}><span>{option}</span>{answer === option && <Icon name="check"/>}</button>)}{step === 1 && pets.slice(0,3).map(pet => <button className={answer.includes("|"+pet.name) ? "is-selected" : ""} onClick={() => setAnswer(answer.split("|")[0]+"|"+pet.name+"|"+pet.id)} key={pet.id}><img src={pet.photo} alt=""/><span><strong>{pet.name}</strong><small>{pet.kind} · {pet.breed}</small></span><Icon name="chevron"/></button>)}{step === 2 && ["Hace menos de una hora","Hoy","Entre ayer y hoy","Hace varios días"].map(option => <button className={answer.includes("|"+option) ? "is-selected" : ""} onClick={() => setAnswer(answer.split("|").slice(0,3).join("|")+"|"+option)} key={option}><span>{option}</span>{answer.includes("|"+option) && <Icon name="check"/>}</button>)}</div><div className="triage-actions">{step > 0 && <Button variant="secondary" onClick={() => setStep(step-1)}>Volver</Button>}<Button disabled={!answer} onClick={() => setStep(step+1)}>Continuar <Icon name="arrow" size={17}/></Button></div><small className="triage-disclaimer"><Icon name="shield" size={15}/> Esta orientación no reemplaza una evaluación veterinaria.</small></main></div>;
+interface TriageTierInfo {
+  tier: ClinicalTriageTier;
+  badge: string;
+  title: string;
+  description: string;
+  estimate: string;
+  isEmergency: boolean;
+  advice?: string[];
 }
 
-function TriageResult({ critical, fullAnswer, onRestart }: { critical: boolean; fullAnswer: string; onRestart: () => void }) {
+function evaluateClientTriage(symptom: string, timeframe: string): TriageTierInfo {
+  const s = symptom.toLowerCase();
+
+  // 1. CÓDIGO ROJO — Emergencia Vital (Airway, Breathing, Circulation, Toxic shock)
+  if (
+    s.includes("respirar") ||
+    s.includes("asfixia") ||
+    s.includes("convulsi") ||
+    s.includes("inconscien") ||
+    s.includes("intoxicac") ||
+    s.includes("veneno") ||
+    s.includes("hemorragia") ||
+    s.includes("sangrado abundante") ||
+    s.includes("ahogo")
+  ) {
+    return {
+      tier: "ROJO",
+      badge: "ATENCIÓN INMEDIATA · CÓDIGO ROJO",
+      title: "Necesitás atención veterinaria inmediata.",
+      description: "Por los signos ingresados, existe compromiso fisiológico agudo. Contactá una guardia veterinaria presencial con soporte de oxígeno mientras te conectamos con un profesional.",
+      estimate: "Ahora (Inmediato)",
+      isEmergency: true,
+      advice: [
+        "Mantené a tu mascota tranquila y en un lugar fresco y seguro.",
+        "No le des comida, agua ni medicación casera sin indicación profesional.",
+        "Si podés trasladarla, dirigite a una clínica con guardia 24 hs.",
+      ],
+    };
+  }
+
+  // 2. CÓDIGO AMARILLO — Urgencia Prioritaria (Signos moderados sin paro inminente)
+  if (
+    s.includes("vómito") ||
+    s.includes("diarrea") ||
+    s.includes("herida") ||
+    s.includes("dolor") ||
+    s.includes("renguera") ||
+    s.includes("decaimiento") ||
+    s.includes("golpe")
+  ) {
+    return {
+      tier: "AMARILLO",
+      badge: "URGENCIA PRIORITARIA · CÓDIGO AMARILLO",
+      title: "Tu mascota requiere evaluación profesional hoy.",
+      description: "El cuadro reportado presenta signos de evolución aguda. Te recomendamos conectar con un veterinario de guardia para estabilizar síntomas y pautar el tratamiento adecuado.",
+      estimate: "4 a 6 minutos",
+      isEmergency: false,
+      advice: [
+        "Retirá el alimento sólido si hay vómitos repetidos.",
+        "Tené a mano agua fresca pero no la obligues a beber.",
+        "Observá si el cuadro empeora o si aparecen nuevos síntomas.",
+      ],
+    };
+  }
+
+  // 3. CÓDIGO VERDE — Consulta General / Rutina (Baja complejidad clínica)
+  return {
+    tier: "VERDE",
+    badge: "CONSULTA GENERAL · CÓDIGO VERDE",
+    title: "Cuadro clínico estable / Sin riesgo vital inminente.",
+    description: "No se identificaron signos de compromiso urgente. Podés realizar una videoconsulta de orientación ahora o agendar un turno con tu veterinario de cabecera.",
+    estimate: "Atención disponible hoy",
+    isEmergency: false,
+    advice: [
+      "Tomá fotos claras de la zona afectada si es un problema de piel u ojos.",
+      "Anotá desde cuándo notás el cambio de conducta o molestia.",
+      "Tené su libreta sanitaria a mano para repasar vacunas.",
+    ],
+  };
+}
+
+function TriagePage() {
+  const { pets, petsLoading } = useClientData();
+  const [step, setStep] = useState(0);
+  const [symptom, setSymptom] = useState("");
+  const [selectedPetId, setSelectedPetId] = useState("");
+  const [timeframe, setTimeframe] = useState("");
+
+  const options = [
+    "Dificultad para respirar / Asfixia",
+    "Convulsiones o pérdida de consciencia",
+    "Intoxicación o ingesta de tóxico",
+    "Hemorragia o sangrado abundante",
+    "Vómitos o diarrea frecuentes",
+    "Herida, corte o traumatismo",
+    "Dolor evidente o renguera",
+    "Decaimiento o inapetencia",
+    "Picazón, alergia o piel",
+    "Control preventivo o consulta de rutina",
+  ];
+
+  // Guardrail: If client has 0 pets registered, block starting a triage
+  if (!petsLoading && pets.length === 0) {
+    return (
+      <div className="triage-page">
+        <div className="triage-top">
+          <Logo />
+          <button onClick={() => go("/client/dashboard")}><Icon name="close"/> Salir</button>
+        </div>
+        <main className="triage-card">
+          <span className="triage-icon"><Icon name="paw" size={28}/></span>
+          <span className="eyebrow">Registro requerido</span>
+          <h1>Antes de comenzar, registrá a tu mascota</h1>
+          <p>Para que un profesional veterinario pueda orientarte y atenderte adecuadamente, necesitamos tener cargada la ficha clínica de tu mascota.</p>
+          <div className="triage-actions" style={{ flexDirection: "column", gap: 12, marginTop: 24 }}>
+            <Button variant="primary" onClick={() => go("/client/pets")}>
+              Registrar mascota ahora <Icon name="arrow" size={17}/>
+            </Button>
+            <Button variant="secondary" onClick={() => go("/client/dashboard")}>
+              Volver al inicio
+            </Button>
+          </div>
+          <small className="triage-disclaimer"><Icon name="shield" size={15}/> El registro toma menos de un minuto.</small>
+        </main>
+      </div>
+    );
+  }
+
+  const isStepValid = step === 0 ? Boolean(symptom) : step === 1 ? Boolean(selectedPetId) : Boolean(timeframe);
+
+  if (step === 3) {
+    const evaluation = evaluateClientTriage(symptom, timeframe);
+    return (
+      <TriageResult
+        evaluation={evaluation}
+        symptom={symptom}
+        petId={selectedPetId}
+        timeframe={timeframe}
+        onRestart={() => {
+          setStep(0);
+          setSymptom("");
+          setSelectedPetId("");
+          setTimeframe("");
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="triage-page">
+      <div className="triage-top">
+        <Logo />
+        <button onClick={() => go("/client/dashboard")}><Icon name="close"/> Salir</button>
+      </div>
+      <div className="triage-progress">
+        <span style={{ width: `${(step + 1) * 33}%` }}/>
+        <small>Paso {step + 1} de 3 · Cerca de 60 segundos</small>
+      </div>
+      <main className="triage-card">
+        <span className="triage-icon">
+          <Icon name={step === 0 ? "heart" : step === 1 ? "paw" : "clock"} size={28}/>
+        </span>
+        <span className="eyebrow">Orientación inicial</span>
+        <h1>{step === 0 ? "¿Qué está pasando?" : step === 1 ? "¿A quién vamos a ayudar?" : "¿Cuándo empezó?"}</h1>
+        <p>
+          {step === 0
+            ? "Elegí la opción que mejor describa lo que ves. No hace falta que tengas toda la información."
+            : step === 1
+            ? "Seleccioná una de tus mascotas para que podamos orientarte mejor."
+            : "Esta información nos ayuda a estimar el nivel de atención médica requerido."}
+        </p>
+        <div className={step === 0 ? "option-grid" : "option-list"}>
+          {step === 0 && options.map((option) => (
+            <button
+              className={symptom === option ? "is-selected" : ""}
+              onClick={() => setSymptom(option)}
+              key={option}
+            >
+              <span>{option}</span>
+              {symptom === option && <Icon name="check"/>}
+            </button>
+          ))}
+          {step === 1 && pets.map((pet) => (
+            <button
+              className={selectedPetId === pet.id ? "is-selected" : ""}
+              onClick={() => setSelectedPetId(pet.id)}
+              key={pet.id}
+            >
+              <img src={pet.photo} alt={pet.name}/>
+              <span>
+                <strong>{pet.name}</strong>
+                <small>{pet.kind} · {pet.breed}</small>
+              </span>
+              <Icon name={selectedPetId === pet.id ? "check" : "chevron"}/>
+            </button>
+          ))}
+          {step === 2 && ["Hace menos de una hora", "Hoy", "Entre ayer y hoy", "Hace varios días"].map((option) => (
+            <button
+              className={timeframe === option ? "is-selected" : ""}
+              onClick={() => setTimeframe(option)}
+              key={option}
+            >
+              <span>{option}</span>
+              {timeframe === option && <Icon name="check"/>}
+            </button>
+          ))}
+        </div>
+        <div className="triage-actions">
+          {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)}>Volver</Button>}
+          <Button disabled={!isStepValid} onClick={() => setStep(step + 1)}>
+            Continuar <Icon name="arrow" size={17}/>
+          </Button>
+        </div>
+        <small className="triage-disclaimer">
+          <Icon name="shield" size={15}/> Esta orientación no reemplaza una evaluación veterinaria presencial.
+        </small>
+      </main>
+    </div>
+  );
+}
+
+function TriageResult({
+  evaluation,
+  symptom,
+  petId,
+  timeframe,
+  onRestart,
+}: {
+  evaluation: TriageTierInfo;
+  symptom: string;
+  petId: string;
+  timeframe: string;
+  onRestart: () => void;
+}) {
   const [matched, setMatched] = useState(false);
   const [createdConsId, setCreatedConsId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { pets } = useClientData();
+  const selectedPet = pets.find((p) => p.id === petId);
 
   const handleConnect = async () => {
+    if (!petId) {
+      setErrorMessage("No se ha seleccionado ninguna mascota válida.");
+      return;
+    }
     setIsSubmitting(true);
+    setErrorMessage(null);
     try {
-      const parts = fullAnswer.split("|");
-      const symptom = parts[0] || "Consulta general";
-      const petIdFromAnswer = parts[2];
-      const selectedPet = pets.find(p => p.id === petIdFromAnswer) || pets[0];
-      const petId = selectedPet ? selectedPet.id : undefined;
-
-      if (petId) {
-        const res = await api.post<ApiResponse<BackendConsultation>>('/api/consultations', {
-          petId,
-          notes: symptom,
-          symptoms: [symptom],
-          duration: parts[3]?.includes('hora') ? 'LESS_THAN_2_HOURS' : 'HOURS_2_TO_12',
-        });
-        if (res.data.success && res.data.data) {
-          queryClient.invalidateQueries({ queryKey: ['consultations', 'mine'] });
-          setCreatedConsId(res.data.data.id);
-        }
+      const res = await api.post<ApiResponse<BackendConsultation>>('/api/consultations', {
+        petId,
+        notes: `[Prioridad: ${evaluation.tier}] ${symptom} (${timeframe})`,
+        symptoms: [symptom || "Consulta general"],
+        duration: timeframe.includes("hora") ? "LESS_THAN_2_HOURS" : "HOURS_2_TO_12",
+      });
+      if (res.data.success && res.data.data) {
+        queryClient.invalidateQueries({ queryKey: ['consultations', 'mine'] });
+        // Navegar directamente a la sala de espera de la videoconsulta (única zona de espera)
+        go(`/call/${res.data.data.id}?from=client`);
+        return;
+      } else {
+        setErrorMessage("No pudimos iniciar la consulta. Por favor intentá nuevamente.");
       }
-    } catch {
-      // Fallback grace
+    } catch (err: any) {
+      const apiMsg = err.response?.data?.error?.message;
+      setErrorMessage(apiMsg || "No pudimos conectar con la sala de atención. Verificá tu conexión.");
     } finally {
       setIsSubmitting(false);
-      setMatched(true);
     }
   };
 
-  if (matched) return <div className="triage-page"><div className="triage-top"><Logo/></div><main className="matching-card"><div className="matching-visual"><span/><span/><span/><Icon name="search" size={30}/></div><span className="eyebrow">{critical ? "Prioridad alta" : "Prioridad moderada"}</span><h1>Veterinario encontrado</h1><p>Hay un profesional disponible para acompañarte ahora.</p><div className="matched-vet"><div className="vet-avatar vet-avatar--large">SM</div><div><strong>Dr. Santiago Mendoza</strong><span>Clínica general · Animales de compañía</span><small>Disponible ahora</small></div></div><Button onClick={() => go(createdConsId ? `/call/${createdConsId}?from=client` : "/client/consultations/seguimiento-milo")}>Entrar a la consulta <Icon name="arrow" size={17}/></Button></main></div>;
-  return <div className="triage-page"><div className="triage-top"><Logo/></div><main className={`result-card ${critical ? "result-card--critical" : ""}`}><span className="result-card__icon"><Icon name={critical ? "phone" : "heart"} size={31}/></span><span className="eyebrow">{critical ? "Atención inmediata" : "Orientación completada"}</span><h1>{critical ? "Necesitás atención veterinaria inmediata." : "Nivel de atención: MODERADO"}</h1><p>{critical ? "Por lo que nos contaste, es importante actuar ahora. Contactá una guardia veterinaria presencial mientras te conectamos con un profesional." : "Según las respuestas ingresadas, recomendamos conectar con un veterinario."}</p>{critical && <div className="critical-guidance"><strong>Mientras buscás atención:</strong><p>Mantené a tu mascota tranquila y en un lugar seguro.</p><p>No le des comida, agua ni medicación sin indicación profesional.</p><p>Si podés trasladarla, buscá una guardia veterinaria cercana.</p></div>}<div className="estimate"><span><Icon name="clock"/><small>Tiempo estimado</small></span><strong>{critical ? "Ahora" : "4 minutos"}</strong></div><div className="result-actions"><Button onClick={handleConnect} disabled={isSubmitting}>{isSubmitting ? "Conectando..." : critical ? "Conectar con atención veterinaria" : "Conectar con veterinario"}</Button>{critical && <Button variant="secondary">Buscar atención presencial inmediata</Button>}</div><button className="text-button" onClick={onRestart}>Revisar respuestas</button><small className="triage-disclaimer">VetConnect no reemplaza una guardia veterinaria presencial.</small></main></div>;
+  if (matched && createdConsId) {
+    return (
+      <div className="triage-page">
+        <div className="triage-top"><Logo/></div>
+        <main className="matching-card">
+          <div className="matching-visual"><span/><span/><span/><Icon name="search" size={30}/></div>
+          <span className="eyebrow">{evaluation.tier === "ROJO" ? "Prioridad alta" : evaluation.tier === "AMARILLO" ? "Prioridad moderada" : "Consulta de guardia"}</span>
+          <h1>En sala de espera</h1>
+          <p>Tu solicitud para {selectedPet?.name || "tu mascota"} fue enviada al equipo de guardia.</p>
+          <div className="matched-vet">
+            <div className="vet-avatar vet-avatar--large">VC</div>
+            <div>
+              <strong>Guardia Veterinaria VetConnect</strong>
+              <span>Clínica general y triage de urgencias</span>
+              <small>Aguardando aceptación médica</small>
+            </div>
+          </div>
+          <Button onClick={() => go(`/call/${createdConsId}?from=client`)}>
+            Ingresar a la sala de espera <Icon name="arrow" size={17}/>
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
+  const isCritical = evaluation.tier === "ROJO";
+
+  return (
+    <div className="triage-page">
+      <div className="triage-top"><Logo/></div>
+      <main className={`result-card ${isCritical ? "result-card--critical" : ""}`}>
+        <span className="result-card__icon"><Icon name={isCritical ? "phone" : "heart"} size={31}/></span>
+        <span className="eyebrow">{evaluation.badge}</span>
+        <h1>{evaluation.title}</h1>
+        <p>{evaluation.description}</p>
+        
+        {evaluation.advice && (
+          <div className={isCritical ? "critical-guidance" : "critical-guidance"} style={!isCritical ? { background: "var(--surface-sunken, #f8fafc)", border: "1px solid var(--line, #cbd5e1)" } : undefined}>
+            <strong style={!isCritical ? { color: "var(--ink, #1e293b)" } : undefined}>Recomendaciones clave mientras te conectás:</strong>
+            {evaluation.advice.map((adv, idx) => (
+              <p key={idx} style={!isCritical ? { color: "var(--ink-soft, #64748b)" } : undefined}>• {adv}</p>
+            ))}
+          </div>
+        )}
+
+        <div className="estimate">
+          <span><Icon name="clock"/><small>Tiempo estimado</small></span>
+          <strong>{evaluation.estimate}</strong>
+        </div>
+
+        {errorMessage && (
+          <div style={{ color: "#d93025", fontSize: 13, background: "#fce8e6", padding: "10px 14px", borderRadius: 8, margin: "12px 0", textAlign: "center" }}>
+            {errorMessage}
+          </div>
+        )}
+
+        <div className="result-actions">
+          <Button onClick={handleConnect} disabled={isSubmitting}>
+            {isSubmitting ? "Conectando..." : isCritical ? "Conectar con atención veterinaria" : "Conectar con veterinario"}
+          </Button>
+          {isCritical && <Button variant="secondary" onClick={() => go("/client/dashboard")}>Buscar atención presencial inmediata</Button>}
+        </div>
+        <button className="text-button" onClick={onRestart}>Revisar respuestas</button>
+        <small className="triage-disclaimer">VetConnect no reemplaza una guardia veterinaria presencial.</small>
+      </main>
+    </div>
+  );
 }
 
 function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const { user } = useAuth();
-  const displayName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Mariana López" : "Mariana López";
-  const firstName = user?.firstName || "Mariana";
-  const lastName = user?.lastName || "López";
-  const email = user?.email || "mariana.lopez@ejemplo.com";
-  const initials = user ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "ML" : "ML";
+  const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
+  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tobias";
+  const lastName = user?.lastName || (user ? "" : "Vera");
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+  const displayName = fullName || (user?.firstName ? user.firstName : (user?.email ? firstName : "Tobias Vera"));
+  const email = user?.email || "tobias@gmail.com";
+  const phone = user?.phone || "+54 11 5555 0182";
+  const initials = user
+    ? `${user.firstName?.[0] || firstName[0] || ""}${user.lastName?.[0] || firstName[1] || ""}`.toUpperCase()
+    : "TV";
 
   return <>
     <PageHeader eyebrow="Tu cuenta" title="Mi perfil" description="Mantené tus datos de contacto actualizados." action={<Button variant={editing ? "primary" : "secondary"} icon={editing ? "check" : "edit"} onClick={() => setEditing(!editing)}>{editing ? "Guardar cambios" : "Editar perfil"}</Button>}/>
-    <div className="profile-grid"><section className="panel profile-card"><div className="profile-avatar">{initials}</div><h2>{displayName}</h2><p>Tutor registrado</p><Status>Perfil activo</Status></section><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Datos básicos</span><h2>Información personal</h2></div></div><div className="form-grid"><Field label="Nombre" value={firstName} editing={editing}/><Field label="Apellido" value={lastName} editing={editing}/><Field label="Email" value={email} editing={editing}/><Field label="Teléfono" value="+54 11 5555 0182" editing={editing}/><Field label="Ciudad" value="Buenos Aires" editing={editing}/><Field label="Zona horaria" value="Argentina (GMT-3)" editing={false}/></div></section></div>
+    <div className="profile-grid"><section className="panel profile-card"><div className="profile-avatar">{initials}</div><h2>{displayName}</h2><p>Tutor registrado</p><Status>Perfil activo</Status></section><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Datos básicos</span><h2>Información personal</h2></div></div><div className="form-grid"><Field label="Nombre" value={firstName} editing={editing}/><Field label="Apellido" value={lastName} editing={editing}/><Field label="Email" value={email} editing={editing}/><Field label="Teléfono" value={phone} editing={editing}/><Field label="Ciudad" value="Buenos Aires" editing={editing}/><Field label="Zona horaria" value="Argentina (GMT-3)" editing={false}/></div></section></div>
   </>;
 }
 
@@ -1961,7 +2602,15 @@ function NotFound() {
 }
 
 export default function ClientApp() {
+  const { user } = useAuth();
   const [path, setPath] = useState(window.location.pathname);
+  useEffect(() => {
+    if (user?.role === "VET") {
+      go("/vet/dashboard");
+    } else if (user?.role === "ADMIN") {
+      go("/admin/dashboard");
+    }
+  }, [user]);
   useEffect(() => { const update = () => setPath(window.location.pathname); window.addEventListener("popstate", update); return () => window.removeEventListener("popstate", update); }, []);
   const page = useMemo(() => {
     if (path === "/" || path === "/client" || path === "/client/dashboard") return <Dashboard/>;

@@ -22,13 +22,16 @@ export interface ClientToServerEvents {
   ) => void;
   'call:answered': (data: { consultationId: string }) => void;
   'call:rejected': (data: { consultationId: string; reason?: string }) => void;
+  'call:ended': (data: { consultationId: string }) => void;
 }
 
 export interface ServerToClientEvents {
   'message:new': (message: any) => void;
   'call:incoming': (data: { consultationId: string; callerName: string; roomName: string }) => void;
+  'call:ended': (data: { consultationId: string; endedBy?: string }) => void;
   'prescription:new': (prescription: any) => void;
   'notification:new': (notification: any) => void;
+  'consultation:new': (consultation: any) => void;
 }
 
 export interface InterServerEvents {}

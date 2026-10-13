@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
-import api from '../services/api';
+import api, { getAccessToken } from '../services/api';
+import { getWsUrl } from '../vet/CallRoom';
 import { useAuth } from '../context/AuthContext';
 import CallRoom from '../components/call/CallRoom';
 import { ReviewModal } from '../components/ui/ReviewModal';
@@ -10,7 +11,6 @@ import { Message, ApiResponse, Consultation } from '../types';
 import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X, FileText, CheckCircle, ShieldCheck, ClipboardList, MessageSquare, Video } from 'lucide-react';
 import VetPatientProfile from '../components/dashboard/VetPatientProfile';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 const POLLING_INTERVAL_MS = 5000;
 
 // ------------------------------------------------------------
@@ -200,9 +200,14 @@ export const ConsultationRoom: React.FC = () => {
   useEffect(() => {
     if (phase !== 'active' || !consultationId) return;
 
-    const newSocket = io(WS_URL, {
+    const wsUrl = getWsUrl();
+    const token = getAccessToken();
+    const newSocket = io(wsUrl, {
       withCredentials: true,
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
+      auth: {
+        token: token ? `Bearer ${token}` : undefined,
+      },
     });
 
     setSocket(newSocket);

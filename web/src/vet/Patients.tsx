@@ -7,12 +7,12 @@ import { FilterSelect, PetPhoto, useVet } from "./vetkit";
 const stateTone = (s: Patient["state"]) => (s === "Activo" ? "teal" : s === "En seguimiento" ? "amber" : "gray");
 
 export function PatientsPage() {
-  const { forceEmpty } = useVet();
+  const { patientsList, forceEmpty } = useVet();
   const [q, setQ] = useState("");
   const [kind, setKind] = useState("Todas");
   const [tutor, setTutor] = useState("Todos");
   const [last, setLast] = useState("Cualquiera");
-  const base = forceEmpty ? [] : patients;
+  const base = forceEmpty ? [] : patientsList;
   const shown = base.filter((p) => (p.name + " " + p.tutor).toLowerCase().includes(q.toLowerCase())
     && (kind === "Todas" || p.kind === kind) && (tutor === "Todos" || p.tutor === tutor)
     && (last === "Cualquiera" || (last === "Últimos 7 días" ? p.lastDays <= 7 : last === "Últimos 30 días" ? p.lastDays <= 30 : p.lastDays > 30)));
@@ -21,8 +21,8 @@ export function PatientsPage() {
     <PageHeader eyebrow="Historias clínicas" title="Pacientes" description="Buscá por mascota o tutor y abrí la ficha clínica."/>
     <div className="v-filters v-filters--search" role="search">
       <div className="search-field v-search"><Icon name="search" size={18}/><input aria-label="Buscar paciente o tutor" placeholder="Buscar por mascota o tutor" value={q} onChange={(e) => setQ(e.target.value)}/></div>
-      <FilterSelect label="Especie" value={kind} onChange={setKind} options={["Todas", ...Array.from(new Set(patients.map((p) => p.kind)))]}/>
-      <FilterSelect label="Tutor" value={tutor} onChange={setTutor} options={["Todos", ...Array.from(new Set(patients.map((p) => p.tutor)))]}/>
+      <FilterSelect label="Especie" value={kind} onChange={setKind} options={["Todas", ...Array.from(new Set(base.map((p) => p.kind)))]}/>
+      <FilterSelect label="Tutor" value={tutor} onChange={setTutor} options={["Todos", ...Array.from(new Set(base.map((p) => p.tutor)))]}/>
       <FilterSelect label="Última consulta" value={last} onChange={setLast} options={["Cualquiera", "Últimos 7 días", "Últimos 30 días", "Más de 30 días"]}/>
       {filtered && <button className="v-link" onClick={() => { setQ(""); setKind("Todas"); setTutor("Todos"); setLast("Cualquiera"); }}>Limpiar</button>}
     </div>

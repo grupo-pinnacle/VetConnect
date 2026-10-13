@@ -5,7 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { startRingtone, stopRingtone } from '../../lib/ringtone';
 import { Video, PhoneCall, PhoneOff, Stethoscope, ShieldCheck } from 'lucide-react';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+import { getAccessToken } from '../../services/api';
+import { getWsUrl } from '../../vet/CallRoom';
 
 interface IncomingCallData {
   consultationId: string;
@@ -22,10 +23,14 @@ export const GlobalCallListener: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Connect to Socket.io with credentials (cookie/token)
-    const socket = io(WS_URL, {
+    const wsUrl = getWsUrl();
+    const token = getAccessToken();
+    const socket = io(wsUrl, {
       withCredentials: true,
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
+      auth: {
+        token: token ? `Bearer ${token}` : undefined,
+      },
     });
     socketRef.current = socket;
 

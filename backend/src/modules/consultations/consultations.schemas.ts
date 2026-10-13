@@ -30,7 +30,15 @@ export const reviewConsultationSchema = z.object({
   comment: z.string().max(1000).optional().nullable(),
 });
 
+export const createMessageSchema = z.object({
+  content: z.string().min(1, 'El mensaje no puede estar vacio').max(2000),
+  clientMsgId: z.string().min(1, 'clientMsgId es requerido'),
+  attachmentUrl: z.string().url().optional().nullable(),
+});
+
 export type CreateConsultationDTO = z.infer<typeof createConsultationSchema>;
 export type CompleteConsultationDTO = z.infer<typeof completeConsultationSchema>;
 export type CancelConsultationDTO = z.infer<typeof cancelConsultationSchema>;
 export type ReviewConsultationDTO = z.infer<typeof reviewConsultationSchema>;
+export type CreateMessageDTO = z.infer<typeof createMessageSchema>;
+

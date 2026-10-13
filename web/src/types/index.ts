@@ -46,6 +46,7 @@ export interface User {
   lastSeen?: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
 }
 
 export interface Pet {

@@ -54,7 +54,7 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 12);
-    const vetStatus = dto.role === Role.VET ? VetStatus.PENDING : null;
+    const vetStatus = dto.role === Role.VET ? (process.env.NODE_ENV === 'production' ? VetStatus.PENDING : VetStatus.APPROVED) : null;
 
     const user = await prisma.user.create({
       data: {

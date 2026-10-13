@@ -10,7 +10,7 @@ export function MessagesPage() {
   const [q, setQ] = useState("");
   const list = threads.filter((t) => (getPatient(t.petId).name + getPatient(t.petId).tutor).toLowerCase().includes(q.toLowerCase()));
   if (!threads.length) return <><PageHeader eyebrow="Comunicación con tutores" title="Mensajes"/><div className="panel"><EmptyState icon="message" title="No tenés conversaciones pendientes." text="Los mensajes de tus tutores aparecerán acá."/></div></>;
-  const consult = consults.find((c) => c.petId === sel && (c.status === "Activa" || c.status === "Próxima"));
+  const consult = consults.find((c) => c.petId === sel && (c.status === "Activa" || c.status === "Próxima")) || consults.find((c) => c.petId === sel);
   return <>
     <PageHeader eyebrow="Comunicación con tutores" title="Mensajes" description="Conversaciones vinculadas a tus pacientes."/>
     <div className={`messages-layout v-msgs ${open ? "is-thread" : ""}`}>
@@ -23,7 +23,7 @@ export function MessagesPage() {
           <time>{t.lastTime}</time>{t.unread > 0 && <b className="unread" aria-label={`${t.unread} mensajes sin leer`}>{t.unread}</b>}
         </button>; })}
       </aside>
-      <ChatPanel key={sel} petId={sel} onBack={() => setOpen(false)} consultLabel={consult?.reason ?? "Conversación"} actions={<>
+      <ChatPanel key={sel} petId={sel} consultationId={consult?.id} onBack={() => setOpen(false)} consultLabel={consult?.reason ?? "Conversación"} actions={<>
         <Button variant="soft" icon="file" onClick={() => go(`/vet/patients/${sel}`)}>Ficha</Button>
         {consult && <Button variant="secondary" icon="video" onClick={() => go(`/vet/consultations/${consult.id}`)}>Consulta</Button>}
       </>}/>

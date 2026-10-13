@@ -16,5 +16,6 @@ router.patch('/:id/complete', controller.complete);
 router.patch('/:id/cancel', controller.cancel);
 router.post('/:id/review', controller.review);
 router.get('/:id/messages', controller.getMessages);
+router.post('/:id/messages', controller.sendMessage);
 
 export default router;

@@ -3,10 +3,10 @@ import { useAuth } from "../context/AuthContext";
 import "./vet.css";
 import { Button, EmptyState, Icon, Logo, PageHeader, go, type IconName } from "../shared";
 import { getPatient, triageMeta, type QueueItem, type Triage } from "./data";
-import { ConsultStatus, PetPhoto, TriageBadge, VetProvider, WaitTimer, useVet, type Avail } from "./vetkit";
+import { ConsultStatus, PetPhoto, Sheet, TriageBadge, VetProvider, WaitTimer, useVet, type Avail } from "./vetkit";
 import { ConsultationDetail, ConsultationsPage } from "./Consultations";
 import { PatientDetail, PatientsPage } from "./Patients";
-import { AppointmentsPage } from "./Agenda";
+import { AppointmentsPage, AvailabilityPage } from "./Agenda";
 import { MessagesPage } from "./Messages";
 import { NewPrescription, PrescriptionDetail, PrescriptionsPage } from "./Prescriptions";
 import { FollowUpsPage, ProfilePage, SettingsPage } from "./Admin";
@@ -23,6 +23,7 @@ const clinical: { label: string; path: string; icon: IconName }[] = [
 ];
 const admin: typeof clinical = [
   { label: "Mi perfil profesional", path: "/vet/profile", icon: "user" },
+  { label: "Disponibilidad", path: "/vet/availability", icon: "clock" },
   { label: "Configuración", path: "/vet/settings", icon: "settings" },
 ];
 
@@ -68,14 +69,15 @@ function AvailabilityControl() {
 function NotificationsPop() {
   const { queue } = useVet();
   const [open, setOpen] = useState(false);
-  const items: [IconName, string, string][] = [
-    ...queue.filter((q) => q.triage === "Crítico").map((q): [IconName, string, string] => ["alert", `Caso crítico en espera: ${getPatient(q.petId).name}`, "Hace 1 min"]),
-    ["message", "Mariana López envió una fotografía", "Hace 2 min"],
-    ["calendar", "Olivia · Videoconsulta a las 19:30", "En 47 min"],
-  ];
+  const items: [IconName, string, string][] = queue.map((q): [IconName, string, string] => [
+    q.triage === "Crítico" ? "alert" : "calendar",
+    `Caso en espera: ${getPatient(q.petId).name} (${q.triage})`,
+    "En sala de espera",
+  ]);
+
   return <div className="v-notif">
-    <button className="icon-button has-dot" onClick={() => setOpen(!open)} aria-label="Notificaciones" aria-expanded={open}><Icon name="bell"/></button>
-    {open && <><button className="v-avail__scrim" aria-label="Cerrar" onClick={() => setOpen(false)}/><div className="v-avail__pop v-notif__pop"><span className="v-avail__grip" aria-hidden="true"/><span className="eyebrow">Notificaciones</span>{items.map((n) => <div key={n[1]} className="v-notif__item"><Icon name={n[0]} size={18}/><div><b>{n[1]}</b><small>{n[2]}</small></div></div>)}</div></>}
+    <button className={`icon-button ${items.length > 0 ? "has-dot" : ""}`} onClick={() => setOpen(!open)} aria-label="Notificaciones" aria-expanded={open}><Icon name="bell"/></button>
+    {open && <><button className="v-avail__scrim" aria-label="Cerrar" onClick={() => setOpen(false)}/><div className="v-avail__pop v-notif__pop"><span className="v-avail__grip" aria-hidden="true"/><span className="eyebrow">Notificaciones</span>{items.length === 0 ? <div style={{ padding: "14px 16px", color: "var(--ink-soft)", fontSize: 13 }}>No tenés notificaciones pendientes.</div> : items.map((n) => <div key={n[1]} className="v-notif__item"><Icon name={n[0]} size={18}/><div><b>{n[1]}</b><small>{n[2]}</small></div></div>)}</div></>}
   </div>;
 }
 
@@ -83,10 +85,13 @@ function VetShell({ path, children }: { path: string; children: ReactNode }) {
   const { queue, unread, followUps } = useVet();
   const { user, logout } = useAuth();
   const [menu, setMenu] = useState(false);
-  const initials = user ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "SM" : "SM";
-  const displayName = user ? `Dr. ${user.firstName || ""} ${user.lastName || ""}`.trim() : "Dr. Santiago Mendoza";
-  const sub = user?.licenseNumber ? `Clínica general · MP ${user.licenseNumber}` : "Clínica general · MP 12.884";
-  const shortName = user?.lastName ? `Dr. ${user.lastName}` : "Dr. Mendoza";
+  const initials = user ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "VC" : "VC";
+  const displayName = user ? `Dr. ${user.firstName || ""} ${user.lastName || ""}`.trim() : "Profesional Veterinario";
+  const sub = user?.licenseNumber ? `Clínica general · MP ${user.licenseNumber}` : (user?.role === "VET" ? "Clínica general" : "Veterinario");
+  const shortName = user?.lastName ? `Dr. ${user.lastName}` : (user?.firstName ? `Dr. ${user.firstName}` : "Profesional");
+  const now = new Date();
+  const dateName = now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  const topDate = `${dateName.charAt(0).toUpperCase() + dateName.slice(1)} · ${now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`;
 
   const late = followUps.filter((f) => f.status === "Atrasado" || f.status === "Pendiente").length;
   const badge = (p: string) => p === "/vet/queue" ? queue.length : p === "/vet/messages" ? unread : p === "/vet/follow-ups" ? late : 0;
@@ -103,13 +108,21 @@ function VetShell({ path, children }: { path: string; children: ReactNode }) {
         <span className="v-nav-label v-nav-label--admin">Administración</span>
         {admin.map(item)}
       </nav>
-      {user && <button className="nav-item" style={{ marginTop: 8 }} onClick={() => logout().then(() => { window.location.href = "/"; })}><Icon name="close"/><span>Cerrar sesión</span></button>}
+      {user ? (
+        <button className="nav-item" style={{ marginTop: 8, color: "var(--red, #ef4444)" }} onClick={() => logout().then(() => { window.location.href = "/login"; })}>
+          <Icon name="close"/><span>Cerrar sesión</span>
+        </button>
+      ) : (
+        <button className="nav-item" style={{ marginTop: 8, color: "var(--teal, #0d9488)" }} onClick={() => { window.location.href = "/login"; }}>
+          <Icon name="user"/><span>Iniciar sesión</span>
+        </button>
+      )}
     </aside>
     {menu && <button className="scrim" onClick={() => setMenu(false)} aria-label="Cerrar menú"/>}
     <div className="app-main">
       <header className="topbar v-topbar">
         <div className="topbar__mobile"><Button variant="icon" icon="menu" onClick={() => setMenu(true)} ariaLabel="Abrir menú"/><Logo to="/vet/dashboard"/></div>
-        <div className="v-topbar__pro"><b>Consola profesional</b><span>Martes 15 de julio · 18:42</span></div>
+        <div className="v-topbar__pro"><b>Consola profesional</b><span>{topDate}</span></div>
         <div className="topbar__spacer"/>
         <AvailabilityControl/>
         <NotificationsPop/>
@@ -128,7 +141,17 @@ export function QueueRow({ item }: { item: QueueItem }) {
   const { accept, avail } = useVet();
   const pet = getPatient(item.petId);
   const blocked = avail === "No disponible";
-  return <article className={`v-queue-row v-queue-row--${triageSlug(item.triage)}`}>
+  const [reviewing, setReviewing] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+  const confirm = async () => {
+    setAccepting(true);
+    try {
+      await accept(item.id);
+    } finally {
+      setAccepting(false);
+    }
+  };
+  return <article className={`v-queue-row v-queue-row--${triageSlug(item.triage)} ${reviewing ? "is-selected" : ""}`}>
     <PetPhoto pet={pet} size={52}/>
     <div className="v-queue-row__main">
       <div className="v-queue-row__name"><h3>{pet.name}</h3><span>{pet.kind} · {pet.breed}</span></div>
@@ -138,9 +161,25 @@ export function QueueRow({ item }: { item: QueueItem }) {
     <div className="v-queue-row__triage"><span className="v-label">Triage</span><TriageBadge level={item.triage}/><small>{triageMeta[item.triage].hint}</small></div>
     <div className="v-queue-row__wait"><span className="v-label">Espera</span><WaitTimer base={item.wait}/></div>
     <div className="v-queue-row__cta">
-      <Button onClick={() => accept(item.id)} disabled={blocked}>Aceptar consulta</Button>
+      <Button onClick={() => setReviewing(true)} disabled={blocked}>Revisar solicitud</Button>
       {blocked && <small>Pasá a Disponible para aceptar.</small>}
     </div>
+    {reviewing && <Sheet eyebrow="Solicitud en revisión" title={`${pet.name} · ${item.reason}`} onClose={() => setReviewing(false)} footer={<>
+      <Button variant="secondary" onClick={() => setReviewing(false)}>Volver a la cola</Button>
+      <Button icon={accepting ? "clock" : "check"} disabled={accepting} onClick={confirm}>{accepting ? "Iniciando consulta…" : "Aceptar consulta"}</Button>
+    </>}>
+      <div className="v-sheet__who"><PetPhoto pet={pet} size={56}/><div><b>{pet.name}</b><span>{pet.kind} · {pet.breed}</span><small>Tutor: {pet.tutor} · {pet.tutorPhone}</small></div></div>
+      <div className="v-review-priority"><span className="v-label">Prioridad informada</span><TriageBadge level={item.triage}/><p>{triageMeta[item.triage].hint}. La prioridad es un dato de demostración y no reemplaza la evaluación profesional.</p></div>
+      <dl className="v-kv v-kv--stack">
+        <div><dt>Motivo informado</dt><dd>{item.reason}</dd></div>
+        <div><dt>Contexto enviado por el tutor</dt><dd>{item.note}</dd></div>
+        <div><dt>Solicitud</dt><dd>{item.requested} · <WaitTimer base={item.wait}/></dd></div>
+        <div><dt>Alergias registradas</dt><dd>{pet.allergies.join(" · ")}</dd></div>
+        <div><dt>Medicación actual</dt><dd>{pet.meds.join(" · ")}</dd></div>
+        <div><dt>Antecedentes relevantes</dt><dd>{pet.history.join(" · ")}</dd></div>
+      </dl>
+      <Button variant="soft" icon="file" onClick={() => go(`/vet/patients/${pet.id}`)}>Abrir ficha clínica completa</Button>
+    </Sheet>}
   </article>;
 }
 const triageSlug = (t: Triage) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -172,7 +211,7 @@ function Dashboard() {
     { label: "Mensajes pendientes", value: String(unread), sub: unread ? `${threads.filter((t) => t.unread).length} conversaciones` : "Al día", icon: "message", to: "/vet/messages" },
   ];
   const { user } = useAuth();
-  const vetName = user?.lastName ? `Dr. ${user.lastName}` : user?.firstName ? `Dr. ${user.firstName}` : "Dr. Mendoza";
+  const vetName = user ? (user.lastName ? `Dr. ${user.firstName} ${user.lastName}` : `Dr. ${user.firstName}`) : "Colega";
   const nowStr = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
 
   return <>
@@ -235,6 +274,7 @@ function Router({ path }: { path: string }) {
     case "consultations": return id ? <ConsultationDetail id={id}/> : <ConsultationsPage/>;
     case "patients": return id ? <PatientDetail id={id}/> : <PatientsPage/>;
     case "appointments": return <AppointmentsPage/>;
+    case "availability": return <AvailabilityPage/>;
     case "messages": return <MessagesPage/>;
     case "prescriptions": return id === "new" ? <NewPrescription/> : id ? <PrescriptionDetail id={id}/> : <PrescriptionsPage/>;
     case "follow-ups": return <FollowUpsPage/>;
@@ -245,6 +285,12 @@ function Router({ path }: { path: string }) {
 }
 
 export default function VetApp({ path }: { path: string }) {
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user && user.role === "CLIENT") {
+      go("/client/dashboard");
+    }
+  }, [user]);
   const state = new URLSearchParams(window.location.search).get("state");
   return <VetProvider forceEmpty={state === "empty"} key={state ?? "ok"}>
     <VetShell path={path}>

@@ -77,6 +77,9 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
       });
   }
 
+  // Reset any lingering offline presence from previous crashes or restarts
+  prisma.user?.updateMany?.({ where: { isOnline: true }, data: { isOnline: false } })?.catch?.(() => {});
+
   // Middleware
   io.use(socketAuthMiddleware);
 
@@ -88,6 +91,15 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
       // Join personal user room for direct signaling (e.g. call:incoming)
       socket.join(`user:${user.id}`);
       registerChatGateway(io, socket);
+
+      if (user.role === 'VET') {
+        prisma.user
+          .update({
+            where: { id: user.id },
+            data: { isOnline: true, lastSeen: new Date() },
+          })
+          .catch(() => {});
+      }
     }
 
     socket.on('disconnect', async () => {

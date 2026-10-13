@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { Button, EmptyState, Icon, Modal, PageHeader, Tabs, go } from "../shared";
+import { useAuth } from "../context/AuthContext";
 import { getPatient, patients, type ConsultStatus as CS, type Patient } from "./data";
 import { ConsultStatus, ChatPanel, FilterSelect, Lightbox, PetPhoto, TriageBadge, useVet } from "./vetkit";
 
 const tabMap: Record<string, CS> = { Próximas: "Próxima", Activas: "Activa", Finalizadas: "Finalizada", Canceladas: "Cancelada" };
 
 export function ConsultationsPage() {
-  const { consults } = useVet();
+  const { consults, patientsList } = useVet();
   const [tab, setTab] = useState("Próximas");
   const [day, setDay] = useState("Todas");
   const [kind, setKind] = useState("Todas");
   const [mode, setMode] = useState("Todas");
   const status = tabMap[tab];
+  const allPets = patientsList;
   const count = (s: CS) => consults.filter((c) => c.status === s).length;
   const shown = consults.filter((c) => c.status === status && (day === "Todas" || c.day === day) && (kind === "Todas" || getPatient(c.petId).kind === kind) && (mode === "Todas" || c.mode === mode));
   const filtered = day !== "Todas" || kind !== "Todas" || mode !== "Todas";
@@ -21,7 +23,7 @@ export function ConsultationsPage() {
     <div className="v-filters" role="group" aria-label="Filtros de consultas">
       <FilterSelect label="Fecha" value={day} onChange={setDay} options={["Todas", "Hoy", "Mañana", "Ayer"]}/>
       <FilterSelect label="Estado" value={tab} onChange={setTab} options={Object.keys(tabMap)}/>
-      <FilterSelect label="Especie" value={kind} onChange={setKind} options={["Todas", ...Array.from(new Set(patients.map((p) => p.kind)))]}/>
+      <FilterSelect label="Especie" value={kind} onChange={setKind} options={["Todas", ...Array.from(new Set(allPets.map((p) => p.kind)))]}/>
       <FilterSelect label="Modalidad" value={mode} onChange={setMode} options={["Todas", "Videoconsulta", "Chat"]}/>
       {filtered && <button className="v-link" onClick={() => { setDay("Todas"); setKind("Todas"); setMode("Todas"); }}>Limpiar filtros</button>}
       <span className="v-filters__count" aria-live="polite">{shown.length} de {count(status)} {tab.toLowerCase()}</span>
@@ -62,7 +64,12 @@ function EvolutionList({ items }: { items: Patient["evolution"] }) {
 
 type Save = "idle" | "saving" | "saved" | "error";
 
-export function EvolutionEditor({ p }: { p: Patient }) {
+export function EvolutionEditor({ p, consultationId }: { p: Patient; consultationId?: string }) {
+  const { user } = useAuth();
+  const vetName = user ? (user.lastName ? `Dr. ${user.firstName} ${user.lastName}` : (user.firstName ? `Dr. ${user.firstName}` : "Profesional Veterinario")) : "Profesional Veterinario";
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+  const timeStr = now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
   const [text, setText] = useState("");
   const [state, setState] = useState<Save>("idle");
   const [items, setItems] = useState(p.evolution);
@@ -70,19 +77,19 @@ export function EvolutionEditor({ p }: { p: Patient }) {
     if (!text.trim()) { setState("error"); return; }
     setState("saving");
     window.setTimeout(() => {
-      setItems((l) => [{ date: "15 Jul 2025", time: "18:44", author: "Dr. Santiago Mendoza", text: text.trim() }, ...l]);
+      setItems((l) => [{ date: dateStr, time: timeStr, author: vetName, text: text.trim() }, ...l]);
       setText(""); setState("saved");
-    }, 850);
+    }, 500);
   };
   return <section className="panel v-evolution" aria-labelledby="evo-title">
     <div className="panel__heading"><div><span className="eyebrow">Registro clínico</span><h2 id="evo-title">Evolución clínica</h2></div></div>
-    <div className="v-evolution__meta"><span><b>Fecha</b>15 Jul 2025</span><span><b>Hora</b>18:44</span><span><b>Profesional</b>Dr. Santiago Mendoza</span></div>
+    <div className="v-evolution__meta"><span><b>Fecha</b>{dateStr}</span><span><b>Hora</b>{timeStr}</span><span><b>Profesional</b>{vetName}</span></div>
     <label className="sr-only" htmlFor="evo-text">Contenido de la evolución</label>
     <textarea id="evo-text" className={`v-textarea ${state === "error" ? "is-error" : ""}`} rows={6} placeholder="Motivo, hallazgos, diagnóstico presuntivo e indicaciones…" value={text} onChange={(e) => { setText(e.target.value); if (state !== "saving") setState("idle"); }} aria-invalid={state === "error"} aria-describedby="evo-status"/>
     <div className="v-evolution__bar">
       <p id="evo-status" className={`v-save v-save--${state}`} role="status" aria-live="polite">
         {state === "saving" && <><span className="v-spin"/>Guardando…</>}
-        {state === "saved" && <><Icon name="check" size={15}/>Guardado a las 18:44</>}
+        {state === "saved" && <><Icon name="check" size={15}/>Guardado a las {timeStr}</>}
         {state === "error" && <><Icon name="alert" size={15}/>No se pudo guardar: escribí la evolución antes de guardar.</>}
         {state === "idle" && <span>{text.length ? `${text.length} caracteres sin guardar` : "Sin cambios"}</span>}
       </p>
@@ -134,13 +141,13 @@ export function ConsultationDetail({ id }: { id: string }) {
         <div className="panel v-panel-flush"><div className="v-head v-head--tight"><h2>Ficha clínica</h2><button className="v-link" onClick={() => go(`/vet/patients/${p.id}`)}>Abrir completa <Icon name="arrow" size={14}/></button></div><FichaClinica p={p}/></div>
       </section>
       <section className={`${show("Chat")} v-pane--chat`} aria-label="Chat con el tutor">
-        <div className="v-chat-wrap"><ChatPanel petId={p.id} header consultLabel={c.reason}/></div>
+        <div className="v-chat-wrap"><ChatPanel petId={p.id} consultationId={c.id} header consultLabel={c.reason}/></div>
       </section>
       <div className={`${show("Evolución")} v-pane--evo`}>
-        <EvolutionEditor p={p}/>
+        <EvolutionEditor p={p} consultationId={c.id}/>
         <aside className="panel v-actions" aria-label="Acciones clínicas"><span className="eyebrow">Acciones clínicas</span>
           <Button variant="secondary" icon="pill" onClick={() => go(`/vet/prescriptions/new?pet=${p.id}`)}>Nueva receta</Button>
-          <Button variant="secondary" icon="repeat" onClick={() => { setFollowUps((l) => [{ id: `f${Date.now()}`, petId: p.id, title: `Control: ${c.reason}`, when: "Mañana · 18:00", status: "Pendiente", note: "Creado desde la consulta." }, ...l]); notify("Seguimiento programado para mañana · 18:00"); }}>Programar seguimiento</Button>
+          <Button variant="secondary" icon="repeat" onClick={() => { setFollowUps((l) => [{ id: `f${Date.now()}`, petId: p.id, title: `Control: ${c.reason}`, when: "Mañana · 18:00", status: "Pendiente", note: "Creado desde la consulta." }, ...l]); notify("Seguimiento programado en esta vista para mañana · 18:00."); }}>Programar seguimiento</Button>
           <Button variant="secondary" icon="file" onClick={() => go(`/vet/patients/${p.id}`)}>Ver ficha completa</Button>
         </aside>
       </div>

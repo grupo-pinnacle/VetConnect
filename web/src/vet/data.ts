@@ -19,12 +19,12 @@ export type Patient = {
   docs: { name: string; kind: string; date: string; size: string }[]; evolution: Evolution[];
 };
 
-const SM = "Dr. Santiago Mendoza";
+const SM = "Profesional Veterinario";
 
 export const patients: Patient[] = [
   {
     id: "milo", name: "Milo", kind: "Perro", breed: "Golden Retriever", age: "8 años", weight: "29 kg", sex: "Macho castrado", chip: "032 884 912",
-    tutor: "Mariana López", tutorPhone: "+54 11 5555 0182", tutorEmail: "mariana.lopez@ejemplo.com", photo: photos.milo, last: "12 Jun 2025", lastDays: 33, state: "Activo",
+    tutor: "Tutor Clínico", tutorPhone: "+54 11 5555 0182", tutorEmail: "tutor@vetconnect.com.ar", photo: photos.milo, last: "12 Jun 2025", lastDays: 33, state: "Activo",
     allergies: ["Polen estacional"], meds: ["Oclacitinib 16 mg · 1 comprimido cada 24 h"], history: ["Dermatitis atópica leve (2023)", "Otitis externa recurrente"],
     vaccines: [
       { name: "Séxtuple canina", date: "12 Mar 2025", next: "12 Mar 2026", state: "Al día" },
@@ -91,7 +91,52 @@ export const patients: Patient[] = [
   },
 ];
 
-export const getPatient = (id: string) => patients.find((p) => p.id === id) ?? patients[0];
+const dynamicPatients = new Map<string, Patient>();
+
+export function registerPatient(patient: Patient) {
+  dynamicPatients.set(patient.id, patient);
+}
+
+export function registerPatients(patientList: Patient[]) {
+  patientList.forEach((p) => dynamicPatients.set(p.id, p));
+}
+
+export function getAllPatients(): Patient[] {
+  return Array.from(dynamicPatients.values());
+}
+
+export const getPatient = (id: string): Patient => {
+  if (dynamicPatients.has(id)) {
+    return dynamicPatients.get(id)!;
+  }
+  const staticFound = patients.find((p) => p.id === id);
+  if (staticFound) return staticFound;
+  return {
+    id,
+    name: "Paciente",
+    kind: "Mascota",
+    breed: "Mestizo",
+    age: "Registrado",
+    weight: "No informado",
+    sex: "No informado",
+    chip: "No informado",
+    tutor: "Tutor",
+    tutorPhone: "No informado",
+    tutorEmail: "No informado",
+    photo: photos.milo,
+    last: "Hoy",
+    lastDays: 0,
+    state: "Activo",
+    allergies: ["Sin alergias conocidas"],
+    meds: [],
+    history: [],
+    vaccines: [],
+    past: [],
+    studies: [],
+    docs: [],
+    evolution: [],
+  };
+};
 
 export type QueueItem = { id: string; petId: string; reason: string; triage: Triage; wait: number; requested: string; note: string };
 
@@ -118,11 +163,37 @@ export const initialConsults: Consult[] = [
 
 export type EventStatus = "Confirmada" | "Pendiente" | "Cancelada" | "Completada";
 export type AgendaEvent = { id: string; day: number; time: string; petId: string; type: string; status: EventStatus; consultId?: string };
-export const weekDays = [
-  { short: "Lun", name: "Lunes", date: 14 }, { short: "Mar", name: "Martes", date: 15 }, { short: "Mié", name: "Miércoles", date: 16 },
-  { short: "Jue", name: "Jueves", date: 17 }, { short: "Vie", name: "Viernes", date: 18 }, { short: "Sáb", name: "Sábado", date: 19 }, { short: "Dom", name: "Domingo", date: 20 },
-];
-export const todayIndex = 1;
+export function getDynamicWeekDays() {
+  const now = new Date();
+  const dayOfWeek = (now.getDay() + 6) % 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - dayOfWeek);
+
+  const names = [
+    { short: "Lun", name: "Lunes" },
+    { short: "Mar", name: "Martes" },
+    { short: "Mié", name: "Miércoles" },
+    { short: "Jue", name: "Jueves" },
+    { short: "Vie", name: "Viernes" },
+    { short: "Sáb", name: "Sábado" },
+    { short: "Dom", name: "Domingo" },
+  ];
+
+  return names.map((item, idx) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + idx);
+    return {
+      short: item.short,
+      name: item.name,
+      date: d.getDate(),
+      month: d.toLocaleDateString("es-AR", { month: "long" }),
+      full: d,
+    };
+  });
+}
+
+export const weekDays = getDynamicWeekDays();
+export const todayIndex = (new Date().getDay() + 6) % 7;
 export const initialEvents: AgendaEvent[] = [
   { id: "e1", day: 0, time: "18:00", petId: "kiwi", type: "Chat", status: "Completada", consultId: "c-kiwi" },
   { id: "e2", day: 0, time: "19:00", petId: "simon", type: "Videoconsulta", status: "Cancelada", consultId: "c-simon-vac" },
@@ -147,7 +218,7 @@ export const initialThreads: Thread[] = [
   { id: "t-milo", petId: "milo", last: "Te envío otra foto del abdomen.", lastTime: "18:40", unread: 2, online: true, msgs: [
     { id: "m1", mine: false, text: "Buenas noches, doctor. Milo vomitó tres veces desde la mañana.", time: "18:36" },
     { id: "m2", mine: false, kind: "image", src: photos.milo, name: "Abdomen · 18:37", time: "18:37", pos: "50% 70%" },
-    { id: "m3", mine: true, text: "Gracias, Mariana. Reviso la ficha de Milo y sigo con algunas preguntas.", time: "18:38" },
+    { id: "m3", mine: true, text: "Gracias. Reviso la ficha de Milo y sigo con algunas preguntas.", time: "18:38" },
     { id: "m4", mine: false, kind: "doc", name: "Análisis de sangre · Jun 2025.pdf", text: "1,8 MB", time: "18:39" },
     { id: "m5", mine: false, text: "Te envío otra foto del abdomen.", time: "18:40" },
   ] },

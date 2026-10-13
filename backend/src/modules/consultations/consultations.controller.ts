@@ -5,6 +5,7 @@ import {
   completeConsultationSchema,
   cancelConsultationSchema,
   reviewConsultationSchema,
+  createMessageSchema,
 } from './consultations.schemas';
 import { AuthenticatedRequest } from '../auth/auth.middleware';
 
@@ -114,6 +115,20 @@ export class ConsultationsController {
       res.status(200).json({
         success: true,
         data: messages,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public sendMessage = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = getParamId(req.params.id);
+      const validated = createMessageSchema.parse(req.body);
+      const message = await consultationsService.createMessage(id, req.user!, validated);
+      res.status(201).json({
+        success: true,
+        data: message,
       });
     } catch (error) {
       next(error);

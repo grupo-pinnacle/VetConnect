@@ -53,6 +53,19 @@ export const registerChatGateway = (
     }
   });
 
+  // Event: call:ended
+  socket.on('call:ended', async (data: { consultationId: string }) => {
+    try {
+      if (!data?.consultationId) return;
+      io.to(`consultation:${data.consultationId}`).emit('call:ended', {
+        consultationId: data.consultationId,
+        endedBy: user?.id,
+      });
+    } catch (err) {
+      console.error('Error in call:ended event:', err);
+    }
+  });
+
   // Event: message:send
   socket.on(
     'message:send',
