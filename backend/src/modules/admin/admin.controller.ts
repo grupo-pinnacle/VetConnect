@@ -102,6 +102,17 @@ export class AdminController {
     }
   };
 
+  public banUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = getParamId(req.params.id);
+      const reason = req.body?.reason as string | undefined;
+      const user = await adminService.banUser(req.user!.id, id, reason);
+      res.status(200).json({ success: true, data: user });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public restoreUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = getParamId(req.params.id);
@@ -180,6 +191,16 @@ export class AdminController {
         search: search as string,
       });
       res.status(200).json({ success: true, data: consultations });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getConsultationMessages = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = getParamId(req.params.id);
+      const messages = await adminService.getConsultationMessages(id);
+      res.status(200).json({ success: true, data: messages });
     } catch (error) {
       next(error);
     }

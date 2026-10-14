@@ -24,6 +24,12 @@ enum ConsultationStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+  TRIAGE_CRITICAL_QUEUED
+  CLAIM_PENDING_SYNC
+  LIVEKIT_CONNECTING
+  IN_CALL_ACTIVE
+  AWAITING_EMERGENCY_CALLBACK
+  HANDOFF_IN_PROGRESS
 }
 
 enum CallStatus {
@@ -93,31 +99,54 @@ model Pet {
 }
 
 model Consultation {
-  id             String             @id @default(uuid())
-  clientId       String             @map("client_id")
-  vetId          String?            @map("vet_id")
-  petId          String             @map("pet_id")
-  status         ConsultationStatus @default(WAITING)
-  notes          String?
-  diagnosisNotes String?            @map("diagnosis_notes")
-  startedAt      DateTime?          @map("started_at")
-  endedAt        DateTime?          @map("ended_at")
-  createdAt      DateTime           @default(now()) @map("created_at")
-  updatedAt      DateTime           @updatedAt @map("updated_at")
-  deletedAt      DateTime?          @map("deleted_at")
+  id              String             @id @default(uuid())
+  clientId        String             @map("client_id")
+  vetId           String?            @map("vet_id")
+  petId           String             @map("pet_id")
+  status          ConsultationStatus @default(WAITING)
+  notes           String?
+  diagnosisNotes  String?            @map("diagnosis_notes")
+  startedAt       DateTime?          @map("started_at")
+  endedAt         DateTime?          @map("ended_at")
+  activeDeviceId  String?            @map("active_device_id")
+  transportStatus String             @default("OFFLINE") @map("transport_status")
+  stateVersion    Int                @default(1) @map("state_version")
+  claimedAt       DateTime?          @map("claimed_at")
+  livekitRoomSid  String?            @map("livekit_room_sid")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  deletedAt       DateTime?          @map("deleted_at")
 
-  client        User           @relation("ClientConsultations", fields: [clientId], references: [id])
-  vet           User?          @relation("VetConsultations", fields: [vetId], references: [id])
-  pet           Pet            @relation(fields: [petId], references: [id])
+  client        User                   @relation("ClientConsultations", fields: [clientId], references: [id])
+  vet           User?                  @relation("VetConsultations", fields: [vetId], references: [id])
+  pet           Pet                    @relation(fields: [petId], references: [id])
   messages      Message[]
   calls         Call[]
   prescriptions Prescription[]
   review        Review?
   mediaFiles    MediaFile[]
+  auditLogs     ConsultationAuditLog[]
 
   @@index([clientId, status, deletedAt])
   @@index([vetId, status, deletedAt])
   @@map("consultations")
+}
+
+model ConsultationAuditLog {
+  id             BigInt        @id @default(autoincrement())
+  consultationId String        @map("consultation_id")
+  eventType      String        @map("event_type")
+  previousState  String?       @map("previous_state")
+  newState       String?       @map("new_state")
+  actorId        String?       @map("actor_id")
+  deviceId       String?       @map("device_id")
+  metadata       Json?         @default("{}")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  consultation   Consultation  @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@index([consultationId, createdAt(sort: Desc)])
+  @@map("consultation_audit_log")
 }
 
 model Message {

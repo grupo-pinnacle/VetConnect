@@ -5,7 +5,7 @@ import { getPatient, initialConsults, initialQueue, registerPatient, type Consul
 import { TriageBadge, VetProvider, useVet } from "./vetkit";
 import { EvolutionEditor, FichaClinica } from "./Consultations";
 import { useAuth } from "../context/AuthContext";
-import api, { getAccessToken } from "../services/api";
+import api, { getAccessToken, getDeviceId } from "../services/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiResponse, Consultation as BackendConsultation } from "../types";
 import { mapBackendPetToPatient } from "./mappers";
@@ -378,14 +378,29 @@ function Room({ id }: { id: string }) {
   useEffect(() => {
     const wsUrl = getWsUrl();
     const token = getAccessToken();
+    const deviceId = getDeviceId();
     const roomSocket = io(wsUrl, {
       withCredentials: true,
       transports: ["websocket", "polling"],
-      auth: { token: token ? `Bearer ${token}` : undefined },
+      auth: { token: token ? `Bearer ${token}` : undefined, deviceId },
     });
 
     roomSocket.on("connect", () => {
       roomSocket.emit("join:consultation", { consultationId: id });
+    });
+
+    roomSocket.on("session:invalidated", (data: { reason?: string; message?: string }) => {
+      roomSocket.disconnect();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("vetconnect:session_terminated", {
+            detail: {
+              reason: data?.reason || "MULTIPLE_DEVICES_DETECTED",
+              message: data?.message || "Tu sesión fue transferida a otro dispositivo.",
+            },
+          })
+        );
+      }
     });
 
     roomSocket.on("call:ended", () => {
@@ -399,6 +414,7 @@ function Room({ id }: { id: string }) {
 
     return () => {
       roomSocket.off("call:ended");
+      roomSocket.off("session:invalidated");
       roomSocket.disconnect();
     };
   }, [id, queryClient, fromClient]);

@@ -2,6 +2,7 @@ import { Role, VetStatus, ConsultationStatus, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
+import { io } from '../../realtime/socket.server';
 import {
   RejectVetDTO,
   AdminCreateUserDTO,
@@ -283,6 +284,10 @@ export class AdminService {
   }
 
   public async deleteUser(adminId: string, userId: string) {
+    return this.banUser(adminId, userId, 'Cuenta dada de baja o suspendida por el administrador.');
+  }
+
+  public async banUser(adminId: string, userId: string, reason?: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND');
@@ -290,16 +295,30 @@ export class AdminService {
 
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: { deletedAt: new Date(), isOnline: false },
+      data: {
+        deletedAt: new Date(),
+        isOnline: false,
+        tokenVersion: { increment: 1 },
+      },
       select: userSelectFields,
     });
+
+    // Notify user in real-time if connected via Socket.io
+    if (io) {
+      io.to(`user:${userId}`).emit('auth:session_terminated', {
+        reason: 'ACCOUNT_BANNED',
+        message:
+          reason ||
+          'Tu cuenta ha sido suspendida permanentemente por un administrador por infracción de términos de servicio.',
+      });
+    }
 
     await prisma.auditLog.create({
       data: {
         adminId,
-        action: 'ADMIN_SOFT_DELETE_USER',
+        action: 'ADMIN_BAN_USER',
         targetId: userId,
-        details: { email: user.email },
+        details: { email: user.email, reason: reason || 'Baneo permanente' },
       },
     }).catch(() => {});
 
@@ -534,9 +553,33 @@ export class AdminService {
         vet: { select: userSelectFields },
         pet: true,
         review: true,
+        _count: {
+          select: {
+            messages: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 100,
+    });
+  }
+
+  public async getConsultationMessages(consultationId: string) {
+    return prisma.message.findMany({
+      where: { consultationId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            email: true,
+            photoUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
     });
   }
 

@@ -1,8 +1,35 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Button, Icon, Logo, Status, Toast, go } from '../shared';
 import type { ApiResponse, User } from '../types';
+import {
+  Users,
+  PawPrint,
+  Video,
+  ShieldCheck,
+  Activity,
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
+  RotateCcw,
+  MessageSquare,
+  Ban,
+  AlertTriangle,
+  X,
+  Check,
+  Eye,
+  FileText,
+  LogOut,
+  Menu,
+  Stethoscope,
+  ShieldAlert,
+  ArrowRight,
+  Clock,
+  Sparkles,
+  Paperclip,
+} from 'lucide-react';
+import { getWeightAssessment } from '../data/petBreeds';
 
 interface AdminStats {
   pendingVets: number;
@@ -52,14 +79,17 @@ interface AdminConsultation {
   startedAt: string | null;
   endedAt: string | null;
   client: {
+    id?: string;
     firstName: string;
     lastName: string;
     email: string;
   };
   vet: {
+    id?: string;
     firstName: string;
     lastName: string;
     email: string;
+    licenseNumber?: string | null;
   } | null;
   pet: {
     name: string;
@@ -70,6 +100,26 @@ interface AdminConsultation {
     rating: number;
     comment: string | null;
   } | null;
+  _count?: {
+    messages: number;
+  };
+}
+
+interface AdminChatMessage {
+  id: string;
+  consultationId: string;
+  senderId: string;
+  content: string;
+  attachmentUrl: string | null;
+  createdAt: string;
+  sender: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    email: string;
+    photoUrl?: string | null;
+  };
 }
 
 interface AuditLogItem {
@@ -88,8 +138,8 @@ interface AuditLogItem {
 export function AdminApp() {
   const { user, logout } = useAuth();
 
-  // Active navigation tab
-  const getInitialTab = () => {
+  // Navigation tab
+  const getInitialTab = (): 'dashboard' | 'users' | 'pets' | 'consultations' | 'vets' | 'audit' => {
     const p = window.location.pathname;
     if (p.includes('/admin/users')) return 'users';
     if (p.includes('/admin/pets')) return 'pets';
@@ -111,11 +161,10 @@ export function AdminApp() {
     return () => clearTimeout(t);
   }, [toast?.id]);
 
-  // Handle URL changes
   const switchTab = (nextTab: typeof tab) => {
     setTab(nextTab);
     setMobileMenu(false);
-    go(`/admin/${nextTab === 'dashboard' ? 'dashboard' : nextTab}`);
+    window.history.pushState(null, '', `/admin/${nextTab === 'dashboard' ? 'dashboard' : nextTab}`);
   };
 
   // State data
@@ -136,12 +185,24 @@ export function AdminApp() {
 
   const [consStatusFilter, setConsStatusFilter] = useState<string>('ALL');
 
-  // Modals state
+  // Modals state: Users & Pets CRUD
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const [petModalOpen, setPetModalOpen] = useState(false);
   const [editingPet, setEditingPet] = useState<AdminPet | null>(null);
+
+  // Ban Modal state
+  const [banModalOpen, setBanModalOpen] = useState(false);
+  const [targetBanUser, setTargetBanUser] = useState<User | null>(null);
+  const [banReason, setBanReason] = useState('');
+  const [isBanning, setIsBanning] = useState(false);
+
+  // Chat Inspector Modal state
+  const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [selectedConsultation, setSelectedConsultation] = useState<AdminConsultation | null>(null);
+  const [consultationMessages, setConsultationMessages] = useState<AdminChatMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   // Form states for User
   const [userForm, setUserForm] = useState({
@@ -185,7 +246,7 @@ export function AdminApp() {
       if (resPets.data.success && resPets.data.data) setPets(resPets.data.data);
       if (resCons.data.success && resCons.data.data) setConsultations(resCons.data.data);
       if (resLogs.data.success && resLogs.data.data) setAuditLogs(resLogs.data.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('Error loading admin data:', err);
       notify('No se pudieron cargar todos los datos administrativos.');
     } finally {
@@ -204,12 +265,14 @@ export function AdminApp() {
       if (userRoleFilter !== 'ALL' && u.role !== userRoleFilter) return false;
       if (!userSearch) return true;
       const s = userSearch.toLowerCase();
-      const name = `${u.firstName} ${u.lastName}`.toLowerCase();
-      const email = u.email.toLowerCase();
-      const license = (u.licenseNumber || '').toLowerCase();
-      return name.includes(s) || email.includes(s) || license.includes(s);
+      return (
+        u.firstName?.toLowerCase().includes(s) ||
+        u.lastName?.toLowerCase().includes(s) ||
+        u.email?.toLowerCase().includes(s) ||
+        u.licenseNumber?.toLowerCase().includes(s)
+      );
     });
-  }, [users, userSearch, userRoleFilter, userIncludeDeleted]);
+  }, [users, userRoleFilter, userIncludeDeleted, userSearch]);
 
   const filteredPets = useMemo(() => {
     return pets.filter((p) => {
@@ -217,15 +280,16 @@ export function AdminApp() {
       if (petFilter === 'HIDDEN' && !p.deletedAt) return false;
       if (!petSearch) return true;
       const s = petSearch.toLowerCase();
-      const name = p.name.toLowerCase();
-      const species = p.species.toLowerCase();
-      const breed = p.breed.toLowerCase();
-      const chip = (p.microchip || '').toLowerCase();
-      const ownerName = `${p.owner?.firstName} ${p.owner?.lastName}`.toLowerCase();
-      const ownerEmail = (p.owner?.email || '').toLowerCase();
-      return name.includes(s) || species.includes(s) || breed.includes(s) || chip.includes(s) || ownerName.includes(s) || ownerEmail.includes(s);
+      return (
+        p.name?.toLowerCase().includes(s) ||
+        p.breed?.toLowerCase().includes(s) ||
+        p.species?.toLowerCase().includes(s) ||
+        p.owner?.firstName?.toLowerCase().includes(s) ||
+        p.owner?.lastName?.toLowerCase().includes(s) ||
+        p.owner?.email?.toLowerCase().includes(s)
+      );
     });
-  }, [pets, petSearch, petFilter]);
+  }, [pets, petFilter, petSearch]);
 
   const filteredConsultations = useMemo(() => {
     return consultations.filter((c) => {
@@ -234,14 +298,7 @@ export function AdminApp() {
     });
   }, [consultations, consStatusFilter]);
 
-  // Clients list for Pet owner dropdown
-  const clientsList = useMemo(() => {
-    return users.filter((u) => u.role === 'CLIENT' && !u.deletedAt);
-  }, [users]);
-
-  // ==========================================
-  // USER HANDLERS
-  // ==========================================
+  // Handlers for User CRUD
   const handleOpenCreateUser = () => {
     setEditingUser(null);
     setUserForm({
@@ -276,67 +333,80 @@ export function AdminApp() {
     e.preventDefault();
     try {
       if (editingUser) {
-        const payload: any = {
+        const payload: Record<string, unknown> = {
           firstName: userForm.firstName,
           lastName: userForm.lastName,
-          email: userForm.email,
           phone: userForm.phone || null,
           role: userForm.role,
-          licenseNumber: userForm.role === 'VET' ? userForm.licenseNumber : null,
+          licenseNumber: userForm.role === 'VET' ? userForm.licenseNumber || null : null,
           bio: userForm.bio || null,
         };
         if (userForm.password) payload.password = userForm.password;
+
         const res = await api.patch<ApiResponse<User>>(`/api/admin/users/${editingUser.id}`, payload);
-        if (res.data.success && res.data.data) {
-          notify(`Usuario ${res.data.data.firstName} actualizado con éxito.`);
+        if (res.data.success) {
+          notify(`Usuario ${userForm.firstName} ${userForm.lastName} actualizado.`);
           setUserModalOpen(false);
           fetchAllData();
         }
       } else {
-        if (!userForm.password) {
-          alert('La contraseña es obligatoria para nuevos usuarios.');
-          return;
-        }
         const res = await api.post<ApiResponse<User>>('/api/admin/users', userForm);
-        if (res.data.success && res.data.data) {
-          notify(`Usuario ${res.data.data.firstName} creado con éxito.`);
+        if (res.data.success) {
+          notify(`Usuario ${userForm.firstName} ${userForm.lastName} creado exitosamente.`);
           setUserModalOpen(false);
           fetchAllData();
         }
       }
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al guardar el usuario.');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al guardar usuario.');
     }
   };
 
-  const handleDeleteUser = async (u: User) => {
-    if (!window.confirm(`¿Seguro que deseás suspender/desactivar al usuario ${u.firstName} ${u.lastName}?`)) return;
+  // Trigger Ban Modal
+  const handleOpenBanModal = (u: User) => {
+    setTargetBanUser(u);
+    setBanReason('');
+    setBanModalOpen(true);
+  };
+
+  const handleConfirmBan = async () => {
+    if (!targetBanUser) return;
+    setIsBanning(true);
     try {
-      await api.delete(`/api/admin/users/${u.id}`);
-      notify(`Usuario ${u.firstName} suspendido.`);
-      fetchAllData();
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al suspender usuario.');
+      const res = await api.patch<ApiResponse<User>>(`/api/admin/users/${targetBanUser.id}/ban`, {
+        reason: banReason.trim() || 'Infracción grave de términos del servicio.',
+      });
+      if (res.data.success) {
+        notify(`Cuenta de ${targetBanUser.firstName} ${targetBanUser.lastName} suspendida permanentemente.`);
+        setBanModalOpen(false);
+        setTargetBanUser(null);
+        fetchAllData();
+      }
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al procesar el baneo de cuenta.');
+    } finally {
+      setIsBanning(false);
     }
   };
 
   const handleRestoreUser = async (u: User) => {
     try {
       await api.patch(`/api/admin/users/${u.id}/restore`);
-      notify(`Usuario ${u.firstName} reactivado.`);
+      notify(`Usuario ${u.firstName} ${u.lastName} restaurado.`);
       fetchAllData();
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al reactivar usuario.');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al restaurar usuario.');
     }
   };
 
-  // ==========================================
-  // PET HANDLERS
-  // ==========================================
+  // Handlers for Pet CRUD
   const handleOpenCreatePet = () => {
     setEditingPet(null);
     setPetForm({
-      ownerId: clientsList[0]?.id || '',
+      ownerId: users.find((u) => u.role === 'CLIENT')?.id || '',
       name: '',
       species: 'Perro',
       breed: 'Mestizo',
@@ -365,10 +435,18 @@ export function AdminApp() {
     setPetModalOpen(true);
   };
 
+  const adminPetWeightAssessment = useMemo(() => {
+    return getWeightAssessment(petForm.species, petForm.breed, petForm.weightKg);
+  }, [petForm.species, petForm.breed, petForm.weightKg]);
+
   const handleSavePet = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (adminPetWeightAssessment && adminPetWeightAssessment.isBlocking) {
+      alert(adminPetWeightAssessment.message);
+      return;
+    }
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         name: petForm.name,
         species: petForm.species,
         breed: petForm.breed,
@@ -395,29 +473,32 @@ export function AdminApp() {
           fetchAllData();
         }
       }
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al guardar la mascota.');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al guardar la mascota.');
     }
   };
 
   const handleDeletePet = async (p: AdminPet) => {
-    if (!window.confirm(`¿Seguro que deseás ocultar/dar de baja a la mascota ${p.name}?`)) return;
+    if (!window.confirm(`¿Seguro que deseás ocultar a la mascota ${p.name}?`)) return;
     try {
       await api.delete(`/api/admin/pets/${p.id}`);
       notify(`Mascota ${p.name} ocultada.`);
       fetchAllData();
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al ocultar mascota.');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al ocultar mascota.');
     }
   };
 
   const handleRestorePet = async (p: AdminPet) => {
     try {
       await api.patch(`/api/admin/pets/${p.id}/restore`);
-      notify(`Mascota ${p.name} restaurada a visible.`);
+      notify(`Mascota ${p.name} restaurada.`);
       fetchAllData();
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al restaurar mascota.');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al restaurar mascota.');
     }
   };
 
@@ -427,264 +508,592 @@ export function AdminApp() {
       await api.patch(`/api/admin/vets/${vetId}/approve`);
       notify('Matrícula SENASA aprobada exitosamente.');
       fetchAllData();
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al aprobar matrícula.');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al aprobar matrícula.');
     }
   };
 
   const handleRejectVet = async (vetId: string) => {
-    const reason = prompt('Motivo de rechazo de la matrícula:');
+    const reason = prompt('Motivo de rechazo de la matrícula profesional:');
     if (!reason) return;
     try {
       await api.patch(`/api/admin/vets/${vetId}/reject`, { reason });
       notify('Matrícula rechazada.');
       fetchAllData();
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al rechazar matrícula.');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al rechazar matrícula.');
+    }
+  };
+
+  // Open Chat Inspector Modal
+  const handleOpenChatInspector = async (cons: AdminConsultation) => {
+    setSelectedConsultation(cons);
+    setConsultationMessages([]);
+    setLoadingMessages(true);
+    setChatModalOpen(true);
+    try {
+      const res = await api.get<ApiResponse<AdminChatMessage[]>>(`/api/admin/consultations/${cons.id}/messages`);
+      if (res.data.success && res.data.data) {
+        setConsultationMessages(res.data.data);
+      }
+    } catch (err: unknown) {
+      console.warn('Error fetching consultation messages:', err);
+      notify('No se pudieron cargar los mensajes del chat.');
+    } finally {
+      setLoadingMessages(false);
     }
   };
 
   return (
-    <div className="app-shell" style={{ display: 'flex', minHeight: '100vh', background: '#fffbed' }}>
-      {/* Toast alert */}
+    <div className="adm-shell">
+      {/* Toast Notification */}
       {toast && (
         <div
-          style={{
-            position: 'fixed',
-            top: 24,
-            right: 24,
-            zIndex: 9999,
-            background: '#173b3a',
-            color: '#fff',
-            padding: '12px 20px',
-            borderRadius: 12,
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            fontSize: 13,
-            fontWeight: 600,
-          }}
+          role="status"
+          aria-live="polite"
+          className="fixed top-6 right-6 z-[9999] flex items-center gap-3 py-3 px-5 rounded-xl shadow-2xl text-white font-bold text-sm animate-in slide-in-from-top-4 duration-200"
+          style={{ backgroundColor: '#183c3a', border: '1px solid #315f5d' }}
         >
-          <Icon name="check" size={18} />
+          <Check className="w-5 h-5 text-[#609f9c]" />
           <span>{toast.msg}</span>
         </div>
       )}
 
-      {/* Sidebar */}
-      <aside className={`sidebar ${mobileMenu ? 'is-open' : ''}`}>
-        <div className="sidebar__head">
-          <Logo to="/admin/dashboard" />
-          <button className="sidebar__close" onClick={() => setMobileMenu(false)} aria-label="Cerrar menú">
-            <Icon name="close" />
+      {/* Mobile Scrim Backdrop */}
+      {mobileMenu && (
+        <button
+          className="adm-scrim"
+          onClick={() => setMobileMenu(false)}
+          aria-label="Cerrar menú de navegación"
+        />
+      )}
+
+      {/* Sidebar Navigation */}
+      <aside className={`adm-sidebar ${mobileMenu ? 'is-open' : ''}`}>
+        <div className="adm-sidebar__head">
+          <div className="flex items-center gap-2.5">
+            <div className="adm-sidebar__logo-mark">
+              V
+            </div>
+            <span className="font-extrabold text-lg tracking-tight text-white">VetConnect</span>
+          </div>
+          <button
+            className="adm-sidebar__close"
+            onClick={() => setMobileMenu(false)}
+            aria-label="Cerrar navegación"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="sidebar__profile">
-          <span className="avatar avatar--small">SA</span>
-          <div>
-            <strong>Super Admin</strong>
-            <span>{user?.email || 'admin@vetconnect.com'}</span>
+        <div className="adm-sidebar__profile">
+          <div className="adm-sidebar__avatar">
+            SA
+          </div>
+          <div className="adm-sidebar__profile-info">
+            <span className="adm-sidebar__profile-name">
+              {user ? `${user.firstName} ${user.lastName}` : 'Super Admin'}
+            </span>
+            <span className="adm-sidebar__profile-email">
+              {user?.email || 'admin@vetconnect.com'}
+            </span>
           </div>
         </div>
 
-        <nav className="sidebar__nav">
+        <nav className="adm-sidebar__nav">
           <button
-            className={`nav-item ${tab === 'dashboard' ? 'is-active' : ''}`}
+            className={`adm-nav-item ${tab === 'dashboard' ? 'is-active' : ''}`}
             onClick={() => switchTab('dashboard')}
           >
-            <Icon name="home" />
-            <span>Métricas & Resumen</span>
+            <Activity className="w-4 h-4" />
+            <span>Métricas & Control</span>
           </button>
+
           <button
-            className={`nav-item ${tab === 'users' ? 'is-active' : ''}`}
+            className={`adm-nav-item ${tab === 'users' ? 'is-active' : ''}`}
             onClick={() => switchTab('users')}
           >
-            <Icon name="user" />
-            <span>Usuarios (CRUD)</span>
+            <Users className="w-4 h-4" />
+            <span>Usuarios & Baneos</span>
             {users.length > 0 && <small>{users.length}</small>}
           </button>
+
           <button
-            className={`nav-item ${tab === 'pets' ? 'is-active' : ''}`}
+            className={`adm-nav-item ${tab === 'pets' ? 'is-active' : ''}`}
             onClick={() => switchTab('pets')}
           >
-            <Icon name="paw" />
-            <span>Mascotas (Activas/Ocultas)</span>
+            <PawPrint className="w-4 h-4" />
+            <span>Mascotas (CRUD)</span>
             {pets.length > 0 && <small>{pets.length}</small>}
           </button>
+
           <button
-            className={`nav-item ${tab === 'consultations' ? 'is-active' : ''}`}
+            className={`adm-nav-item ${tab === 'consultations' ? 'is-active' : ''}`}
             onClick={() => switchTab('consultations')}
           >
-            <Icon name="video" />
-            <span>Consultas Clínicas</span>
+            <Video className="w-4 h-4" />
+            <span>Consultas & Chats</span>
             {consultations.length > 0 && <small>{consultations.length}</small>}
           </button>
+
           <button
-            className={`nav-item ${tab === 'vets' ? 'is-active' : ''}`}
+            className={`adm-nav-item ${tab === 'vets' ? 'is-active' : ''}`}
             onClick={() => switchTab('vets')}
           >
-            <Icon name="shield" />
+            <ShieldCheck className="w-4 h-4" />
             <span>Auditoría SENASA</span>
             {stats && stats.pendingVets > 0 && (
-              <small style={{ background: '#e98b70', color: '#fff' }}>{stats.pendingVets}</small>
+              <small>{stats.pendingVets}</small>
             )}
           </button>
+
           <button
-            className={`nav-item ${tab === 'audit' ? 'is-active' : ''}`}
+            className={`adm-nav-item ${tab === 'audit' ? 'is-active' : ''}`}
             onClick={() => switchTab('audit')}
           >
-            <Icon name="file" />
-            <span>Registro de Auditoría</span>
+            <FileText className="w-4 h-4" />
+            <span>Logs de Seguridad</span>
           </button>
         </nav>
 
-        <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="adm-sidebar__foot">
           <button
-            className="nav-item"
-            style={{ color: '#ef4444' }}
+            className="adm-nav-item text-[#e98b70] hover:text-[#ffffff] hover:bg-[#c96b52]"
             onClick={() => {
               logout().then(() => {
                 window.location.href = '/login';
               });
             }}
           >
-            <Icon name="close" />
+            <LogOut className="w-4 h-4" />
             <span>Cerrar sesión</span>
           </button>
         </div>
       </aside>
 
-      {mobileMenu && <button className="scrim" onClick={() => setMobileMenu(false)} aria-label="Cerrar menú" />}
-
       {/* Main Container */}
-      <div className="app-main">
-        <header className="topbar">
-          <div className="topbar__mobile">
-            <Button variant="icon" icon="menu" onClick={() => setMobileMenu(true)} ariaLabel="Abrir menú" />
-            <Logo to="/admin/dashboard" />
+      <div className="adm-main">
+        {/* Topbar */}
+        <header className="adm-topbar">
+          <div className="adm-topbar__left">
+            <button
+              className="adm-topbar__toggle"
+              onClick={() => setMobileMenu(true)}
+              aria-label="Abrir menú"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2.5">
+              <span className="font-black text-sm tracking-wide uppercase text-[#183c3a]">
+                Panel de Administración
+              </span>
+              <span className="adm-topbar__badge">Consola Suprema</span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#173b3a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Panel de Administración
-            </span>
-            <span style={{ fontSize: 11, background: '#e7f2f0', color: '#245e5b', padding: '3px 9px', borderRadius: 12, fontWeight: 700 }}>
-              Control Total
-            </span>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-[#536b69]">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Actualizado en vivo</span>
+            </div>
+            <button
+              onClick={fetchAllData}
+              className="p-2 rounded-lg bg-[#f1eee4] text-[#183c3a] hover:bg-[#e2ded4] transition-colors"
+              title="Recargar datos"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
           </div>
-          <div className="topbar__spacer" />
-          <button className="user-menu" onClick={() => switchTab('users')}>
-            <span className="avatar avatar--small">SA</span>
-            <span>Administrador</span>
-          </button>
         </header>
 
-        <main className="content">
-          {/* ==================================================== */}
-          {/* TAB 1: DASHBOARD & METRICS                           */}
-          {/* ==================================================== */}
+        {/* Content Body */}
+        <main className="adm-content">
+          {/* TAB 1: DASHBOARD & METRICS */}
           {tab === 'dashboard' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
-                <div>
-                  <span className="eyebrow">Métricas Operativas</span>
+              <div className="adm-header">
+                <div className="adm-header__titles">
+                  <span className="adm-header__eyebrow">Métricas en tiempo real</span>
                   <h1>Resumen del Sistema</h1>
-                  <p>Supervisión en tiempo real de ingresos, usuarios, mascotas y telemedicina.</p>
+                  <p>Monitoreo unificado de telemedicina, usuarios, pacientes y cola de triage.</p>
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <Button icon="plus" onClick={handleOpenCreateUser}>+ Usuario</Button>
-                  <Button variant="secondary" icon="paw" onClick={handleOpenCreatePet}>+ Mascota</Button>
+                <div className="adm-header__actions">
+                  <button
+                    onClick={handleOpenCreateUser}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Nuevo Usuario</span>
+                  </button>
+                  <button
+                    onClick={handleOpenCreatePet}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#ffffff] text-[#183c3a] border border-[#315f5d] hover:bg-[#f8f6f0] transition-all shadow-sm"
+                  >
+                    <PawPrint className="w-4 h-4" />
+                    <span>Nueva Mascota</span>
+                  </button>
                 </div>
               </div>
 
               {/* KPI Cards Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 32 }}>
-                <div style={{ background: '#fff', padding: 22, borderRadius: 16, border: '1px solid #dbe7e3', boxShadow: '0 4px 14px rgba(0,0,0,0.03)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#4b6968' }}>Total Usuarios</span>
-                    <span style={{ background: '#e7f2f0', color: '#245e5b', padding: 6, borderRadius: 10 }}><Icon name="users" size={18} /></span>
+              <div className="adm-kpi-grid">
+                <div className="adm-kpi-card">
+                  <div className="adm-kpi-card__top">
+                    <span className="adm-kpi-card__label">Veterinarios Online</span>
+                    <div className="adm-kpi-card__icon bg-[#e7f2f0] text-[#183c3a]">
+                      <Stethoscope className="w-4 h-4" />
+                    </div>
                   </div>
-                  <strong style={{ fontSize: 32, color: '#173b3a' }}>{users.length}</strong>
-                  <div style={{ display: 'flex', gap: 10, marginTop: 8, fontSize: 12, color: '#4b6968' }}>
-                    <span>Tutores: <b>{stats?.clientsCount ?? users.filter(u => u.role === 'CLIENT').length}</b></span>
-                    <span>Vets: <b>{stats?.vetsCount ?? users.filter(u => u.role === 'VET').length}</b></span>
+                  <div className="adm-kpi-card__value text-[#183c3a]">
+                    {stats?.onlineVets ?? 0}
                   </div>
-                </div>
-
-                <div style={{ background: '#fff', padding: 22, borderRadius: 16, border: '1px solid #dbe7e3', boxShadow: '0 4px 14px rgba(0,0,0,0.03)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#4b6968' }}>Mascotas Registradas</span>
-                    <span style={{ background: '#fff3d8', color: '#d4933f', padding: 6, borderRadius: 10 }}><Icon name="paw" size={18} /></span>
-                  </div>
-                  <strong style={{ fontSize: 32, color: '#173b3a' }}>{pets.length}</strong>
-                  <div style={{ display: 'flex', gap: 10, marginTop: 8, fontSize: 12, color: '#4b6968' }}>
-                    <span style={{ color: '#10b981' }}>Activas: <b>{pets.filter(p => !p.deletedAt).length}</b></span>
-                    <span style={{ color: '#ef4444' }}>Ocultas/Bajas: <b>{pets.filter(p => p.deletedAt).length}</b></span>
+                  <div className="adm-kpi-card__sub">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>En guardia inmediata</span>
                   </div>
                 </div>
 
-                <div style={{ background: '#fff', padding: 22, borderRadius: 16, border: '1px solid #dbe7e3', boxShadow: '0 4px 14px rgba(0,0,0,0.03)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#4b6968' }}>Consultas Médicas</span>
-                    <span style={{ background: '#e0e7ff', color: '#4338ca', padding: 6, borderRadius: 10 }}><Icon name="video" size={18} /></span>
+                <div className="adm-kpi-card">
+                  <div className="adm-kpi-card__top">
+                    <span className="adm-kpi-card__label">SENASA Pendientes</span>
+                    <div className="adm-kpi-card__icon bg-[#fbeee9] text-[#c96b52]">
+                      <ShieldAlert className="w-4 h-4" />
+                    </div>
                   </div>
-                  <strong style={{ fontSize: 32, color: '#173b3a' }}>{consultations.length}</strong>
-                  <div style={{ display: 'flex', gap: 10, marginTop: 8, fontSize: 12, color: '#4b6968' }}>
-                    <span>En espera: <b>{consultations.filter(c => c.status === 'WAITING').length}</b></span>
-                    <span style={{ color: '#10b981' }}>Finalizadas: <b>{consultations.filter(c => c.status === 'COMPLETED').length}</b></span>
+                  <div className="adm-kpi-card__value text-[#c96b52]">
+                    {stats?.pendingVets ?? 0}
+                  </div>
+                  <div className="adm-kpi-card__sub">
+                    <span>Aprobación SENASA requerida</span>
                   </div>
                 </div>
 
-                <div style={{ background: '#fff', padding: 22, borderRadius: 16, border: '1px solid #dbe7e3', boxShadow: '0 4px 14px rgba(0,0,0,0.03)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#4b6968' }}>Auditoría SENASA</span>
-                    <span style={{ background: '#fef2f2', color: '#b91c1c', padding: 6, borderRadius: 10 }}><Icon name="shield" size={18} /></span>
+                <div className="adm-kpi-card">
+                  <div className="adm-kpi-card__top">
+                    <span className="adm-kpi-card__label">Consultas Totales</span>
+                    <div className="adm-kpi-card__icon bg-[#f3efe6] text-[#183c3a]">
+                      <Video className="w-4 h-4" />
+                    </div>
                   </div>
-                  <strong style={{ fontSize: 32, color: '#173b3a' }}>{stats?.pendingVets ?? 0}</strong>
-                  <div style={{ marginTop: 8, fontSize: 12, color: '#4b6968' }}>
-                    <span>Tasa de Aprobación: <b>{stats?.approvalRate ?? 100}%</b></span>
+                  <div className="adm-kpi-card__value text-[#183c3a]">
+                    {stats?.totalConsultations ?? consultations.length}
+                  </div>
+                  <div className="adm-kpi-card__sub">
+                    <span>Telemedicina registrada</span>
+                  </div>
+                </div>
+
+                <div className="adm-kpi-card">
+                  <div className="adm-kpi-card__top">
+                    <span className="adm-kpi-card__label">Pacientes Activos</span>
+                    <div className="adm-kpi-card__icon bg-[#e7f2f0] text-[#245e5b]">
+                      <PawPrint className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="adm-kpi-card__value text-[#245e5b]">
+                    {stats?.activePetsCount ?? pets.filter((p) => !p.deletedAt).length}
+                  </div>
+                  <div className="adm-kpi-card__sub">
+                    <span>Mascotas en seguimiento</span>
                   </div>
                 </div>
               </div>
 
-              {/* Recent Activity Table */}
-              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dbe7e3', padding: 24, boxShadow: '0 4px 14px rgba(0,0,0,0.03)' }}>
-                <h3 style={{ fontSize: 17, marginBottom: 16 }}>Últimos Ingresos y Consultas</h3>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+              {/* Operations Overview Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Pending Vets Queue */}
+                <div className="adm-table-card p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-extrabold text-base text-[#183c3a] flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-[#609f9c]" />
+                      <span>Matrículas SENASA por Validar</span>
+                    </h3>
+                    <button
+                      onClick={() => switchTab('vets')}
+                      className="text-xs font-bold text-[#315f5d] hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Ver todas</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  {users.filter((u) => u.role === 'VET' && u.vetStatus === 'PENDING').length === 0 ? (
+                    <div className="py-10 text-center text-sm font-medium text-[#536b69]">
+                      Cero solicitudes pendientes. Todas las matrículas fueron verificadas.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {users
+                        .filter((u) => u.role === 'VET' && u.vetStatus === 'PENDING')
+                        .slice(0, 4)
+                        .map((v) => (
+                          <div
+                            key={v.id}
+                            className="flex items-center justify-between p-3.5 rounded-xl bg-[#f8f6f0] border border-[#e2ded4]"
+                          >
+                            <div>
+                              <div className="font-extrabold text-sm text-[#183c3a]">
+                                Dr. {v.firstName} {v.lastName}
+                              </div>
+                              <div className="text-xs text-[#536b69]">
+                                Matrícula: <strong className="text-[#183c3a]">{v.licenseNumber || 'S/N'}</strong> • {v.email}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleApproveVet(v.id)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#183c3a] text-white hover:bg-[#254d4a]"
+                              >
+                                Aprobar
+                              </button>
+                              <button
+                                onClick={() => handleRejectVet(v.id)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#fbeee9] text-[#c96b52] hover:bg-[#f3c2b5]"
+                              >
+                                Rechazar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent Telemedicine Consultations */}
+                <div className="adm-table-card p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-extrabold text-base text-[#183c3a] flex items-center gap-2">
+                      <Video className="w-4 h-4 text-[#609f9c]" />
+                      <span>Últimas Consultas Realizadas</span>
+                    </h3>
+                    <button
+                      onClick={() => switchTab('consultations')}
+                      className="text-xs font-bold text-[#315f5d] hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Ver todas</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  {consultations.length === 0 ? (
+                    <div className="py-10 text-center text-sm font-medium text-[#536b69]">
+                      Aún no hay consultas registradas en la base de datos.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {consultations.slice(0, 4).map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between p-3.5 rounded-xl bg-[#f8f6f0] border border-[#e2ded4]"
+                        >
+                          <div>
+                            <div className="font-extrabold text-sm text-[#183c3a]">
+                              {c.pet.name} ({c.pet.species})
+                            </div>
+                            <div className="text-xs text-[#536b69]">
+                              Tutor: {c.client.firstName} {c.client.lastName} • Vet: {c.vet ? `Dr. ${c.vet.firstName}` : 'En espera'}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`adm-badge ${
+                                c.status === 'COMPLETED'
+                                  ? 'adm-badge--active'
+                                  : c.status === 'WAITING'
+                                  ? 'adm-badge--waiting'
+                                  : 'adm-badge--client'
+                              }`}
+                            >
+                              {c.status}
+                            </span>
+                            <button
+                              onClick={() => handleOpenChatInspector(c)}
+                              className="p-1.5 rounded-lg bg-[#ffffff] border border-[#315f5d] text-[#183c3a] hover:bg-[#e7f2f0]"
+                              title="Ver Chat"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: USERS & PERMANENT BANS */}
+          {tab === 'users' && (
+            <div>
+              <div className="adm-header">
+                <div className="adm-header__titles">
+                  <span className="adm-header__eyebrow">Gestión Integral de Accesos</span>
+                  <h1>Usuarios del Sistema</h1>
+                  <p>Administración, edición y aplicación de baneos y suspensiones permanentes.</p>
+                </div>
+                <div className="adm-header__actions">
+                  <button
+                    onClick={handleOpenCreateUser}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Crear Usuario</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="adm-filter-bar">
+                <div className="adm-filter-bar__search">
+                  <Search className="w-4 h-4 text-[#536b69]" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre, email o matrícula..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                  />
+                  {userSearch && (
+                    <button onClick={() => setUserSearch('')} className="text-[#536b69] hover:text-[#183c3a]">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="adm-filter-bar__actions">
+                  <select
+                    className="adm-select"
+                    value={userRoleFilter}
+                    onChange={(e) => setUserRoleFilter(e.target.value)}
+                  >
+                    <option value="ALL">Todos los Roles</option>
+                    <option value="CLIENT">Tutores (CLIENT)</option>
+                    <option value="VET">Veterinarios (VET)</option>
+                    <option value="ADMIN">Administradores (ADMIN)</option>
+                  </select>
+
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[#183c3a] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={userIncludeDeleted}
+                      onChange={(e) => setUserIncludeDeleted(e.target.checked)}
+                      className="rounded border-[#315f5d] text-[#183c3a]"
+                    />
+                    <span>Ver suspendidos/baneados</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Users Responsive Table */}
+              <div className="adm-table-card">
+                <div className="adm-table-wrap">
+                  <table className="adm-table">
                     <thead>
-                      <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#4b6968' }}>
-                        <th style={{ padding: '10px 12px' }}>Paciente</th>
-                        <th style={{ padding: '10px 12px' }}>Tutor</th>
-                        <th style={{ padding: '10px 12px' }}>Veterinario</th>
-                        <th style={{ padding: '10px 12px' }}>Estado</th>
-                        <th style={{ padding: '10px 12px' }}>Fecha</th>
+                      <tr>
+                        <th>Nombre y Correo</th>
+                        <th>Rol</th>
+                        <th>Estado Cuenta</th>
+                        <th>Presencia</th>
+                        <th>Matrícula / Bio</th>
+                        <th>Alta</th>
+                        <th style={{ textAlign: 'right' }}>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {consultations.slice(0, 5).map((c) => (
-                        <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '12px' }}>
-                            <b>{c.pet?.name || 'Mascota'}</b>
-                            <div style={{ fontSize: 11, color: '#64748b' }}>{c.pet?.species} · {c.pet?.breed}</div>
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="text-center py-12 text-sm text-[#536b69]">
+                            No se encontraron usuarios que coincidan con los filtros.
                           </td>
-                          <td style={{ padding: '12px' }}>{c.client?.firstName} {c.client?.lastName}</td>
-                          <td style={{ padding: '12px' }}>{c.vet ? `Dr. ${c.vet.firstName} ${c.vet.lastName}` : <span style={{ color: '#94a3b8' }}>En sala de espera</span>}</td>
-                          <td style={{ padding: '12px' }}>
-                            <span style={{
-                              padding: '4px 9px',
-                              borderRadius: 12,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: c.status === 'COMPLETED' ? '#dcfce7' : c.status === 'ACTIVE' ? '#e0e7ff' : c.status === 'WAITING' ? '#fef3c7' : '#fee2e2',
-                              color: c.status === 'COMPLETED' ? '#166534' : c.status === 'ACTIVE' ? '#3730a3' : c.status === 'WAITING' ? '#92400e' : '#991b1b',
-                            }}>
-                              {c.status}
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px', color: '#64748b' }}>{new Date(c.createdAt).toLocaleDateString()}</td>
                         </tr>
-                      ))}
+                      ) : (
+                        filteredUsers.map((u) => {
+                          const isBanned = Boolean(u.deletedAt);
+                          return (
+                            <tr key={u.id} className={isBanned ? 'is-banned' : ''}>
+                              <td>
+                                <div className="font-extrabold text-sm text-[#183c3a]">
+                                  {u.firstName} {u.lastName}
+                                </div>
+                                <div className="text-xs text-[#536b69]">{u.email}</div>
+                              </td>
+                              <td>
+                                <span
+                                  className={`adm-badge ${
+                                    u.role === 'ADMIN'
+                                      ? 'adm-badge--admin'
+                                      : u.role === 'VET'
+                                      ? 'adm-badge--vet'
+                                      : 'adm-badge--client'
+                                  }`}
+                                >
+                                  {u.role}
+                                </span>
+                              </td>
+                              <td>
+                                {isBanned ? (
+                                  <span className="adm-badge adm-badge--banned">
+                                    <Ban className="w-3 h-3" />
+                                    <span>Suspendido / Baneado</span>
+                                  </span>
+                                ) : (
+                                  <span className="adm-badge adm-badge--active">
+                                    <Check className="w-3 h-3" />
+                                    <span>Activo</span>
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                                  <span
+                                    className={`w-2 h-2 rounded-full ${
+                                      u.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+                                    }`}
+                                  />
+                                  <span>{u.isOnline ? 'Conectado' : 'Offline'}</span>
+                                </span>
+                              </td>
+                              <td>
+                                <div className="text-xs text-[#183c3a] font-medium max-w-[200px] truncate">
+                                  {u.licenseNumber ? `MP: ${u.licenseNumber}` : u.bio || '—'}
+                                </div>
+                              </td>
+                              <td className="text-xs text-[#536b69] whitespace-nowrap">
+                                {new Date(u.createdAt).toLocaleDateString('es-AR')}
+                              </td>
+                              <td>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => handleOpenEditUser(u)}
+                                    className="p-2 rounded-lg bg-[#f8f6f0] border border-[#e2ded4] text-[#183c3a] hover:bg-[#e7f2f0] transition-colors"
+                                    title="Editar Usuario"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {isBanned ? (
+                                    <button
+                                      onClick={() => handleRestoreUser(u)}
+                                      className="p-2 rounded-lg bg-[#eaf6ea] border border-[#c2e2c2] text-[#206120] hover:bg-[#d5ebd5] transition-colors"
+                                      title="Restaurar Cuenta"
+                                    >
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleOpenBanModal(u)}
+                                      className="p-2 rounded-lg bg-[#fbeee9] border border-[#f3c2b5] text-[#c96b52] hover:bg-[#e98b70] hover:text-white transition-colors"
+                                      title="Banear / Suspender Permanentemente"
+                                    >
+                                      <Ban className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -692,462 +1101,465 @@ export function AdminApp() {
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* TAB 2: USUARIOS CRUD                                 */}
-          {/* ==================================================== */}
-          {tab === 'users' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-                <div>
-                  <span className="eyebrow">Gestión de Acceso y Personas</span>
-                  <h1>Usuarios del Sistema</h1>
-                  <p>Creación, edición, cambio de roles y suspensión de tutores, médicos y administradores.</p>
-                </div>
-                <Button icon="plus" onClick={handleOpenCreateUser}>+ Nuevo Usuario</Button>
-              </div>
-
-              {/* Filters toolbar */}
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 20, background: '#fff', padding: 14, borderRadius: 14, border: '1px solid #dbe7e3' }}>
-                <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Icon name="search" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Buscar por nombre, email o matrícula..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    style={{ width: '100%', border: 0, outline: 'none', background: 'transparent' }}
-                  />
-                </div>
-                <select
-                  value={userRoleFilter}
-                  onChange={(e) => setUserRoleFilter(e.target.value)}
-                  style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #dbe7e3', background: '#fff' }}
-                >
-                  <option value="ALL">Todos los roles</option>
-                  <option value="CLIENT">Solo Tutores (CLIENT)</option>
-                  <option value="VET">Solo Veterinarios (VET)</option>
-                  <option value="ADMIN">Solo Administradores (ADMIN)</option>
-                </select>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={userIncludeDeleted}
-                    onChange={(e) => setUserIncludeDeleted(e.target.checked)}
-                  />
-                  <span>Mostrar suspendidos</span>
-                </label>
-              </div>
-
-              {/* Users table */}
-              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dbe7e3', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#4b6968' }}>
-                      <th style={{ padding: '12px 16px' }}>Usuario</th>
-                      <th style={{ padding: '12px 16px' }}>Contacto</th>
-                      <th style={{ padding: '12px 16px' }}>Rol</th>
-                      <th style={{ padding: '12px 16px' }}>Estado</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((u) => (
-                      <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9', opacity: u.deletedAt ? 0.6 : 1 }}>
-                        <td style={{ padding: '14px 16px' }}>
-                          <b>{u.firstName} {u.lastName}</b>
-                          {u.licenseNumber && (
-                            <div style={{ fontSize: 11, color: '#0d9488', fontWeight: 600 }}>MP: {u.licenseNumber}</div>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <div>{u.email}</div>
-                          <small style={{ color: '#64748b' }}>{u.phone || 'Sin teléfono'}</small>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <span style={{
-                            padding: '4px 10px',
-                            borderRadius: 12,
-                            fontSize: 11,
-                            fontWeight: 800,
-                            background: u.role === 'ADMIN' ? '#f3e8ff' : u.role === 'VET' ? '#e7f2f0' : '#f1f5f9',
-                            color: u.role === 'ADMIN' ? '#6b21a8' : u.role === 'VET' ? '#245e5b' : '#334155',
-                          }}>
-                            {u.role}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          {u.deletedAt ? (
-                            <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11, background: '#fee2e2', padding: '3px 8px', borderRadius: 8 }}>
-                              Suspendido
-                            </span>
-                          ) : (
-                            <span style={{ color: '#10b981', fontWeight: 700, fontSize: 11, background: '#dcfce7', padding: '3px 8px', borderRadius: 8 }}>
-                              Activo
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: 6 }}>
-                            <Button variant="secondary" icon="edit" onClick={() => handleOpenEditUser(u)}>
-                              Editar
-                            </Button>
-                            {u.deletedAt ? (
-                              <Button variant="soft" icon="repeat" onClick={() => handleRestoreUser(u)}>
-                                Reactivar
-                              </Button>
-                            ) : (
-                              <Button variant="danger" icon="trash" onClick={() => handleDeleteUser(u)}>
-                                Suspender
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredUsers.length === 0 && (
-                      <tr>
-                        <td colSpan={5} style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
-                          No se encontraron usuarios con los filtros seleccionados.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* ==================================================== */}
-          {/* TAB 3: MASCOTAS CRUD (Creadas y Ocultas)              */}
-          {/* ==================================================== */}
+          {/* TAB 3: PETS (CRUD) */}
           {tab === 'pets' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-                <div>
-                  <span className="eyebrow">Gestión de Pacientes</span>
-                  <h1>Mascotas (Activas y Ocultas)</h1>
-                  <p>Alta, edición y administración de visibilidad (bajas lógicas y reactivaciones) de mascotas.</p>
+              <div className="adm-header">
+                <div className="adm-header__titles">
+                  <span className="adm-header__eyebrow">Expedientes Clínicos Veterinarios</span>
+                  <h1>Mascotas Registradas</h1>
+                  <p>Administración completa de animales registrados, activas u ocultas.</p>
                 </div>
-                <Button icon="plus" onClick={handleOpenCreatePet}>+ Registrar Mascota</Button>
+                <div className="adm-header__actions">
+                  <button
+                    onClick={handleOpenCreatePet}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Nueva Mascota</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Pet filters toolbar */}
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 20, background: '#fff', padding: 14, borderRadius: 14, border: '1px solid #dbe7e3' }}>
-                <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Icon name="search" size={18} />
+              {/* Filter Bar */}
+              <div className="adm-filter-bar">
+                <div className="adm-filter-bar__search">
+                  <Search className="w-4 h-4 text-[#536b69]" />
                   <input
                     type="text"
-                    placeholder="Buscar por nombre, especie, raza, chip o tutor..."
+                    placeholder="Buscar por mascota, tutor o raza..."
                     value={petSearch}
                     onChange={(e) => setPetSearch(e.target.value)}
-                    style={{ width: '100%', border: 0, outline: 'none', background: 'transparent' }}
                   />
+                  {petSearch && (
+                    <button onClick={() => setPetSearch('')} className="text-[#536b69] hover:text-[#183c3a]">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-                <select
-                  value={petFilter}
-                  onChange={(e) => setPetFilter(e.target.value as any)}
-                  style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #dbe7e3', background: '#fff' }}
-                >
-                  <option value="ALL">Todas las mascotas ({pets.length})</option>
-                  <option value="ACTIVE">Solo Activas ({pets.filter(p => !p.deletedAt).length})</option>
-                  <option value="HIDDEN">Solo Ocultas / Dadas de baja ({pets.filter(p => p.deletedAt).length})</option>
-                </select>
+
+                <div className="adm-filter-bar__actions">
+                  <select
+                    className="adm-select"
+                    value={petFilter}
+                    onChange={(e) => setPetFilter(e.target.value as any)}
+                  >
+                    <option value="ALL">Todas las Mascotas</option>
+                    <option value="ACTIVE">Solo Activas</option>
+                    <option value="HIDDEN">Ocultas / Dadas de Baja</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Pets table */}
-              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dbe7e3', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#4b6968' }}>
-                      <th style={{ padding: '12px 16px' }}>Mascota</th>
-                      <th style={{ padding: '12px 16px' }}>Datos Físicos</th>
-                      <th style={{ padding: '12px 16px' }}>Tutor Responsable</th>
-                      <th style={{ padding: '12px 16px' }}>Visibilidad</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPets.map((p) => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9', opacity: p.deletedAt ? 0.65 : 1 }}>
-                        <td style={{ padding: '14px 16px' }}>
-                          <b style={{ fontSize: 15, color: '#173b3a' }}>{p.name}</b>
-                          <div style={{ fontSize: 11, color: '#64748b' }}>{p.species} · {p.breed}</div>
-                          {p.microchip && (
-                            <small style={{ color: '#0d9488', display: 'block', marginTop: 2 }}>Chip: {p.microchip}</small>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <div><b>{p.weightKg ? `${p.weightKg} kg` : '—'}</b> · {p.sex || 'No especificado'}</div>
-                          {p.allergies && <small style={{ color: '#e11d48', display: 'block' }}>Alergias: {p.allergies}</small>}
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <b>{p.owner?.firstName} {p.owner?.lastName}</b>
-                          <div style={{ fontSize: 11, color: '#64748b' }}>{p.owner?.email}</div>
-                          {p.owner?.phone && <div style={{ fontSize: 11, color: '#64748b' }}>{p.owner.phone}</div>}
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          {p.deletedAt ? (
-                            <span style={{ color: '#b91c1c', background: '#fee2e2', padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
-                              Oculta (Baja)
-                            </span>
-                          ) : (
-                            <span style={{ color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
-                              Activa
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: 6 }}>
-                            <Button variant="secondary" icon="edit" onClick={() => handleOpenEditPet(p)}>
-                              Editar
-                            </Button>
-                            {p.deletedAt ? (
-                              <Button variant="soft" icon="repeat" onClick={() => handleRestorePet(p)}>
-                                Restaurar
-                              </Button>
-                            ) : (
-                              <Button variant="danger" icon="trash" onClick={() => handleDeletePet(p)}>
-                                Ocultar
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredPets.length === 0 && (
+              {/* Pets Responsive Table */}
+              <div className="adm-table-card">
+                <div className="adm-table-wrap">
+                  <table className="adm-table">
+                    <thead>
                       <tr>
-                        <td colSpan={5} style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
-                          No se encontraron mascotas registradas con este filtro.
-                        </td>
+                        <th>Mascota & Especie</th>
+                        <th>Raza & Peso</th>
+                        <th>Tutor Responsable</th>
+                        <th>Microchip</th>
+                        <th>Alergias / Crónicas</th>
+                        <th>Estado</th>
+                        <th style={{ textAlign: 'right' }}>Acciones</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filteredPets.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="text-center py-12 text-sm text-[#536b69]">
+                            No hay mascotas que coincidan con la búsqueda.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredPets.map((p) => {
+                          const isDeleted = Boolean(p.deletedAt);
+                          return (
+                            <tr key={p.id} className={isDeleted ? 'is-banned' : ''}>
+                              <td>
+                                <div className="font-extrabold text-sm text-[#183c3a]">{p.name}</div>
+                                <div className="text-xs text-[#536b69]">{p.species} • {p.sex || 'N/A'}</div>
+                              </td>
+                              <td>
+                                <div className="text-xs font-bold text-[#183c3a]">{p.breed}</div>
+                                <div className="text-xs text-[#536b69]">{p.weightKg ? `${p.weightKg} kg` : 'Sin peso'}</div>
+                              </td>
+                              <td>
+                                <div className="text-xs font-bold text-[#183c3a]">
+                                  {p.owner ? `${p.owner.firstName} ${p.owner.lastName}` : 'Desconocido'}
+                                </div>
+                                <div className="text-xs text-[#536b69]">{p.owner?.email || '—'}</div>
+                              </td>
+                              <td className="text-xs font-mono text-[#536b69]">{p.microchip || '—'}</td>
+                              <td>
+                                <div className="text-xs text-[#183c3a] max-w-[200px] truncate">
+                                  {p.allergies || p.chronicConditions ? (
+                                    <span className="text-[#c96b52] font-semibold">
+                                      {p.allergies || p.chronicConditions}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[#536b69]">Ninguna</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                {isDeleted ? (
+                                  <span className="adm-badge adm-badge--banned">Oculta / Baja</span>
+                                ) : (
+                                  <span className="adm-badge adm-badge--active">Activa</span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => handleOpenEditPet(p)}
+                                    className="p-2 rounded-lg bg-[#f8f6f0] border border-[#e2ded4] text-[#183c3a] hover:bg-[#e7f2f0] transition-colors"
+                                    title="Editar Mascota"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  {isDeleted ? (
+                                    <button
+                                      onClick={() => handleRestorePet(p)}
+                                      className="p-2 rounded-lg bg-[#eaf6ea] border border-[#c2e2c2] text-[#206120] hover:bg-[#d5ebd5] transition-colors"
+                                      title="Restaurar Mascota"
+                                    >
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleDeletePet(p)}
+                                      className="p-2 rounded-lg bg-[#fbeee9] border border-[#f3c2b5] text-[#c96b52] hover:bg-[#f3c2b5] transition-colors"
+                                      title="Ocultar Mascota"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* TAB 4: CONSULTAS                                     */}
-          {/* ==================================================== */}
+          {/* TAB 4: CONSULTATIONS & CHAT CONVERSATION VIEWER */}
           {tab === 'consultations' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-                <div>
-                  <span className="eyebrow">Historial Clínico Central</span>
-                  <h1>Consultas Médicas</h1>
-                  <p>Registro histórico y auditoría de atenciones de telemedicina.</p>
+              <div className="adm-header">
+                <div className="adm-header__titles">
+                  <span className="adm-header__eyebrow">Auditoría Clínica & Conversaciones</span>
+                  <h1>Consultas & Chats</h1>
+                  <p>Inspección de teleconsultas, estado médico y mensajes cruzados entre tutores y veterinarios.</p>
                 </div>
-                <select
-                  value={consStatusFilter}
-                  onChange={(e) => setConsStatusFilter(e.target.value)}
-                  style={{ padding: '8px 14px', borderRadius: 10, border: '1px solid #dbe7e3', background: '#fff' }}
-                >
-                  <option value="ALL">Todos los estados</option>
-                  <option value="WAITING">En espera (WAITING)</option>
-                  <option value="ACTIVE">En curso (ACTIVE)</option>
-                  <option value="COMPLETED">Finalizadas (COMPLETED)</option>
-                  <option value="CANCELLED">Canceladas (CANCELLED)</option>
-                </select>
               </div>
 
-              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dbe7e3', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#4b6968' }}>
-                      <th style={{ padding: '12px 16px' }}>Paciente</th>
-                      <th style={{ padding: '12px 16px' }}>Tutor</th>
-                      <th style={{ padding: '12px 16px' }}>Veterinario</th>
-                      <th style={{ padding: '12px 16px' }}>Motivo / Triage</th>
-                      <th style={{ padding: '12px 16px' }}>Estado</th>
-                      <th style={{ padding: '12px 16px' }}>Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredConsultations.map((c) => (
-                      <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '14px 16px' }}>
-                          <b>{c.pet?.name}</b>
-                          <div style={{ fontSize: 11, color: '#64748b' }}>{c.pet?.species} · {c.pet?.breed}</div>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <b>{c.client?.firstName} {c.client?.lastName}</b>
-                          <div style={{ fontSize: 11, color: '#64748b' }}>{c.client?.email}</div>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          {c.vet ? (
-                            <div>
-                              <b>Dr. {c.vet.firstName} {c.vet.lastName}</b>
-                              <div style={{ fontSize: 11, color: '#64748b' }}>{c.vet.email}</div>
-                            </div>
-                          ) : (
-                            <span style={{ color: '#d97706', fontWeight: 600 }}>Sin asignar (En guardia)</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px 16px', maxWidth: 260 }}>
-                          <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {c.notes || 'Consulta general'}
-                          </div>
-                          {c.review && (
-                            <small style={{ color: '#f59e0b', fontWeight: 700 }}>
-                              ★ {c.review.rating}/5 {c.review.comment ? `("${c.review.comment}")` : ''}
-                            </small>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <span style={{
-                            padding: '4px 9px',
-                            borderRadius: 12,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: c.status === 'COMPLETED' ? '#dcfce7' : c.status === 'ACTIVE' ? '#e0e7ff' : c.status === 'WAITING' ? '#fef3c7' : '#fee2e2',
-                            color: c.status === 'COMPLETED' ? '#166534' : c.status === 'ACTIVE' ? '#3730a3' : c.status === 'WAITING' ? '#92400e' : '#991b1b',
-                          }}>
-                            {c.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 16px', color: '#64748b' }}>
-                          {new Date(c.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredConsultations.length === 0 && (
+              {/* Filter Bar */}
+              <div className="adm-filter-bar">
+                <div className="adm-filter-bar__search">
+                  <Search className="w-4 h-4 text-[#536b69]" />
+                  <input
+                    type="text"
+                    placeholder="Filtrar por paciente o profesional..."
+                    value={petSearch}
+                    onChange={(e) => setPetSearch(e.target.value)}
+                  />
+                </div>
+
+                <div className="adm-filter-bar__actions">
+                  <select
+                    className="adm-select"
+                    value={consStatusFilter}
+                    onChange={(e) => setConsStatusFilter(e.target.value)}
+                  >
+                    <option value="ALL">Todos los Estados</option>
+                    <option value="WAITING">En Sala de Espera (WAITING)</option>
+                    <option value="ACTIVE">En Consulta Activa (ACTIVE)</option>
+                    <option value="COMPLETED">Finalizadas (COMPLETED)</option>
+                    <option value="CANCELLED">Canceladas (CANCELLED)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Consultations Table */}
+              <div className="adm-table-card">
+                <div className="adm-table-wrap">
+                  <table className="adm-table">
+                    <thead>
                       <tr>
-                        <td colSpan={6} style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
-                          No hay consultas con este estado.
-                        </td>
+                        <th>Fecha / ID</th>
+                        <th>Paciente (Mascota)</th>
+                        <th>Tutor (Cliente)</th>
+                        <th>Veterinario Asignado</th>
+                        <th>Estado Consulta</th>
+                        <th>Reseña / Calificación</th>
+                        <th style={{ textAlign: 'right' }}>Conversación</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filteredConsultations.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="text-center py-12 text-sm text-[#536b69]">
+                            No hay consultas registradas que coincidan con los filtros.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredConsultations.map((c) => {
+                          const msgCount = c._count?.messages ?? 0;
+                          return (
+                            <tr key={c.id}>
+                              <td>
+                                <div className="font-extrabold text-xs text-[#183c3a]">
+                                  {new Date(c.createdAt).toLocaleDateString('es-AR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </div>
+                                <div className="text-[10px] font-mono text-[#536b69]">{c.id.substring(0, 8)}...</div>
+                              </td>
+                              <td>
+                                <div className="font-extrabold text-sm text-[#183c3a]">{c.pet.name}</div>
+                                <div className="text-xs text-[#536b69]">{c.pet.species} • {c.pet.breed}</div>
+                              </td>
+                              <td>
+                                <div className="font-bold text-xs text-[#183c3a]">
+                                  {c.client.firstName} {c.client.lastName}
+                                </div>
+                                <div className="text-xs text-[#536b69]">{c.client.email}</div>
+                              </td>
+                              <td>
+                                {c.vet ? (
+                                  <>
+                                    <div className="font-bold text-xs text-[#183c3a]">
+                                      Dr. {c.vet.firstName} {c.vet.lastName}
+                                    </div>
+                                    <div className="text-xs text-[#536b69]">{c.vet.email}</div>
+                                  </>
+                                ) : (
+                                  <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                                    Sin asignar
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                <span
+                                  className={`adm-badge ${
+                                    c.status === 'COMPLETED'
+                                      ? 'adm-badge--active'
+                                      : c.status === 'WAITING'
+                                      ? 'adm-badge--waiting'
+                                      : 'adm-badge--client'
+                                  }`}
+                                >
+                                  {c.status}
+                                </span>
+                              </td>
+                              <td>
+                                {c.review ? (
+                                  <div className="flex items-center gap-1 text-xs font-bold text-[#183c3a]">
+                                    <span className="text-amber-500">★</span>
+                                    <span>{c.review.rating}</span>
+                                    {c.review.comment && (
+                                      <span className="text-[11px] font-normal text-[#536b69] max-w-[120px] truncate ml-1">
+                                        "{c.review.comment}"
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-[#536b69]">—</span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="flex items-center justify-end">
+                                  <button
+                                    onClick={() => handleOpenChatInspector(c)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm cursor-pointer"
+                                  >
+                                    <MessageSquare className="w-3.5 h-3.5 text-[#609f9c]" />
+                                    <span>Ver Chat</span>
+                                    {msgCount > 0 && (
+                                      <span className="bg-[#609f9c] text-[#183c3a] px-1.5 py-0.2 rounded-full text-[10px] font-black">
+                                        {msgCount}
+                                      </span>
+                                    )}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* TAB 5: AUDITORÍA SENASA                              */}
-          {/* ==================================================== */}
+          {/* TAB 5: SENASA VETS VERIFICATION */}
           {tab === 'vets' && (
             <div>
-              <div style={{ marginBottom: 24 }}>
-                <span className="eyebrow">Matrículas Profesionales</span>
-                <h1>Auditoría y Validación SENASA</h1>
-                <p>Revisión y habilitación legal de veterinarios para la atención telemática.</p>
+              <div className="adm-header">
+                <div className="adm-header__titles">
+                  <span className="adm-header__eyebrow">Validación Legal SENASA</span>
+                  <h1>Auditoría de Matrículas Veterinarias</h1>
+                  <p>Inspección de credenciales habilitantes para ejercicio clínico legal en Argentina.</p>
+                </div>
               </div>
 
-              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dbe7e3', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#4b6968' }}>
-                      <th style={{ padding: '12px 16px' }}>Veterinario</th>
-                      <th style={{ padding: '12px 16px' }}>Matrícula Informada</th>
-                      <th style={{ padding: '12px 16px' }}>Bio / Presentación</th>
-                      <th style={{ padding: '12px 16px' }}>Estado Actual</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Resolución Legal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.filter(u => u.role === 'VET').map((v) => (
-                      <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '14px 16px' }}>
-                          <b>Dr. {v.firstName} {v.lastName}</b>
-                          <div style={{ fontSize: 11, color: '#64748b' }}>{v.email}</div>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, background: '#f1f5f9', padding: '3px 8px', borderRadius: 6 }}>
-                            {v.licenseNumber || 'NO INFORMADA'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 16px', maxWidth: 280, color: '#64748b' }}>
-                          {v.bio || 'Sin descripción profesional ingresada.'}
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <span style={{
-                            padding: '4px 10px',
-                            borderRadius: 12,
-                            fontSize: 11,
-                            fontWeight: 800,
-                            background: v.vetStatus === 'APPROVED' ? '#dcfce7' : v.vetStatus === 'PENDING' ? '#fef3c7' : '#fee2e2',
-                            color: v.vetStatus === 'APPROVED' ? '#166534' : v.vetStatus === 'PENDING' ? '#92400e' : '#991b1b',
-                          }}>
-                            {v.vetStatus || 'PENDING'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: 6 }}>
-                            {v.vetStatus !== 'APPROVED' && (
-                              <Button variant="primary" icon="check" onClick={() => handleApproveVet(v.id)}>
-                                Aprobar
-                              </Button>
-                            )}
-                            {v.vetStatus !== 'REJECTED' && (
-                              <Button variant="danger" icon="close" onClick={() => handleRejectVet(v.id)}>
-                                Rechazar
-                              </Button>
-                            )}
-                          </div>
-                        </td>
+              <div className="adm-table-card">
+                <div className="adm-table-wrap">
+                  <table className="adm-table">
+                    <thead>
+                      <tr>
+                        <th>Veterinario</th>
+                        <th>Matrícula Profesional</th>
+                        <th>Estado SENASA</th>
+                        <th>Especialidad / Bio</th>
+                        <th>Fecha Registro</th>
+                        <th style={{ textAlign: 'right' }}>Resolución</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {users.filter((u) => u.role === 'VET').length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-12 text-sm text-[#536b69]">
+                            No hay profesionales veterinarios registrados en el sistema.
+                          </td>
+                        </tr>
+                      ) : (
+                        users
+                          .filter((u) => u.role === 'VET')
+                          .map((v) => (
+                            <tr key={v.id}>
+                              <td>
+                                <div className="font-extrabold text-sm text-[#183c3a]">
+                                  Dr. {v.firstName} {v.lastName}
+                                </div>
+                                <div className="text-xs text-[#536b69]">{v.email}</div>
+                              </td>
+                              <td>
+                                <span className="font-mono text-xs font-extrabold text-[#183c3a] bg-[#f8f6f0] px-2 py-1 rounded border border-[#e2ded4]">
+                                  {v.licenseNumber || 'PENDIENTE'}
+                                </span>
+                              </td>
+                              <td>
+                                <span
+                                  className={`adm-badge ${
+                                    v.vetStatus === 'APPROVED'
+                                      ? 'adm-badge--active'
+                                      : v.vetStatus === 'REJECTED'
+                                      ? 'adm-badge--banned'
+                                      : 'adm-badge--waiting'
+                                  }`}
+                                >
+                                  {v.vetStatus || 'PENDING'}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="text-xs text-[#536b69] max-w-[260px] truncate">{v.bio || '—'}</div>
+                              </td>
+                              <td className="text-xs text-[#536b69]">
+                                {new Date(v.createdAt).toLocaleDateString('es-AR')}
+                              </td>
+                              <td>
+                                <div className="flex items-center justify-end gap-2">
+                                  {v.vetStatus !== 'APPROVED' && (
+                                    <button
+                                      onClick={() => handleApproveVet(v.id)}
+                                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#183c3a] text-white hover:bg-[#254d4a] transition-all"
+                                    >
+                                      Aprobar
+                                    </button>
+                                  )}
+                                  {v.vetStatus !== 'REJECTED' && (
+                                    <button
+                                      onClick={() => handleRejectVet(v.id)}
+                                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#fbeee9] text-[#c96b52] hover:bg-[#f3c2b5] transition-all"
+                                    >
+                                      Rechazar
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* TAB 6: AUDIT LOGS                                    */}
-          {/* ==================================================== */}
+          {/* TAB 6: AUDIT LOGS */}
           {tab === 'audit' && (
             <div>
-              <div style={{ marginBottom: 24 }}>
-                <span className="eyebrow">Trazabilidad Inmutable</span>
-                <h1>Registro de Auditoría</h1>
-                <p>Historial legal de acciones administrativas realizadas en la base de datos.</p>
+              <div className="adm-header">
+                <div className="adm-header__titles">
+                  <span className="adm-header__eyebrow">Trazabilidad & Seguridad</span>
+                  <h1>Registro de Auditoría</h1>
+                  <p>Historial inmutable de operaciones administrativas y modificaciones de datos.</p>
+                </div>
               </div>
 
-              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dbe7e3', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#4b6968' }}>
-                      <th style={{ padding: '12px 16px' }}>Acción</th>
-                      <th style={{ padding: '12px 16px' }}>Administrador</th>
-                      <th style={{ padding: '12px 16px' }}>Target ID</th>
-                      <th style={{ padding: '12px 16px' }}>Detalles</th>
-                      <th style={{ padding: '12px 16px' }}>Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {auditLogs.map((log) => (
-                      <tr key={log.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ fontWeight: 800, color: '#173b3a', background: '#e7f2f0', padding: '3px 8px', borderRadius: 6, fontSize: 11 }}>
-                            {log.action}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          {log.admin?.firstName} {log.admin?.lastName}
-                        </td>
-                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 11, color: '#64748b' }}>
-                          {log.targetId || '—'}
-                        </td>
-                        <td style={{ padding: '12px 16px', maxWidth: 300, fontSize: 11, color: '#64748b' }}>
-                          {log.details ? JSON.stringify(log.details) : '—'}
-                        </td>
-                        <td style={{ padding: '12px 16px', color: '#64748b', fontSize: 11 }}>
-                          {new Date(log.createdAt).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                    {auditLogs.length === 0 && (
+              <div className="adm-table-card">
+                <div className="adm-table-wrap">
+                  <table className="adm-table">
+                    <thead>
                       <tr>
-                        <td colSpan={5} style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
-                          Aún no hay registros de auditoría almacenados.
-                        </td>
+                        <th>Fecha & Hora</th>
+                        <th>Administrador</th>
+                        <th>Acción Ejecutada</th>
+                        <th>ID Objeto / Target</th>
+                        <th>Detalles</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {auditLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="text-center py-12 text-sm text-[#536b69]">
+                            No hay eventos registrados en la bitácora de auditoría.
+                          </td>
+                        </tr>
+                      ) : (
+                        auditLogs.map((log) => (
+                          <tr key={log.id}>
+                            <td className="text-xs font-mono text-[#536b69] whitespace-nowrap">
+                              {new Date(log.createdAt).toLocaleString('es-AR')}
+                            </td>
+                            <td>
+                              <div className="font-bold text-xs text-[#183c3a]">
+                                {log.admin ? `${log.admin.firstName} ${log.admin.lastName}` : 'Sistema'}
+                              </div>
+                              <div className="text-[11px] text-[#536b69]">{log.admin?.email}</div>
+                            </td>
+                            <td>
+                              <span className="font-mono text-xs font-bold text-[#183c3a] bg-[#e7f2f0] px-2 py-0.5 rounded border border-[#bddbd6]">
+                                {log.action}
+                              </span>
+                            </td>
+                            <td className="text-xs font-mono text-[#536b69]">{log.targetId || '—'}</td>
+                            <td className="text-xs text-[#536b69]">
+                              <code className="text-[11px] bg-[#f8f6f0] px-2 py-1 rounded border border-[#e2ded4] block max-w-sm truncate">
+                                {JSON.stringify(log.details)}
+                              </code>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -1155,110 +1567,316 @@ export function AdminApp() {
       </div>
 
       {/* ==================================================== */}
-      {/* MODAL: USUARIO (CREAR / EDITAR)                      */}
+      {/* MODAL 1: PERMANENT BAN CONFIRMATION WITH ANIMATION   */}
+      {/* ==================================================== */}
+      {banModalOpen && targetBanUser && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="adm-modal-overlay"
+        >
+          <div className="adm-modal-card text-center space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-16 h-16 rounded-full bg-[#fbeee9] border-2 border-[#c96b52] flex items-center justify-center text-[#c96b52] animate-bounce">
+              <Ban className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-block text-xs uppercase tracking-wider font-extrabold px-3 py-1 rounded-full bg-[#fbeee9] text-[#c96b52] border border-[#f3c2b5]">
+                Acción Irreversible
+              </span>
+              <h2 className="text-2xl font-black text-[#183c3a] tracking-tight">
+                Banear Cuenta Permanentemente
+              </h2>
+              <p className="text-sm text-[#536b69] font-medium leading-relaxed">
+                ¿Estás seguro de que deseás suspender y banear de forma permanente a{' '}
+                <strong className="text-[#183c3a]">
+                  {targetBanUser.firstName} {targetBanUser.lastName} ({targetBanUser.email})
+                </strong>
+                ?
+              </p>
+            </div>
+
+            <div className="bg-[#f8f6f0] p-4 rounded-xl border border-[#e2ded4] text-left space-y-3">
+              <div className="flex items-start gap-2 text-xs text-[#c96b52] font-bold">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Al confirmar, sus tokens de sesión se invalidarán al instante y recibirá una notificación en pantalla expulsándolo del sistema.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#183c3a] mb-1">
+                  Motivo del Baneo (visible para el usuario):
+                </label>
+                <textarea
+                  className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a] focus:outline-none focus:border-[#315f5d]"
+                  rows={2}
+                  placeholder="Ej: Infracción reiterada de normas comunitarias / Suplantación de identidad profesional."
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isBanning}
+                onClick={() => {
+                  setBanModalOpen(false);
+                  setTargetBanUser(null);
+                }}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-xs bg-white text-[#183c3a] border border-[#315f5d] hover:bg-[#f8f6f0] transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isBanning}
+                onClick={handleConfirmBan}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-xs bg-[#c96b52] text-white hover:bg-[#b0533b] transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isBanning ? (
+                  <span>Procesando...</span>
+                ) : (
+                  <>
+                    <Ban className="w-4 h-4" />
+                    <span>Confirmar Baneo Definitivo</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 2: CHAT CONVERSATION INSPECTOR                 */}
+      {/* ==================================================== */}
+      {chatModalOpen && selectedConsultation && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="adm-modal-overlay"
+        >
+          <div className="adm-modal-card adm-modal-card--wide space-y-4">
+            <div className="flex items-start justify-between pb-3 border-b border-[#e2ded4]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-lg text-[#183c3a]">
+                    Conversación de Teleconsulta
+                  </span>
+                  <span
+                    className={`adm-badge ${
+                      selectedConsultation.status === 'COMPLETED'
+                        ? 'adm-badge--active'
+                        : selectedConsultation.status === 'WAITING'
+                        ? 'adm-badge--waiting'
+                        : 'adm-badge--client'
+                    }`}
+                  >
+                    {selectedConsultation.status}
+                  </span>
+                </div>
+                <p className="text-xs text-[#536b69] mt-0.5">
+                  Paciente: <strong className="text-[#183c3a]">{selectedConsultation.pet.name}</strong> • Tutor:{' '}
+                  <strong className="text-[#183c3a]">
+                    {selectedConsultation.client.firstName} {selectedConsultation.client.lastName}
+                  </strong>{' '}
+                  • Veterinario:{' '}
+                  <strong className="text-[#183c3a]">
+                    {selectedConsultation.vet
+                      ? `Dr. ${selectedConsultation.vet.firstName} ${selectedConsultation.vet.lastName}`
+                      : 'Sin asignar'}
+                  </strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setChatModalOpen(false)}
+                className="p-1.5 rounded-lg text-[#536b69] hover:text-[#183c3a] hover:bg-[#e2ded4]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Chat Messages Stream */}
+            <div className="adm-chat-thread">
+              {loadingMessages ? (
+                <div className="py-20 text-center text-sm font-semibold text-[#536b69]">
+                  Cargando mensajes del servidor seguro...
+                </div>
+              ) : consultationMessages.length === 0 ? (
+                <div className="py-20 text-center space-y-2">
+                  <MessageSquare className="w-10 h-10 text-[#609f9c] mx-auto opacity-40" />
+                  <p className="text-sm font-bold text-[#183c3a]">No hay mensajes registrados</p>
+                  <p className="text-xs text-[#536b69]">
+                    Esta teleconsulta no registra mensajes de texto intercambiados entre las partes.
+                  </p>
+                </div>
+              ) : (
+                consultationMessages.map((msg) => {
+                  const isVet = msg.sender.role === 'VET';
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`adm-chat-msg ${isVet ? 'adm-chat-msg--vet' : 'adm-chat-msg--client'}`}
+                    >
+                      <div className="adm-chat-msg__meta">
+                        <span className="font-extrabold">
+                          {isVet ? `Dr. ${msg.sender.firstName} ${msg.sender.lastName}` : `${msg.sender.firstName} (Tutor)`}
+                        </span>
+                        <span className="text-[9px] uppercase tracking-wider font-mono opacity-70">
+                          {msg.sender.role}
+                        </span>
+                      </div>
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                      {msg.attachmentUrl && (
+                        <a
+                          href={msg.attachmentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#245e5b] underline font-bold"
+                        >
+                          <Paperclip className="w-3.5 h-3.5" />
+                          <span>Ver archivo adjunto</span>
+                        </a>
+                      )}
+                      <div className="adm-chat-msg__time">
+                        {new Date(msg.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setChatModalOpen(false)}
+                className="py-2.5 px-6 rounded-xl font-bold text-xs bg-[#183c3a] text-white hover:bg-[#254d4a] transition-colors cursor-pointer"
+              >
+                Cerrar Visor de Conversación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 3: USER CREATE / EDIT                          */}
       {/* ==================================================== */}
       {userModalOpen && (
-        <div className="modal-layer">
-          <div className="modal-scrim" onClick={() => setUserModalOpen(false)} />
-          <div className="modal" style={{ width: 'min(540px, 92vw)' }}>
-            <button className="button button--icon modal__close" onClick={() => setUserModalOpen(false)}>
-              <Icon name="close" size={18} />
-            </button>
-            <h2 style={{ fontSize: 20, marginBottom: 4 }}>
-              {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
-            </h2>
-            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-              {editingUser ? 'Actualizar información del perfil o permisos.' : 'Registrar una nueva cuenta en la plataforma.'}
-            </p>
+        <div role="dialog" aria-modal="true" className="adm-modal-overlay">
+          <div className="adm-modal-card">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e2ded4] mb-4">
+              <h2 className="text-xl font-black text-[#183c3a]">
+                {editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}
+              </h2>
+              <button onClick={() => setUserModalOpen(false)} className="text-[#536b69] hover:text-[#183c3a]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleSaveUser} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <label className="field">
-                  <span>Nombre</span>
+            <form onSubmit={handleSaveUser} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Nombre</label>
                   <input
                     required
+                    type="text"
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={userForm.firstName}
                     onChange={(e) => setUserForm({ ...userForm, firstName: e.target.value })}
                   />
-                </label>
-                <label className="field">
-                  <span>Apellido</span>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Apellido</label>
                   <input
                     required
+                    type="text"
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={userForm.lastName}
                     onChange={(e) => setUserForm({ ...userForm, lastName: e.target.value })}
                   />
-                </label>
+                </div>
               </div>
 
-              <label className="field">
-                <span>Email</span>
+              <div>
+                <label className="block text-xs font-bold text-[#183c3a] mb-1">Correo Electrónico</label>
                 <input
-                  type="email"
                   required
+                  type="email"
+                  disabled={Boolean(editingUser)}
+                  className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a] disabled:opacity-60"
                   value={userForm.email}
                   onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
                 />
-              </label>
+              </div>
 
-              <label className="field">
-                <span>{editingUser ? 'Nueva Contraseña (dejar en blanco para conservar)' : 'Contraseña (mín 8 car.)'}</span>
+              <div>
+                <label className="block text-xs font-bold text-[#183c3a] mb-1">
+                  {editingUser ? 'Contraseña (dejar en blanco para no modificar)' : 'Contraseña'}
+                </label>
                 <input
                   type="password"
-                  placeholder={editingUser ? '••••••••' : 'Password123!'}
                   required={!editingUser}
+                  className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                   value={userForm.password}
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                 />
-              </label>
+              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <label className="field">
-                  <span>Teléfono</span>
-                  <input
-                    value={userForm.phone}
-                    onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
-                  />
-                </label>
-
-                <label className="field">
-                  <span>Rol de Cuenta</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Rol</label>
                   <select
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={userForm.role}
                     onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
-                    style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid #dbe7e3', background: '#fff' }}
                   >
                     <option value="CLIENT">Tutor (CLIENT)</option>
                     <option value="VET">Veterinario (VET)</option>
                     <option value="ADMIN">Administrador (ADMIN)</option>
                   </select>
-                </label>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
+                    value={userForm.phone}
+                    onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
+                  />
+                </div>
               </div>
 
               {userForm.role === 'VET' && (
-                <>
-                  <label className="field">
-                    <span>Matrícula Profesional SENASA / Provincial</span>
-                    <input
-                      placeholder="MP-12345"
-                      value={userForm.licenseNumber}
-                      onChange={(e) => setUserForm({ ...userForm, licenseNumber: e.target.value })}
-                    />
-                  </label>
-                  <label className="field">
-                    <span>Biografía / Especialidad</span>
-                    <textarea
-                      rows={2}
-                      value={userForm.bio}
-                      onChange={(e) => setUserForm({ ...userForm, bio: e.target.value })}
-                    />
-                  </label>
-                </>
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Matrícula SENASA</label>
+                  <input
+                    type="text"
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
+                    placeholder="MP-1234"
+                    value={userForm.licenseNumber}
+                    onChange={(e) => setUserForm({ ...userForm, licenseNumber: e.target.value })}
+                  />
+                </div>
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
-                <Button variant="secondary" onClick={() => setUserModalOpen(false)}>Cancelar</Button>
-                <Button type="submit" variant="primary">Guardar Usuario</Button>
+              <div className="flex justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setUserModalOpen(false)}
+                  className="py-2.5 px-4 rounded-xl text-xs font-bold bg-white text-[#183c3a] border border-[#315f5d]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="py-2.5 px-5 rounded-xl text-xs font-bold bg-[#183c3a] text-white hover:bg-[#254d4a]"
+                >
+                  Guardar Usuario
+                </button>
               </div>
             </form>
           </div>
@@ -1266,131 +1884,137 @@ export function AdminApp() {
       )}
 
       {/* ==================================================== */}
-      {/* MODAL: MASCOTA (CREAR / EDITAR)                      */}
+      {/* MODAL 4: PET CREATE / EDIT                           */}
       {/* ==================================================== */}
       {petModalOpen && (
-        <div className="modal-layer">
-          <div className="modal-scrim" onClick={() => setPetModalOpen(false)} />
-          <div className="modal" style={{ width: 'min(540px, 92vw)' }}>
-            <button className="button button--icon modal__close" onClick={() => setPetModalOpen(false)}>
-              <Icon name="close" size={18} />
-            </button>
-            <h2 style={{ fontSize: 20, marginBottom: 4 }}>
-              {editingPet ? 'Editar Mascota' : 'Registrar Nueva Mascota'}
-            </h2>
-            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-              {editingPet ? 'Modificar datos clínicos o del tutor.' : 'Asignar un nuevo paciente a un tutor registrado.'}
-            </p>
+        <div role="dialog" aria-modal="true" className="adm-modal-overlay">
+          <div className="adm-modal-card">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e2ded4] mb-4">
+              <h2 className="text-xl font-black text-[#183c3a]">
+                {editingPet ? 'Editar Mascota' : 'Registrar Mascota'}
+              </h2>
+              <button onClick={() => setPetModalOpen(false)} className="text-[#536b69] hover:text-[#183c3a]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleSavePet} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form onSubmit={handleSavePet} className="space-y-4">
               {!editingPet && (
-                <label className="field">
-                  <span>Tutor Responsable</span>
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Tutor Propietario</label>
                   <select
                     required
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={petForm.ownerId}
                     onChange={(e) => setPetForm({ ...petForm, ownerId: e.target.value })}
-                    style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid #dbe7e3', background: '#fff' }}
                   >
-                    {clientsList.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.firstName} {c.lastName} ({c.email})
-                      </option>
-                    ))}
+                    <option value="">Seleccionar Tutor...</option>
+                    {users
+                      .filter((u) => u.role === 'CLIENT')
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.firstName} {c.lastName} ({c.email})
+                        </option>
+                      ))}
                   </select>
-                </label>
+                </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <label className="field">
-                  <span>Nombre de la Mascota</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Nombre de Mascota</label>
                   <input
                     required
+                    type="text"
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={petForm.name}
                     onChange={(e) => setPetForm({ ...petForm, name: e.target.value })}
                   />
-                </label>
-                <label className="field">
-                  <span>Especie</span>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Especie</label>
                   <select
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={petForm.species}
                     onChange={(e) => setPetForm({ ...petForm, species: e.target.value })}
-                    style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid #dbe7e3', background: '#fff' }}
                   >
                     <option value="Perro">Perro</option>
                     <option value="Gato">Gato</option>
-                    <option value="Conejo">Conejo</option>
-                    <option value="Hurón">Hurón</option>
                     <option value="Ave">Ave</option>
-                    <option value="Otro">Otro</option>
+                    <option value="Exótico">Exótico</option>
                   </select>
-                </label>
+                </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <label className="field">
-                  <span>Raza</span>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Raza</label>
                   <input
-                    required
+                    type="text"
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={petForm.breed}
                     onChange={(e) => setPetForm({ ...petForm, breed: e.target.value })}
                   />
-                </label>
-                <label className="field">
-                  <span>Peso (kg)</span>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Peso (kg)</label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="Ej: 14.5"
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={petForm.weightKg}
                     onChange={(e) => setPetForm({ ...petForm, weightKg: e.target.value })}
                   />
-                </label>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <label className="field">
-                  <span>Sexo</span>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#183c3a] mb-1">Sexo</label>
                   <select
+                    className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
                     value={petForm.sex}
                     onChange={(e) => setPetForm({ ...petForm, sex: e.target.value })}
-                    style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid #dbe7e3', background: '#fff' }}
                   >
                     <option value="Macho">Macho</option>
                     <option value="Hembra">Hembra</option>
                   </select>
-                </label>
-                <label className="field">
-                  <span>Microchip ISO</span>
-                  <input
-                    placeholder="15 dígitos"
-                    value={petForm.microchip}
-                    onChange={(e) => setPetForm({ ...petForm, microchip: e.target.value })}
-                  />
-                </label>
+                </div>
               </div>
 
-              <label className="field">
-                <span>Alergias conocidas</span>
-                <input
-                  placeholder="Ej: Penicilina, polen..."
-                  value={petForm.allergies}
-                  onChange={(e) => setPetForm({ ...petForm, allergies: e.target.value })}
-                />
-              </label>
+              {adminPetWeightAssessment && (
+                <div className={`p-2.5 rounded-lg text-xs leading-relaxed border ${
+                  adminPetWeightAssessment.status === 'too_low' || adminPetWeightAssessment.status === 'too_high'
+                    ? 'bg-red-50 border-red-300 text-red-800'
+                    : adminPetWeightAssessment.status === 'valid_divergent'
+                    ? 'bg-amber-50 border-amber-300 text-amber-800'
+                    : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                }`}>
+                  {adminPetWeightAssessment.message}
+                </div>
+              )}
 
-              <label className="field">
-                <span>Condiciones crónicas</span>
+              <div>
+                <label className="block text-xs font-bold text-[#183c3a] mb-1">Microchip (opcional)</label>
                 <input
-                  placeholder="Ej: Displasia leve, diabetes..."
-                  value={petForm.chronicConditions}
-                  onChange={(e) => setPetForm({ ...petForm, chronicConditions: e.target.value })}
+                  type="text"
+                  className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a]"
+                  value={petForm.microchip}
+                  onChange={(e) => setPetForm({ ...petForm, microchip: e.target.value })}
                 />
-              </label>
+              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
-                <Button variant="secondary" onClick={() => setPetModalOpen(false)}>Cancelar</Button>
-                <Button type="submit" variant="primary">Guardar Mascota</Button>
+              <div className="flex justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setPetModalOpen(false)}
+                  className="py-2.5 px-4 rounded-xl text-xs font-bold bg-white text-[#183c3a] border border-[#315f5d]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="py-2.5 px-5 rounded-xl text-xs font-bold bg-[#183c3a] text-white hover:bg-[#254d4a]"
+                >
+                  Guardar Mascota
+                </button>
               </div>
             </form>
           </div>

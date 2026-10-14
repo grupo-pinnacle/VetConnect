@@ -6,10 +6,12 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import OfflineBanner from './components/common/OfflineBanner';
 import GlobalCallListener from './components/call/GlobalCallListener';
 import CookieConsentBanner from './components/common/CookieConsentBanner';
+import SessionTerminatedModal from './components/common/SessionTerminatedModal';
 
 import landingCss from './styles/landing.css?inline';
 import clientCss from './styles/client.css?inline';
 import authCss from './styles/auth.css?inline';
+import adminCss from './styles/admin.css?inline';
 
 import Landing from './pages/Landing';
 import AuthExperience from './pages/AuthExperience';
@@ -121,6 +123,7 @@ const AdminWrapper: React.FC = () => {
   return (
     <>
       <ScopedStyle id="client-style" css={clientCss} />
+      <ScopedStyle id="admin-style" css={adminCss} />
       <AdminApp />
     </>
   );
@@ -143,6 +146,7 @@ export const App: React.FC = () => {
           <BrowserRouter>
             <OfflineBanner />
             <GlobalCallListener />
+            <SessionTerminatedModal />
             <CookieConsentBanner />
             <Suspense fallback={<div className="route-loading" role="status">Cargando...</div>}>
               <Routes>

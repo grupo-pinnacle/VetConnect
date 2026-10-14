@@ -33,7 +33,12 @@ export const adminCreatePetSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   species: z.string().min(2, 'La especie es requerida'),
   breed: z.string().min(2, 'La raza es requerida'),
-  weightKg: z.number().positive().optional().nullable(),
+  weightKg: z
+    .number()
+    .positive('El peso debe ser positivo')
+    .max(1500, 'El peso excede el límite fisiológico posible')
+    .optional()
+    .nullable(),
   sex: z.string().optional().nullable(),
   microchip: z.string().optional().nullable(),
   allergies: z.string().optional().nullable(),
@@ -45,7 +50,12 @@ export const adminUpdatePetSchema = z.object({
   name: z.string().min(2).optional(),
   species: z.string().min(2).optional(),
   breed: z.string().min(2).optional(),
-  weightKg: z.number().positive().optional().nullable(),
+  weightKg: z
+    .number()
+    .positive('El peso debe ser positivo')
+    .max(1500, 'El peso excede el límite fisiológico posible')
+    .optional()
+    .nullable(),
   sex: z.string().optional().nullable(),
   microchip: z.string().optional().nullable(),
   allergies: z.string().optional().nullable(),

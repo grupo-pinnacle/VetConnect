@@ -6,6 +6,9 @@ import { User, ApiResponse } from '../types';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  sessionTerminated: { reason: string; message: string } | null;
+  dismissSessionTerminated: () => void;
+  clearSession: () => void;
   login: (credentials: Record<string, any>) => Promise<User>;
   register: (data: Record<string, any>) => Promise<User>;
   logout: () => Promise<void>;
@@ -27,6 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return null;
   });
   const [loading, setLoading] = useState<boolean>(true);
+  const [sessionTerminated, setSessionTerminated] = useState<{ reason: string; message: string } | null>(null);
 
   const clearSession = () => {
     setUser(null);
@@ -34,6 +38,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       window.localStorage.removeItem('vetconnect_user');
     } catch {}
+  };
+
+  const dismissSessionTerminated = () => {
+    setSessionTerminated(null);
   };
 
   /**
@@ -83,6 +91,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     refreshSession();
+
+    const handleSessionTerminated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ reason: string; message: string }>;
+      clearSession();
+      setSessionTerminated(
+        customEvent.detail || {
+          reason: 'CONCURRENT_LOGIN',
+          message: 'Se ha iniciado sesión desde otro dispositivo. Tu sesión ha sido finalizada.',
+        }
+      );
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('vetconnect:session_terminated', handleSessionTerminated);
+      return () => {
+        window.removeEventListener('vetconnect:session_terminated', handleSessionTerminated);
+      };
+    }
   }, []);
 
   const login = async (credentials: Record<string, any>): Promise<User> => {
@@ -132,7 +158,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshSession }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        sessionTerminated,
+        dismissSessionTerminated,
+        clearSession,
+        login,
+        register,
+        logout,
+        refreshSession,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -144,6 +182,9 @@ export const useAuth = (): AuthContextType => {
     return {
       user: null,
       loading: false,
+      sessionTerminated: null,
+      dismissSessionTerminated: () => {},
+      clearSession: () => {},
       login: async () => {
         throw new Error('useAuth must be used within an AuthProvider');
       },

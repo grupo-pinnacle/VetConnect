@@ -45,6 +45,10 @@ describe('Auth Module (/api/auth)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPrismaUser.update.mockResolvedValue({
+      ...mockUser,
+      tokenVersion: 2,
+    } as any);
   });
 
   describe('POST /api/auth/register', () => {
@@ -163,6 +167,23 @@ describe('Auth Module (/api/auth)', () => {
       expect(res.body.data.refreshToken).toBeDefined();
     });
 
+    it('should increment tokenVersion on login to invalidate prior sessions (single session concurrency)', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockUser);
+
+      const res = await request(app).post('/api/auth/login').send({
+        email: 'test.client@vetconnect.com',
+        password: 'Password123!',
+      });
+
+      expect(res.status).toBe(200);
+      expect(mockPrismaUser.update).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
+        data: {
+          tokenVersion: { increment: 1 },
+        },
+      });
+    });
+
     it('should REJECT login with wrong password with 401 Invalid Credentials', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(mockUser);
 
@@ -190,7 +211,7 @@ describe('Auth Module (/api/auth)', () => {
 
   describe('POST /api/auth/logout & tokenVersion Revocation', () => {
     it('should increment tokenVersion on logout', async () => {
-      mockPrismaUser.findUnique.mockResolvedValue(mockUser);
+      mockPrismaUser.findUnique.mockResolvedValue({ ...mockUser, tokenVersion: 2 });
       mockPrismaUser.update.mockResolvedValue({ ...mockUser, tokenVersion: 2 });
 
       const loginRes = await request(app).post('/api/auth/login').send({

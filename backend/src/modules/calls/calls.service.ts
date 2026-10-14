@@ -40,6 +40,16 @@ export class CallsService {
     }
   }
 
+  public async removeParticipant(roomName: string, identity: string): Promise<void> {
+    try {
+      if (!roomName || !identity) return;
+      const roomService = this.getRoomService();
+      await roomService.removeParticipant(roomName, identity);
+    } catch (err) {
+      console.warn(`[LiveKit SFU] Failed to remove participant ${identity} from room ${roomName}:`, err);
+    }
+  }
+
   public async generateLiveKitToken(consultationId: string, user: User) {
     const consultation = await prisma.consultation.findUnique({
       where: { id: consultationId },
@@ -63,9 +73,13 @@ export class CallsService {
 
     const { apiKey, apiSecret, wsUrl } = getLiveKitConfig();
 
-    // Zero PII guardrail: identity is user.id, name is user.firstName (NO email or phone)
+    // Zero PII guardrail: compound identity for tutor with active device, else user.id (NO email or phone)
+    const identity = isClient && consultation.activeDeviceId
+      ? `tutor_${user.id}:${consultation.activeDeviceId}`
+      : user.id;
+
     const at = new AccessToken(apiKey, apiSecret, {
-      identity: user.id,
+      identity,
       name: user.firstName,
       ttl: '1h',
     });
@@ -140,3 +154,5 @@ export class CallsService {
     };
   }
 }
+
+export const callsService = new CallsService();

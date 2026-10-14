@@ -13,8 +13,18 @@ import {
 } from './socket.types';
 
 import { isAllowedOrigin } from '../config/cors';
+import {
+  consultationConcurrencyService,
+  PostCommitEvictionParams,
+} from '../modules/consultations/consultationConcurrency.service';
 
 export let io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
+
+export const evictRevokedSessionAndResume = async (
+  params: PostCommitEvictionParams
+): Promise<void> => {
+  await consultationConcurrencyService.handlePostCommitEvictionAndResume(params);
+};
 
 export const initializeSocketServer = (httpServer: HttpServer) => {
   io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(
@@ -86,10 +96,17 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
   // Connection Handler
   io.on('connection', (socket) => {
     const user = socket.data.user;
+    const deviceId = socket.data.deviceId;
 
     if (user) {
       // Join personal user room for direct signaling (e.g. call:incoming)
       socket.join(`user:${user.id}`);
+
+      // Join device room for device-targeted handoff signaling
+      if (deviceId) {
+        socket.join(`device:${deviceId}`);
+      }
+
       registerChatGateway(io, socket);
 
       if (user.role === 'VET') {
@@ -104,12 +121,28 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
 
     socket.on('disconnect', async () => {
       if (user) {
-        await prisma.user
-          .update({
-            where: { id: user.id },
-            data: { isOnline: false, lastSeen: new Date() },
-          })
-          .catch(() => {});
+        // Atomic guard on socket disconnect:
+        // Only transitions transport_status to GRACE_DISCONNECTED if this socket's deviceId
+        // is still recorded as the active device in the database.
+        if (deviceId && user.role === 'CLIENT') {
+          try {
+            await consultationConcurrencyService.markSocketDisconnect(user.id, deviceId);
+          } catch (err) {
+            console.warn('[Socket Disconnect] Error in atomic disconnect guard:', err);
+          }
+        }
+
+        try {
+          const remainingSockets = await io.in(`user:${user.id}`).fetchSockets();
+          if (remainingSockets.length === 0) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { isOnline: false, lastSeen: new Date() },
+            });
+          }
+        } catch {
+          // Gracefully ignore error during server teardown
+        }
       }
     });
   });

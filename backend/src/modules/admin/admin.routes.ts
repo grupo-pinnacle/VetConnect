@@ -23,6 +23,7 @@ router.get('/users', controller.getUsers);
 router.post('/users', controller.createUser);
 router.patch('/users/:id', controller.updateUser);
 router.delete('/users/:id', controller.deleteUser);
+router.patch('/users/:id/ban', controller.banUser);
 router.patch('/users/:id/restore', controller.restoreUser);
 
 // Pets Management (CRUD - Creadas y Ocultas)
@@ -32,7 +33,8 @@ router.patch('/pets/:id', controller.updatePet);
 router.delete('/pets/:id', controller.deletePet);
 router.patch('/pets/:id/restore', controller.restorePet);
 
-// Consultations Management
+// Consultations Management & Conversation Inspection
 router.get('/consultations', controller.getConsultations);
+router.get('/consultations/:id/messages', controller.getConsultationMessages);
 
 export default router;

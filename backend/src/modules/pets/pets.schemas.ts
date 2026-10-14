@@ -4,7 +4,12 @@ export const createPetSchema = z.object({
   name: z.string().min(1, 'El nombre de la mascota es requerido').max(100),
   species: z.string().min(1, 'La especie es requerida').max(50),
   breed: z.string().min(1, 'La raza es requerida').max(50),
-  weightKg: z.number().positive('El peso debe ser positivo').optional().nullable(),
+  weightKg: z
+    .number()
+    .positive('El peso debe ser positivo')
+    .max(1500, 'El peso excede el límite fisiológico posible')
+    .optional()
+    .nullable(),
   sex: z.string().optional().nullable(),
   microchip: z
     .string()

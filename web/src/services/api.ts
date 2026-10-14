@@ -41,6 +41,16 @@ export const setAccessToken = (token: string | null) => {
 
 export const getAccessToken = () => currentAccessToken;
 
+export const getDeviceId = (): string => {
+  if (typeof window === 'undefined') return 'server';
+  let deviceId = window.localStorage.getItem('vetconnect_device_id');
+  if (!deviceId) {
+    deviceId = `dev_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    window.localStorage.setItem('vetconnect_device_id', deviceId);
+  }
+  return deviceId;
+};
+
 export const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
@@ -53,6 +63,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (currentAccessToken && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${currentAccessToken}`;
   }
+  config.headers['x-device-id'] = getDeviceId();
   return config;
 });
 
@@ -86,6 +97,24 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      const errorCode = (error.response?.data as ApiResponse)?.error?.code;
+      if (errorCode === 'SESSION_REVOKED') {
+        setAccessToken(null);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('vetconnect:session_terminated', {
+              detail: {
+                reason: 'CONCURRENT_LOGIN',
+                message:
+                  (error.response?.data as ApiResponse)?.error?.message ||
+                  'Se ha iniciado sesión desde otro dispositivo. Tu sesión ha sido finalizada.',
+              },
+            })
+          );
+        }
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -116,6 +145,17 @@ api.interceptors.response.use(
       } catch (refreshError) {
         setAccessToken(null);
         processQueue(refreshError as AxiosError);
+        const refreshErrorCode = (refreshError as AxiosError<ApiResponse>)?.response?.data?.error?.code;
+        if (refreshErrorCode === 'SESSION_REVOKED' && typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('vetconnect:session_terminated', {
+              detail: {
+                reason: 'CONCURRENT_LOGIN',
+                message: 'Se ha iniciado sesión desde otro dispositivo. Tu sesión ha sido finalizada.',
+              },
+            })
+          );
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

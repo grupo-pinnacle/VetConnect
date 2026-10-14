@@ -90,8 +90,16 @@ export class AuthService {
       throw new AppError('Credenciales invalidas', 401, 'INVALID_CREDENTIALS');
     }
 
-    const tokens = AuthService.generateTokens(user);
-    return { user: AuthService.sanitizeUser(user), tokens };
+    // Atomic session rotation: increment tokenVersion to invalidate existing active sessions (ADR-004 Single Session Concurrency)
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        tokenVersion: { increment: 1 },
+      },
+    });
+
+    const tokens = AuthService.generateTokens(updatedUser);
+    return { user: AuthService.sanitizeUser(updatedUser), tokens };
   }
 
   public async refresh(tokenString: string) {

@@ -63,6 +63,14 @@ export const socketAuthMiddleware = async (
 
     socket.data.user = socketUser;
 
+    const rawDeviceId =
+      socket.handshake.auth?.deviceId ??
+      socket.handshake.query?.deviceId ??
+      socket.handshake.headers?.['x-device-id'];
+    if (typeof rawDeviceId === 'string' && rawDeviceId.trim().length > 0) {
+      socket.data.deviceId = rawDeviceId.trim();
+    }
+
     // Set online status in DB
     await prisma.user
       .update({

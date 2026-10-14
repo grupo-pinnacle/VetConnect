@@ -7,7 +7,7 @@ import { io } from "socket.io-client";
 import { getWsUrl } from "../vet/CallRoom";
 import type { ApiResponse, Pet as BackendPet, Consultation as BackendConsultation, Prescription as BackendPrescription } from "../types";
 import { parseConsultationNotes } from "../lib/consultationNotes";
-import { SPECIES_LIST, getBreedsForSpecies, compressImageFile } from "../data/petBreeds";
+import { SPECIES_LIST, getBreedsForSpecies, getWeightAssessment, compressImageFile } from "../data/petBreeds";
 
 const VetApp = lazy(() => import("../vet/VetApp"));
 const CallRoom = lazy(() => import("../vet/CallRoom"));
@@ -308,10 +308,20 @@ function NewPetModal({
 
   const isCustomBreedRequired = breed.startsWith("Otra") || breed.startsWith("Otro");
 
+  const weightAssessment = useMemo(() => {
+    const currentBreed = isCustomBreedRequired && customBreed.trim() ? customBreed.trim() : breed;
+    return getWeightAssessment(species, currentBreed, weightKg);
+  }, [species, breed, customBreed, isCustomBreedRequired, weightKg]);
+
   const handleSavePet = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setErrorMsg("Por favor, ingresá el nombre de la mascota.");
+      return;
+    }
+
+    if (weightAssessment && weightAssessment.isBlocking) {
+      setErrorMsg(weightAssessment.message);
       return;
     }
 
@@ -412,6 +422,35 @@ function NewPetModal({
               </label>
               <label className="field"><span>Peso (kg)</span><input type="number" step="0.1" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Ej: 14.5"/></label>
             </div>
+            {weightAssessment && (
+              <div style={{
+                marginTop: 2,
+                marginBottom: 8,
+                padding: "8px 12px",
+                borderRadius: 8,
+                fontSize: 12,
+                lineHeight: 1.4,
+                background: weightAssessment.status === 'too_low' || weightAssessment.status === 'too_high'
+                  ? "#fee2e2"
+                  : weightAssessment.status === 'valid_divergent'
+                  ? "#fef3c7"
+                  : "#ecfdf5",
+                border: `1px solid ${
+                  weightAssessment.status === 'too_low' || weightAssessment.status === 'too_high'
+                    ? "#f87171"
+                    : weightAssessment.status === 'valid_divergent'
+                    ? "#f59e0b"
+                    : "#10b981"
+                }`,
+                color: weightAssessment.status === 'too_low' || weightAssessment.status === 'too_high'
+                  ? "#991b1b"
+                  : weightAssessment.status === 'valid_divergent'
+                  ? "#92400e"
+                  : "#065f46"
+              }}>
+                {weightAssessment.message}
+              </div>
+            )}
             {isCustomBreedRequired && (
               <label className="field">
                 <span>Especificar raza</span>
@@ -681,9 +720,22 @@ function PetDetail({ id }: { id: string }) {
     },
   });
 
+  const editWeightAssessment = useMemo(() => {
+    const isCustom = editBreed.startsWith("Otra") || editBreed.startsWith("Otro");
+    const finalBreed = isCustom && editCustomBreed.trim() ? editCustomBreed.trim() : editBreed;
+    return getWeightAssessment(editKind, finalBreed, editWeight);
+  }, [editKind, editBreed, editCustomBreed, editWeight]);
+
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editName.trim()) return;
+
+    if (editWeightAssessment && editWeightAssessment.isBlocking) {
+      setToastMsg(editWeightAssessment.message);
+      setTimeout(() => setToastMsg(null), 4500);
+      return;
+    }
+
     const isCustom = editBreed.startsWith("Otra") || editBreed.startsWith("Otro");
     const finalBreed = isCustom && editCustomBreed.trim() ? editCustomBreed.trim() : editBreed;
     updatePetMutation.mutate({
@@ -941,6 +993,35 @@ function PetDetail({ id }: { id: string }) {
                 </label>
                 <label className="field"><span>Peso (kg)</span><input type="number" step="0.1" value={editWeight} onChange={(e) => setEditWeight(e.target.value)}/></label>
               </div>
+              {editWeightAssessment && (
+                <div style={{
+                  marginTop: 2,
+                  marginBottom: 8,
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  lineHeight: 1.4,
+                  background: editWeightAssessment.status === 'too_low' || editWeightAssessment.status === 'too_high'
+                    ? "#fee2e2"
+                    : editWeightAssessment.status === 'valid_divergent'
+                    ? "#fef3c7"
+                    : "#ecfdf5",
+                  border: `1px solid ${
+                    editWeightAssessment.status === 'too_low' || editWeightAssessment.status === 'too_high'
+                      ? "#f87171"
+                      : editWeightAssessment.status === 'valid_divergent'
+                      ? "#f59e0b"
+                      : "#10b981"
+                  }`,
+                  color: editWeightAssessment.status === 'too_low' || editWeightAssessment.status === 'too_high'
+                    ? "#991b1b"
+                    : editWeightAssessment.status === 'valid_divergent'
+                    ? "#92400e"
+                    : "#065f46"
+                }}>
+                  {editWeightAssessment.message}
+                </div>
+              )}
               {(editBreed.startsWith("Otra") || editBreed.startsWith("Otro")) && (
                 <label className="field">
                   <span>Especificar raza</span>

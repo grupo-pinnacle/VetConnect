@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { registerSchema, loginSchema, refreshSchema } from './auth.schemas';
 import { AuthenticatedRequest } from './auth.middleware';
+import { io } from '../../realtime/socket.server';
 
 const authService = new AuthService();
 
@@ -51,6 +52,14 @@ export class AuthController {
     try {
       const validated = loginSchema.parse(req.body);
       const { user, tokens } = await authService.login(validated);
+
+      // Notify and terminate any active sessions on other devices in real-time
+      if (io) {
+        io.to(`user:${user.id}`).emit('auth:session_terminated', {
+          reason: 'CONCURRENT_LOGIN',
+          message: 'Se ha iniciado sesión desde otro dispositivo. Tu sesión ha sido finalizada por seguridad.',
+        });
+      }
 
       setRefreshCookie(res, tokens.refreshToken);
 

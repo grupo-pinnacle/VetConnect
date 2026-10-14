@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { startRingtone, stopRingtone } from '../../lib/ringtone';
 import { Video, PhoneCall, PhoneOff, Stethoscope, ShieldCheck } from 'lucide-react';
 
-import { getAccessToken } from '../../services/api';
+import { getAccessToken, getDeviceId } from '../../services/api';
 import { getWsUrl } from '../../vet/CallRoom';
 
 interface IncomingCallData {
@@ -25,11 +25,13 @@ export const GlobalCallListener: React.FC = () => {
 
     const wsUrl = getWsUrl();
     const token = getAccessToken();
+    const deviceId = getDeviceId();
     const socket = io(wsUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       auth: {
         token: token ? `Bearer ${token}` : undefined,
+        deviceId,
       },
     });
     socketRef.current = socket;
@@ -39,13 +41,51 @@ export const GlobalCallListener: React.FC = () => {
       startRingtone();
     });
 
+    socket.on('auth:session_terminated', (data: { reason: string; message: string }) => {
+      stopRingtone();
+      setIncomingCall(null);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('vetconnect:session_terminated', {
+            detail: data,
+          })
+        );
+      }
+    });
+
+    socket.on('session:invalidated', (data: { reason?: string; message?: string }) => {
+      stopRingtone();
+      setIncomingCall(null);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('vetconnect:session_terminated', {
+            detail: {
+              reason: data?.reason || 'MULTIPLE_DEVICES_DETECTED',
+              message: data?.message || 'Tu sesión fue transferida a otro dispositivo.',
+            },
+          })
+        );
+      }
+    });
+
+    socket.on('consultation:critical_resume', (data: { consultationId: string }) => {
+      stopRingtone();
+      setIncomingCall(null);
+      if (data?.consultationId) {
+        navigate(`/call/${data.consultationId}`);
+      }
+    });
+
     return () => {
       stopRingtone();
       socket.off('call:incoming');
+      socket.off('auth:session_terminated');
+      socket.off('session:invalidated');
+      socket.off('consultation:critical_resume');
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [user]);
+  }, [user, navigate]);
 
   const handleAccept = () => {
     if (!incomingCall) return;

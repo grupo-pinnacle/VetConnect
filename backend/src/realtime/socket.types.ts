@@ -32,10 +32,20 @@ export interface ServerToClientEvents {
   'prescription:new': (prescription: any) => void;
   'notification:new': (notification: any) => void;
   'consultation:new': (consultation: any) => void;
+  'auth:session_terminated': (data: { reason: string; message: string }) => void;
+  'session:invalidated': (data: { reason: string; consultationId?: string }) => void;
+  'consultation:critical_resume': (data: {
+    consultationId: string;
+    status: string;
+    stateVersion: number;
+    vetId?: string | null;
+  }) => void;
+  'consultation:tutor_reconnecting': (data: { consultationId: string; message: string }) => void;
 }
 
 export interface InterServerEvents {}
 
 export interface SocketData {
   user: SocketUser;
+  deviceId?: string;
 }
