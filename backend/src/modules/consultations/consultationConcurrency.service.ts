@@ -38,6 +38,30 @@ export interface PostCommitEvictionParams {
   vetId?: string | null;
 }
 
+let _hasConcurrencyColumns: boolean | null = process.env.NODE_ENV === 'test' ? true : null;
+
+/**
+ * Checks if the underlying database schema has the required concurrency columns.
+ * Caches the result to avoid repeated introspection overhead.
+ * In test environment, defaults to true.
+ */
+export async function isConcurrencySchemaSupported(): Promise<boolean> {
+  if (_hasConcurrencyColumns !== null) return _hasConcurrencyColumns;
+  try {
+    const result = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'consultations' AND column_name = 'transport_status' LIMIT 1`
+    );
+    _hasConcurrencyColumns = Array.isArray(result) && result.length > 0;
+  } catch {
+    _hasConcurrencyColumns = false;
+  }
+  return _hasConcurrencyColumns;
+}
+
+export function setConcurrencySchemaSupportForTest(supported: boolean | null): void {
+  _hasConcurrencyColumns = supported;
+}
+
 export class ConsultationConcurrencyService {
   /**
    * Veterinarian Claim Transaction (claimConsultationByVet)
@@ -48,6 +72,45 @@ export class ConsultationConcurrencyService {
     consultationId: string,
     vetId: string
   ): Promise<ClaimConsultationResult> {
+    const schemaSupported = await isConcurrencySchemaSupported();
+    if (!schemaSupported) {
+      const consultation = await prisma.consultation.findUnique({
+        where: { id: consultationId },
+      });
+      if (!consultation) {
+        throw new AppError('Consulta no encontrada', 404, 'CONSULTATION_NOT_FOUND');
+      }
+      if (consultation.vetId && consultation.vetId !== vetId) {
+        throw new AppError('Consulta ya tomada por otro veterinario', 409, 'CONSULTATION_ALREADY_CLAIMED');
+      }
+      const allowedStatuses = [
+        'TRIAGE_CRITICAL_QUEUED',
+        'HANDOFF_IN_PROGRESS',
+        'CLAIM_PENDING_SYNC',
+        'WAITING',
+      ];
+      if (!allowedStatuses.includes(consultation.status)) {
+        throw new AppError(`Estado ${consultation.status} no valido para ser tomado`, 400, 'INVALID_STATE_FOR_CLAIM');
+      }
+
+      const updated = await prisma.consultation.update({
+        where: { id: consultationId },
+        data: {
+          vetId,
+          status: 'IN_CALL_ACTIVE' as any,
+        },
+      });
+
+      return {
+        consultationId: updated.id,
+        status: updated.status,
+        tutorId: updated.clientId,
+        activeDeviceId: null,
+        transportStatus: 'ONLINE',
+        stateVersion: 1,
+      };
+    }
+
     return await prisma.$transaction(async (tx) => {
       // 1. Set local lock timeout (1500ms bounded waiting)
       await tx.$executeRawUnsafe(`SET LOCAL lock_timeout = '1500ms'`).catch(() => {});
@@ -179,6 +242,11 @@ export class ConsultationConcurrencyService {
     tutorId: string,
     newDeviceId: string
   ): Promise<MigrateSessionResult> {
+    const schemaSupported = await isConcurrencySchemaSupported();
+    if (!schemaSupported) {
+      return { hasActiveConsultation: false };
+    }
+
     return await prisma.$transaction(async (tx) => {
       // 1. Set local lock timeout
       await tx.$executeRawUnsafe(`SET LOCAL lock_timeout = '1500ms'`).catch(() => {});
@@ -307,6 +375,11 @@ export class ConsultationConcurrencyService {
     tutorId: string,
     deviceId: string
   ): Promise<MarkDisconnectResult> {
+    const schemaSupported = await isConcurrencySchemaSupported();
+    if (!schemaSupported) {
+      return { updated: false, rowCount: 0 };
+    }
+
     return await prisma.$transaction(async (tx) => {
       // 1. Set local lock timeout
       await tx.$executeRawUnsafe(`SET LOCAL lock_timeout = '1500ms'`).catch(() => {});

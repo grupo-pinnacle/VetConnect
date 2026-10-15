@@ -1,6 +1,7 @@
 import {
   consultationConcurrencyService,
   PostCommitEvictionParams,
+  setConcurrencySchemaSupportForTest,
 } from '../modules/consultations/consultationConcurrency.service';
 import prisma from '../lib/prisma';
 import { callsService } from '../modules/calls/calls.service';
@@ -517,6 +518,64 @@ describe('Resilient Concurrency & Session Handoff for Telemedicine Triage', () =
           stateVersion: 3,
           vetId: 'vet-777',
         },
+      });
+    });
+  });
+
+  describe('6. Graceful Schema Resilience on Unmigrated Database', () => {
+    afterEach(() => {
+      setConcurrencySchemaSupportForTest(true);
+    });
+
+    it('should safely return updated: false on markSocketDisconnect when columns do not exist', async () => {
+      setConcurrencySchemaSupportForTest(false);
+      const txSpy = jest.spyOn(prisma, '$transaction');
+
+      const result = await consultationConcurrencyService.markSocketDisconnect('tutor-1', 'device-1');
+
+      expect(result).toEqual({ updated: false, rowCount: 0 });
+      expect(txSpy).not.toHaveBeenCalled();
+      txSpy.mockRestore();
+    });
+
+    it('should safely return hasActiveConsultation: false on migrateTutorSession when columns do not exist', async () => {
+      setConcurrencySchemaSupportForTest(false);
+      const txSpy = jest.spyOn(prisma, '$transaction');
+
+      const result = await consultationConcurrencyService.migrateTutorSession('tutor-1', 'device-2');
+
+      expect(result).toEqual({ hasActiveConsultation: false });
+      expect(txSpy).not.toHaveBeenCalled();
+      txSpy.mockRestore();
+    });
+
+    it('should gracefully fallback to standard claim without concurrency columns when unmigrated', async () => {
+      setConcurrencySchemaSupportForTest(false);
+      const mockFindUnique = prisma.consultation.findUnique as jest.Mock;
+      const mockUpdate = prisma.consultation.update as jest.Mock;
+
+      mockFindUnique.mockResolvedValueOnce({
+        id: 'cons-legacy-1',
+        clientId: 'client-leg-1',
+        vetId: null,
+        status: 'WAITING',
+      });
+      mockUpdate.mockResolvedValueOnce({
+        id: 'cons-legacy-1',
+        clientId: 'client-leg-1',
+        vetId: 'vet-leg-1',
+        status: 'IN_CALL_ACTIVE',
+      });
+
+      const result = await consultationConcurrencyService.claimConsultationByVet('cons-legacy-1', 'vet-leg-1');
+
+      expect(result).toEqual({
+        consultationId: 'cons-legacy-1',
+        status: 'IN_CALL_ACTIVE',
+        tutorId: 'client-leg-1',
+        activeDeviceId: null,
+        transportStatus: 'ONLINE',
+        stateVersion: 1,
       });
     });
   });
