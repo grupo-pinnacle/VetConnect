@@ -10,9 +10,29 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiResponse, Consultation as BackendConsultation } from "../types";
 import { mapBackendPetToPatient } from "./mappers";
 import { io, Socket } from "socket.io-client";
-import { LiveKitRoom, VideoConference } from "@livekit/components-react";
+import { LiveKitRoom, VideoConference, useLocalParticipant } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { ReviewModal } from "../components/ui/ReviewModal";
+
+export function LiveKitTrackSynchronizer({ mic, cam }: { mic: boolean; cam: boolean }) {
+  const { localParticipant } = useLocalParticipant();
+
+  useEffect(() => {
+    if (!localParticipant) return;
+    localParticipant.setMicrophoneEnabled(mic).catch((err) => {
+      console.warn("LiveKit mic toggle notice:", err);
+    });
+  }, [mic, localParticipant]);
+
+  useEffect(() => {
+    if (!localParticipant) return;
+    localParticipant.setCameraEnabled(cam).catch((err) => {
+      console.warn("LiveKit cam toggle notice:", err);
+    });
+  }, [cam, localParticipant]);
+
+  return null;
+}
 
 export const getWsUrl = () => {
   if (typeof window !== "undefined") {
@@ -28,8 +48,24 @@ export const getWsUrl = () => {
   return import.meta.env.VITE_WS_URL || "http://localhost:3001";
 };
 
-export function WhatsAppCheck({ state = "read" }: { state?: "sending" | "sent" | "delivered" | "read" }) {
-  if (state === "sending" || state === "sent") {
+export function WhatsAppCheck({ state = "read" }: { state?: "sending" | "sent" | "delivered" | "read" | "failed" }) {
+  if (state === "sending") {
+    return (
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-label="Enviando…"
+        className="wa-sending-spin"
+        style={{ animation: "waSpin 0.9s linear infinite", display: "inline-block", verticalAlign: "middle" }}
+      >
+        <circle cx="8" cy="8" r="6" stroke="#8696a0" strokeWidth="1.6" strokeDasharray="26" strokeDashoffset="8" />
+        <polyline points="8 4.5 8 8 10.5 8" stroke="#8696a0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (state === "sent") {
     return (
       <svg width="15" height="11" viewBox="0 0 16 11" fill="none" aria-label="Enviado">
         <path d="M1.5 6L5.5 10L14.5 1" stroke="#8696a0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -86,10 +122,15 @@ function CallChatPanel({
 
     s.on("message:new", (msg: any) => {
       setMessages((prev) => {
-        if (prev.some((m) => (m.id && m.id === msg.id) || (m.clientMsgId && m.clientMsgId === msg.clientMsgId))) {
-          return prev;
+        const existingIdx = prev.findIndex(
+          (m) => (m.id && m.id === msg.id) || (m.clientMsgId && m.clientMsgId === msg.clientMsgId)
+        );
+        if (existingIdx >= 0) {
+          const updated = [...prev];
+          updated[existingIdx] = { ...msg, status: "sent" };
+          return updated;
         }
-        return [...prev, msg];
+        return [...prev, { ...msg, status: "sent" }];
       });
     });
 
@@ -117,6 +158,20 @@ function CallChatPanel({
     const newContent = text.trim();
     setText("");
 
+    // Optimistic message insertion: display immediately with WhatsApp 'sending' animated clock
+    const optimisticMsg = {
+      id: clientMsgId,
+      clientMsgId,
+      consultationId,
+      content: newContent,
+      senderId: user?.id,
+      sender: user ? { firstName: user.firstName, lastName: user.lastName } : undefined,
+      createdAt: new Date().toISOString(),
+      status: "sending" as const,
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     if (socket && connected) {
       socket.emit(
         "message:send",
@@ -127,10 +182,13 @@ function CallChatPanel({
         },
         (res: any) => {
           if (res?.success && res?.data) {
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === res.data.id || m.clientMsgId === clientMsgId)) return prev;
-              return [...prev, res.data];
-            });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.clientMsgId === clientMsgId
+                  ? { ...res.data, status: "sent" }
+                  : m
+              )
+            );
           }
         }
       );
@@ -142,19 +200,35 @@ function CallChatPanel({
           clientMsgId,
         });
         if (res.data.success && res.data.data) {
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === res.data.data.id || m.clientMsgId === clientMsgId)) return prev;
-            return [...prev, res.data.data];
-          });
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.clientMsgId === clientMsgId
+                ? { ...res.data.data, status: "sent" }
+                : m
+            )
+          );
         }
       } catch (err) {
         console.error("Error sending message via HTTP fallback:", err);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.clientMsgId === clientMsgId
+              ? { ...m, status: "failed" }
+              : m
+          )
+        );
       }
     }
   };
 
   return (
     <div className="wa-chat-pane" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#efeae2" }}>
+      <style>{`
+        @keyframes waSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
       <div className="wa-chat-body" style={{ flex: 1, padding: "14px 16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
         <div className="wa-encryption-pill" style={{ alignSelf: "center", margin: "4px auto 8px" }}>
           <span>🔒</span>
@@ -192,7 +266,7 @@ function CallChatPanel({
                 </p>
                 <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 3, fontSize: 10, color: "#667781" }}>
                   <span>{time}</span>
-                  {mine && <WhatsAppCheck state="read" />}
+                  {mine && <WhatsAppCheck state={m.status || "read"} />}
                 </div>
               </div>
             );
@@ -578,6 +652,7 @@ function Room({ id }: { id: string }) {
                 handleFinalize();
               }}
             >
+              <LiveKitTrackSynchronizer mic={mic} cam={cam} />
               <VideoConference />
             </LiveKitRoom>
           ) : callState !== "connected" ? (
@@ -709,40 +784,37 @@ function Room({ id }: { id: string }) {
         </button>
       </nav>
 
-      {panel && (
-        <aside
-          className="v-call__panel"
-          aria-label={
-            panel === "Chat"
+      <aside
+        className={`v-call__panel ${panel ? "is-open" : "is-closed"}`}
+        style={{ display: panel ? "flex" : "none" }}
+        aria-label={
+          panel === "Chat"
+            ? `Chat con ${chatOtherName}`
+            : panel === "Ficha"
+            ? "Ficha clínica"
+            : "Evolución clínica"
+        }
+      >
+        <header>
+          <b>
+            {panel === "Chat"
               ? `Chat con ${chatOtherName}`
               : panel === "Ficha"
               ? "Ficha clínica"
-              : "Evolución clínica"
-          }
-        >
-          <header>
-            <b>
-              {panel === "Chat"
-                ? `Chat con ${chatOtherName}`
-                : panel === "Ficha"
-                ? "Ficha clínica"
-                : "Evolución clínica"}
-            </b>
-            <button className="button button--icon" onClick={() => setPanel("")} aria-label="Cerrar panel">
-              <Icon name="close" size={16} />
-            </button>
-          </header>
-          <div className="v-call__panel-body">
-            {panel === "Chat" ? (
-              <CallChatPanel consultationId={id} otherName={chatOtherName} user={user} />
-            ) : panel === "Ficha" ? (
-              <FichaClinica p={p} />
-            ) : (
-              <EvolutionEditor p={p} />
-            )}
+              : "Evolución clínica"}
+          </b>
+          <button className="button button--icon" onClick={() => setPanel("")} aria-label="Cerrar panel">
+            <Icon name="close" size={16} />
+          </button>
+        </header>
+        <div className="v-call__panel-body" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <div style={{ display: panel === "Chat" ? "flex" : "none", flex: 1, flexDirection: "column", height: "100%", minHeight: 0 }}>
+            <CallChatPanel consultationId={id} otherName={chatOtherName} user={user} />
           </div>
-        </aside>
-      )}
+          {panel === "Ficha" && <FichaClinica p={p} />}
+          {panel === "Evolución" && <EvolutionEditor p={p} />}
+        </div>
+      </aside>
 
       {ending && (
         <Modal
