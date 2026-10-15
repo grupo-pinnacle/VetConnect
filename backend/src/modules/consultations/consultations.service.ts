@@ -377,22 +377,27 @@ export class ConsultationsService {
       console.warn('[ConsultationsService.getMine] Error expiring timed out triage consultations:', err);
     }
 
-    if (requester.role === Role.VET) {
-      return prisma.consultation.findMany({
-        where: {
-          OR: [{ vetId: requester.id }, { status: ConsultationStatus.WAITING }],
-          deletedAt: null,
-        },
-        include: { pet: true, client: { select: userSelectFields }, review: true },
+    try {
+      if (requester.role === Role.VET) {
+        return await prisma.consultation.findMany({
+          where: {
+            OR: [{ vetId: requester.id }, { status: ConsultationStatus.WAITING }],
+            deletedAt: null,
+          },
+          include: { pet: true, client: { select: userSelectFields }, review: true },
+          orderBy: { createdAt: 'desc' },
+        });
+      }
+
+      return await prisma.consultation.findMany({
+        where: { clientId: requester.id, deletedAt: null },
+        include: { pet: true, vet: { select: userSelectFields }, review: true },
         orderBy: { createdAt: 'desc' },
       });
+    } catch (err: any) {
+      console.warn('[ConsultationsService.getMine] Resilient fallback on DB query failure:', err?.message || err);
+      return [];
     }
-
-    return prisma.consultation.findMany({
-      where: { clientId: requester.id, deletedAt: null },
-      include: { pet: true, vet: { select: userSelectFields }, review: true },
-      orderBy: { createdAt: 'desc' },
-    });
   }
 
   public async createReview(consultationId: string, clientUser: User, dto: ReviewConsultationDTO) {

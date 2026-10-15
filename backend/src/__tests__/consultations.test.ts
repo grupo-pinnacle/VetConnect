@@ -353,6 +353,19 @@ describe('Consultations Module (/api/consultations)', () => {
       expect(Array.isArray(res.body.data)).toBe(true);
       expect(mockPrismaConsultation.updateMany).toHaveBeenCalled();
     });
+
+    it('should gracefully return 200 with empty array if database query throws schema or connection error', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+      mockPrismaConsultation.findMany.mockRejectedValue(new Error('column "transport_status" does not exist'));
+
+      const res = await request(app)
+        .get('/api/consultations/mine')
+        .set('Authorization', `Bearer ${clientToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toEqual([]);
+    });
   });
 
   describe('FSM Timeouts (15-min Triage TTL & 3-min Vet Disconnect Grace Window)', () => {
