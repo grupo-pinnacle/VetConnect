@@ -187,4 +187,29 @@ describe('Mobile chat socket teardown (debt D-06)', () => {
     expect(getMock).toHaveBeenCalledTimes(1);
     expect(getMock).toHaveBeenCalledWith(windowUrl(WATERMARK));
   });
+
+  it('untracks a specific consultation and leaves the socket connected without leaking to incremental sync', async () => {
+    const manager = new MobileSocketManager();
+    const emitMock = jest.fn();
+    const mockSocket = {
+      connected: true,
+      emit: emitMock,
+      disconnect: jest.fn(),
+    };
+    (manager as any).socket = mockSocket;
+
+    manager.trackConsultation(CONSULTATION_ID, WATERMARK);
+    manager.untrackConsultation(CONSULTATION_ID);
+
+    expect(emitMock).toHaveBeenCalledWith('leave:consultation', { consultationId: CONSULTATION_ID });
+    expect(mockSocket.disconnect).not.toHaveBeenCalled();
+
+    // Verify it does not fetch messages for untracked consultation
+    getMock.mockResolvedValueOnce(okResponse([buildMessage('m-2', NEWER)]));
+    const synced = await manager.syncIncrementalMessages();
+
+    expect(getMock).not.toHaveBeenCalled();
+    expect(synced.size).toBe(0);
+    expect(manager.getSocket()).toBe(mockSocket);
+  });
 });

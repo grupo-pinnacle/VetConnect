@@ -111,9 +111,9 @@ export default function ChatScreen() {
       s.off('disconnect', onDisconnect);
       s.off('message:new', onNew);
       unsubscribeFromSync();
-      // Releases the socket and the tracked consultations so neither leaks into
-      // the next consultation.
-      socketManager.disconnect();
+      // Untracks the consultation and leaves its socket room without killing
+      // the global socket needed for incoming calls and notifications.
+      socketManager.untrackConsultation(consultationId);
     };
   }, [consultationId, accessToken]);
 

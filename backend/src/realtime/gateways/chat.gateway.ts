@@ -34,6 +34,16 @@ export const registerChatGateway = (
     }
   });
 
+  // Event: leave:consultation
+  socket.on('leave:consultation', async (data: { consultationId: string }) => {
+    try {
+      if (!data?.consultationId) return;
+      socket.leave(`consultation:${data.consultationId}`);
+    } catch (err) {
+      console.error('Error in leave:consultation socket event:', err);
+    }
+  });
+
   // Event: call:answered
   socket.on('call:answered', async (data: { consultationId: string }) => {
     try {

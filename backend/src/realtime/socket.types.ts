@@ -23,6 +23,7 @@ export interface ClientToServerEvents {
   'call:answered': (data: { consultationId: string }) => void;
   'call:rejected': (data: { consultationId: string; reason?: string }) => void;
   'call:ended': (data: { consultationId: string }) => void;
+  'leave:consultation': (data: { consultationId: string }) => void;
 }
 
 export interface ServerToClientEvents {

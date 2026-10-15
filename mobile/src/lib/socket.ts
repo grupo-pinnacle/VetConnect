@@ -79,6 +79,14 @@ export class MobileSocketManager {
     }
   }
 
+  public untrackConsultation(consultationId: string): void {
+    this.activeConsultationIds.delete(consultationId);
+    this.lastKnownTimestamps.delete(consultationId);
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('leave:consultation', { consultationId });
+    }
+  }
+
   public updateLastKnownTimestamp(consultationId: string, timestamp: string) {
     this.lastKnownTimestamps.set(consultationId, timestamp);
   }
