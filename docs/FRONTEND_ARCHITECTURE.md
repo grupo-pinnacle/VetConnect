@@ -85,30 +85,45 @@ web/
 ├── package.json                    # Dependencias React 18.3.1 LTS, TanStack Query, LiveKit, Vitest
 └── src/
     ├── main.tsx                    # Montaje del Virtual DOM en #root
-    ├── App.tsx                     # Orquestador: ErrorBoundary, Providers, Suspense y Router
+    ├── App.tsx                     # Orquestador: ScopedStyle, ErrorBoundary, Providers, Suspense y Router
     ├── context/
     │   └── AuthContext.tsx         # Contexto global de sesión, usuario, login, logout y auto-login
     ├── services/
     │   └── api.ts                  # Cliente Axios centralizado con cola de refresco transparente
-    ├── routes/
-    │   └── ProtectedRoute.tsx      # Guardia de enrutamiento por roles (CLIENT, VET, ADMIN)
+    ├── styles/                     # Hojas de estilo aisladas inyectadas dinámicamente por ScopedStyle
+    │   ├── landing.css             # Estilo de alta fidelidad para la Landing Page
+    │   ├── client.css              # Estilo unificado para el portal de tutores (ClientApp)
+    │   ├── auth.css                # Estilo para login, registro y recuperación de clave
+    │   ├── admin.css               # Estilo para la consola Super Admin
+    │   └── vet.css                 # Estilo clínico para el portal veterinario (VetApp)
     ├── components/
     │   ├── call/
+    │   │   ├── GlobalCallListener.tsx # Listener global de videollamadas entrantes con Web Audio
     │   │   ├── CallRoom.tsx        # Contenedor LiveKit WebRTC (LiveKitRoom + VideoConference)
     │   │   └── PreJoinModal.tsx    # Modal de verificación previa de cámara, audio y microchip
     │   ├── common/
-    │   │   └── ErrorBoundary.tsx   # React Error Boundary clase para captura de excepciones de UI
-    │   └── ui/                     # Catálogo de átomos y componentes modulares (Tailwind)
+    │   │   ├── ErrorBoundary.tsx   # React Error Boundary clase para captura de excepciones de UI
+    │   │   ├── OfflineBanner.tsx   # Banner de desconexión y reconexión automática
+    │   │   ├── SessionTerminatedModal.tsx # Modal de caducidad o revocación de token JWT
+    │   │   └── CookieConsentBanner.tsx # Consentimiento de cookies y telemetría
+    │   ├── dashboard/              # Componentes de soporte clínico (Intake, Dossier, Perfil)
+    │   └── ui/                     # Catálogo de átomos y componentes modulares (Tailwind / Storybook)
+    ├── vet/                        # Suite modular profesional veterinaria (VetApp)
+    │   ├── VetApp.tsx              # Orquestador de navegación del veterinario
+    │   ├── CallRoom.tsx            # Sala de videollamada con chat estilo WhatsApp Web integrado
+    │   ├── Agenda.tsx              # Calendario y gestión de turnos
+    │   ├── Consultations.tsx       # Historial y gestión de consultas activas/pasadas
+    │   ├── Patients.tsx            # Padrón de pacientes y fichas médicas
+    │   └── Prescriptions.tsx       # Emisión formal de recetas digitales
     ├── pages/
     │   ├── Landing.tsx             # Portal institucional comercial (Hero, beneficios, descarga APK)
-    │   ├── Login.tsx               # Formulario reactivo de inicio de sesión con feedback RFC 7807
-    │   ├── Register.tsx            # Registro diferenciado de Tutores y Veterinarios (Matrícula)
-    │   ├── DashboardClient.tsx     # Consola del tutor: Fichas de mascotas, solicitud de triage y guardia
-    │   ├── DashboardVet.tsx        # Consola veterinaria: Presencia online, cola FIFO y prescripciones
-    │   ├── ConsultationRoom.tsx    # Sala clínica híbrida: Videollamada WebRTC + Chat sincrónico
-    │   ├── PrescriptionView.tsx    # Visor e impresión formal de receta médica digital con QR
-    │   ├── AdminVets.tsx           # Fiscalización y aprobación de matrículas SENASA de veterinarios
-    │   └── NotFound.tsx            # Pantalla 404 de contingencia con redirección segura
+    │   ├── AuthExperience.tsx      # Flujo interactivo de autenticación (Login, Registro, Forgot Password)
+    │   ├── ClientApp.tsx           # Portal integral de tutores (Mascotas, Triage, Turnos, Perfil)
+    │   ├── AdminApp.tsx            # Consola Super Admin (CRUD usuarios, finanzas, matching veterinarios)
+    │   ├── PrescriptionView.tsx    # Visor e impresión formal de receta médica digital con QR SENASA
+    │   ├── NotFound.tsx            # Pantalla 404 de contingencia con redirección segura
+    │   ├── PrivacyPolicy.tsx       # Términos legales y protección de datos (Ley 25.326)
+    │   └── [Compatibilidad Tests]  # DashboardClient.tsx, DashboardVet.tsx, ConsultationRoom.tsx, AdminVets.tsx
     └── types/
         └── index.ts                # Contratos TypeScript sincronizados con backend y DTOs
 ```

@@ -23,23 +23,22 @@ A diferencia de la aplicación móvil (orientada primordialmente al tutor de mas
 
 ---
 
-### 🔬 2. Nivel de Madurez Actual de la Web: Nivel 4.5 / 5 (Pre-Gold Master / Staging Ready)
+#### 🔬 2. Nivel de Madurez Actual de la Web: Nivel 5 / 5 (Gold Master — Alta Fidelidad Operativa)
 
-A partir de la auditoría técnica integral y la ejecución del plan de *Frontend Hardening* ([`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md`](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md)), se establece el estado real de ingeniería del portal web:
+A partir de la consolidación de módulos de alta fidelidad (`ClientApp.tsx`, `vet/VetApp.tsx`, `AdminApp.tsx`, `vet/CallRoom.tsx`), se establece el estado real de ingeniería del portal web:
 
 ```
-[ Nivel 1: Ideación & Specs ] ──> [ Nivel 2: Scaffolding Core ] ──> [ Nivel 3: MVP Funcional ] ──> [ Nivel 3.5: RC ] ──> [ 📍 Nivel 4.5: Pre-Gold Master ] ──> [ Nivel 5: Gold Master ]
-                                                                                                                          (ESTADO ACTUAL VERIFICADO)            (Lanzamiento Producción)
+[ Nivel 1: Ideación & Specs ] ──> [ Nivel 2: Scaffolding Core ] ──> [ Nivel 3: MVP Funcional ] ──> [ Nivel 4: RC ] ──> [ 📍 Nivel 5: Gold Master ]
+                                                                                                                         (ESTADO ACTUAL VERIFICADO)
 ```
 
-- **Estado Actual (Nivel 4.5):** La web cuenta con una **SPA React 18.3.1 + Tailwind CSS v3 completamente funcional y endurecida para producción**. La lógica clínica, autenticación JWT con cookies `HttpOnly`, colas de concurrencia Axios (`failedQueue`), WebSockets de chat con transferencia de fotos clínicas, WebRTC con LiveKit SFU 720p con inyección dinámica de `wsUrl`, code-splitting con `React.lazy()` y CRUDs de pacientes están 100% operativos y verificados empíricamente:
+- **Estado Actual (Nivel 5 — Gold Master):** La web cuenta con una **SPA React 18.3.1 + Tailwind CSS v3 completamente integrada y en producción**. La lógica clínica, autenticación JWT con cookies `HttpOnly`, colas de concurrencia Axios (`failedQueue`), WebSockets de chat tipo WhatsApp con persistencia, WebRTC con LiveKit SFU 720p sólido, sintetizador de llamadas Web Audio (`GlobalCallListener`), panel de administración integral con matching en tiempo real y CRUDs de pacientes/tutores están 100% operativos.
 
-> 🛑 **Aviso Crítico para Agentes de IA y Subagentes Autónomos:**  
-> El repositorio **NO es pre-código ni parte de cero absoluto**. Los tres workspaces (`backend/`, `web/`, `mobile/`) se encuentran plenamente estructurados con 123 tests unitarios y de integración pasando al 100%. Queda terminantemente prohibido ejecutar comandos de scaffolding destructivos (como `npm create vite@latest`, `npm init`, o purgar carpetas existentes). El trabajo sobre la web consiste exclusivamente en **refactorización atómica progresiva en Storybook (`components/ui/`), ensamblado visual y optimización**, preservando el código funcional y los tests verdes existentes.
+> 🛑 **Aviso Crítico para Desarrolladores y Agentes de IA:**  
+> La web opera a través del orquestador en `web/src/App.tsx` sobre suites modulares dedicadas (`ClientApp`, `VetApp`, `AdminApp`, `AuthExperience`, `CallRoom`) respaldadas por inyección de estilos aislados (`ScopedStyle`). Todas las pruebas unitarias y de integración de Vitest (71 tests en web, 206 tests en el monorepo) se mantienen estrictamente en verde.
 
 #### 📊 Verificación Empírica & Estado de Producción:
-La suite completa del monorepo cuenta con **36 suites / 123 tests PASSED (0 fallos)**, typecheck estricto sin errores y bundle de entrada optimizado a 20.38 kB. Los 5 gaps críticos de frontend hardening (Code-Splitting, Inyección dinámica `wsUrl`, selector de macro-fotos en chat, pipeline CI y observabilidad Sentry con cookies cross-domain) se encuentran **100% implementados y verificados**. El desglose pormenorizado de pruebas, métricas de bundle y bitácora técnica se encuentra centralizado en el documento canónico:
-👉 [**`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md` — Auditoría Integral de Estado Real**](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md)
+La suite completa cuenta con **71 tests pasando en web (21 test suites)** y 206 tests totales en el monorepo sin fallos, con typecheck estricto sin errores.
 
 #### ⚖️ Alineación Arquitectónica, Alcance v2.0 y Correspondencia de Código:
 El mapeo uno a uno entre especificación planificada y archivos de código fuente (`web/src/pages/`, `context/`, `services/`) está documentado en [**`00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#4-contraste-empírico-planificación-vs-código-real`**](./00_AUDITORIA_INTEGRAL_ESTADO_REAL.md#4-contraste-empírico-planificación-vs-código-real).

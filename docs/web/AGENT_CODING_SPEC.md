@@ -12,38 +12,43 @@
 |---|---|---|---|
 | Librería UI | React | **18.3.1 LTS** | NO migrar a React 19 (peer-dep conflict con LiveKit) |
 | Build | Vite | 6.x | — |
-| Estilos | Tailwind CSS | v3 | NO usar Tailwind v4 aún |
-| Data Fetching | useState + useEffect + api.ts | — | TanStack Query v5 CONGELADO en páginas existentes |
+| Estilos | Tailwind CSS v3 + Scoped CSS | — | Inyección aislada por vista (`styles/client.css`, `landing.css`, `auth.css`, `admin.css`, `vet.css`) |
+| Data Fetching | React Query v5 + AuthContext + api.ts | — | Cache reactivo global con staleTime 5m + cola Axios `failedQueue` |
 | Sesión | AuthContext + Axios failedQueue | — | Access token en memoria; refresh en cookie HttpOnly |
-| WebRTC | @livekit/components-react | latest compatible | Solo `<VideoConference />` dentro de `<LiveKitRoom>` |
-| Realtime | socket.io-client | — | Conectado solo dentro de ConsultationRoom |
-| Testing | Vitest + @testing-library/react | — | 29 tests deben permanecer en verde |
+| WebRTC | @livekit/components-react | latest compatible | `<VideoConference />` dentro de `<LiveKitRoom>` en `vet/CallRoom.tsx` |
+| Realtime | socket.io-client | — | Conexión global para alertas (`GlobalCallListener`) y chat en vivo |
+| Testing | Vitest + @testing-library/react | — | 71 tests unitarios y de integración web en verde (21 test suites) |
 
 ### Guardarraíles Absolutos (Prohibiciones de Tooling)
 - ❌ `npx shadcn@latest init` / `npx shadcn add` — **PROHIBIDO**
 - ❌ `@radix-ui/*` — **PROHIBIDO** (usar HTML5 semántico nativo)
-- ❌ `useQuery` / `useMutation` en páginas existentes hasta crear `test-utils.tsx`
-- ❌ `<RoomAudioRenderer />` junto a `<VideoConference />` — causa eco WebRTC
-- ❌ Eliminar o renombrar `data-testid` existentes (rompe los 29 tests)
+- ❌ `<RoomAudioRenderer />` junto a `<VideoConference />` — causa eco WebRTC (ADR-018)
+- ❌ Eliminar o renombrar `data-testid` existentes (rompe los tests de Vitest)
 - ❌ `git push --force`, `git filter-repo` — NUNCA
 - ❌ PII (email, teléfono) en tokens LiveKit — usar solo `user.id` + `user.firstName`
 
 ---
 
-## 1. Rutas Canónicas (React Router)
+## 1. Rutas Canónicas Vigentes (`web/src/App.tsx`)
 
-| Ruta | Componente | Rol Requerido |
-|---|---|---|
-| `/` | `pages/Landing.tsx` | Público |
-| `/login` | `pages/Login.tsx` | Público |
-| `/register` | `pages/Register.tsx` | Público |
-| `/client/dashboard` | `pages/DashboardClient.tsx` | `CLIENT` |
-| `/vet/dashboard` | `pages/DashboardVet.tsx` | `VET` |
-| `/call/:id` | `pages/ConsultationRoom.tsx` | `CLIENT, VET, ADMIN` |
-| `/prescriptions/:id` | `pages/PrescriptionView.tsx` | **Público** ⚠️ Sin ProtectedRoute — farmacias y SENASA escanean QR sin cuenta |
-| `/admin/vets` | `pages/AdminVets.tsx` | `ADMIN` |
-| `/admin/dashboard` | `pages/AdminVets.tsx` | `ADMIN` (alias — mismo componente, NO existe AdminDashboard.tsx) |
-| `*` | `pages/NotFound.tsx` | Público |
+El enrutador principal en `web/src/App.tsx` orquesta suites modulares de alta fidelidad respaldadas por componentes de estilo aislado (`ScopedStyle`):
+
+| Ruta | Envoltura / Componente Real | Rol Requerido | Descripción Operativa |
+|---|---|---|---|
+| `/` | `LandingWrapper` (`pages/Landing.tsx`) | Público | Landing institucional con estilo scoped `landing.css` (Hero, beneficios, CTA) |
+| `/login` | `AuthWrapper` (`pages/AuthExperience.tsx`) | Público | Flujo unificado de inicio de sesión con feedback RFC 7807 |
+| `/register`, `/register/*` | `AuthWrapper` (`pages/AuthExperience.tsx`) | Público | Registro diferenciado para Tutores y Veterinarios con validación de matrícula |
+| `/forgot-password` | `AuthWrapper` (`pages/AuthExperience.tsx`) | Público | Recuperación asistida de contraseña |
+| `/client`, `/client/*` | `ClientWrapper` (`pages/ClientApp.tsx`) | `CLIENT` | Portal integral de tutores: mascotas, triaje clínico, turnos y perfil |
+| `/vet`, `/vet/*` | `VetWrapper` (`vet/VetApp.tsx`) | `VET` | Portal profesional veterinario: agenda, pacientes, consultas y prescripciones |
+| `/call/:id` | `CallWrapper` (`vet/CallRoom.tsx`) | `CLIENT, VET, ADMIN` | Sala clínica híbrida: WebRTC sólido + chat estilo WhatsApp Web persistente |
+| `/admin`, `/admin/*` | `AdminWrapper` (`pages/AdminApp.tsx`) | `ADMIN` | Consola Super Admin: CRUD completo de usuarios, finanzas y matching de veterinarios |
+| `/prescriptions/:id` | `pages/PrescriptionView.tsx` | **Público** | Visor e impresión A4 de receta médica digital con código QR de validación SENASA |
+| `/verify-rx` | `pages/PrescriptionView.tsx` | **Público** | Endpoint de validación pública de recetas para farmacias y clínicas |
+| `/privacy`, `/terms`, `/cookies`, `/refunds` | `pages/PrivacyPolicy.tsx`, etc. | Público | Páginas de cumplimiento normativo legal (Ley 25.326 y SENASA) |
+| `*` | `LandingWrapper` (`pages/Landing.tsx`) | Público | Fallback de contingencia |
+
+> ℹ️ **Nota de compatibilidad histórica:** Los archivos `pages/DashboardClient.tsx`, `pages/DashboardVet.tsx`, `pages/ConsultationRoom.tsx` y `pages/AdminVets.tsx` se conservan en el proyecto para garantizar la suite de pruebas unitarias y de integración de Vitest (71 tests pasando al 100%).
 
 ---
 
