@@ -53,6 +53,8 @@ app.use(
       'Content-Type',
       'Authorization',
       'X-Client-Platform',
+      'X-Device-Id',
+      'x-device-id',
       'sentry-trace',
       'baggage',
     ],
