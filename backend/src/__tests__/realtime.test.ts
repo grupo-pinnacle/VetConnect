@@ -259,6 +259,102 @@ describe('Realtime & Chat Socket Gateway (TASK-3.1 & TASK-3.2)', () => {
     });
   });
 
+  it('should accept message:send with attachmentUrl as UUID (Mobile case)', (done) => {
+    mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+    mockPrismaUser.update.mockResolvedValue(mockClient);
+
+    mockPrismaConsultation.findUnique.mockResolvedValue({
+      id: 'consultation-chat-1',
+      clientId: mockClient.id,
+      vetId: 'vet-uuid-1',
+      petId: 'pet-uuid-1',
+      status: 'ACTIVE',
+      notes: 'Notes',
+      diagnosisNotes: null,
+      startedAt: new Date(),
+      endedAt: null,
+      activeDeviceId: null,
+      transportStatus: 'OFFLINE',
+      stateVersion: 1,
+      claimedAt: null,
+      livekitRoomSid: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    });
+
+    const mockCreatedMessageWithAttachment = {
+      id: 'msg-attachment-uuid-1',
+      consultationId: 'consultation-chat-1',
+      senderId: mockClient.id,
+      content: 'Foto adjunta',
+      attachmentUrl: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
+      clientMsgId: 'client-msg-attach-100',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      sender: {
+        id: mockClient.id,
+        firstName: mockClient.firstName,
+        lastName: mockClient.lastName,
+        role: mockClient.role,
+      },
+    };
+
+    mockPrismaMessage.create.mockResolvedValue(mockCreatedMessageWithAttachment);
+
+    const socket = Client(`http://localhost:${port}`, {
+      auth: { token: `Bearer ${validToken}` },
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      socket.emit(
+        'message:send',
+        {
+          consultationId: 'consultation-chat-1',
+          content: 'Foto adjunta',
+          clientMsgId: 'client-msg-attach-100',
+          attachmentUrl: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
+        },
+        (response: any) => {
+          expect(response.success).toBe(true);
+          expect(response.data.attachmentUrl).toBe('d290f1ee-6c54-4b01-90e6-d701748f0851');
+          socket.disconnect();
+          done();
+        }
+      );
+    });
+  });
+
+  it('should reject message:send with dangerous/invalid attachmentUrl with VALIDATION_ERROR', (done) => {
+    mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+    mockPrismaUser.update.mockResolvedValue(mockClient);
+
+    const socket = Client(`http://localhost:${port}`, {
+      auth: { token: `Bearer ${validToken}` },
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      socket.emit(
+        'message:send',
+        {
+          consultationId: 'consultation-chat-1',
+          content: 'Payload malicioso',
+          clientMsgId: 'client-msg-invalid-url',
+          attachmentUrl: 'javascript:alert(1)',
+        },
+        (response: any) => {
+          expect(response.success).toBe(false);
+          expect(response.error.code).toBe('VALIDATION_ERROR');
+          socket.disconnect();
+          done();
+        }
+      );
+    });
+  });
+
   // Boundary Integration Test: Communication with calls.service.ts consumer
   it('should deliver call:incoming event to personal user room via in-memory adapter (Boundary Integration)', (done) => {
     mockPrismaUser.findUnique.mockResolvedValue(mockClient);

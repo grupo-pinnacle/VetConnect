@@ -2,6 +2,7 @@ import { Socket, Server } from 'socket.io';
 import { Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { SocketData } from '../socket.types';
+import { createMessageSchema } from '../../modules/consultations/consultations.schemas';
 
 export const registerChatGateway = (
   io: Server,
@@ -79,7 +80,7 @@ export const registerChatGateway = (
       callback?: (response: { success: boolean; data?: any; error?: any }) => void
     ) => {
       try {
-        if (!data?.consultationId || !data?.content || !data?.clientMsgId) {
+        if (!data?.consultationId) {
           if (callback) {
             callback({
               success: false,
@@ -88,6 +89,27 @@ export const registerChatGateway = (
           }
           return;
         }
+
+        const parsed = createMessageSchema.safeParse({
+          content: data.content,
+          clientMsgId: data.clientMsgId,
+          attachmentUrl: data.attachmentUrl,
+        });
+
+        if (!parsed.success) {
+          if (callback) {
+            callback({
+              success: false,
+              error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Faltan campos requeridos o formato inválido en el mensaje',
+              },
+            });
+          }
+          return;
+        }
+
+        const validMessage = parsed.data;
 
         const consultation = await prisma.consultation.findUnique({
           where: { id: data.consultationId },
@@ -124,9 +146,9 @@ export const registerChatGateway = (
             data: {
               consultationId: data.consultationId,
               senderId: user.id,
-              content: data.content,
-              clientMsgId: data.clientMsgId,
-              attachmentUrl: data.attachmentUrl || null,
+              content: validMessage.content,
+              clientMsgId: validMessage.clientMsgId,
+              attachmentUrl: validMessage.attachmentUrl || null,
             },
             include: {
               sender: {

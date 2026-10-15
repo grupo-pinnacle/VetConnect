@@ -1,6 +1,9 @@
 import { AppError } from '../middlewares/errorHandler';
 import { createPetSchema } from '../modules/pets/pets.schemas';
-import { createConsultationSchema } from '../modules/consultations/consultations.schemas';
+import {
+  createConsultationSchema,
+  createMessageSchema,
+} from '../modules/consultations/consultations.schemas';
 import { createPrescriptionSchema } from '../modules/prescriptions/prescriptions.schemas';
 import { registerSchema, loginSchema } from '../modules/auth/auth.schemas';
 
@@ -128,6 +131,76 @@ describe('Utility, Error & DTO Validation Suite', () => {
         indications: 'Suministrar despues del alimento.',
       });
       expect(invalid.success).toBe(false);
+    });
+
+    describe('createMessageSchema (Chat & Attachments)', () => {
+      it('should accept message with attachmentUrl as UUID (Mobile case)', () => {
+        const valid = createMessageSchema.safeParse({
+          content: 'Foto de la herida',
+          clientMsgId: 'msg-uuid-client-1',
+          attachmentUrl: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        });
+        expect(valid.success).toBe(true);
+      });
+
+      it('should accept message with internal relative media path', () => {
+        const valid = createMessageSchema.safeParse({
+          content: 'Adjunto estudio',
+          clientMsgId: 'msg-uuid-client-2',
+          attachmentUrl: '/api/media/a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        });
+        expect(valid.success).toBe(true);
+      });
+
+      it('should accept message with absolute https URL', () => {
+        const valid = createMessageSchema.safeParse({
+          content: 'Foto en alta definicion',
+          clientMsgId: 'msg-uuid-client-3',
+          attachmentUrl: 'https://app.vetconnect.com.ar/uploads/sample.jpg',
+        });
+        expect(valid.success).toBe(true);
+      });
+
+      it('should accept message without attachmentUrl or with null', () => {
+        const withoutAttachment = createMessageSchema.safeParse({
+          content: 'Mensaje de texto solo',
+          clientMsgId: 'msg-uuid-client-4',
+        });
+        expect(withoutAttachment.success).toBe(true);
+
+        const withNull = createMessageSchema.safeParse({
+          content: 'Mensaje con null',
+          clientMsgId: 'msg-uuid-client-5',
+          attachmentUrl: null,
+        });
+        expect(withNull.success).toBe(true);
+      });
+
+      it('should reject dangerous scheme javascript: in attachmentUrl', () => {
+        const dangerous = createMessageSchema.safeParse({
+          content: 'Ataque XSS',
+          clientMsgId: 'msg-uuid-client-6',
+          attachmentUrl: 'javascript:alert(1)',
+        });
+        expect(dangerous.success).toBe(false);
+      });
+
+      it('should reject data URI in attachmentUrl', () => {
+        const dangerous = createMessageSchema.safeParse({
+          content: 'Data URI',
+          clientMsgId: 'msg-uuid-client-7',
+          attachmentUrl: 'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==',
+        });
+        expect(dangerous.success).toBe(false);
+      });
+
+      it('should reject content exceeding 2000 characters', () => {
+        const tooLong = createMessageSchema.safeParse({
+          content: 'A'.repeat(2001),
+          clientMsgId: 'msg-uuid-client-8',
+        });
+        expect(tooLong.success).toBe(false);
+      });
     });
   });
 });

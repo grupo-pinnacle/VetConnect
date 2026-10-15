@@ -33,7 +33,53 @@ export const reviewConsultationSchema = z.object({
 export const createMessageSchema = z.object({
   content: z.string().min(1, 'El mensaje no puede estar vacio').max(2000),
   clientMsgId: z.string().min(1, 'clientMsgId es requerido'),
-  attachmentUrl: z.string().url().optional().nullable(),
+  attachmentUrl: z
+    .string()
+    .max(500, 'La ruta del adjunto no puede exceder 500 caracteres')
+    .refine(
+      (val) => {
+        const trimmed = val.trim();
+        if (!trimmed) return false;
+        const lower = trimmed.toLowerCase();
+        if (
+          lower.startsWith('javascript:') ||
+          lower.startsWith('data:') ||
+          lower.startsWith('vbscript:') ||
+          lower.includes('<') ||
+          lower.includes('>')
+        ) {
+          return false;
+        }
+
+        // a) URL absoluta con protocolo http:// o https://
+        try {
+          const parsed = new URL(trimmed);
+          if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+            return true;
+          }
+        } catch {
+          // No es URL absoluta con protocolo, continuar
+        }
+
+        // b) Ruta relativa interna /api/media/:id
+        if (/^\/api\/media\/[a-zA-Z0-9_.-]+$/.test(trimmed)) {
+          return true;
+        }
+
+        // c) Identificador seguro de MediaFile (UUID o alfanumérico [a-zA-Z0-9_-]{1,128})
+        if (/^[a-zA-Z0-9_-]{1,128}$/.test(trimmed)) {
+          return true;
+        }
+
+        return false;
+      },
+      {
+        message:
+          'attachmentUrl debe ser una URL http(s):// válida, una ruta /api/media/... o un ID de archivo seguro',
+      }
+    )
+    .optional()
+    .nullable(),
 });
 
 export type CreateConsultationDTO = z.infer<typeof createConsultationSchema>;
