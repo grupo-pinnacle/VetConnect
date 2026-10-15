@@ -1094,15 +1094,15 @@ p { color: var(--ink-soft); line-height: 1.6; }
 .option-list button > .icon:last-child { margin-left: auto; }
 .option-list img { width: 39px; height: 39px; border-radius: 10px; object-fit: cover; }
 .option-list strong,.option-list small { display: block; }
-.option-list small { margin-top: 2px; color: var(--ink-soft); font-size: 8px; }
+.option-list small { margin-top: 2px; color: var(--ink-soft); font-size: 12px; }
 .triage-actions { display: flex; margin-top: 25px; justify-content: flex-end; gap: 9px; }
-.triage-disclaimer { display: flex; margin: 23px auto 0; align-items: center; justify-content: center; gap: 5px; color: var(--ink-soft); font-size: 8px; }
+.triage-disclaimer { display: flex; margin: 23px auto 0; align-items: center; justify-content: center; gap: 8px; color: var(--ink-soft); font-size: 13px; font-weight: 500; line-height: 1.5; }
 .result-card--critical { border-top: 5px solid var(--danger); }
 .result-card--critical .result-card__icon { background: var(--danger-pale); color: var(--danger); }
 .result-card--critical .eyebrow { color: var(--danger); }
 .critical-guidance { margin-bottom: 22px; padding: 17px; border-radius: 13px; background: var(--danger-pale); text-align: left; }
-.critical-guidance strong { display: block; margin-bottom: 8px; font-size: 11px; }
-.critical-guidance p { margin: 4px 0; color: #78413d; font-size: 10px; }
+.critical-guidance strong { display: block; margin-bottom: 8px; font-size: 13px; }
+.critical-guidance p { margin: 4px 0; color: #78413d; font-size: 12px; }
 .estimate { display: flex; margin: 20px 0; padding: 16px; align-items: center; justify-content: space-between; border-radius: 13px; background: #f5f8f5; }
 .estimate span { display: flex; align-items: center; gap: 8px; }
 .estimate small { color: var(--ink-soft); font-size: 9px; text-transform: uppercase; }

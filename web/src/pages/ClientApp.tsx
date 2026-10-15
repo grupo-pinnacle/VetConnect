@@ -129,6 +129,25 @@ function mapBackendConsultation(c: BackendConsultation): ClientViewConsultation 
 function AppShell({ children, path }: { children: ReactNode; path: string }) {
   const [menu, setMenu] = useState(false);
   const { user, logout } = useAuth();
+
+  const notificationsQuery = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      try {
+        const res = await api.get<ApiResponse<any[]>>('/api/notifications');
+        return (res.data?.success && res.data?.data) ? res.data.data : [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!user,
+  });
+
+  const unreadCount = useMemo(() => {
+    const list = notificationsQuery.data || [];
+    return list.filter((n: any) => !n.isRead && !n.read).length;
+  }, [notificationsQuery.data]);
+
   const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
   const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tutor";
   const lastName = user?.lastName || "";
@@ -164,7 +183,13 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
         <div className="topbar__mobile"><Button variant="icon" icon="menu" onClick={() => setMenu(true)} ariaLabel="Abrir menú"/><Logo/></div>
         <div className="topbar__spacer"/>
         <button className="topbar__help" onClick={() => go("/client/triage")}><Icon name="heart" size={18}/> Necesito atención</button>
-        <button className="icon-button has-dot" onClick={() => go("/client/notifications")} aria-label="Ver notificaciones"><Icon name="bell"/></button>
+        <button
+          className={`icon-button ${unreadCount > 0 ? "has-dot" : ""}`}
+          onClick={() => go("/client/notifications")}
+          aria-label={unreadCount > 0 ? `Ver notificaciones (${unreadCount} sin leer)` : "Ver notificaciones"}
+        >
+          <Icon name="bell"/>
+        </button>
         <button className="user-menu" onClick={() => go("/client/profile")}><span className="avatar avatar--small">{initials}</span><span>{firstName}</span><Icon name="chevron" size={15}/></button>
       </header>
       <main className="content">{children}</main>
@@ -220,7 +245,7 @@ function useClientData() {
   };
 }
 
-function NewPetModal({
+export function NewPetModal({
   open,
   onClose,
   onSuccess,
@@ -304,14 +329,14 @@ function NewPetModal({
     },
   });
 
-  if (!open) return null;
-
   const isCustomBreedRequired = breed.startsWith("Otra") || breed.startsWith("Otro");
 
   const weightAssessment = useMemo(() => {
     const currentBreed = isCustomBreedRequired && customBreed.trim() ? customBreed.trim() : breed;
     return getWeightAssessment(species, currentBreed, weightKg);
   }, [species, breed, customBreed, isCustomBreedRequired, weightKg]);
+
+  if (!open) return null;
 
   const handleSavePet = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1985,13 +2010,7 @@ function MessagesPage() {
         {/* RIGHT CHAT PANE */}
         <section className={`wa-chat-pane ${!mobileThreadOpen ? "is-hidden" : ""}`}>
           <header className="wa-chat-pane__header">
-            <div
-              className="wa-chat-pane__header-contact"
-              onClick={() => {
-                if (consultations[0]) go(`/client/consultations/${consultations[0].id}`);
-                else go("/client/consultations");
-              }}
-            >
+            <div className="wa-chat-pane__header-contact">
               <button
                 className="wa-icon-btn mobile-only-btn"
                 style={{ marginRight: -4 }}
@@ -2267,12 +2286,100 @@ function MessagesPage() {
 }
 
 function NotificationsPage() {
-  return <>
-    <PageHeader eyebrow="Novedades importantes" title="Notificaciones" description="Todo lo que necesitás saber sobre la salud de tus mascotas."/>
-    <div className="panel">
-      <EmptyState icon="bell" title="Sin notificaciones pendientes" text="Te avisaremos acá cuando haya novedades sobre tus consultas o recetas."/>
-    </div>
-  </>;
+  const queryClient = useQueryClient();
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<any[]>>('/api/notifications');
+      return (res.data?.success && res.data?.data) ? res.data.data : [];
+    },
+  });
+
+  const markAllMutation = useMutation({
+    mutationFn: async () => {
+      await api.patch('/api/notifications/read-all');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  useEffect(() => {
+    const hasUnread = notifications.some((n: any) => !n.isRead && !n.read);
+    if (hasUnread) {
+      markAllMutation.mutate();
+    }
+  }, [notifications.length]);
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Novedades importantes"
+        title="Notificaciones"
+        description="Todo lo que necesitás saber sobre la salud de tus mascotas."
+      />
+      <div className="panel">
+        {isLoading ? (
+          <div style={{ padding: 40, textAlign: "center", color: "var(--ink-soft)" }}>Cargando notificaciones...</div>
+        ) : notifications.length === 0 ? (
+          <EmptyState
+            icon="bell"
+            title="Sin notificaciones pendientes"
+            text="Te avisaremos acá cuando haya novedades sobre tus consultas o recetas."
+          />
+        ) : (
+          <div className="notification-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {notifications.map((notif: any) => (
+              <div
+                key={notif.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 14,
+                  padding: "16px 20px",
+                  borderRadius: 12,
+                  background: notif.isRead || notif.read ? "var(--bg-card, #f8fafc)" : "var(--teal-subtle, #f0fdfa)",
+                  border: `1px solid ${notif.isRead || notif.read ? "var(--border, #e2e8f0)" : "var(--teal, #0d9488)"}`,
+                }}
+              >
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    background: notif.isRead || notif.read ? "#e2e8f0" : "#ccfbf1",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: notif.isRead || notif.read ? "#64748b" : "#0f766e",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon name="bell" size={18} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                    <strong style={{ fontSize: 15, color: "var(--ink)" }}>{notif.title}</strong>
+                    <small style={{ color: "var(--ink-soft)", fontSize: 12 }}>
+                      {notif.createdAt
+                        ? new Date(notif.createdAt).toLocaleDateString("es-AR", {
+                            day: "2-digit",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
+                    </small>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 14, color: "var(--ink-soft)", lineHeight: 1.5 }}>{notif.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
 }
 
 function PrescriptionsPage() {
