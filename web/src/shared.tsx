@@ -110,13 +110,14 @@ export function Status({ children, tone = "teal" }: { children: ReactNode; tone?
 }
 
 export function Logo({ to }: { to?: string }) {
-  let defaultTo = "/client/dashboard";
+  let defaultTo = "/login";
   try {
     const raw = typeof window !== "undefined" ? window.localStorage.getItem("vetconnect_user") : null;
     if (raw) {
       const u = JSON.parse(raw);
       if (u?.role === "VET") defaultTo = "/vet/dashboard";
       else if (u?.role === "ADMIN") defaultTo = "/admin/dashboard";
+      else if (u?.role === "CLIENT") defaultTo = "/client/dashboard";
     }
   } catch {}
   const target = to || defaultTo;

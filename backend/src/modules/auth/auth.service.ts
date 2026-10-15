@@ -50,6 +50,13 @@ export class AuthService {
     });
 
     if (existing) {
+      if (existing.deletedAt) {
+        throw new AppError(
+          'Este correo pertenece a una cuenta dada de baja o suspendida',
+          409,
+          'EMAIL_ALREADY_EXISTS'
+        );
+      }
       throw new AppError('El email ya se encuentra registrado', 409, 'EMAIL_ALREADY_EXISTS');
     }
 
@@ -81,13 +88,21 @@ export class AuthService {
       where: { email: emailStr },
     });
 
-    if (!user || user.deletedAt) {
+    if (!user) {
       throw new AppError('Credenciales invalidas', 401, 'INVALID_CREDENTIALS');
     }
 
     const isMatch = await bcrypt.compare(dto.password, user.password);
     if (!isMatch) {
       throw new AppError('Credenciales invalidas', 401, 'INVALID_CREDENTIALS');
+    }
+
+    if (user.deletedAt) {
+      throw new AppError(
+        'Tu cuenta ha sido dada de baja o suspendida por un administrador',
+        403,
+        'ACCOUNT_SUSPENDED'
+      );
     }
 
     // Atomic session rotation: increment tokenVersion to invalidate existing active sessions (ADR-004 Single Session Concurrency)

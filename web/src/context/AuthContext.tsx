@@ -37,6 +37,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAccessToken(null);
     try {
       window.localStorage.removeItem('vetconnect_user');
+      window.localStorage.removeItem('vetconnect_token');
+      window.localStorage.removeItem('vetconnect_device_id');
+      window.sessionStorage.clear();
     } catch {}
   };
 
@@ -148,12 +151,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async (): Promise<void> => {
     try {
       await api.post('/api/auth/logout');
+    } catch {
+      // Ignorar fallos de red en logout
     } finally {
-      setAccessToken(null);
-      setUser(null);
-      try {
-        window.localStorage.removeItem('vetconnect_user');
-      } catch {}
+      clearSession();
     }
   };
 

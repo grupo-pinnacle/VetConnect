@@ -130,13 +130,13 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
   const [menu, setMenu] = useState(false);
   const { user, logout } = useAuth();
   const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
-  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tobias";
-  const lastName = user?.lastName || (user ? "" : "Vera");
+  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tutor";
+  const lastName = user?.lastName || "";
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
-  const displayName = fullName || (user?.firstName ? user.firstName : (user?.email ? firstName : "Tobias Vera"));
+  const displayName = fullName || (user?.firstName ? user.firstName : (user?.email ? firstName : "Tutor"));
   const initials = user
-    ? `${user.firstName?.[0] || firstName[0] || ""}${user.lastName?.[0] || firstName[1] || ""}`.toUpperCase()
-    : "TV";
+    ? `${user.firstName?.[0] || firstName[0] || "T"}${user.lastName?.[0] || ""}`.toUpperCase()
+    : "TU";
   const roleName = user?.role === "VET" ? "Veterinario" : user?.role === "ADMIN" ? "Administrador" : "Tutor";
 
   return <div className="app-shell">
@@ -473,7 +473,7 @@ function NewPetModal({
 function Dashboard() {
   const { user } = useAuth();
   const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
-  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tobias";
+  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tutor";
   const { pets, consultations, petsLoading, consultationsLoading } = useClientData();
   const [modalOpen, setModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -1380,7 +1380,7 @@ function MessagesPage() {
   const { pets, consultations } = useClientData();
   const { user } = useAuth();
   const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
-  const clientFirstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tobias";
+  const clientFirstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tutor";
   const petName = pets[0]?.name || "tu mascota";
 
   const [activeChip, setActiveChip] = useState<string>("Todos");
@@ -2632,15 +2632,15 @@ function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const { user } = useAuth();
   const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
-  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tobias";
-  const lastName = user?.lastName || (user ? "" : "Vera");
+  const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tutor";
+  const lastName = user?.lastName || "";
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
-  const displayName = fullName || (user?.firstName ? user.firstName : (user?.email ? firstName : "Tobias Vera"));
-  const email = user?.email || "tobias@gmail.com";
-  const phone = user?.phone || "+54 11 5555 0182";
+  const displayName = fullName || (user?.firstName ? user.firstName : (user?.email ? firstName : "Tutor"));
+  const email = user?.email || "";
+  const phone = user?.phone || "";
   const initials = user
-    ? `${user.firstName?.[0] || firstName[0] || ""}${user.lastName?.[0] || firstName[1] || ""}`.toUpperCase()
-    : "TV";
+    ? `${user.firstName?.[0] || firstName[0] || "T"}${user.lastName?.[0] || ""}`.toUpperCase()
+    : "TU";
 
   return <>
     <PageHeader eyebrow="Tu cuenta" title="Mi perfil" description="Mantené tus datos de contacto actualizados." action={<Button variant={editing ? "primary" : "secondary"} icon={editing ? "check" : "edit"} onClick={() => setEditing(!editing)}>{editing ? "Guardar cambios" : "Editar perfil"}</Button>}/>

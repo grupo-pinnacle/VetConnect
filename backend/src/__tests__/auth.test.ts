@@ -85,6 +85,26 @@ describe('Auth Module (/api/auth)', () => {
       expect(res.body.error.code).toBe('EMAIL_ALREADY_EXISTS');
     });
 
+    it('should reject registration with email of a deleted/suspended account with 409 EMAIL_ALREADY_EXISTS', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue({
+        ...mockUser,
+        deletedAt: new Date(),
+      });
+
+      const res = await request(app).post('/api/auth/register').send({
+        email: 'test.client@vetconnect.com',
+        password: 'Password123!',
+        firstName: 'Laura',
+        lastName: 'Perez',
+        role: 'CLIENT',
+      });
+
+      expect(res.status).toBe(409);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('EMAIL_ALREADY_EXISTS');
+      expect(res.body.error.message).toContain('dada de baja o suspendida');
+    });
+
     it('should register a VET with vetStatus PENDING', async () => {
       const mockVetUser = {
         ...mockUser,
@@ -205,6 +225,39 @@ describe('Auth Module (/api/auth)', () => {
       });
 
       expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
+    });
+
+    it('should reject login of soft-deleted/banned user with 403 ACCOUNT_SUSPENDED when password is valid', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue({
+        ...mockUser,
+        deletedAt: new Date(),
+      });
+
+      const res = await request(app).post('/api/auth/login').send({
+        email: 'test.client@vetconnect.com',
+        password: 'Password123!',
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('ACCOUNT_SUSPENDED');
+      expect(res.body.error.message).toContain('dada de baja o suspendida');
+    });
+
+    it('should reject login of soft-deleted user with 401 INVALID_CREDENTIALS when password is invalid', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue({
+        ...mockUser,
+        deletedAt: new Date(),
+      });
+
+      const res = await request(app).post('/api/auth/login').send({
+        email: 'test.client@vetconnect.com',
+        password: 'WrongPassword!',
+      });
+
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
     });
   });

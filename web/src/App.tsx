@@ -67,15 +67,17 @@ const ClientWrapper: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user?.role === 'VET') {
+    if (!loading && !user) {
+      navigate('/login', { replace: true });
+    } else if (!loading && user?.role === 'VET') {
       navigate('/vet/dashboard', { replace: true });
     } else if (!loading && user?.role === 'ADMIN') {
       navigate('/admin/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
 
-  if (!loading && (user?.role === 'VET' || user?.role === 'ADMIN')) {
-    return <div className="route-loading" role="status">Redirigiendo a tu consola…</div>;
+  if (!loading && (!user || user?.role === 'VET' || user?.role === 'ADMIN')) {
+    return <div className="route-loading" role="status">Redirigiendo…</div>;
   }
 
   return (
@@ -92,13 +94,17 @@ const VetWrapper: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (!loading && user?.role === 'CLIENT') {
+    if (!loading && !user) {
+      navigate('/login', { replace: true });
+    } else if (!loading && user?.role === 'CLIENT') {
       navigate('/client/dashboard', { replace: true });
+    } else if (!loading && user?.role === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
 
-  if (!loading && user?.role === 'CLIENT') {
-    return <div className="route-loading" role="status">Redirigiendo a tu portal de tutor…</div>;
+  if (!loading && (!user || user?.role !== 'VET')) {
+    return <div className="route-loading" role="status">Redirigiendo…</div>;
   }
 
   return (
@@ -120,6 +126,19 @@ const CallWrapper: React.FC = () => {
 };
 
 const AdminWrapper: React.FC = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'ADMIN')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (!loading && (!user || user.role !== 'ADMIN')) {
+    return <div className="route-loading" role="status">Acceso restringido. Redirigiendo a inicio de sesión…</div>;
+  }
+
   return (
     <>
       <ScopedStyle id="client-style" css={clientCss} />
