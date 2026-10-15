@@ -4,12 +4,13 @@ import { User } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import { TokenPayload } from './auth.service';
+import { config } from '../../config/env';
 
 export interface AuthenticatedRequest extends Request {
   user?: User;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-key-change-in-production-min-32-chars-long';
+const JWT_SECRET = config.JWT_SECRET;
 
 export const authenticate = async (
   req: AuthenticatedRequest,

@@ -60,6 +60,32 @@ if (!process.env.DATABASE_URL && process.env.NODE_ENV !== 'production') {
     'postgresql://vetconnect:vetconnect_password@localhost:5432/vetconnect?schema=public';
 }
 
+// Normalización de alias comunes para JWT y Storage (compatibilidad histórica y de templates)
+if (!process.env.JWT_REFRESH_SECRET && process.env.REFRESH_TOKEN_SECRET) {
+  process.env.JWT_REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
+}
+if (!process.env.REFRESH_TOKEN_SECRET && process.env.JWT_REFRESH_SECRET) {
+  process.env.REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET;
+}
+
+if (!process.env.STORAGE_DRIVER && process.env.STORAGE_PROVIDER) {
+  process.env.STORAGE_DRIVER = process.env.STORAGE_PROVIDER;
+}
+if (!process.env.STORAGE_PROVIDER && process.env.STORAGE_DRIVER) {
+  process.env.STORAGE_PROVIDER = process.env.STORAGE_DRIVER;
+}
+
+if (!process.env.AWS_BUCKET_NAME && process.env.AWS_S3_BUCKET_NAME) {
+  process.env.AWS_BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
+}
+if (!process.env.AWS_S3_BUCKET_NAME && process.env.AWS_BUCKET_NAME) {
+  process.env.AWS_S3_BUCKET_NAME = process.env.AWS_BUCKET_NAME;
+}
+
+if (!process.env.FRONTEND_URL && process.env.CLIENT_URL) {
+  process.env.FRONTEND_URL = process.env.CLIENT_URL;
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3001').transform((val) => parseInt(val, 10)),
@@ -76,6 +102,15 @@ const envSchema = z.object({
   LIVEKIT_URL: z.string().default('wss://vetconnect-dev.livekit.cloud'),
   LIVEKIT_API_KEY: z.string().default('devkey'),
   LIVEKIT_API_SECRET: z.string().default('secret'),
+  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  UPLOAD_DIR: z.string().default('./uploads'),
+  AWS_ACCESS_KEY_ID: z.string().optional().default(''),
+  AWS_SECRET_ACCESS_KEY: z.string().optional().default(''),
+  AWS_REGION: z.string().default('us-east-1'),
+  AWS_BUCKET_NAME: z.string().default('vetconnect-media'),
+  CORS_ORIGIN: z.string().optional(),
+  FRONTEND_URL: z.string().optional(),
+  CLIENT_URL: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -95,12 +130,26 @@ export const config = Object.freeze(
         NODE_ENV: 'test' as const,
         PORT: 3001,
         DATABASE_URL: process.env.DATABASE_URL || 'file:./test.db',
-        JWT_SECRET: 'dev-jwt-secret-key-change-in-production-min-32-chars-long',
-        JWT_REFRESH_SECRET: 'dev-refresh-secret-key-change-in-production-min-32-chars-long',
+        JWT_SECRET:
+          process.env.JWT_SECRET || 'dev-jwt-secret-key-change-in-production-min-32-chars-long',
+        JWT_REFRESH_SECRET:
+          process.env.JWT_REFRESH_SECRET ||
+          process.env.REFRESH_TOKEN_SECRET ||
+          'dev-refresh-secret-key-change-in-production-min-32-chars-long',
         REDIS_URL: undefined,
         LIVEKIT_URL: 'wss://vetconnect-dev.livekit.cloud',
         LIVEKIT_API_KEY: 'devkey',
         LIVEKIT_API_SECRET: 'secret',
+        STORAGE_DRIVER: (process.env.STORAGE_DRIVER as 'local' | 's3') || 'local',
+        UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
+        AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
+        AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
+        AWS_REGION: process.env.AWS_REGION || 'us-east-1',
+        AWS_BUCKET_NAME:
+          process.env.AWS_BUCKET_NAME || process.env.AWS_S3_BUCKET_NAME || 'vetconnect-media',
+        CORS_ORIGIN: process.env.CORS_ORIGIN,
+        FRONTEND_URL: process.env.FRONTEND_URL || process.env.CLIENT_URL,
+        CLIENT_URL: process.env.CLIENT_URL,
       }
 );
 

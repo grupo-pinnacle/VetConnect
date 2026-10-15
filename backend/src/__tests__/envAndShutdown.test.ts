@@ -29,6 +29,19 @@ describe('Backend Fail-Fast Environment Validation & Graceful Shutdown', () => {
     expect(config.LIVEKIT_API_SECRET).toBeDefined();
   });
 
+  it('should provide robust JWT and JWT_REFRESH_SECRET configuration', () => {
+    expect(config.JWT_SECRET).toBeDefined();
+    expect(config.JWT_SECRET.length).toBeGreaterThanOrEqual(32);
+    expect(config.JWT_REFRESH_SECRET).toBeDefined();
+    expect(config.JWT_REFRESH_SECRET.length).toBeGreaterThanOrEqual(32);
+  });
+
+  it('should provide storage driver and bucket parameters aligned with production template', () => {
+    expect(config.STORAGE_DRIVER).toBeDefined();
+    expect(['local', 's3']).toContain(config.STORAGE_DRIVER);
+    expect(config.AWS_BUCKET_NAME).toBeDefined();
+  });
+
   it('should execute gracefulShutdown cleanly on SIGTERM signal without throwing', async () => {
     await expect(gracefulShutdown('SIGTERM')).resolves.not.toThrow();
   });

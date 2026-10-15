@@ -5,22 +5,23 @@ import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
+import { config } from '../../config/env';
 
 const MAX_DAILY_BYTES = 50 * 1024 * 1024; // 50 MB in bytes
-const uploadsDir = path.resolve(process.cwd(), 'uploads');
+const uploadsDir = path.resolve(process.cwd(), config.UPLOAD_DIR || 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local';
-const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
-const AWS_S3_BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'vetconnect-media';
+const STORAGE_DRIVER = config.STORAGE_DRIVER;
+const AWS_REGION = config.AWS_REGION;
+const AWS_BUCKET_NAME = config.AWS_BUCKET_NAME;
 
 const s3Client = new S3Client({
   region: AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    accessKeyId: config.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: config.AWS_SECRET_ACCESS_KEY || '',
   },
 });
 
@@ -82,13 +83,13 @@ export class MediaService {
 
     const finalFileName = `${Date.now()}-${path.basename(file.path)}`;
 
-    if (STORAGE_PROVIDER === 's3') {
+    if (STORAGE_DRIVER === 's3') {
       s3Key = `uploads/${user.id}/${finalFileName}`;
       const fileBuffer = fs.readFileSync(file.path);
 
       await s3Client.send(
         new PutObjectCommand({
-          Bucket: AWS_S3_BUCKET_NAME,
+          Bucket: AWS_BUCKET_NAME,
           Key: s3Key,
           Body: fileBuffer,
           ContentType: file.mimetype,
@@ -161,9 +162,9 @@ export class MediaService {
       throw new AppError('Acceso denegado al archivo medico', 403, 'FORBIDDEN');
     }
 
-    if (STORAGE_PROVIDER === 's3' && mediaFile.s3Key) {
+    if (STORAGE_DRIVER === 's3' && mediaFile.s3Key) {
       const command = new GetObjectCommand({
-        Bucket: AWS_S3_BUCKET_NAME,
+        Bucket: AWS_BUCKET_NAME,
         Key: mediaFile.s3Key,
       });
 

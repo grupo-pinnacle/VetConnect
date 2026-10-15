@@ -4,10 +4,10 @@ import { Role, VetStatus, User } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import { RegisterDTO, LoginDTO } from './auth.schemas';
+import { config } from '../../config/env';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-key-change-in-production-min-32-chars-long';
-const REFRESH_TOKEN_SECRET =
-  process.env.REFRESH_TOKEN_SECRET || 'dev-refresh-secret-key-change-in-production-min-32-chars';
+const JWT_SECRET = config.JWT_SECRET;
+const JWT_REFRESH_SECRET = config.JWT_REFRESH_SECRET;
 
 export interface TokenPayload {
   userId: string;
@@ -28,7 +28,7 @@ export class AuthService {
       expiresIn: '15m',
     });
 
-    const refreshToken = jwt.sign(payload, REFRESH_TOKEN_SECRET, {
+    const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
       algorithm: 'HS256',
       expiresIn: '7d',
     });
@@ -109,7 +109,7 @@ export class AuthService {
 
     let payload: TokenPayload;
     try {
-      payload = jwt.verify(tokenString, REFRESH_TOKEN_SECRET, {
+      payload = jwt.verify(tokenString, JWT_REFRESH_SECRET, {
         algorithms: ['HS256'],
       }) as TokenPayload;
     } catch (err) {

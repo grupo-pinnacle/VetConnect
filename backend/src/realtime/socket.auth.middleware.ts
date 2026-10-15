@@ -3,8 +3,9 @@ import jwt from 'jsonwebtoken';
 import cookie from 'cookie';
 import prisma from '../lib/prisma';
 import { SocketData, SocketUser } from './socket.types';
+import { config } from '../config/env';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-key-change-in-production-min-32-chars-long';
+const JWT_SECRET = config.JWT_SECRET;
 
 interface TokenPayload {
   userId: string;
