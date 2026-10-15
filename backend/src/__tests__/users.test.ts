@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../app';
 import prisma from '../lib/prisma';
 import jwt from 'jsonwebtoken';
+import { adminCreatePetSchema, adminUpdatePetSchema } from '../modules/admin/admin.schemas';
 
 jest.mock('../lib/prisma', () => ({
   __esModule: true,
@@ -120,6 +121,54 @@ describe('Users & Vet Directory Module', () => {
       );
     });
 
+    it('should update firstName, lastName, and phone for authenticated user', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockAdmin);
+      mockPrismaUser.update.mockResolvedValue({
+        ...mockAdmin,
+        firstName: 'Gonzalo',
+        lastName: 'Perez',
+        phone: '+5491155551234',
+      });
+
+      const res = await request(app)
+        .patch('/api/users/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          firstName: 'Gonzalo',
+          lastName: 'Perez',
+          phone: '+5491155551234',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.firstName).toBe('Gonzalo');
+      expect(res.body.data.lastName).toBe('Perez');
+      expect(res.body.data.phone).toBe('+5491155551234');
+      expect(mockPrismaUser.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: mockAdmin.id },
+          data: expect.objectContaining({
+            firstName: 'Gonzalo',
+            lastName: 'Perez',
+            phone: '+5491155551234',
+          }),
+        })
+      );
+    });
+
+    it('should reject invalid profile payload with HTTP 400 VALIDATION_ERROR', async () => {
+      const res = await request(app)
+        .patch('/api/users/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          firstName: 'A', // too short (< 2)
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
     it('should reject unauthenticated request with HTTP 401', async () => {
       const res = await request(app)
         .patch('/api/users/profile')
@@ -128,6 +177,58 @@ describe('Users & Vet Directory Module', () => {
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('UNAUTHORIZED');
+    });
+  });
+
+  describe('Admin Pet Microchip Validation (ISO 11784/11785 15-digit)', () => {
+    it('should accept valid 15-digit numeric microchip in adminCreatePetSchema', () => {
+      const validPayload = {
+        ownerId: 'owner-uuid-1',
+        name: 'Firulais',
+        species: 'Canino',
+        breed: 'Labrador',
+        microchip: '123456789012345',
+      };
+      const parsed = adminCreatePetSchema.parse(validPayload);
+      expect(parsed.microchip).toBe('123456789012345');
+    });
+
+    it('should reject invalid microchip formats in adminCreatePetSchema', () => {
+      expect(() =>
+        adminCreatePetSchema.parse({
+          ownerId: 'owner-uuid-1',
+          name: 'Firulais',
+          species: 'Canino',
+          breed: 'Labrador',
+          microchip: '12345',
+        })
+      ).toThrow();
+
+      expect(() =>
+        adminCreatePetSchema.parse({
+          ownerId: 'owner-uuid-1',
+          name: 'Firulais',
+          species: 'Canino',
+          breed: 'Labrador',
+          microchip: '1234567890abcde',
+        })
+      ).toThrow();
+    });
+
+    it('should accept null or undefined microchip in adminCreatePetSchema and adminUpdatePetSchema', () => {
+      const parsed = adminCreatePetSchema.parse({
+        ownerId: 'owner-uuid-1',
+        name: 'Firulais',
+        species: 'Canino',
+        breed: 'Labrador',
+        microchip: null,
+      });
+      expect(parsed.microchip).toBeNull();
+
+      const parsedUpdate = adminUpdatePetSchema.parse({
+        microchip: null,
+      });
+      expect(parsedUpdate.microchip).toBeNull();
     });
   });
 

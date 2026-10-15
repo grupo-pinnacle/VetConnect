@@ -2630,7 +2630,22 @@ function TriageResult({
 
 function ProfilePage() {
   const [editing, setEditing] = useState(false);
-  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const { user, refreshSession } = useAuth();
+
+  const [formFirstName, setFormFirstName] = useState(user?.firstName || "");
+  const [formLastName, setFormLastName] = useState(user?.lastName || "");
+  const [formPhone, setFormPhone] = useState(user?.phone || "");
+
+  useEffect(() => {
+    if (user) {
+      setFormFirstName(user.firstName || "");
+      setFormLastName(user.lastName || "");
+      setFormPhone(user.phone || "");
+    }
+  }, [user]);
+
   const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
   const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tutor";
   const lastName = user?.lastName || "";
@@ -2642,9 +2657,90 @@ function ProfilePage() {
     ? `${user.firstName?.[0] || firstName[0] || "T"}${user.lastName?.[0] || ""}`.toUpperCase()
     : "TU";
 
+  const handleSave = async () => {
+    if (formFirstName.trim().length < 2) {
+      setToastMsg("Error: El nombre debe tener al menos 2 caracteres.");
+      return;
+    }
+    if (formLastName.trim().length < 2) {
+      setToastMsg("Error: El apellido debe tener al menos 2 caracteres.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await api.patch<ApiResponse<unknown>>("/api/users/profile", {
+        firstName: formFirstName.trim(),
+        lastName: formLastName.trim(),
+        phone: formPhone.trim() || null,
+      });
+
+      if (res.data.success) {
+        await refreshSession();
+        setToastMsg("Perfil actualizado con éxito.");
+        setEditing(false);
+      } else {
+        setToastMsg("Error al actualizar el perfil.");
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      setToastMsg(`Error: ${msg || "No se pudo actualizar el perfil."}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setFormFirstName(user?.firstName || "");
+    setFormLastName(user?.lastName || "");
+    setFormPhone(user?.phone || "");
+  };
+
   return <>
-    <PageHeader eyebrow="Tu cuenta" title="Mi perfil" description="Mantené tus datos de contacto actualizados." action={<Button variant={editing ? "primary" : "secondary"} icon={editing ? "check" : "edit"} onClick={() => setEditing(!editing)}>{editing ? "Guardar cambios" : "Editar perfil"}</Button>}/>
-    <div className="profile-grid"><section className="panel profile-card"><div className="profile-avatar">{initials}</div><h2>{displayName}</h2><p>Tutor registrado</p><Status>Perfil activo</Status></section><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Datos básicos</span><h2>Información personal</h2></div></div><div className="form-grid"><Field label="Nombre" value={firstName} editing={editing}/><Field label="Apellido" value={lastName} editing={editing}/><Field label="Email" value={email} editing={editing}/><Field label="Teléfono" value={phone} editing={editing}/><Field label="Ciudad" value="Buenos Aires" editing={editing}/><Field label="Zona horaria" value="Argentina (GMT-3)" editing={false}/></div></section></div>
+    {toastMsg && <Toast message={toastMsg} tone={toastMsg.includes("Error") ? "error" : "success"}/>}
+    <PageHeader
+      eyebrow="Tu cuenta"
+      title="Mi perfil"
+      description="Mantené tus datos de contacto actualizados."
+      action={
+        editing ? (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Button variant="secondary" onClick={handleCancel} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button variant="primary" icon="check" onClick={handleSave} disabled={saving}>
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </Button>
+          </div>
+        ) : (
+          <Button variant="secondary" icon="edit" onClick={() => setEditing(true)}>
+            Editar perfil
+          </Button>
+        )
+      }
+    />
+    <div className="profile-grid">
+      <section className="panel profile-card">
+        <div className="profile-avatar">{initials}</div>
+        <h2>{displayName}</h2>
+        <p>Tutor registrado</p>
+        <Status>Perfil activo</Status>
+      </section>
+      <section className="panel">
+        <div className="panel__heading">
+          <div><span className="eyebrow">Datos básicos</span><h2>Información personal</h2></div>
+        </div>
+        <div className="form-grid">
+          <Field label="Nombre" value={editing ? formFirstName : (user?.firstName || firstName)} editing={editing} onChange={setFormFirstName}/>
+          <Field label="Apellido" value={editing ? formLastName : (user?.lastName || lastName)} editing={editing} onChange={setFormLastName}/>
+          <Field label="Email" value={email} editing={false}/>
+          <Field label="Teléfono" value={editing ? formPhone : phone} editing={editing} onChange={setFormPhone}/>
+          <Field label="Ciudad" value="Buenos Aires" editing={false}/>
+          <Field label="Zona horaria" value="Argentina (GMT-3)" editing={false}/>
+        </div>
+      </section>
+    </div>
   </>;
 }
 

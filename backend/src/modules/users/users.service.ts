@@ -1,4 +1,5 @@
 import prisma from '../../lib/prisma';
+import { UpdateProfileDTO } from './users.schemas';
 
 const userSelectFields = {
   id: true,
@@ -20,16 +21,29 @@ const userSelectFields = {
 };
 
 export class UsersService {
-  public async updateProfile(userId: string, data: { isOnline?: boolean; bio?: string; photoUrl?: string }) {
-    const updateData: any = {};
+  public async updateProfile(userId: string, data: UpdateProfileDTO) {
+    const updateData: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string | null;
+      bio?: string | null;
+      photoUrl?: string | null;
+      isOnline?: boolean;
+      lastSeen?: Date;
+    } = {};
+
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.bio !== undefined) updateData.bio = data.bio;
+    if (data.photoUrl !== undefined) updateData.photoUrl = data.photoUrl;
+
     if (typeof data.isOnline === 'boolean') {
       updateData.isOnline = data.isOnline;
       if (!data.isOnline) {
         updateData.lastSeen = new Date();
       }
     }
-    if (data.bio !== undefined) updateData.bio = data.bio;
-    if (data.photoUrl !== undefined) updateData.photoUrl = data.photoUrl;
 
     return prisma.user.update({
       where: { id: userId },

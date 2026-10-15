@@ -40,7 +40,11 @@ export const adminCreatePetSchema = z.object({
     .optional()
     .nullable(),
   sex: z.string().optional().nullable(),
-  microchip: z.string().optional().nullable(),
+  microchip: z
+    .string()
+    .regex(/^\d{15}$/, 'El microchip debe poseer exactamente 15 digitos numericos ISO')
+    .optional()
+    .nullable(),
   allergies: z.string().optional().nullable(),
   chronicConditions: z.string().optional().nullable(),
 });
@@ -57,7 +61,11 @@ export const adminUpdatePetSchema = z.object({
     .optional()
     .nullable(),
   sex: z.string().optional().nullable(),
-  microchip: z.string().optional().nullable(),
+  microchip: z
+    .string()
+    .regex(/^\d{15}$/, 'El microchip debe poseer exactamente 15 digitos numericos ISO')
+    .optional()
+    .nullable(),
   allergies: z.string().optional().nullable(),
   chronicConditions: z.string().optional().nullable(),
 });

@@ -399,6 +399,15 @@ export class AdminService {
       throw new AppError('Tutor no encontrado', 404, 'OWNER_NOT_FOUND');
     }
 
+    if (dto.microchip) {
+      const existingChip = await prisma.pet.findFirst({
+        where: { microchip: dto.microchip, deletedAt: null },
+      });
+      if (existingChip) {
+        throw new AppError('El numero de microchip ya se encuentra registrado', 409, 'MICROCHIP_ALREADY_EXISTS');
+      }
+    }
+
     const pet = await prisma.pet.create({
       data: {
         ownerId: dto.ownerId,
@@ -439,6 +448,15 @@ export class AdminService {
     const pet = await prisma.pet.findUnique({ where: { id: petId } });
     if (!pet) {
       throw new AppError('Mascota no encontrada', 404, 'PET_NOT_FOUND');
+    }
+
+    if (dto.microchip && dto.microchip !== pet.microchip) {
+      const existingChip = await prisma.pet.findFirst({
+        where: { microchip: dto.microchip, deletedAt: null },
+      });
+      if (existingChip) {
+        throw new AppError('El numero de microchip ya se encuentra registrado', 409, 'MICROCHIP_ALREADY_EXISTS');
+      }
     }
 
     const updated = await prisma.pet.update({
