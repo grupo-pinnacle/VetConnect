@@ -32,7 +32,8 @@ export class MobileSocketManager {
 
     this.socket = io(WS_URL, {
       auth: { token: `Bearer ${token}` },
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
+      reconnection: true,
       autoConnect: true,
     });
 

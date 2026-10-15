@@ -73,7 +73,8 @@ export function VetProvider({ children, forceEmpty }: { children: ReactNode; for
     const token = getAccessToken();
     const socket = io(wsUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      reconnection: true,
       auth: {
         token: token ? `Bearer ${token}` : undefined,
       },
@@ -386,7 +387,8 @@ export function ChatPanel({
     const token = getAccessToken();
     const s = io(wsUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      reconnection: true,
       auth: { token: token ? `Bearer ${token}` : undefined },
     });
     setSocket(s);

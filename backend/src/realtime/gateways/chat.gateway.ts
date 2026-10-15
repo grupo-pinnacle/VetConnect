@@ -44,10 +44,29 @@ export const registerChatGateway = (
     }
   });
 
+  const isAuthorizedParticipant = async (consultationId: string): Promise<boolean> => {
+    if (!consultationId || !user) return false;
+    if (socket.rooms.has(`consultation:${consultationId}`)) {
+      return true;
+    }
+    const consultation = await prisma.consultation.findUnique({
+      where: { id: consultationId },
+      select: { clientId: true, vetId: true, deletedAt: true },
+    });
+    if (!consultation || consultation.deletedAt) return false;
+    return (
+      consultation.clientId === user.id ||
+      consultation.vetId === user.id ||
+      user.role === 'ADMIN'
+    );
+  };
+
   // Event: call:answered
   socket.on('call:answered', async (data: { consultationId: string }) => {
     try {
       if (!data?.consultationId) return;
+      const isAuth = await isAuthorizedParticipant(data.consultationId);
+      if (!isAuth) return;
       io.to(`consultation:${data.consultationId}`).emit('call:answered', data);
     } catch (err) {
       console.error('Error in call:answered event:', err);
@@ -58,6 +77,8 @@ export const registerChatGateway = (
   socket.on('call:rejected', async (data: { consultationId: string; reason?: string }) => {
     try {
       if (!data?.consultationId) return;
+      const isAuth = await isAuthorizedParticipant(data.consultationId);
+      if (!isAuth) return;
       io.to(`consultation:${data.consultationId}`).emit('call:rejected', data);
     } catch (err) {
       console.error('Error in call:rejected event:', err);
@@ -68,6 +89,8 @@ export const registerChatGateway = (
   socket.on('call:ended', async (data: { consultationId: string }) => {
     try {
       if (!data?.consultationId) return;
+      const isAuth = await isAuthorizedParticipant(data.consultationId);
+      if (!isAuth) return;
       io.to(`consultation:${data.consultationId}`).emit('call:ended', {
         consultationId: data.consultationId,
         endedBy: user?.id,
@@ -130,6 +153,19 @@ export const registerChatGateway = (
             callback({
               success: false,
               error: { code: 'CONSULTATION_NOT_FOUND', message: 'Consulta no encontrada' },
+            });
+          }
+          return;
+        }
+
+        if (consultation.status === 'CANCELLED') {
+          if (callback) {
+            callback({
+              success: false,
+              error: {
+                code: 'INVALID_CONSULTATION_STATE',
+                message: 'No se pueden enviar mensajes a una consulta cancelada',
+              },
             });
           }
           return;

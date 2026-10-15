@@ -390,6 +390,151 @@ describe('Realtime & Chat Socket Gateway (TASK-3.1 & TASK-3.2)', () => {
     });
   });
 
+  // Cerco #6: Reject message:send on CANCELLED consultation
+  it('should reject message:send with INVALID_CONSULTATION_STATE when consultation is CANCELLED', (done) => {
+    mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+    mockPrismaUser.update.mockResolvedValue(mockClient);
+
+    mockPrismaConsultation.findUnique.mockResolvedValue({
+      id: 'consultation-cancelled-1',
+      clientId: mockClient.id,
+      vetId: 'vet-uuid-99',
+      petId: 'pet-1',
+      status: 'CANCELLED',
+      notes: 'Cancelled notes',
+      diagnosisNotes: null,
+      startedAt: new Date(),
+      endedAt: new Date(),
+      activeDeviceId: null,
+      transportStatus: 'OFFLINE',
+      stateVersion: 1,
+      claimedAt: null,
+      livekitRoomSid: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    });
+
+    const socket = Client(`http://localhost:${port}`, {
+      auth: { token: `Bearer ${validToken}` },
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      socket.emit(
+        'message:send',
+        {
+          consultationId: 'consultation-cancelled-1',
+          content: 'Hola, consulta cancelada?',
+          clientMsgId: 'client-msg-cancelled-1',
+        },
+        (response: any) => {
+          expect(response.success).toBe(false);
+          expect(response.error.code).toBe('INVALID_CONSULTATION_STATE');
+          socket.disconnect();
+          done();
+        }
+      );
+    });
+  });
+
+  // Cerco #6: Role:vets room & PII Redaction
+  it('should join role:vets room when user is a VET and receive sanitized consultation:new', (done) => {
+    const mockVetUser = {
+      ...mockClient,
+      id: 'vet-uuid-realtime-1',
+      role: 'VET' as const,
+      vetStatus: 'APPROVED' as const,
+    };
+
+    const vetToken = jwt.sign(
+      { userId: mockVetUser.id, role: mockVetUser.role, tokenVersion: 1 },
+      JWT_SECRET,
+      { algorithm: 'HS256' }
+    );
+
+    mockPrismaUser.findUnique.mockResolvedValue(mockVetUser);
+    mockPrismaUser.update.mockResolvedValue(mockVetUser);
+
+    const vetSocket = Client(`http://localhost:${port}`, {
+      auth: { token: `Bearer ${vetToken}` },
+      transports: ['websocket'],
+    });
+
+    vetSocket.on('consultation:new', (consultation: any) => {
+      expect(consultation.id).toBe('cons-new-1');
+      expect(consultation.client.email).toBeUndefined();
+      expect(consultation.client.phone).toBeUndefined();
+      expect(consultation.client.firstName).toBe('Laura');
+      vetSocket.disconnect();
+      done();
+    });
+
+    vetSocket.on('connect', () => {
+      setTimeout(() => {
+        const sanitized = {
+          id: 'cons-new-1',
+          status: 'WAITING',
+          client: {
+            id: 'client-1',
+            firstName: 'Laura',
+            email: undefined,
+            phone: undefined,
+          },
+        };
+        serverIo.to('role:vets').emit('consultation:new', sanitized as any);
+      }, 50);
+    });
+  });
+
+  // Cerco #6: Drop unauthorized call signaling
+  it('should drop call signaling events when emitted by an unauthorized non-participant', async () => {
+    mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+    mockPrismaUser.update.mockResolvedValue(mockClient);
+
+    mockPrismaConsultation.findUnique.mockResolvedValue({
+      id: 'consultation-private-1',
+      clientId: 'other-client-id',
+      vetId: 'other-vet-id',
+      petId: 'pet-1',
+      status: 'ACTIVE',
+      notes: 'Private',
+      diagnosisNotes: null,
+      startedAt: new Date(),
+      endedAt: null,
+      activeDeviceId: null,
+      transportStatus: 'OFFLINE',
+      stateVersion: 1,
+      claimedAt: null,
+      livekitRoomSid: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    });
+
+    const socket = Client(`http://localhost:${port}`, {
+      auth: { token: `Bearer ${validToken}` },
+      transports: ['websocket'],
+    });
+
+    await new Promise<void>((resolve) => {
+      socket.on('connect', () => {
+        let eventReceived = false;
+        socket.on('call:answered', () => {
+          eventReceived = true;
+        });
+
+        socket.emit('call:answered', { consultationId: 'consultation-private-1' });
+
+        setTimeout(() => {
+          expect(eventReceived).toBe(false);
+          socket.disconnect();
+          resolve();
+        }, 150);
+      });
+    });
+  });
+
   // Unit Test del Cerco: Fallback ante ausencia o fallo de Redis
   it('should gracefully handle Redis connection failure without crashing and operate on in-memory adapter', () => {
     const dummyHttpServer = createServer();
@@ -399,8 +544,9 @@ describe('Realtime & Chat Socket Gateway (TASK-3.1 & TASK-3.2)', () => {
     const testIo = initializeSocketServer(dummyHttpServer);
     expect(testIo).toBeDefined();
 
-    // Restore environment
+    // Restore environment and real server instance
     process.env.REDIS_URL = prevRedisUrl;
+    initializeSocketServer(httpServer);
   });
 });
 

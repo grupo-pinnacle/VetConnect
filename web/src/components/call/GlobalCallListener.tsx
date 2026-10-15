@@ -28,7 +28,8 @@ export const GlobalCallListener: React.FC = () => {
     const deviceId = getDeviceId();
     const socket = io(wsUrl, {
       withCredentials: true,
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      reconnection: true,
       auth: {
         token: token ? `Bearer ${token}` : undefined,
         deviceId,

@@ -100,7 +100,19 @@ export class ConsultationsService {
     try {
       const { io } = await import('../../realtime/socket.server');
       if (io) {
-        io.emit('consultation:new', consultation);
+        // Redact PII (email, phone) in consultation.client while in WAITING status (ADR-009 / Ley 25.326)
+        const sanitizedClient = consultation.client
+          ? {
+              ...consultation.client,
+              email: undefined,
+              phone: undefined,
+            }
+          : consultation.client;
+        const sanitizedConsultation = {
+          ...consultation,
+          client: sanitizedClient,
+        };
+        io.to('role:vets').emit('consultation:new', sanitizedConsultation);
       }
     } catch {
       // Broadcast error should never fail consultation creation
@@ -486,6 +498,14 @@ export class ConsultationsService {
 
     if (!consultation || consultation.deletedAt) {
       throw new AppError('Consulta no encontrada', 404, 'CONSULTATION_NOT_FOUND');
+    }
+
+    if (consultation.status === ConsultationStatus.CANCELLED) {
+      throw new AppError(
+        'No se pueden enviar mensajes a una consulta cancelada',
+        400,
+        'INVALID_CONSULTATION_STATE'
+      );
     }
 
     const isClient = consultation.clientId === requester.id;

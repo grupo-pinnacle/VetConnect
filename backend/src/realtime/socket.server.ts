@@ -107,6 +107,11 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
         socket.join(`device:${deviceId}`);
       }
 
+      // Join role room for vets and admins to receive sanitized triage alerts
+      if (user.role === 'VET' || user.role === 'ADMIN') {
+        socket.join('role:vets');
+      }
+
       registerChatGateway(io, socket);
 
       if (user.role === 'VET') {

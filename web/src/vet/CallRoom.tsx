@@ -65,7 +65,8 @@ function CallChatPanel({
     const token = getAccessToken();
     const s = io(wsUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      reconnection: true,
       auth: {
         token: token ? `Bearer ${token}` : undefined,
       },
@@ -381,7 +382,8 @@ function Room({ id }: { id: string }) {
     const deviceId = getDeviceId();
     const roomSocket = io(wsUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      reconnection: true,
       auth: { token: token ? `Bearer ${token}` : undefined, deviceId },
     });
 
@@ -447,7 +449,8 @@ function Room({ id }: { id: string }) {
       const token = getAccessToken();
       const s = io(wsUrl, {
         withCredentials: true,
-        transports: ["websocket", "polling"],
+        transports: ["polling", "websocket"],
+        reconnection: true,
         auth: { token: token ? `Bearer ${token}` : undefined },
       });
       s.emit("call:ended", { consultationId: id });

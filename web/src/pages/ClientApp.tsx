@@ -1608,7 +1608,8 @@ function MessagesPage() {
     const wsUrl = getWsUrl();
     const s = io(wsUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      reconnection: true,
       auth: { token: token ? `Bearer ${token}` : undefined },
     });
 

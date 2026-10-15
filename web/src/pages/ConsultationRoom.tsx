@@ -204,7 +204,8 @@ export const ConsultationRoom: React.FC = () => {
     const token = getAccessToken();
     const newSocket = io(wsUrl, {
       withCredentials: true,
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      reconnection: true,
       auth: {
         token: token ? `Bearer ${token}` : undefined,
       },
