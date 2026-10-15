@@ -205,7 +205,7 @@ export class ConsultationsService {
     }
 
     if (consultation.status !== ConsultationStatus.WAITING) {
-      throw new AppError('La consulta no se encuentra en sala de espera', 400, 'INVALID_STATUS');
+      throw new AppError('La consulta ya ha sido asignada o no se encuentra en espera', 409, 'CONSULTATION_ALREADY_ASSIGNED');
     }
 
     const updated = await prisma.consultation.update({
@@ -245,11 +245,14 @@ export class ConsultationsService {
     }
 
     const isVet = consultation.vetId === requester.id;
-    const isClient = consultation.clientId === requester.id;
     const isAdmin = requester.role === Role.ADMIN;
 
-    if (!isVet && !isClient && !isAdmin) {
-      throw new AppError('No tienes permisos para finalizar esta consulta', 403, 'FORBIDDEN');
+    if (!isVet && !isAdmin) {
+      throw new AppError(
+        'Solo el veterinario asignado puede finalizar la consulta con diagnóstico clínico',
+        403,
+        'FORBIDDEN'
+      );
     }
 
     if (consultation.status !== ConsultationStatus.ACTIVE) {
@@ -261,7 +264,7 @@ export class ConsultationsService {
       data: {
         status: ConsultationStatus.COMPLETED,
         endedAt: new Date(),
-        diagnosisNotes: dto.diagnosisNotes || (isClient ? 'Consulta finalizada por el tutor.' : 'Consulta telemática finalizada con éxito.'),
+        diagnosisNotes: dto.diagnosisNotes || 'Consulta telemática finalizada con éxito.',
       },
       include: {
         pet: true,
@@ -354,15 +357,27 @@ export class ConsultationsService {
   }
 
   public async getMine(requester: User) {
-    if (requester.role === Role.VET) {
-      const waitingList = await prisma.consultation.findMany({
-        where: { status: ConsultationStatus.WAITING, deletedAt: null },
-      });
-
-      for (const cons of waitingList) {
-        await this.checkTriageTimeout(cons.id);
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    try {
+      if (prisma.consultation.updateMany) {
+        await prisma.consultation.updateMany({
+          where: {
+            status: ConsultationStatus.WAITING,
+            deletedAt: null,
+            createdAt: { lt: fifteenMinutesAgo },
+            ...(requester.role === Role.VET ? {} : { clientId: requester.id }),
+          },
+          data: {
+            status: ConsultationStatus.CANCELLED,
+            endedAt: new Date(),
+          },
+        });
       }
+    } catch (err) {
+      console.warn('[ConsultationsService.getMine] Error expiring timed out triage consultations:', err);
+    }
 
+    if (requester.role === Role.VET) {
       return prisma.consultation.findMany({
         where: {
           OR: [{ vetId: requester.id }, { status: ConsultationStatus.WAITING }],
@@ -371,14 +386,6 @@ export class ConsultationsService {
         include: { pet: true, client: { select: userSelectFields }, review: true },
         orderBy: { createdAt: 'desc' },
       });
-    }
-
-    const clientWaitingList = await prisma.consultation.findMany({
-      where: { clientId: requester.id, status: ConsultationStatus.WAITING, deletedAt: null },
-    });
-
-    for (const cons of clientWaitingList) {
-      await this.checkTriageTimeout(cons.id);
     }
 
     return prisma.consultation.findMany({

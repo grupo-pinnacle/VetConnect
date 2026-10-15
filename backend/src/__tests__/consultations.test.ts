@@ -21,6 +21,7 @@ jest.mock('../lib/prisma', () => ({
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     review: {
       create: jest.fn(),
@@ -251,7 +252,7 @@ describe('Consultations Module (/api/consultations)', () => {
       expect(res.body.data.vetId).toBe(mockVet.id);
     });
 
-    it('should REJECT assignment if consultation is ALREADY ACTIVE or claimed by another vet with HTTP 400/409', async () => {
+    it('should REJECT assignment if consultation is ALREADY ACTIVE or claimed by another vet with HTTP 409', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(mockVet2);
       mockPrismaConsultation.findUnique.mockResolvedValue({
         id: 'consultation-uuid-active-1',
@@ -268,8 +269,89 @@ describe('Consultations Module (/api/consultations)', () => {
         .patch('/api/consultations/consultation-uuid-active-1/assign')
         .set('Authorization', `Bearer ${vet2Token}`);
 
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe('INVALID_STATUS');
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe('CONSULTATION_ALREADY_ASSIGNED');
+    });
+  });
+
+  describe('PATCH /api/consultations/:id/complete (Clinical Completion Roles)', () => {
+    it('should REJECT completion with 403 when called by a client', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockClient);
+      mockPrismaConsultation.findUnique.mockResolvedValue({
+        id: 'consultation-uuid-active-1',
+        clientId: mockClient.id,
+        vetId: mockVet.id,
+        status: 'ACTIVE',
+        deletedAt: null,
+      } as any);
+
+      const res = await request(app)
+        .patch('/api/consultations/consultation-uuid-active-1/complete')
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({ diagnosisNotes: 'Intento de cierre por cliente' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('should ALLOW assigned VET to complete consultation with diagnosis notes', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockVet);
+      mockPrismaConsultation.findUnique.mockResolvedValue({
+        id: 'consultation-uuid-active-1',
+        clientId: mockClient.id,
+        vetId: mockVet.id,
+        status: 'ACTIVE',
+        deletedAt: null,
+      } as any);
+
+      mockPrismaConsultation.update.mockResolvedValue({
+        id: 'consultation-uuid-active-1',
+        clientId: mockClient.id,
+        vetId: mockVet.id,
+        status: 'COMPLETED',
+        diagnosisNotes: 'Paciente estable. Tratamiento antibiótico por 7 días.',
+        endedAt: new Date(),
+        pet: {} as any,
+        client: mockClient as any,
+        vet: mockVet as any,
+      } as any);
+
+      const res = await request(app)
+        .patch('/api/consultations/consultation-uuid-active-1/complete')
+        .set('Authorization', `Bearer ${vetToken}`)
+        .send({ diagnosisNotes: 'Paciente estable. Tratamiento antibiótico por 7 días.' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.status).toBe('COMPLETED');
+      expect(res.body.data.diagnosisNotes).toBe('Paciente estable. Tratamiento antibiótico por 7 días.');
+    });
+  });
+
+  describe('GET /api/consultations/mine (Resilient Batch Triage Timeout)', () => {
+    it('should return consultations without error and batch-expire timed out triage sessions', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockVet);
+      (mockPrismaConsultation.updateMany as jest.Mock).mockResolvedValue({ count: 2 });
+      mockPrismaConsultation.findMany.mockResolvedValue([
+        {
+          id: 'consultation-uuid-mine-1',
+          clientId: mockClient.id,
+          vetId: mockVet.id,
+          status: 'ACTIVE',
+          pet: {} as any,
+          client: mockClient as any,
+          review: null,
+        } as any,
+      ]);
+
+      const res = await request(app)
+        .get('/api/consultations/mine')
+        .set('Authorization', `Bearer ${vetToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(mockPrismaConsultation.updateMany).toHaveBeenCalled();
     });
   });
 

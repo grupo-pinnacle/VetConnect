@@ -68,7 +68,8 @@ export class PrescriptionsService {
       },
     });
 
-    const verifyUrl = `https://app.vetconnect.com.ar/prescriptions/${prescription.id}`;
+    const baseUrl = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://app.vetconnect.com.ar').replace(/\/$/, '');
+    const verifyUrl = `${baseUrl}/prescriptions/${prescription.id}`;
     let qrCodeDataUrl = '';
     try {
       qrCodeDataUrl = await QRCode.toDataURL(verifyUrl);
@@ -116,17 +117,8 @@ export class PrescriptionsService {
     }
 
     // Public QR verification: allow unauthenticated third-party verification of non-sensitive official health data
-    if (requester) {
-      const isClient = prescription.consultation.clientId === requester.id;
-      const isVet = prescription.vetId === requester.id;
-      const isAdmin = requester.role === Role.ADMIN;
-
-      if (!isClient && !isVet && !isAdmin) {
-        // Still return the public prescription verification data for QR scans
-      }
-    }
-
-    const verifyUrl = `https://app.vetconnect.com.ar/prescriptions/${prescription.id}`;
+    const baseUrl = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://app.vetconnect.com.ar').replace(/\/$/, '');
+    const verifyUrl = `${baseUrl}/prescriptions/${prescription.id}`;
     let qrCodeDataUrl = '';
     try {
       qrCodeDataUrl = await QRCode.toDataURL(verifyUrl);
