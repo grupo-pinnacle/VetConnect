@@ -345,6 +345,9 @@ function Room({ id }: { id: string }) {
   const [cam, setCam] = useState(true);
   const [panel, setPanel] = useState<"" | "Chat" | "Ficha" | "Evolución">("Chat");
   const [ending, setEnding] = useState(false);
+  const endingRef = useRef(false);
+  const disconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  endingRef.current = ending;
   const [showReviewModal, setShowReviewModal] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -505,6 +508,10 @@ function Room({ id }: { id: string }) {
 
   // Call completion handler
   const handleFinalize = async () => {
+    if (disconnectTimerRef.current) {
+      clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
+    }
     setEnding(false);
     try {
       await api.patch(`/api/consultations/${id}/complete`, {
@@ -648,8 +655,24 @@ function Room({ id }: { id: string }) {
               connect={true}
               data-lk-theme="default"
               style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
-              onDisconnected={() => {
-                handleFinalize();
+              onConnected={() => {
+                if (disconnectTimerRef.current) {
+                  clearTimeout(disconnectTimerRef.current);
+                  disconnectTimerRef.current = null;
+                }
+                setCallState("connected");
+              }}
+              onDisconnected={(reason) => {
+                if (endingRef.current) {
+                  handleFinalize();
+                  return;
+                }
+                console.warn("LiveKit transient disconnect notice, waiting 5s for reconnect...", reason);
+                setCallState("reconnecting");
+                if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
+                disconnectTimerRef.current = setTimeout(() => {
+                  handleFinalize();
+                }, 5000);
               }}
             >
               <LiveKitTrackSynchronizer mic={mic} cam={cam} />
