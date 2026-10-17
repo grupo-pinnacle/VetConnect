@@ -233,8 +233,23 @@ function useClientData() {
   const petsList = petsQuery.data ?? [];
   const consultationsList = consultationsQuery.data ?? [];
 
+  const syncedPets = useMemo(() => {
+    return petsList.map((pet) => {
+      const upcoming = consultationsList.find(
+        (c) =>
+          c.pet &&
+          c.pet.toLowerCase() === pet.name.toLowerCase() &&
+          (c.status === "Confirmada" || c.status === "Pendiente")
+      );
+      return {
+        ...pet,
+        next: upcoming ? `${upcoming.date} · ${upcoming.time}` : "Sin turno próximo",
+      };
+    });
+  }, [petsList, consultationsList]);
+
   return {
-    pets: petsList,
+    pets: syncedPets,
     petsLoading: petsQuery.isLoading,
     hasRealPets: petsList.length > 0,
     consultations: consultationsList,
@@ -1241,6 +1256,8 @@ function AppointmentsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['consultations', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
+      queryClient.invalidateQueries({ queryKey: ['pets', 'mine'] });
       setModal(null);
       setToastMsg("Turno cancelado correctamente");
       setTimeout(() => setToastMsg(null), 3500);
