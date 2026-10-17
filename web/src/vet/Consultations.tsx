@@ -8,10 +8,64 @@ const tabMap: Record<string, CS> = { Próximas: "Próxima", Activas: "Activa", F
 
 export function ConsultationsPage() {
   const { consults, patientsList } = useVet();
-  const [tab, setTab] = useState("Próximas");
-  const [day, setDay] = useState("Todas");
-  const [kind, setKind] = useState("Todas");
-  const [mode, setMode] = useState("Todas");
+  const [tab, setTabState] = useState(() => {
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get("tab");
+      if (param && tabMap[param]) return param;
+      try {
+        const saved = sessionStorage.getItem("vet_consultations_tab");
+        if (saved && tabMap[saved]) return saved;
+      } catch {}
+    }
+    return "Próximas";
+  });
+  const [day, setDayState] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem("vet_consultations_day") || "Todas";
+      } catch {}
+    }
+    return "Todas";
+  });
+  const [kind, setKindState] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem("vet_consultations_kind") || "Todas";
+      } catch {}
+    }
+    return "Todas";
+  });
+  const [mode, setModeState] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem("vet_consultations_mode") || "Todas";
+      } catch {}
+    }
+    return "Todas";
+  });
+
+  const setTab = (t: string) => {
+    setTabState(t);
+    try { sessionStorage.setItem("vet_consultations_tab", t); } catch {}
+  };
+  const setDay = (d: string) => {
+    setDayState(d);
+    try { sessionStorage.setItem("vet_consultations_day", d); } catch {}
+  };
+  const setKind = (k: string) => {
+    setKindState(k);
+    try { sessionStorage.setItem("vet_consultations_kind", k); } catch {}
+  };
+  const setMode = (m: string) => {
+    setModeState(m);
+    try { sessionStorage.setItem("vet_consultations_mode", m); } catch {}
+  };
+  const clearFilters = () => {
+    setDay("Todas");
+    setKind("Todas");
+    setMode("Todas");
+  };
+
   const status = tabMap[tab];
   const allPets = patientsList;
   const count = (s: CS) => consults.filter((c) => c.status === s).length;
@@ -25,7 +79,7 @@ export function ConsultationsPage() {
       <FilterSelect label="Estado" value={tab} onChange={setTab} options={Object.keys(tabMap)}/>
       <FilterSelect label="Especie" value={kind} onChange={setKind} options={["Todas", ...Array.from(new Set(allPets.map((p) => p.kind)))]}/>
       <FilterSelect label="Modalidad" value={mode} onChange={setMode} options={["Todas", "Videoconsulta", "Chat"]}/>
-      {filtered && <button className="v-link" onClick={() => { setDay("Todas"); setKind("Todas"); setMode("Todas"); }}>Limpiar filtros</button>}
+      {filtered && <button className="v-link" onClick={clearFilters}>Limpiar filtros</button>}
       <span className="v-filters__count" aria-live="polite">{shown.length} de {count(status)} {tab.toLowerCase()}</span>
     </div>
     {shown.length === 0 ? <div className="panel"><EmptyState icon="video" title="No tenés consultas para mostrar." text={filtered ? "Probá con otros filtros." : "Cuando haya actividad en esta categoría, aparecerá acá."}/></div> :
