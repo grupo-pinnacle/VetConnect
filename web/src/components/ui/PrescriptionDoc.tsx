@@ -2,15 +2,18 @@ import React from 'react';
 import { Printer, ShieldCheck, Stethoscope } from 'lucide-react';
 import { PrescriptionDocProps } from '../../types';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
 
 export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
   prescription,
   qrUrl,
   pet,
+  fallbackLicense,
   onPrint,
   className = '',
   'data-testid': testId = 'prescription-document',
 }) => {
+  const { user } = useAuth();
   const handlePrint = () => {
     if (onPrint) {
       onPrint();
@@ -22,8 +25,10 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
   const qrSource = qrUrl || prescription.qrCodeDataUrl || prescription.verifyUrl;
   const vetName = prescription.vet
     ? `Dr/a. ${prescription.vet.firstName || ''} ${prescription.vet.lastName || ''}`.trim()
+    : user
+    ? `Dr/a. ${user.firstName || ''} ${user.lastName || ''}`.trim()
     : 'Médico Veterinario Matriculado';
-  const licenseNumber = prescription.vet?.licenseNumber || 'MP-Oficial';
+  const licenseNumber = prescription.vet?.licenseNumber || fallbackLicense || user?.licenseNumber || 'MP-Oficial';
 
   const formattedDate = prescription.createdAt
     ? new Date(prescription.createdAt).toLocaleDateString('es-AR', {

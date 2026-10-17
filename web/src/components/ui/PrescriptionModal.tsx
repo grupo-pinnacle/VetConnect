@@ -12,6 +12,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
   initialValues,
   isLoading: externalLoading = false,
   onSubmit,
+  fallbackLicense,
   className = '',
   'data-testid': testId = 'prescription-modal',
 }) => {

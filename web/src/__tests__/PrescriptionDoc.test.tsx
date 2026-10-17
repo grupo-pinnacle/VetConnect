@@ -67,4 +67,13 @@ describe('PrescriptionDoc Component', () => {
     fireEvent.click(printButton);
     expect(handlePrint).toHaveBeenCalledTimes(1);
   });
+
+  it('should render fallbackLicense when prescription.vet is unhydrated', () => {
+    const unhydratedPrescription = {
+      ...mockPrescription,
+      vet: undefined,
+    };
+    render(<PrescriptionDoc prescription={unhydratedPrescription} fallbackLicense="MP-99887" />);
+    expect(screen.getByText(/MP-99887/)).toBeDefined();
+  });
 });

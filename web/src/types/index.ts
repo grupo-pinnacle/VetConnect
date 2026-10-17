@@ -328,6 +328,7 @@ export interface PrescriptionDocProps extends BaseComponentProps {
   prescription: Prescription;
   qrUrl?: string;
   pet?: Pet;
+  fallbackLicense?: string;
   onPrint?: () => void;
 }
 
@@ -341,6 +342,7 @@ export interface PrescriptionModalProps extends BaseComponentProps {
   consultationId: string;
   onClose: () => void;
   onSuccess: (prescription: Prescription) => void;
+  fallbackLicense?: string;
   initialValues?: {
     medication?: string;
     dosage?: string;
