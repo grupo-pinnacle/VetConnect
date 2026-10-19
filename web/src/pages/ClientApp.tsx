@@ -47,14 +47,6 @@ export interface ClientViewPet {
   microchip?: string;
 }
 
-const INITIAL_PETS: ClientViewPet[] = [
-  { id: "milo", name: "Milo", kind: "Perro", breed: "Golden Retriever", age: "8 años", weight: "29 kg", state: "Controles al día", last: "12 Jun 2025", next: "Hoy · 19:30", photo: photos.milo, allergies: "Polen estacional", microchip: "032 884 912" },
-  { id: "luna", name: "Luna", kind: "Coneja", breed: "Enana", age: "3 años", weight: "1,7 kg", state: "En seguimiento", last: "28 May 2025", next: "Sin turno próximo", photo: photos.luna },
-  { id: "nube", name: "Nube", kind: "Gato", breed: "Mestizo", age: "5 años", weight: "4,3 kg", state: "Controles al día", last: "03 Abr 2025", next: "18 Jul · 10:00", photo: photos.nube },
-  { id: "kiwi", name: "Kiwi", kind: "Ave", breed: "Cotorra argentina", age: "2 años", weight: "110 g", state: "Control pendiente", last: "10 Ene 2025", next: "Sin turno próximo", photo: photos.kiwi },
-  { id: "toby", name: "Toby", kind: "Hurón", breed: "Sable", age: "4 años", weight: "1,2 kg", state: "Controles al día", last: "20 May 2025", next: "02 Ago · 16:30", photo: photos.toby },
-];
-
 export interface ClientViewConsultation {
   id: string;
   title: string;
@@ -67,12 +59,6 @@ export interface ClientViewConsultation {
   mode: string;
   rawStatus?: string;
 }
-
-const INITIAL_CONSULTATIONS: ClientViewConsultation[] = [
-  { id: "seguimiento-milo", title: "Consulta de seguimiento", vet: "Dr. Santiago Mendoza", pet: "Milo", date: "Hoy", time: "19:30", reason: "Seguimiento dermatológico", status: "Confirmada", mode: "Videoconsulta" },
-  { id: "luna-nutricion", title: "Control nutricional", vet: "Dra. Camila López", pet: "Luna", date: "18 Jul", time: "10:00", reason: "Control de alimentación", status: "Pendiente", mode: "Videoconsulta" },
-  { id: "nube-control", title: "Control clínico", vet: "Dr. Santiago Mendoza", pet: "Nube", date: "03 Abr", time: "17:15", reason: "Control anual", status: "Finalizada", mode: "Videoconsulta" },
-];
 
 function mapBackendPet(p: BackendPet): ClientViewPet {
   const customPhoto = typeof window !== "undefined" ? localStorage.getItem(`vetconnect_pet_photo_${p.id}`) : null;
@@ -1498,7 +1484,7 @@ function MessagesPage() {
   const [activeChip, setActiveChip] = useState<string>("Todos");
   const [searchQuery, setSearchQuery] = useState("");
   const [showBanner, setShowBanner] = useState(true);
-  const [activeChatId, setActiveChatId] = useState<string>("santiago");
+  const [activeChatId, setActiveChatId] = useState<string>("");
   const [inputText, setInputText] = useState("");
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showEmojiMenu, setShowEmojiMenu] = useState(false);
@@ -1508,148 +1494,9 @@ function MessagesPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const [conversations, setConversations] = useState<WAChatConversation[]>([
-    {
-      id: "santiago",
-      name: "Dr. Santiago Mendoza",
-      role: `Clínica general · Veterinario de ${petName}`,
-      avatarText: "SM",
-      isOnline: true,
-      statusText: "en línea",
-      lastTime: "12:38 p. m.",
-      preview: "✓✓ Perfecto doctor, muchas gracias. Ya me descargué...",
-      isPinned: true,
-      category: "consults",
-      messages: [
-        {
-          id: "m-1",
-          sender: "them",
-          senderName: "Dr. Santiago Mendoza",
-          text: `¡Hola ${clientFirstName}! Ya revisé la evolución clínica de ${petName} respecto al control dermatológico. El cuadro inflamatorio cedió notablemente y la piel está en excelente estado.`,
-          time: "12:30 p. m.",
-          state: "read",
-        },
-        {
-          id: "m-2",
-          sender: "them",
-          senderName: "Dr. Santiago Mendoza",
-          doc: {
-            title: `INFORME_CLINICO_Y_PLAN_TRATAMIENTO_${petName.toUpperCase()}_2026.pdf`,
-            sub: "48 páginas • PDF • 2.2 MB",
-            bannerTag: "HISTORIA CLÍNICA OFICIAL",
-            bannerTitle: "VetConnect · Evaluación Dermatológica",
-          },
-          time: "12:35 p. m.",
-          state: "read",
-        },
-        {
-          id: "m-3",
-          sender: "them",
-          senderName: "Dr. Santiago Mendoza",
-          text: `Plan terapéutico para ${petName}:\n1. Continuar comprimido antialérgico cada 24 hs por la mañana.\n2. Baño con shampoo antiséptico el día jueves (dejar actuar 10 min antes de enjuagar).\n3. Mantener cepillado suave con cardina para oxigenar el manto.\n4. Próximo control: videoconsulta de seguimiento el viernes.`,
-          time: "12:36 p. m.",
-          state: "read",
-        },
-        {
-          id: "m-4",
-          sender: "me",
-          text: "Perfecto doctor, muchas gracias. Ya me descargué el informe y el jueves le hago el baño terapéutico como me indicó.",
-          time: "12:38 p. m.",
-          state: "read",
-        },
-      ],
-    },
-    {
-      id: "camila",
-      name: "Dra. Camila López",
-      role: "Especialista en Nutrición Animal",
-      avatarText: "CL",
-      isOnline: false,
-      statusText: "Última vez hoy a las 11:35 a. m.",
-      lastTime: "11:29 a. m.",
-      preview: "Avisame si notás alguna alteración gastrointestinal...",
-      unreadCount: 2,
-      category: "vets",
-      messages: [
-        {
-          id: "c-1",
-          sender: "them",
-          senderName: "Dra. Camila López",
-          text: `Hola ${clientFirstName}, ¿cómo viene tolerando ${petName} la transición al nuevo alimento balanceado húmedo?`,
-          time: "11:25 a. m.",
-          state: "delivered",
-        },
-        {
-          id: "c-2",
-          sender: "them",
-          senderName: "Dra. Camila López",
-          text: "Avisame si notás alguna alteración gastrointestinal para regular la ración diaria antes del fin de semana.",
-          time: "11:29 a. m.",
-          state: "delivered",
-        },
-      ],
-    },
-    {
-      id: "guardia",
-      name: "Guardia VetConnect 24hs",
-      role: "Atención Médica Inmediata y Triage",
-      avatarText: "VC",
-      isOnline: true,
-      statusText: "Disponible 24/7",
-      lastTime: "Ayer",
-      preview: "Si notás síntomas críticos como dificultad respiratoria...",
-      isPinned: true,
-      category: "consults",
-      messages: [
-        {
-          id: "g-1",
-          sender: "them",
-          senderName: "Guardia VetConnect",
-          text: "Canal oficial de guardia y soporte clínico 24/7 de VetConnect.",
-          time: "Ayer",
-          state: "read",
-        },
-        {
-          id: "g-2",
-          sender: "them",
-          senderName: "Guardia VetConnect",
-          text: "Si notás síntomas críticos como dificultad respiratoria o sangrado, ingresá a 'Necesito atención' para triage y conexión prioritaria por videoconsulta.",
-          time: "Ayer",
-          state: "read",
-        },
-      ],
-    },
-    {
-      id: "martin",
-      name: "Dr. Martín Silva",
-      role: "Cirugía Veterinaria & Traumatología",
-      avatarText: "MS",
-      isOnline: false,
-      statusText: "Última vez lunes a las 18:20",
-      lastTime: "Lunes",
-      preview: "✓✓ Muchas gracias Dr. Silva, nos vemos en la fecha...",
-      category: "vets",
-      messages: [
-        {
-          id: "s-1",
-          sender: "them",
-          senderName: "Dr. Martín Silva",
-          text: `${clientFirstName}, te confirmo que los análisis prequirúrgicos están totalmente en regla para la intervención programada.`,
-          time: "Lunes",
-          state: "read",
-        },
-        {
-          id: "s-2",
-          sender: "me",
-          text: "Muchas gracias Dr. Silva, nos vemos en la fecha pactada.",
-          time: "Lunes",
-          state: "read",
-        },
-      ],
-    },
-  ]);
+  const [conversations, setConversations] = useState<WAChatConversation[]>([]);
 
-  const activeChat = conversations.find((c) => c.id === activeChatId) || conversations[0];
+  const activeChat = conversations.find((c) => c.id === activeChatId) || conversations[0] || null;
 
   const filteredChats = useMemo(() => {
     return conversations.filter((chat) => {
@@ -1675,7 +1522,8 @@ function MessagesPage() {
   useEffect(() => {
     if (consultations && consultations.length > 0) {
       const realConvs: WAChatConversation[] = consultations.map((c) => {
-        const initials = c.vet
+        const vetName = c.vet && c.vet !== "Sin asignar" ? c.vet : "Guardia / Pendiente";
+        const initials = vetName
           .split(" ")
           .map((n) => n[0])
           .slice(0, 2)
@@ -1683,32 +1531,43 @@ function MessagesPage() {
           .toUpperCase() || "VC";
         return {
           id: c.id,
-          name: c.vet,
+          name: vetName,
           role: `Consulta de ${c.pet} · ${c.status}`,
           avatarText: initials,
           isOnline: c.rawStatus === "ACTIVE",
-          statusText: c.rawStatus === "ACTIVE" ? "en línea" : "consulta registrada",
+          statusText: c.rawStatus === "ACTIVE" ? "en línea" : `Estado: ${c.status}`,
           lastTime: c.time || "Hoy",
           preview: c.reason || "Consulta clínica",
-          isPinned: true,
+          isPinned: c.rawStatus === "ACTIVE",
           category: "consults",
           messages: [],
         };
       });
 
       setConversations((prev) => {
-        const existingIds = new Set(prev.map((x) => x.id));
-        const toAdd = realConvs.filter((rc) => !existingIds.has(rc.id));
-        if (toAdd.length === 0) return prev;
-        return [...toAdd, ...prev];
+        return realConvs.map((rc) => {
+          const existing = prev.find((p) => p.id === rc.id);
+          if (existing && existing.messages.length > 0) {
+            return {
+              ...rc,
+              messages: existing.messages,
+              preview: existing.preview,
+              lastTime: existing.lastTime,
+            };
+          }
+          return rc;
+        });
       });
 
       setActiveChatId((curr) => {
-        if (curr === "santiago" && realConvs[0]) {
-          return realConvs[0].id;
+        if (!curr || !realConvs.some((rc) => rc.id === curr)) {
+          return realConvs[0]?.id || "";
         }
         return curr;
       });
+    } else {
+      setConversations([]);
+      setActiveChatId("");
     }
   }, [consultations]);
 
@@ -1808,7 +1667,7 @@ function MessagesPage() {
 
   const handleSend = (textToSend?: string) => {
     const content = (textToSend !== undefined ? textToSend : inputText).trim();
-    if (!content) return;
+    if (!content || !activeChat) return;
 
     const newMsgId = `msg-${Date.now()}`;
     const nowTime = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
@@ -1849,7 +1708,7 @@ function MessagesPage() {
         .catch((err) => console.error("Error sending real message:", err));
     }
 
-    // Transition ticks: sent -> delivered -> read
+    // Transition ticks: sent -> delivered
     setTimeout(() => {
       setConversations((prev) =>
         prev.map((chat) => ({
@@ -1858,50 +1717,10 @@ function MessagesPage() {
         }))
       );
     }, 450);
-
-    setTimeout(() => {
-      setConversations((prev) =>
-        prev.map((chat) => ({
-          ...chat,
-          messages: chat.messages.map((m) => (m.id === newMsgId ? { ...m, state: "read" } : m)),
-        }))
-      );
-    }, 950);
-
-    // Simulated reply only for mock/demo conversations (not real consultations)
-    if (!matchingCons) {
-      setTimeout(() => {
-        setIsTyping(true);
-        setTimeout(() => {
-          setIsTyping(false);
-          const replyTime = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-          const replyMsg: WAMessageItem = {
-            id: `reply-${Date.now()}`,
-            sender: "them",
-            senderName: activeChat.name,
-            text: `Recibido ${clientFirstName}. Cualquier cambio o consulta adicional que tengas con ${petName}, escribime por acá y lo monitoreamos en conjunto.`,
-            time: replyTime,
-            state: "read",
-          };
-          setConversations((prev) =>
-            prev.map((chat) => {
-              if (chat.id === activeChat.id) {
-                return {
-                  ...chat,
-                  lastTime: replyTime,
-                  preview: replyMsg.text || "",
-                  messages: [...chat.messages, replyMsg],
-                };
-              }
-              return chat;
-            })
-          );
-        }, 2000);
-      }, 1500);
-    }
   };
 
   const handleAttachDoc = (docTitle: string) => {
+    if (!activeChat) return;
     setShowAttachMenu(false);
     const newMsgId = `doc-${Date.now()}`;
     const nowTime = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
@@ -1910,12 +1729,12 @@ function MessagesPage() {
       sender: "me",
       doc: {
         title: docTitle,
-        sub: "3 páginas • PDF • 1.4 MB",
+        sub: "Documento clínico • PDF",
         bannerTag: "DOCUMENTO ADJUNTO",
         bannerTitle: "VetConnect · Certificado Médico",
       },
       time: nowTime,
-      state: "read",
+      state: "sent",
     };
 
     setConversations((prev) =>
@@ -2050,12 +1869,22 @@ function MessagesPage() {
 
           <div className="wa-chats-list">
             {filteredChats.length === 0 ? (
-              <div style={{ padding: "30px 20px", textAlign: "center", color: "#667781", fontSize: 13 }}>
-                No se encontraron conversaciones con ese filtro.
+              <div style={{ padding: "36px 20px", textAlign: "center", color: "#667781", fontSize: 13 }}>
+                {conversations.length === 0 ? (
+                  <>
+                    <p style={{ fontWeight: 600, color: "#111b21", marginBottom: 6 }}>Sin consultas registradas</p>
+                    <p style={{ marginBottom: 14 }}>Tus conversaciones con veterinarios aparecerán acá una vez iniciada la atención.</p>
+                    <button className="btn btn--primary btn--sm" onClick={() => go("/client/triage")}>
+                      Iniciar consulta
+                    </button>
+                  </>
+                ) : (
+                  "No se encontraron conversaciones con ese filtro."
+                )}
               </div>
             ) : (
               filteredChats.map((chat) => {
-                const isSelected = chat.id === activeChat.id;
+                const isSelected = activeChat ? chat.id === activeChat.id : false;
                 const hasUnread = !!chat.unreadCount && chat.unreadCount > 0;
                 return (
                   <button
@@ -2096,274 +1925,303 @@ function MessagesPage() {
 
         {/* RIGHT CHAT PANE */}
         <section className={`wa-chat-pane ${!mobileThreadOpen ? "is-hidden" : ""}`}>
-          <header className="wa-chat-pane__header">
-            <div className="wa-chat-pane__header-contact">
-              <button
-                className="wa-icon-btn mobile-only-btn"
-                style={{ marginRight: -4 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMobileThreadOpen(false);
-                }}
-                aria-label="Volver a chats"
-              >
-                <Icon name="left" size={18} />
-              </button>
-              <div className="wa-chat-pane__header-avatar">
-                {activeChat.avatarText}
-                {activeChat.isOnline && <span className="wa-online-badge" />}
-              </div>
-              <div className="wa-chat-pane__header-info">
-                <h2>{activeChat.name}</h2>
-                <span className={activeChat.isOnline ? "is-online" : ""}>
-                  {activeChat.statusText}
-                </span>
-              </div>
-            </div>
-
-            <div className="wa-chat-pane__header-actions">
-              <button
-                className="wa-icon-btn"
-                title="Iniciar videoconsulta"
-                onClick={() => {
-                  if (consultations[0]) go(`/call/${consultations[0].id}?from=client`);
-                  else go("/client/triage");
-                }}
-                aria-label="Videollamada"
-              >
-                <Icon name="video" size={20} />
-              </button>
-              <button
-                className="wa-icon-btn"
-                title="Buscar en el chat"
-                onClick={() => setToastMsg("Buscador dentro del chat activo")}
-                aria-label="Buscar"
-              >
-                <Icon name="search" size={19} />
-              </button>
-              <button
-                className="wa-icon-btn"
-                title="Más opciones"
-                onClick={() => setToastMsg(`Conversación con ${activeChat.name}`)}
-                aria-label="Más opciones"
-              >
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="5" r="2" />
-                  <circle cx="12" cy="12" r="2" />
-                  <circle cx="12" cy="19" r="2" />
-                </svg>
-              </button>
-            </div>
-          </header>
-
-          {/* CHAT BODY WITH DOODLE BACKGROUND */}
-          <div className="wa-chat-body">
-            <div className="wa-encryption-pill">
-              <span>🔒</span>
-              <span>
-                Los mensajes y llamadas están cifrados de extremo a extremo. Nadie fuera de este chat, ni siquiera VetConnect, puede leerlos ni escucharlos.
-              </span>
-            </div>
-
-            <div className="wa-date-pill">HOY</div>
-
-            {activeChat.messages.map((msg) => {
-              const isSent = msg.sender === "me";
-
-              if (msg.doc) {
-                return (
-                  <div
-                    key={msg.id}
-                    className={`wa-bubble wa-doc-bubble ${isSent ? "wa-bubble--sent" : "wa-bubble--received"}`}
-                  >
-                    {!isSent && msg.senderName && (
-                      <div className="wa-bubble__sender">{msg.senderName}</div>
-                    )}
-                    <div className="wa-doc-card">
-                      <div className="wa-doc-card__banner">
-                        <span className="wa-doc-card__banner-tag">
-                          {msg.doc.bannerTag || "DOCUMENTO PDF"}
-                        </span>
-                        <div className="wa-doc-card__banner-preview">
-                          <Icon name="file" size={26} />
-                          <span>{msg.doc.bannerTitle || "VetConnect Clinical Record"}</span>
-                        </div>
-                      </div>
-
-                      <div className="wa-doc-card__body">
-                        <div className="wa-pdf-badge">PDF</div>
-                        <div className="wa-doc-card__info">
-                          <div className="wa-doc-card__title" title={msg.doc.title}>
-                            {msg.doc.title}
-                          </div>
-                          <div className="wa-doc-card__sub">{msg.doc.sub}</div>
-                        </div>
-                        <button
-                          className="wa-doc-card__download"
-                          onClick={() => handleDownloadDoc(msg.doc!.title)}
-                          title="Descargar documento"
-                          aria-label="Descargar documento"
-                        >
-                          <Icon name="download" size={17} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="wa-bubble__meta">
-                      <span>{msg.time}</span>
-                      {isSent && <WhatsAppCheck state={msg.state} />}
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={msg.id}
-                  className={`wa-bubble ${isSent ? "wa-bubble--sent" : "wa-bubble--received"}`}
+          {!activeChat ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 32, textAlign: "center", color: "#667781" }}>
+              <div style={{ fontSize: 44, marginBottom: 16 }}>🩺</div>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111b21", marginBottom: 8 }}>VetConnect Mensajería Clínica</h2>
+              <p style={{ maxWidth: 420, fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
+                {conversations.length === 0
+                  ? "No tenés consultas médicas activas. Iniciá una atención para comunicarte directamente con tu veterinario."
+                  : "Seleccioná una conversación de la lista para ver el historial y comunicarte con el profesional."}
+              </p>
+              {conversations.length === 0 && (
+                <button
+                  className="btn btn--primary"
+                  onClick={() => go("/client/triage")}
                 >
-                  {!isSent && msg.senderName && (
-                    <div className="wa-bubble__sender">{msg.senderName}</div>
-                  )}
-                  <p className="wa-bubble__text">{msg.text}</p>
-                  <div className="wa-bubble__meta">
-                    <span>{msg.time}</span>
-                    {isSent && <WhatsAppCheck state={msg.state} />}
+                  Iniciar consulta clínica
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <header className="wa-chat-pane__header">
+                <div className="wa-chat-pane__header-contact">
+                  <button
+                    className="wa-icon-btn mobile-only-btn"
+                    style={{ marginRight: -4 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMobileThreadOpen(false);
+                    }}
+                    aria-label="Volver a chats"
+                  >
+                    <Icon name="left" size={18} />
+                  </button>
+                  <div className="wa-chat-pane__header-avatar">
+                    {activeChat.avatarText}
+                    {activeChat.isOnline && <span className="wa-online-badge" />}
+                  </div>
+                  <div className="wa-chat-pane__header-info">
+                    <h2>{activeChat.name}</h2>
+                    <span className={activeChat.isOnline ? "is-online" : ""}>
+                      {activeChat.statusText}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
 
-            {isTyping && (
-              <div className="wa-typing-indicator">
-                <span className="wa-typing-dot" />
-                <span className="wa-typing-dot" />
-                <span className="wa-typing-dot" />
+                <div className="wa-chat-pane__header-actions">
+                  <button
+                    className="wa-icon-btn"
+                    title="Iniciar videoconsulta"
+                    onClick={() => {
+                      const targetCons = consultations.find((c) => c.id === activeChat.id) || consultations[0];
+                      if (targetCons) go(`/call/${targetCons.id}?from=client`);
+                      else go("/client/triage");
+                    }}
+                    aria-label="Videollamada"
+                  >
+                    <Icon name="video" size={20} />
+                  </button>
+                  <button
+                    className="wa-icon-btn"
+                    title="Buscar en el chat"
+                    onClick={() => setToastMsg("Buscador dentro del chat activo")}
+                    aria-label="Buscar"
+                  >
+                    <Icon name="search" size={19} />
+                  </button>
+                  <button
+                    className="wa-icon-btn"
+                    title="Más opciones"
+                    onClick={() => setToastMsg(`Conversación con ${activeChat.name}`)}
+                    aria-label="Más opciones"
+                  >
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="12" cy="5" r="2" />
+                      <circle cx="12" cy="12" r="2" />
+                      <circle cx="12" cy="19" r="2" />
+                    </svg>
+                  </button>
+                </div>
+              </header>
+
+              {/* CHAT BODY WITH DOODLE BACKGROUND */}
+              <div className="wa-chat-body">
+                <div className="wa-encryption-pill">
+                  <span>🔒</span>
+                  <span>
+                    Los mensajes y llamadas están cifrados de extremo a extremo. Nadie fuera de este chat, ni siquiera VetConnect, puede leerlos ni escucharlos.
+                  </span>
+                </div>
+
+                <div className="wa-date-pill">HOY</div>
+
+                {activeChat.messages.length === 0 ? (
+                  <div style={{ padding: "24px 20px", textAlign: "center", color: "#667781", fontSize: 13, background: "rgba(255,255,255,0.7)", borderRadius: 12, margin: "24px auto", maxWidth: 420 }}>
+                    Iniciá la conversación con {activeChat.name}. Todo mensaje e indicación queda registrado en la historia clínica.
+                  </div>
+                ) : (
+                  activeChat.messages.map((msg) => {
+                    const isSent = msg.sender === "me";
+
+                    if (msg.doc) {
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`wa-bubble wa-doc-bubble ${isSent ? "wa-bubble--sent" : "wa-bubble--received"}`}
+                        >
+                          {!isSent && msg.senderName && (
+                            <div className="wa-bubble__sender">{msg.senderName}</div>
+                          )}
+                          <div className="wa-doc-card">
+                            <div className="wa-doc-card__banner">
+                              <span className="wa-doc-card__banner-tag">
+                                {msg.doc.bannerTag || "DOCUMENTO PDF"}
+                              </span>
+                              <div className="wa-doc-card__banner-preview">
+                                <Icon name="file" size={26} />
+                                <span>{msg.doc.bannerTitle || "VetConnect Clinical Record"}</span>
+                              </div>
+                            </div>
+
+                            <div className="wa-doc-card__body">
+                              <div className="wa-pdf-badge">PDF</div>
+                              <div className="wa-doc-card__info">
+                                <div className="wa-doc-card__title" title={msg.doc.title}>
+                                  {msg.doc.title}
+                                </div>
+                                <div className="wa-doc-card__sub">{msg.doc.sub}</div>
+                              </div>
+                              <button
+                                className="wa-doc-card__download"
+                                onClick={() => handleDownloadDoc(msg.doc!.title)}
+                                title="Descargar documento"
+                                aria-label="Descargar documento"
+                              >
+                                <Icon name="download" size={17} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="wa-bubble__meta">
+                            <span>{msg.time}</span>
+                            {isSent && <WhatsAppCheck state={msg.state} />}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`wa-bubble ${isSent ? "wa-bubble--sent" : "wa-bubble--received"}`}
+                      >
+                        {!isSent && msg.senderName && (
+                          <div className="wa-bubble__sender">{msg.senderName}</div>
+                        )}
+                        <p className="wa-bubble__text">{msg.text}</p>
+                        <div className="wa-bubble__meta">
+                          <span>{msg.time}</span>
+                          {isSent && <WhatsAppCheck state={msg.state} />}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+
+                {isTyping && (
+                  <div className="wa-typing-indicator">
+                    <span className="wa-typing-dot" />
+                    <span className="wa-typing-dot" />
+                    <span className="wa-typing-dot" />
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
               </div>
-            )}
 
-            <div ref={messagesEndRef} />
-          </div>
+              {/* QUICK EMOJI BAR */}
+              {showEmojiMenu && (
+                <div className="wa-emoji-bar">
+                  {quickEmojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      className="wa-emoji-btn"
+                      onClick={() => {
+                        setInputText((prev) => prev + emoji);
+                        setShowEmojiMenu(false);
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-          {/* QUICK EMOJI BAR */}
-          {showEmojiMenu && (
-            <div className="wa-emoji-bar">
-              {quickEmojis.map((emoji) => (
-                <button
-                  key={emoji}
-                  className="wa-emoji-btn"
-                  onClick={() => {
-                    setInputText((prev) => prev + emoji);
-                    setShowEmojiMenu(false);
-                  }}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+              {/* QUICK ATTACH POPUP */}
+              {showAttachMenu && (
+                <div className="wa-attach-popup">
+                  <button
+                    className="wa-attach-item"
+                    onClick={() =>
+                      handleAttachDoc(`ESTUDIO_COMPLEMENTARIO_${petName.toUpperCase()}_2026.pdf`)
+                    }
+                  >
+                    <i style={{ background: "#ea4335" }}>
+                      <Icon name="file" size={17} />
+                    </i>
+                    <span>Documento PDF</span>
+                  </button>
+                  <button
+                    className="wa-attach-item"
+                    onClick={() =>
+                      handleAttachDoc(`FOTO_CLINICA_EVOLUCION_${petName.toUpperCase()}.pdf`)
+                    }
+                  >
+                    <i style={{ background: "#007bfc" }}>
+                      <Icon name="image" size={17} />
+                    </i>
+                    <span>Fotos y videos</span>
+                  </button>
+                  <button
+                    className="wa-attach-item"
+                    onClick={() =>
+                      handleAttachDoc(`RECETA_MEDICA_${petName.toUpperCase()}.pdf`)
+                    }
+                  >
+                    <i style={{ background: "#00a884" }}>
+                      <Icon name="pill" size={17} />
+                    </i>
+                    <span>Receta médica</span>
+                  </button>
+                </div>
+              )}
+
+              {/* FOOTER INPUT BAR */}
+              <footer className="wa-chat-footer">
+                <div className="wa-chat-footer__actions">
+                  <button
+                    className="wa-icon-btn"
+                    title="Emojis"
+                    onClick={() => {
+                      setShowEmojiMenu(!showEmojiMenu);
+                      setShowAttachMenu(false);
+                    }}
+                    aria-label="Emojis"
+                  >
+                    😊
+                  </button>
+                  <button
+                    className="wa-icon-btn"
+                    title="Adjuntar archivo o documento"
+                    onClick={() => {
+                      setShowAttachMenu(!showAttachMenu);
+                      setShowEmojiMenu(false);
+                    }}
+                    aria-label="Adjuntar"
+                  >
+                    <Icon name="paperclip" size={20} />
+                  </button>
+                </div>
+
+                <div className="wa-input-pill">
+                  <input
+                    type="text"
+                    placeholder="Escribe un mensaje"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                  />
+                </div>
+
+                {inputText.trim() ? (
+                  <button
+                    className="wa-send-btn"
+                    onClick={() => handleSend()}
+                    title="Enviar mensaje"
+                    aria-label="Enviar"
+                  >
+                    <Icon name="send" size={19} />
+                  </button>
+                ) : (
+                  <button
+                    className="wa-mic-btn"
+                    onClick={() => setToastMsg("Mensaje de voz: mantén presionado para grabar")}
+                    title="Mensaje de voz"
+                    aria-label="Mensaje de voz"
+                  >
+                    <Icon name="mic" size={20} />
+                  </button>
+                )}
+              </footer>
+            </>
           )}
-
-          {/* QUICK ATTACH POPUP */}
-          {showAttachMenu && (
-            <div className="wa-attach-popup">
-              <button
-                className="wa-attach-item"
-                onClick={() =>
-                  handleAttachDoc(`ESTUDIO_COMPLEMENTARIO_${petName.toUpperCase()}_2026.pdf`)
-                }
-              >
-                <i style={{ background: "#ea4335" }}>
-                  <Icon name="file" size={17} />
-                </i>
-                <span>Documento PDF</span>
-              </button>
-              <button
-                className="wa-attach-item"
-                onClick={() =>
-                  handleAttachDoc(`FOTO_CLINICA_EVOLUCION_${petName.toUpperCase()}.pdf`)
-                }
-              >
-                <i style={{ background: "#007bfc" }}>
-                  <Icon name="image" size={17} />
-                </i>
-                <span>Fotos y videos</span>
-              </button>
-              <button
-                className="wa-attach-item"
-                onClick={() =>
-                  handleAttachDoc(`RECETA_MEDICA_${petName.toUpperCase()}.pdf`)
-                }
-              >
-                <i style={{ background: "#00a884" }}>
-                  <Icon name="pill" size={17} />
-                </i>
-                <span>Receta médica</span>
-              </button>
-            </div>
-          )}
-
-          {/* FOOTER INPUT BAR */}
-          <footer className="wa-chat-footer">
-            <div className="wa-chat-footer__actions">
-              <button
-                className="wa-icon-btn"
-                title="Emojis"
-                onClick={() => {
-                  setShowEmojiMenu(!showEmojiMenu);
-                  setShowAttachMenu(false);
-                }}
-                aria-label="Emojis"
-              >
-                😊
-              </button>
-              <button
-                className="wa-icon-btn"
-                title="Adjuntar archivo o documento"
-                onClick={() => {
-                  setShowAttachMenu(!showAttachMenu);
-                  setShowEmojiMenu(false);
-                }}
-                aria-label="Adjuntar"
-              >
-                <Icon name="paperclip" size={20} />
-              </button>
-            </div>
-
-            <div className="wa-input-pill">
-              <input
-                type="text"
-                placeholder="Escribe un mensaje"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-              />
-            </div>
-
-            {inputText.trim() ? (
-              <button
-                className="wa-send-btn"
-                onClick={() => handleSend()}
-                title="Enviar mensaje"
-                aria-label="Enviar"
-              >
-                <Icon name="send" size={19} />
-              </button>
-            ) : (
-              <button
-                className="wa-mic-btn"
-                onClick={() => setToastMsg("Mensaje de voz: mantén presionado para grabar")}
-                title="Mensaje de voz"
-                aria-label="Mensaje de voz"
-              >
-                <Icon name="mic" size={20} />
-              </button>
-            )}
-          </footer>
         </section>
       </div>
 
