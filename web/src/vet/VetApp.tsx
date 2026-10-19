@@ -102,6 +102,16 @@ function VetShell({ path, children }: { path: string; children: ReactNode }) {
   return <div className="app-shell v-shell">
     <aside className={`sidebar ${menu ? "is-open" : ""}`}>
       <div className="sidebar__head"><Logo to="/vet/dashboard"/><Button variant="icon" icon="close" onClick={() => setMenu(false)} ariaLabel="Cerrar menú" className="sidebar__close"/></div>
+      <button
+        type="button"
+        className="sidebar__profile"
+        onClick={() => { go("/vet/profile"); setMenu(false); }}
+        title="Ver mi perfil profesional"
+        aria-label="Ir a mi perfil profesional"
+      >
+        <div className="avatar">{initials}</div>
+        <div><strong>{displayName}</strong><span>{sub}</span></div>
+      </button>
       <nav className="sidebar__nav" aria-label="Navegación clínica">
         <span className="v-nav-label">Acciones clínicas</span>
         {clinical.map(item)}

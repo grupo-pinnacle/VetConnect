@@ -44,7 +44,8 @@ p { color: var(--ink-soft); line-height: 1.6; }
 .logo { display: inline-flex; padding: 0; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font-size: 19px; font-weight: 800; letter-spacing: -.04em; }
 .logo__mark { display: grid; width: 37px; height: 37px; place-items: center; border-radius: 12px 12px 12px 4px; background: var(--teal); color: var(--white); }
 .sidebar__close { display: none !important; }
-.sidebar__profile { display: flex; margin-bottom: 22px; padding: 15px 12px; align-items: center; gap: 11px; border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius-sm); background: rgba(255,255,255,.05); }
+.sidebar__profile { display: flex; width: 100%; margin-bottom: 22px; padding: 15px 12px; align-items: center; gap: 11px; border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius-sm); background: rgba(255,255,255,.05); color: inherit; text-align: left; cursor: pointer; transition: background 0.18s ease, border-color 0.18s ease; }
+.sidebar__profile:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.25); }
 .avatar { display: grid; width: 39px; height: 39px; flex: none; place-items: center; border-radius: 50%; background: #f5d5aa; color: var(--ink); font-size: 12px; font-weight: 800; }
 .avatar--small { width: 34px; height: 34px; }
 .sidebar__profile strong, .sidebar__profile span { display: block; }

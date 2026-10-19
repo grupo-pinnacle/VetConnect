@@ -161,6 +161,16 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
   return <div className="app-shell">
     <aside className={`sidebar ${menu ? "is-open" : ""}`}>
       <div className="sidebar__head"><Logo/><Button variant="icon" icon="close" onClick={() => setMenu(false)} ariaLabel="Cerrar menú" className="sidebar__close"/></div>
+      <button
+        type="button"
+        className="sidebar__profile"
+        onClick={() => { go("/client/profile"); setMenu(false); }}
+        title="Ver mi perfil"
+        aria-label="Ir a mi perfil"
+      >
+        <div className="avatar">{initials}</div>
+        <div><strong>{displayName}</strong><span>{roleName}</span></div>
+      </button>
       <nav className="sidebar__nav" aria-label="Navegación principal">
         {routes.map((item) => <button key={item.path} className={`nav-item ${path.startsWith(item.path) ? "is-active" : ""}`} onClick={() => { go(item.path); setMenu(false); }}><Icon name={item.icon}/><span>{item.label}</span></button>)}
       </nav>
