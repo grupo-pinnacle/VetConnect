@@ -8,6 +8,9 @@ const controller = new PrescriptionsController();
 // Public QR verification endpoint for third-party pharmacies / official scans
 router.get('/prescriptions/:id', controller.getByIdPublic);
 
+// Authenticated client/user prescriptions listing
+router.get('/prescriptions', authenticate, controller.getMyPrescriptions);
+
 // Authenticated creation of official digital prescriptions
 router.post('/consultations/:id/prescriptions', authenticate, controller.create);
 

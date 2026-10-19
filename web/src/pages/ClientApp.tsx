@@ -2401,13 +2401,126 @@ function NotificationsPage() {
 
 function PrescriptionsPage() {
   const [active, setActive] = useState("Activas");
-  return <>
-    <PageHeader eyebrow="Indicaciones médicas" title="Recetas" description="Consultá tratamientos e indicaciones emitidas por tus veterinarios."/>
-    <Tabs tabs={["Activas", "Anteriores"]} active={active} onChange={setActive}/>
-    <div className="panel">
-      <EmptyState icon="file" title="No tenés recetas en esta sección." text="Cuando un veterinario emita una receta o plan de tratamiento para tus mascotas, aparecerá acá."/>
-    </div>
-  </>;
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    api
+      .get("/api/prescriptions")
+      .then((res) => {
+        if (isMounted && res.data?.data) {
+          setPrescriptions(res.data.data);
+        }
+      })
+      .catch((err) => {
+        console.warn("Error fetching client prescriptions:", err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Indicaciones médicas"
+        title="Recetas"
+        description="Consultá tratamientos e indicaciones oficiales emitidas por tus veterinarios."
+      />
+      <Tabs tabs={["Activas", "Anteriores"]} active={active} onChange={setActive} />
+      
+      {loading ? (
+        <div className="panel" style={{ textAlign: "center", padding: "40px" }}>
+          <p>Cargando recetas médicas...</p>
+        </div>
+      ) : prescriptions.length === 0 ? (
+        <div className="panel">
+          <EmptyState
+            icon="file"
+            title="No tenés recetas en esta sección."
+            text="Cuando un veterinario emita una receta o plan de tratamiento para tus mascotas, aparecerá acá y la recibirás por correo."
+          />
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: "16px", marginTop: "16px" }}>
+          {prescriptions.map((rx) => {
+            const petName = rx.consultation?.pet?.name || "Mascota";
+            const vetName = rx.consultation?.vet
+              ? `Dr. ${rx.consultation.vet.firstName} ${rx.consultation.vet.lastName || ""}`
+              : "Veterinario matriculado";
+            const dateStr = new Date(rx.createdAt).toLocaleDateString("es-AR", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
+
+            return (
+              <div
+                key={rx.id}
+                className="panel"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "20px",
+                  borderRadius: "16px",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 800,
+                      color: "#315f5d",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {petName} · {dateStr}
+                  </span>
+                  <h3 style={{ margin: "6px 0 4px", fontSize: "18px", color: "var(--foreground)" }}>
+                    {rx.medication}
+                  </h3>
+                  <p style={{ margin: 0, fontSize: "14px", color: "var(--muted)" }}>
+                    {rx.dosage} · Cada {rx.frequency} por {rx.durationDays} días
+                  </p>
+                  <small style={{ display: "block", marginTop: "6px", color: "#648482" }}>
+                    Emitida por {vetName}
+                  </small>
+                </div>
+                <div>
+                  <a
+                    href={rx.verifyUrl || `/prescriptions/${rx.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="button button--secondary"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 16px",
+                      borderRadius: "10px",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      backgroundColor: "#183c3a",
+                      color: "#ffffff",
+                    }}
+                  >
+                    Ver Receta y QR
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
 }
 
 type ClinicalTriageTier = "ROJO" | "AMARILLO" | "VERDE";

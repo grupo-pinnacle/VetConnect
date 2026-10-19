@@ -51,14 +51,35 @@ export async function ensureDatabaseSchema(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_audit_log_consultation_created 
         ON consultation_audit_log (consultation_id, created_at DESC);
     `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        code_hash TEXT NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS idx_password_reset_email_exp 
+        ON password_reset_tokens (email, expires_at);
+    `);
   } catch (err) {
     console.warn('[Schema Sync] Database schema self-check notice:', err);
   }
 }
 
+import { notificationsScheduler } from './jobs/notifications.scheduler';
+
 const server = app.listen(PORT, async () => {
   console.log(`🚀 VetConnect Backend Server running on port ${PORT}`);
   await ensureDatabaseSchema();
+  if (process.env.NODE_ENV !== 'test') {
+    notificationsScheduler.start();
+  }
 });
 
 const io = initializeSocketServer(server);

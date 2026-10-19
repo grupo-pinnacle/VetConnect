@@ -56,11 +56,52 @@ export function ProfilePage() {
   const [state, setState] = useState<"idle" | "saving" | "success" | "error">("idle");
   const update = (key: keyof typeof draft, value: string) => { setDraft({ ...draft, [key]: value }); if (state === "error") setState("idle"); };
   const cancel = () => { setDraft(profile); setEditing(false); setState("idle"); };
+  const [photoUrl, setPhotoUrl] = useState<string | null>(user?.photoUrl || null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const uploadRes = await api.post("/api/media", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const uploadedUrl = uploadRes.data?.data?.url || uploadRes.data?.data?.localPath;
+      if (uploadedUrl) {
+        await api.patch("/api/users/profile", { photoUrl: uploadedUrl });
+        setPhotoUrl(uploadedUrl);
+        notify("Foto de perfil actualizada correctamente.");
+      }
+    } catch (err) {
+      console.warn("Error uploading vet avatar:", err);
+      // Fallback a Base64 / Data URL local si el backend media está en storage local
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        try {
+          await api.patch("/api/users/profile", { photoUrl: base64 });
+          setPhotoUrl(base64);
+          notify("Foto de perfil actualizada.");
+        } catch {
+          notify("No se pudo guardar la fotografía.");
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const save = async () => {
     if (!draft.name.trim() || !draft.email.trim() || !draft.jurisdiction.trim()) { setState("error"); return; }
     setState("saving");
     try {
-      await api.patch('/api/users/profile', { bio: draft.bio });
+      await api.patch('/api/users/profile', { bio: draft.bio, photoUrl });
     } catch (err) {
       console.warn("Backend profile save notice:", err);
     }
@@ -77,8 +118,30 @@ export function ProfilePage() {
     {state === "success" && <Alert tone="success" title="Perfil actualizado.">Los datos se guardaron correctamente.</Alert>}
     {state === "error" && <Alert tone="error" title="Revisá los campos señalados.">Nombre, jurisdicción y email profesional son obligatorios.</Alert>}
     <div className="profile-grid v-profile">
-      <section className="panel profile-card"><div className="profile-avatar">{initials}</div><h2>Dr. {profile.name}</h2><p>Clínica general · Animales de compañía</p><Status>Matrícula {license}</Status>{editing && <Button variant="soft" icon="image" onClick={() => notify("La carga de foto está disponible desde la app.")}>Cambiar fotografía</Button>}
-        <div className="v-chips">{specialties.map((s) => <span className="v-chip" key={s}>{s}</span>)}</div></section>
+      <section className="panel profile-card">
+        <div
+          className="profile-avatar"
+          style={{
+            backgroundImage: photoUrl ? `url(${photoUrl})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          {!photoUrl && initials}
+        </div>
+        <h2>Dr. {profile.name}</h2>
+        <p>Clínica general · Animales de compañía</p>
+        <Status>Matrícula {license}</Status>
+        
+        <div style={{ marginTop: "12px" }}>
+          <label className="button button--secondary" style={{ cursor: "pointer", display: "inline-block", padding: "8px 14px", borderRadius: "10px", fontSize: "13px" }}>
+            {uploadingPhoto ? "Subiendo…" : photoUrl ? "Cambiar foto" : "Subir foto obligatoria"}
+            <input type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
+          </label>
+        </div>
+
+        <div className="v-chips">{specialties.map((s) => <span className="v-chip" key={s}>{s}</span>)}</div>
+      </section>
       <div className="v-stack">
         <section className="panel"><div className="panel__heading"><div><span className="eyebrow">Datos profesionales</span><h2>Información</h2></div></div>
           <div className="form-grid"><Field label="Nombre" value={editing ? draft.name : profile.name} editing={editing} onChange={(value) => update("name", value)} error={state === "error" && !draft.name.trim() ? "Ingresá el nombre profesional." : undefined}/><Field label="Matrícula" value={license} editing={false}/><Field label="Jurisdicción" value={editing ? draft.jurisdiction : profile.jurisdiction} editing={editing} onChange={(value) => update("jurisdiction", value)} error={state === "error" && !draft.jurisdiction.trim() ? "Ingresá la jurisdicción." : undefined}/><Field label="Experiencia" value={editing ? draft.experience : profile.experience} editing={editing} onChange={(value) => update("experience", value)}/><Field label="Especialidades" value={editing ? draft.specialties : profile.specialties} editing={editing} onChange={(value) => update("specialties", value)}/></div>

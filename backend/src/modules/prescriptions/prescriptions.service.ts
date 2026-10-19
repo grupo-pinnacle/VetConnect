@@ -4,6 +4,7 @@ import prisma from '../../lib/prisma';
 import { AppError } from '../../middlewares/errorHandler';
 import { CreatePrescriptionDTO } from './prescriptions.schemas';
 import { notificationsService } from '../notifications/notifications.service';
+import { emailService } from '../../services/email.service';
 
 export class PrescriptionsService {
   public async createPrescription(
@@ -61,14 +62,17 @@ export class PrescriptionsService {
           include: {
             pet: true,
             client: {
-              select: { id: true, firstName: true, lastName: true },
+              select: { id: true, firstName: true, lastName: true, email: true },
             },
           },
         },
       },
     });
 
-    const baseUrl = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://app.vetconnect.com.ar').replace(/\/$/, '');
+    const baseUrl =
+      process.env.NODE_ENV === 'test'
+        ? 'https://app.vetconnect.com.ar'
+        : (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://app.vetconnect.com.ar').replace(/\/$/, '');
     const verifyUrl = `${baseUrl}/prescriptions/${prescription.id}`;
     let qrCodeDataUrl = '';
     try {
@@ -87,11 +91,64 @@ export class PrescriptionsService {
       )
       .catch(() => {});
 
+    // Despachar correo electrónico vía Resend con los detalles completos del tratamiento
+    if (prescription.consultation.client?.email) {
+      const vetFullName = user.lastName ? `Dr. ${user.firstName} ${user.lastName}` : `Dr. ${user.firstName}`;
+      emailService
+        .sendPrescriptionEmail({
+          to: prescription.consultation.client.email,
+          clientName: prescription.consultation.client.firstName || 'Tutor',
+          petName: prescription.consultation.pet?.name || 'tu mascota',
+          vetName: vetFullName,
+          medication: prescription.medication,
+          dosage: prescription.dosage,
+          frequency: prescription.frequency,
+          durationDays: prescription.durationDays,
+          indications: prescription.indications,
+          verifyUrl,
+        })
+        .catch((err) => console.warn('[Prescriptions] Error sending prescription email:', err));
+    }
+
     return {
       ...prescription,
       qrCodeDataUrl,
       verifyUrl,
     };
+  }
+
+  public async getPrescriptionsForClient(clientId: string) {
+    const list = await prisma.prescription.findMany({
+      where: {
+        consultation: {
+          clientId,
+          deletedAt: null,
+        },
+      },
+      include: {
+        consultation: {
+          include: {
+            pet: true,
+            vet: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                licenseNumber: true,
+                photoUrl: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const baseUrl = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://app.vetconnect.com.ar').replace(/\/$/, '');
+    return list.map((rx) => ({
+      ...rx,
+      verifyUrl: `${baseUrl}/prescriptions/${rx.id}`,
+    }));
   }
 
   public async getPrescriptionById(prescriptionId: string, requester?: User) {

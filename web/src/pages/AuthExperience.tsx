@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Icon, Logo } from "./Landing";
 import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 import "../styles/auth.css";
 
 type AuthRoute =
@@ -732,30 +733,86 @@ function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
 }
 
 function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const submit = (event: FormEvent) => {
+  // Paso 1: Enviar correo con el código de 6 dígitos
+  const handleRequestCode = async (event: FormEvent) => {
     event.preventDefault();
     if (!isValidEmail(email)) {
       setError("Ingresá un email válido.");
       return;
     }
     setLoading(true);
-    window.setTimeout(() => {
+    setError("");
+    try {
+      await api.post("/api/auth/forgot-password", { email });
+      setStep(2);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || "Error al solicitar el código.");
+    } finally {
       setLoading(false);
-      setSent(true);
-    }, 900);
+    }
   };
 
-  if (sent) {
+  // Paso 2: Verificar el código de 6 dígitos
+  const handleVerifyCode = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!code || code.trim().length !== 6) {
+      setError("Ingresá el código numérico de 6 dígitos.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      await api.post("/api/auth/verify-reset-code", { email, code: code.trim() });
+      setStep(3);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || "El código ingresado es incorrecto o ha expirado.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Paso 3: Guardar la nueva contraseña
+  const handleResetPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    if (newPassword.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      await api.post("/api/auth/reset-password", {
+        email,
+        code: code.trim(),
+        newPassword,
+      });
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || "Error al restablecer la contraseña.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
     return (
       <SuccessState
-        title="Revisá tu correo"
-        copy="Si existe una cuenta asociada a este email, recibirás instrucciones para recuperar el acceso."
-        action="Volver al inicio de sesión"
+        title="Contraseña actualizada"
+        copy="Tu clave de acceso ha sido restablecida correctamente. Ya podés ingresar con tu nueva contraseña."
+        action="Iniciar sesión"
         onContinue={() => navigate("/login")}
       />
     );
@@ -763,21 +820,102 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
 
   return (
     <>
-      <AuthHeader title="Recuperá tu acceso" copy="Te enviaremos instrucciones para restablecer tu contraseña." />
-      <form className="auth-form" onSubmit={submit} noValidate>
-        <Field
-          label="Email"
-          name="email"
-          type="email"
-          placeholder="tu@email.com"
-          value={email}
-          error={error}
-          autoComplete="email"
-          onChange={(event) => { setEmail(event.target.value); setError(""); }}
-        />
-        <SubmitButton loading={loading}>Enviar instrucciones</SubmitButton>
-      </form>
-      <p className="auth-switch"><AuthLink to="/login" navigate={navigate}>← Volver a ingresar</AuthLink></p>
+      <AuthHeader
+        title={
+          step === 1
+            ? "Recuperá tu acceso"
+            : step === 2
+            ? "Ingresá tu código"
+            : "Creá tu nueva contraseña"
+        }
+        copy={
+          step === 1
+            ? "Ingresá tu Gmail y te enviaremos un código de seguridad para restablecer tu contraseña."
+            : step === 2
+            ? `Enviamos un código de 6 dígitos a ${email}. Revisá tu bandeja de entrada o spam.`
+            : "Definí una contraseña segura de al menos 8 caracteres."
+        }
+      />
+
+      {error && <Alert variant="error" title="Atención">{error}</Alert>}
+
+      {step === 1 && (
+        <form className="auth-form" onSubmit={handleRequestCode} noValidate>
+          <Field
+            label="Email"
+            name="email"
+            type="email"
+            placeholder="tu@gmail.com"
+            value={email}
+            error={error ? " " : undefined}
+            autoComplete="email"
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError("");
+            }}
+          />
+          <SubmitButton loading={loading}>Enviar al mail</SubmitButton>
+        </form>
+      )}
+
+      {step === 2 && (
+        <form className="auth-form" onSubmit={handleVerifyCode} noValidate>
+          <Field
+            label="Código de 6 dígitos"
+            name="code"
+            type="text"
+            placeholder="123456"
+            value={code}
+            error={error ? " " : undefined}
+            autoComplete="one-time-code"
+            onChange={(event) => {
+              const val = event.target.value.replace(/\D/g, "").slice(0, 6);
+              setCode(val);
+              setError("");
+            }}
+          />
+          <SubmitButton loading={loading}>Verificar código</SubmitButton>
+          <button
+            type="button"
+            className="back-link"
+            style={{ margin: "12px auto 0", display: "inline-block", background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}
+            onClick={() => {
+              setStep(1);
+              setError("");
+            }}
+          >
+            ← Cambiar de email
+          </button>
+        </form>
+      )}
+
+      {step === 3 && (
+        <form className="auth-form" onSubmit={handleResetPassword} noValidate>
+          <PasswordField
+            label="Nueva contraseña"
+            name="newPassword"
+            value={newPassword}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setError("");
+            }}
+          />
+          <PasswordField
+            label="Confirmar nueva contraseña"
+            name="confirmPassword"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setError("");
+            }}
+          />
+          <SubmitButton loading={loading}>Guardar nueva contraseña</SubmitButton>
+        </form>
+      )}
+
+      <p className="auth-switch">
+        <AuthLink to="/login" navigate={navigate}>← Volver a ingresar</AuthLink>
+      </p>
     </>
   );
 }

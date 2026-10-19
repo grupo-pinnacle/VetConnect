@@ -1,6 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
-import { registerSchema, loginSchema, refreshSchema } from './auth.schemas';
+import {
+  registerSchema,
+  loginSchema,
+  refreshSchema,
+  forgotPasswordSchema,
+  verifyResetCodeSchema,
+  resetPasswordSchema,
+} from './auth.schemas';
+import { passwordResetService } from './passwordReset.service';
 import { AuthenticatedRequest } from './auth.middleware';
 import { io } from '../../realtime/socket.server';
 
@@ -149,6 +157,45 @@ export class AuthController {
         data: {
           user: req.user ? AuthService.sanitizeUser(req.user) : null,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const validated = forgotPasswordSchema.parse(req.body);
+      await passwordResetService.requestReset(validated.email);
+      res.status(200).json({
+        success: true,
+        message: 'Si el correo existe en nuestro sistema, recibirás un código de recuperación en breve.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public verifyResetCode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const validated = verifyResetCodeSchema.parse(req.body);
+      await passwordResetService.verifyCode(validated.email, validated.code);
+      res.status(200).json({
+        success: true,
+        message: 'Código verificado correctamente.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const validated = resetPasswordSchema.parse(req.body);
+      await passwordResetService.resetPassword(validated.email, validated.code, validated.newPassword);
+      res.status(200).json({
+        success: true,
+        message: 'Tu contraseña ha sido restablecida exitosamente. Ya podés iniciar sesión.',
       });
     } catch (error) {
       next(error);

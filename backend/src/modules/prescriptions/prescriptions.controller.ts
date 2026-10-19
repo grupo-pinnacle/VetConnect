@@ -57,4 +57,16 @@ export class PrescriptionsController {
       next(error);
     }
   };
+
+  public getMyPrescriptions = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const prescriptions = await prescriptionsService.getPrescriptionsForClient(req.user!.id);
+      res.status(200).json({
+        success: true,
+        data: prescriptions,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

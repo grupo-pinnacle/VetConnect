@@ -11,4 +11,9 @@ router.post('/refresh', controller.refresh);
 router.post('/logout', authenticate, controller.logout);
 router.get('/me', authenticate, controller.me);
 
+// Password recovery routes
+router.post('/forgot-password', controller.forgotPassword);
+router.post('/verify-reset-code', controller.verifyResetCode);
+router.post('/reset-password', controller.resetPassword);
+
 export default router;
