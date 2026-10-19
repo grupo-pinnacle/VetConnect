@@ -20,7 +20,6 @@ const routes = [
   { label: "Mensajes", path: "/client/messages", icon: "message" as IconName },
   { label: "Recetas", path: "/client/prescriptions", icon: "file" as IconName },
   { label: "Notificaciones", path: "/client/notifications", icon: "bell" as IconName },
-  { label: "Mi perfil", path: "/client/profile", icon: "user" as IconName },
 ];
 
 const mobileRoutes = [
@@ -162,7 +161,6 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
   return <div className="app-shell">
     <aside className={`sidebar ${menu ? "is-open" : ""}`}>
       <div className="sidebar__head"><Logo/><Button variant="icon" icon="close" onClick={() => setMenu(false)} ariaLabel="Cerrar menú" className="sidebar__close"/></div>
-      <div className="sidebar__profile"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{roleName}</span></div></div>
       <nav className="sidebar__nav" aria-label="Navegación principal">
         {routes.map((item) => <button key={item.path} className={`nav-item ${path.startsWith(item.path) ? "is-active" : ""}`} onClick={() => { go(item.path); setMenu(false); }}><Icon name={item.icon}/><span>{item.label}</span></button>)}
       </nav>
