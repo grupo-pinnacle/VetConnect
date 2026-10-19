@@ -921,7 +921,20 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
 }
 
 export default function AuthExperience() {
+  const { user, loading } = useAuth();
   const [route, setRoute] = useState<AuthRoute>(() => normalizeRoute(window.location.pathname));
+
+  useEffect(() => {
+    if (!loading && user && (route === "/login" || route === "/register")) {
+      const target =
+        user.role === "VET"
+          ? "/vet/dashboard"
+          : user.role === "ADMIN"
+          ? "/admin/dashboard"
+          : "/client/dashboard";
+      window.location.replace(target);
+    }
+  }, [user, loading, route]);
 
   useEffect(() => {
     const handlePopState = () => setRoute(normalizeRoute(window.location.pathname));

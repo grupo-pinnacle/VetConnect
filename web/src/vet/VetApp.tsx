@@ -85,6 +85,7 @@ function VetShell({ path, children }: { path: string; children: ReactNode }) {
   const { queue, unread, followUps } = useVet();
   const { user, logout } = useAuth();
   const [menu, setMenu] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const initials = user ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "VC" : "VC";
   const displayName = user ? `Dr. ${user.firstName || ""} ${user.lastName || ""}`.trim() : "Profesional Veterinario";
   const sub = user?.licenseNumber ? `Clínica general · MP ${user.licenseNumber}` : (user?.role === "VET" ? "Clínica general" : "Veterinario");
@@ -127,7 +128,65 @@ function VetShell({ path, children }: { path: string; children: ReactNode }) {
         <AvailabilityControl/>
         <NotificationsPop/>
         <button className="icon-button v-topbar__msgs" onClick={() => go("/vet/messages")} aria-label={`Mensajes${unread ? `, ${unread} sin leer` : ""}`}><Icon name="message"/>{unread > 0 && <b className="v-count">{unread}</b>}</button>
-        <button className="user-menu" onClick={() => go("/vet/profile")} aria-label="Mi perfil profesional"><span className="avatar avatar--small">{initials}</span><span>{shortName}</span><Icon name="chevron" size={15}/></button>
+        <div className="user-menu-wrapper">
+          <button
+            className="user-menu"
+            onClick={() => setUserMenuOpen((prev) => !prev)}
+            aria-expanded={userMenuOpen}
+            aria-label="Mi perfil profesional"
+          >
+            <span className="avatar avatar--small">{initials}</span>
+            <span>{shortName}</span>
+            <Icon name="chevron" size={15}/>
+          </button>
+          {userMenuOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 90 }}
+                onClick={() => setUserMenuOpen(false)}
+              />
+              <div className="user-menu-dropdown">
+                <div className="user-menu-dropdown__header">
+                  <strong>{displayName}</strong>
+                  <span>{user?.email || "Veterinario"}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    go("/vet/profile");
+                  }}
+                >
+                  <Icon name="user"/>
+                  <span>Mi perfil profesional</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    go("/vet/dashboard");
+                  }}
+                >
+                  <Icon name="calendar"/>
+                  <span>Consola clínica</span>
+                </button>
+                <button
+                  type="button"
+                  className="is-danger"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout().then(() => {
+                      window.location.href = "/login";
+                    });
+                  }}
+                >
+                  <Icon name="close"/>
+                  <span>Cerrar sesión</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </header>
       <main className="content content--wide">{children}</main>
     </div>

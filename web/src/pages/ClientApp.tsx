@@ -128,6 +128,7 @@ function mapBackendConsultation(c: BackendConsultation): ClientViewConsultation 
 
 function AppShell({ children, path }: { children: ReactNode; path: string }) {
   const [menu, setMenu] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
 
   const notificationsQuery = useQuery({
@@ -190,7 +191,65 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
         >
           <Icon name="bell"/>
         </button>
-        <button className="user-menu" onClick={() => go("/client/profile")}><span className="avatar avatar--small">{initials}</span><span>{firstName}</span><Icon name="chevron" size={15}/></button>
+        <div className="user-menu-wrapper">
+          <button
+            className="user-menu"
+            onClick={() => setUserMenuOpen((prev) => !prev)}
+            aria-expanded={userMenuOpen}
+            aria-label="Menú de usuario"
+          >
+            <span className="avatar avatar--small">{initials}</span>
+            <span>{firstName}</span>
+            <Icon name="chevron" size={15}/>
+          </button>
+          {userMenuOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 90 }}
+                onClick={() => setUserMenuOpen(false)}
+              />
+              <div className="user-menu-dropdown">
+                <div className="user-menu-dropdown__header">
+                  <strong>{displayName}</strong>
+                  <span>{user?.email || roleName}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    go("/client/profile");
+                  }}
+                >
+                  <Icon name="user"/>
+                  <span>Mi perfil</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    go("/client/settings");
+                  }}
+                >
+                  <Icon name="settings"/>
+                  <span>Configuración</span>
+                </button>
+                <button
+                  type="button"
+                  className="is-danger"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout().then(() => {
+                      window.location.href = "/login";
+                    });
+                  }}
+                >
+                  <Icon name="close"/>
+                  <span>Cerrar sesión</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </header>
       <main className="content">{children}</main>
     </div>
@@ -2985,9 +3044,10 @@ function ProfilePage() {
 
 function SettingsPage() {
   const [toggles, setToggles] = useState([true,true,false,true]);
+  const { logout } = useAuth();
   return <>
     <PageHeader eyebrow="Preferencias" title="Configuración" description="Elegí cómo querés usar VetConnect y recibir novedades."/>
-    <div className="settings-layout"><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Avisos</span><h2>Notificaciones</h2></div></div>{[["Recordatorios de consultas","Avisos antes de cada turno."],["Nuevos mensajes","Cuando un veterinario te escriba."],["Novedades de VetConnect","Información y consejos de cuidado."],["Recetas y documentos","Cuando haya nuevos archivos disponibles."]].map((item,i) => <div className="setting-row" key={item[0]}><div><strong>{item[0]}</strong><p>{item[1]}</p></div><button role="switch" aria-checked={toggles[i]} className={`switch ${toggles[i] ? "is-on" : ""}`} onClick={() => setToggles(toggles.map((v,j) => i === j ? !v : v))}><span/></button></div>)}</section><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Cuenta</span><h2>Privacidad y acceso</h2></div></div><button className="settings-link"><span><Icon name="shield"/><span><strong>Cambiar contraseña</strong><small>Actualizá tu clave de acceso.</small></span></span><Icon name="chevron"/></button><button className="settings-link"><span><Icon name="file"/><span><strong>Privacidad</strong><small>Revisá cómo cuidamos tus datos.</small></span></span><Icon name="chevron"/></button></section></div>
+    <div className="settings-layout"><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Avisos</span><h2>Notificaciones</h2></div></div>{[["Recordatorios de consultas","Avisos antes de cada turno."],["Nuevos mensajes","Cuando un veterinario te escriba."],["Novedades de VetConnect","Información y consejos de cuidado."],["Recetas y documentos","Cuando haya nuevos archivos disponibles."]].map((item,i) => <div className="setting-row" key={item[0]}><div><strong>{item[0]}</strong><p>{item[1]}</p></div><button role="switch" aria-checked={toggles[i]} className={`switch ${toggles[i] ? "is-on" : ""}`} onClick={() => setToggles(toggles.map((v,j) => i === j ? !v : v))}><span/></button></div>)}</section><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Cuenta</span><h2>Privacidad y acceso</h2></div></div><button className="settings-link"><span><Icon name="shield"/><span><strong>Cambiar contraseña</strong><small>Actualizá tu clave de acceso.</small></span></span><Icon name="chevron"/></button><button className="settings-link"><span><Icon name="file"/><span><strong>Privacidad</strong><small>Revisá cómo cuidamos tus datos.</small></span></span><Icon name="chevron"/></button><button className="settings-link" style={{ color: "var(--danger, #ae4d45)", marginTop: 12 }} onClick={() => logout().then(() => { window.location.href = "/login"; })}><span><Icon name="close"/><span><strong style={{ color: "var(--danger, #ae4d45)" }}>Cerrar sesión</strong><small>Finalizar tu sesión en este dispositivo de forma segura.</small></span></span><Icon name="chevron"/></button></section></div>
   </>;
 }
 

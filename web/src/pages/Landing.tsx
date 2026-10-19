@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const photos = {
   rabbit:
@@ -137,17 +138,39 @@ export function Logo({ light = false }: { light?: boolean }) {
 
 export function Button({
   children,
-  href = "#",
+  href,
+  onClick,
   variant = "primary",
   className = "",
+  style,
 }: {
   children: ReactNode;
   href?: string;
+  onClick?: (e: MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => void;
   variant?: "primary" | "secondary" | "cream" | "ghost";
   className?: string;
+  style?: CSSProperties;
 }) {
+  if (onClick && !href) {
+    return (
+      <button
+        type="button"
+        className={`button button--${variant} ${className}`}
+        onClick={onClick}
+        style={style}
+      >
+        <span>{children}</span>
+        {variant !== "ghost" && <Icon name="arrow" />}
+      </button>
+    );
+  }
   return (
-    <a className={`button button--${variant} ${className}`} href={href}>
+    <a
+      className={`button button--${variant} ${className}`}
+      href={href || "#"}
+      onClick={onClick}
+      style={style}
+    >
       <span>{children}</span>
       {variant !== "ghost" && <Icon name="arrow" />}
     </a>
@@ -241,9 +264,17 @@ const faqs = [
 ];
 
 export function Landing() {
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
+
+  const dashboardUrl =
+    user?.role === "VET"
+      ? "/vet/dashboard"
+      : user?.role === "ADMIN"
+      ? "/admin/dashboard"
+      : "/client/dashboard";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -265,8 +296,29 @@ export function Landing() {
             <a href="#preguntas">Preguntas frecuentes</a>
           </nav>
           <div className="site-header__actions">
-            <Button href="/login" variant="ghost">Ingresar</Button>
-            <Button href="/register">Comenzar consulta</Button>
+            {user ? (
+              <>
+                <Button href={dashboardUrl} variant="primary">
+                  Mi panel ({user.firstName || "Usuario"})
+                </Button>
+                <Button
+                  onClick={() => {
+                    logout().then(() => {
+                      window.location.href = "/login";
+                    });
+                  }}
+                  variant="ghost"
+                  style={{ color: "var(--danger, #ae4d45)" }}
+                >
+                  Cerrar sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button href="/login" variant="ghost">Ingresar</Button>
+                <Button href="/register">Comenzar consulta</Button>
+              </>
+            )}
           </div>
           <button
             className="menu-button"
@@ -288,7 +340,24 @@ export function Landing() {
             ].map(([label, href]) => (
               <a key={label} href={href} onClick={() => setMenuOpen(false)}>{label}<Icon name="arrow" /></a>
             ))}
-            <Button href="/register">Comenzar consulta</Button>
+            {user ? (
+              <>
+                <Button href={dashboardUrl}>Ir a mi panel</Button>
+                <Button
+                  onClick={() => {
+                    logout().then(() => {
+                      window.location.href = "/login";
+                    });
+                  }}
+                  variant="ghost"
+                  style={{ color: "var(--danger, #ae4d45)" }}
+                >
+                  Cerrar sesión
+                </Button>
+              </>
+            ) : (
+              <Button href="/register">Comenzar consulta</Button>
+            )}
           </nav>
         )}
       </header>
