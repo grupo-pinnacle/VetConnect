@@ -281,20 +281,23 @@ function ConsultationCard({ item }: { item: ClientViewConsultation }) {
 }
 
 function useClientData() {
+  const { user } = useAuth();
   const petsQuery = useQuery({
-    queryKey: ['pets'],
+    queryKey: ['pets', user?.id],
     queryFn: async () => {
       const res = await api.get<ApiResponse<BackendPet[]>>('/api/pets');
       return (res.data.success && res.data.data) ? res.data.data.map(mapBackendPet) : [];
     },
+    enabled: !!user,
   });
 
   const consultationsQuery = useQuery({
-    queryKey: ['consultations', 'mine'],
+    queryKey: ['consultations', 'mine', user?.id],
     queryFn: async () => {
       const res = await api.get<ApiResponse<BackendConsultation[]>>('/api/consultations/mine');
       return (res.data.success && res.data.data) ? res.data.data.map(mapBackendConsultation) : [];
     },
+    enabled: !!user,
   });
 
   const petsList = petsQuery.data ?? [];
