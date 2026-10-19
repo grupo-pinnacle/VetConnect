@@ -565,8 +565,10 @@ function TutorRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
       <SuccessState
         title="Tu cuenta está lista."
         copy="Ahora podés organizar la información de tu mascota y conectar con profesionales veterinarios."
-        action="Continuar"
-        onContinue={() => navigate("/login")}
+        action="Continuar a mi cuenta"
+        onContinue={() => {
+          window.location.href = "/client/dashboard";
+        }}
       />
     );
   }
@@ -674,7 +676,9 @@ function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
         title="Tu perfil fue creado."
         copy="Completá tu información profesional para comenzar a formar parte de VetConnect."
         action="Continuar con mi perfil"
-        onContinue={() => navigate("/login")}
+        onContinue={() => {
+          window.location.href = "/vet/dashboard";
+        }}
       />
     );
   }

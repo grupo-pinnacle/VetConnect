@@ -53,12 +53,26 @@ export class AuthController {
       const validated = loginSchema.parse(req.body);
       const { user, tokens } = await authService.login(validated);
 
-      // Notify and terminate any active sessions on other devices in real-time
+      // Notify and terminate any active sessions on OTHER devices in real-time
       if (io) {
-        io.to(`user:${user.id}`).emit('auth:session_terminated', {
-          reason: 'CONCURRENT_LOGIN',
-          message: 'Se ha iniciado sesión desde otro dispositivo. Tu sesión ha sido finalizada por seguridad.',
-        });
+        const rawDeviceId =
+          (req.headers['x-device-id'] as string) ||
+          (req.headers['x-device-id'] as string) ||
+          undefined;
+
+        if (rawDeviceId) {
+          io.to(`user:${user.id}`)
+            .except(`device:${rawDeviceId}`)
+            .emit('auth:session_terminated', {
+              reason: 'CONCURRENT_LOGIN',
+              message: 'Se ha iniciado sesión desde otro dispositivo. Tu sesión ha sido finalizada por seguridad.',
+            });
+        } else {
+          io.to(`user:${user.id}`).emit('auth:session_terminated', {
+            reason: 'CONCURRENT_LOGIN',
+            message: 'Se ha iniciado sesión desde otro dispositivo. Tu sesión ha sido finalizada por seguridad.',
+          });
+        }
       }
 
       setRefreshCookie(res, tokens.refreshToken);
