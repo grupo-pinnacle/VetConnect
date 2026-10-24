@@ -1,3 +1,5 @@
+> ⚠️ **Reconstrucción mobile v3 en curso (2026-10-12):** el espacio de trabajo y las decisiones vigentes están en `odd/mobile-v3/`. La fila 3 ("Sin TanStack Query") y el bridge WebView quedan revocados por los ADR M-03 y M-02. Este índice se reescribe en la fase F8.
+
 # 📱 VetConnect Mobile — Índice Maestro (SSOT)
 
 > **Precedencia (ADR-025).** Nivel 1 `backend/prisma/schema.prisma` + `backend/src/modules/` → Nivel 2 `01_TECH_REFERENCE_MOBILE.md` + `AGENT_CODING_SPEC_MOBILE.md` → Nivel 3 `docs/ARCHITECTURE.md` + `docs/DECISIONS.md` → Nivel 4 narrativa web/wireframes.

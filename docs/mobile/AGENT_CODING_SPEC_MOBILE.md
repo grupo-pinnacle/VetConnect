@@ -1,3 +1,5 @@
+> ⚠️ **Parcialmente reemplazado (2026-10-12):** durante la reconstrucción mobile v3 manda `odd/mobile-v3/CONTEXT.md`. Quedan revocados el bridge WebView de LiveKit (→ ADR M-02) y "sin TanStack Query" (→ ADR M-03). Este archivo se reescribe en la fase F8.
+
 # 📱 AGENT_CODING_SPEC_MOBILE — Contrato Canónico Ejecutable (Nivel 2)
 
 > Precedencia: este archivo + `01_TECH_REFERENCE_MOBILE.md` invalidan a `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/web/00-11`, `docs/SISTEMA_DE_DISENO.md` y `docs/SPEC.md` si hay conflicto (ADR-025).

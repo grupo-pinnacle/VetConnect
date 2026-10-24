@@ -1,3 +1,5 @@
+> ⛔ **SUPERSEDED (2026-10-12)** by the mobile v3 rebuild — see `odd/mobile-v3/CONTEXT.md`. Do not execute tasks from this file. Constraints "never TanStack Query" and "WebView bridge only" are revoked (ADR M-02, M-03).
+
 # Feature: mobile-completion
 
 > ODD feature document. Single source of task state for finishing the VetConnect mobile app

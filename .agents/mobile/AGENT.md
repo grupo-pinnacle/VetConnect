@@ -1,3 +1,5 @@
+> ⚠️ **Parcialmente reemplazado (2026-10-12):** durante la reconstrucción mobile v3 manda `odd/mobile-v3/CONTEXT.md`. Quedan revocados el bridge WebView de LiveKit (§1.1.3 → ADR M-02, LiveKit nativo) y la prohibición de TanStack Query (→ ADR M-03). Este archivo se reescribe en la fase F8.
+
 # 📱 AGENT.md — Agente Especialista en Mobile App Multiplataforma (Principal Mobile Architect)
 
 > **Nivel de Inteligencia & Cognición:** Claude Opus 5.5 / Principal Staff Mobile Engineer (Google L7 / Meta E7 Tier).  
