@@ -12,23 +12,33 @@ import { SPECIES_LIST, getBreedsForSpecies, getWeightAssessment, compressImageFi
 const VetApp = lazy(() => import("../vet/VetApp"));
 const CallRoom = lazy(() => import("../vet/CallRoom"));
 
-const routes = [
+export const routes = [
   { label: "Inicio", path: "/client/dashboard", icon: "home" as IconName },
   { label: "Mis mascotas", path: "/client/pets", icon: "paw" as IconName },
   { label: "Mis consultas", path: "/client/consultations", icon: "video" as IconName },
-  { label: "Agenda", path: "/client/appointments", icon: "calendar" as IconName },
   { label: "Mensajes", path: "/client/messages", icon: "message" as IconName },
   { label: "Recetas", path: "/client/prescriptions", icon: "file" as IconName },
   { label: "Notificaciones", path: "/client/notifications", icon: "bell" as IconName },
 ];
 
-const mobileRoutes = [
-  routes[0],
-  routes[1],
+export const mobileRoutes = [
+  routes[0], // Inicio (/client/dashboard)
+  routes[1], // Mis mascotas (/client/pets)
   { label: "Atención", path: "/client/triage", icon: "heart" as IconName },
-  routes[4],
-  routes[6],
+  routes[3], // Mensajes (/client/messages)
+  routes[2], // Mis consultas (/client/consultations) en lugar de Notificaciones
 ];
+
+export function isRouteActive(itemPath: string, currentPath: string): boolean {
+  if (!currentPath) return itemPath === "/client/dashboard";
+  if (itemPath === "/client/dashboard") {
+    return currentPath === "/" || currentPath === "/client" || currentPath === "/client/" || currentPath === "/client/dashboard";
+  }
+  if (itemPath === "/client/consultations") {
+    return currentPath.startsWith("/client/consultations") || currentPath.startsWith("/client/appointments");
+  }
+  return currentPath === itemPath || (itemPath !== "/client" && currentPath.startsWith(itemPath));
+}
 
 export interface ClientViewPet {
   id: string;
@@ -111,7 +121,7 @@ function mapBackendConsultation(c: BackendConsultation): ClientViewConsultation 
 }
 
 
-function AppShell({ children, path }: { children: ReactNode; path: string }) {
+export function AppShell({ children, path }: { children: ReactNode; path: string }) {
   const [menu, setMenu] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
@@ -153,12 +163,37 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
         onClick={() => { go("/client/profile"); setMenu(false); }}
         title="Ver mi perfil"
         aria-label="Ir a mi perfil"
+        data-testid="drawer-profile-card"
+        style={{
+          cursor: "pointer",
+          width: "100%",
+          textAlign: "left",
+          background: "transparent",
+          border: "none",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+        }}
       >
         <div className="avatar">{initials}</div>
         <div><strong>{displayName}</strong><span>{roleName}</span></div>
       </button>
       <nav className="sidebar__nav" aria-label="Navegación principal">
-        {routes.map((item) => <button key={item.path} className={`nav-item ${path.startsWith(item.path) ? "is-active" : ""}`} onClick={() => { go(item.path); setMenu(false); }}><Icon name={item.icon}/><span>{item.label}</span></button>)}
+        {routes.map((item) => {
+          const active = isRouteActive(item.path, path);
+          return (
+            <button
+              key={item.path}
+              className={`nav-item ${active ? "is-active" : ""}`}
+              onClick={() => { go(item.path); setMenu(false); }}
+              data-testid={`sidebar-nav-${item.path.split("/").pop()}`}
+              aria-current={active ? "page" : undefined}
+            >
+              <Icon name={item.icon}/>
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
       <div className="sidebar__support"><span className="eyebrow">¿Necesitás ayuda?</span><strong>Estamos para acompañarte.</strong><button onClick={() => go("/client/triage")}>Necesito atención <Icon name="arrow" size={16}/></button></div>
       <button className={`nav-item ${path === "/client/settings" ? "is-active" : ""}`} onClick={() => go("/client/settings")}><Icon name="settings"/><span>Configuración</span></button>
@@ -247,8 +282,25 @@ function AppShell({ children, path }: { children: ReactNode; path: string }) {
       </header>
       <main className="content">{children}</main>
     </div>
-    <nav className="mobile-nav" aria-label="Navegación móvil">
-      {mobileRoutes.map((item) => <button key={item.path} className={`${path.startsWith(item.path) ? "is-active" : ""} ${item.path === "/client/triage" ? "is-priority" : ""}`} onClick={() => go(item.path)}><Icon name={item.icon}/><span>{item.label.replace("Mis ", "")}</span></button>)}
+    <nav className="mobile-nav" aria-label="Navegación móvil" data-testid="mobile-bottom-nav">
+      {mobileRoutes.map((item) => {
+        const active = isRouteActive(item.path, path);
+        return (
+          <button
+            key={item.path}
+            className={`${active ? "is-active" : ""} ${item.path === "/client/triage" ? "is-priority" : ""}`}
+            onClick={() => go(item.path)}
+            data-testid={`mobile-nav-${item.path.split("/").pop()}`}
+            aria-current={active ? "page" : undefined}
+          >
+            <Icon name={item.icon}/>
+            <span>{(() => {
+              const cleaned = item.label.replace(/^Mis\s+/i, "");
+              return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+            })()}</span>
+          </button>
+        );
+      })}
     </nav>
   </div>;
 }
@@ -1398,18 +1450,25 @@ function PetDetail({ id }: { id: string }) {
   </>;
 }
 
-function ConsultationsPage() {
+export function ConsultationsPage({ initialTab = "Próximas" }: { initialTab?: string }) {
   const { consultations } = useClientData();
-  const [filter, setFilter] = useState("Próximas");
+  const [filter, setFilter] = useState(initialTab);
   const shown = filter === "Finalizadas" ? consultations.filter(c => c.status === "Finalizada")
     : filter === "En curso" ? consultations.filter(c => c.status === "Confirmada" || c.status === "Pendiente")
+    : filter === "Agenda" ? consultations
     : consultations;
 
   return <>
-    <PageHeader eyebrow="Atención veterinaria" title="Mis consultas" description="Seguí tus próximas consultas y revisá las anteriores." action={<Button onClick={() => go("/client/triage")}>Nueva consulta</Button>}/>
-    <Tabs tabs={["Próximas", "En curso", "Finalizadas"]} active={filter} onChange={setFilter}/>
-    {filter === "En curso" && shown[0] && <section className="active-call active-call--page"><div className="active-call__pulse"><Icon name="video"/></div><div><span className="eyebrow">En espera</span><h2>Tu consulta está en curso</h2><p>{`${shown[0].vet} se va a conectar en breve.`}</p></div><Button onClick={() => go(`/call/${shown[0].id}?from=client&state=waiting`)}>Entrar a la consulta</Button></section>}
-    {shown.length === 0 ? <div className="panel"><EmptyState icon="video" title="No hay consultas en esta sección" text="Podés solicitar una nueva consulta de telemedicina veterinaria cuando lo necesites." action="Nueva consulta"/></div> : <div className="consultation-list">{shown.map((item) => <ConsultationCard item={item} key={item.id}/>)}</div>}
+    <PageHeader eyebrow="Atención veterinaria" title="Mis consultas" description="Seguí tus próximas consultas, revisá las anteriores y organizá tus turnos." action={<Button onClick={() => go("/client/triage")}>Nueva consulta</Button>}/>
+    <Tabs tabs={["Próximas", "En curso", "Finalizadas", "Agenda"]} active={filter} onChange={setFilter}/>
+    {filter === "Agenda" ? (
+      <AppointmentsCalendar consultations={consultations} />
+    ) : (
+      <>
+        {filter === "En curso" && shown[0] && <section className="active-call active-call--page"><div className="active-call__pulse"><Icon name="video"/></div><div><span className="eyebrow">En espera</span><h2>Tu consulta está en curso</h2><p>{`${shown[0].vet} se va a conectar en breve.`}</p></div><Button onClick={() => go(`/call/${shown[0].id}?from=client&state=waiting`)}>Entrar a la consulta</Button></section>}
+        {shown.length === 0 ? <div className="panel"><EmptyState icon="video" title="No hay consultas en esta sección" text="Podés solicitar una nueva consulta de telemedicina veterinaria cuando lo necesites." action="Nueva consulta" onAction={() => go("/client/triage")}/></div> : <div className="consultation-list">{shown.map((item) => <ConsultationCard item={item} key={item.id}/>)}</div>}
+      </>
+    )}
   </>;
 }
 
@@ -1439,8 +1498,7 @@ function ConsultationDetail() {
   </>;
 }
 
-function AppointmentsPage() {
-  const { consultations } = useClientData();
+function AppointmentsCalendar({ consultations }: { consultations: ClientViewConsultation[] }) {
   const queryClient = useQueryClient();
   const [modal, setModal] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -1509,7 +1567,7 @@ function AppointmentsPage() {
   });
 
   return <>
-    <PageHeader eyebrow="Organizá tus turnos" title="Agenda" description="Consultas, controles y recordatorios para tus mascotas." action={<Button icon="plus" onClick={() => go("/client/triage")}>Reservar turno</Button>}/>
+    
     <div className="calendar-layout">
       <section className="panel calendar">
         <div className="calendar__head">
@@ -1656,6 +1714,10 @@ interface WAChatConversation {
   isPinned?: boolean;
   category: "vets" | "consults";
   messages: WAMessageItem[];
+}
+
+export function AppointmentsPage() {
+  return <ConsultationsPage initialTab="Agenda" />;
 }
 
 function MessagesPage() {
@@ -3243,7 +3305,7 @@ export default function ClientApp() {
     if (path.startsWith("/client/pets/")) return <PetDetail id={path.split("/").pop() || "milo"}/>;
     if (path === "/client/consultations") return <ConsultationsPage/>;
     if (path.startsWith("/client/consultations/")) return <ConsultationDetail/>;
-    if (path === "/client/appointments") return <AppointmentsPage/>;
+    if (path === "/client/appointments") return <ConsultationsPage initialTab="Agenda"/>;
     if (path === "/client/messages") return <MessagesPage/>;
     if (path === "/client/notifications") return <NotificationsPage/>;
     if (path === "/client/prescriptions") return <PrescriptionsPage/>;
