@@ -265,7 +265,8 @@ export type ClinicalSymptomKey =
   | 'deep_wound'
   | 'lethargy'
   | 'eye_injury'
-  | 'routine_checkup';
+  | 'routine_checkup'
+  | 'other';
 
 export type SymptomDuration =
   | 'LESS_THAN_2_HOURS'

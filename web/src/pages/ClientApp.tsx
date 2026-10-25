@@ -6,7 +6,7 @@ import api, { getAccessToken } from "../services/api";
 import { io } from "socket.io-client";
 import { getWsUrl } from "../vet/CallRoom";
 import type { ApiResponse, Pet as BackendPet, Consultation as BackendConsultation, Prescription as BackendPrescription } from "../types";
-import { parseConsultationNotes } from "../lib/consultationNotes";
+import { parseConsultationNotes, formatConsultationNotes } from "../lib/consultationNotes";
 import { SPECIES_LIST, getBreedsForSpecies, getWeightAssessment, compressImageFile } from "../data/petBreeds";
 
 const VetApp = lazy(() => import("../vet/VetApp"));
@@ -2652,10 +2652,11 @@ function evaluateClientTriage(symptom: string, timeframe: string): TriageTierInf
   };
 }
 
-function TriagePage() {
+export function TriagePage() {
   const { pets, petsLoading } = useClientData();
   const [step, setStep] = useState(0);
   const [symptom, setSymptom] = useState("");
+  const [customSymptom, setCustomSymptom] = useState("");
   const [selectedPetId, setSelectedPetId] = useState("");
   const [timeframe, setTimeframe] = useState("");
 
@@ -2670,7 +2671,11 @@ function TriagePage() {
     "Decaimiento o inapetencia",
     "Picazón, alergia o piel",
     "Control preventivo o consulta de rutina",
+    "Otro",
   ];
+
+  const isRoutine = symptom === "Control preventivo o consulta de rutina";
+  const effectiveSymptom = symptom === "Otro" ? customSymptom.trim() : symptom;
 
   // Guardrail: If client has 0 pets registered, block starting a triage
   if (!petsLoading && pets.length === 0) {
@@ -2699,25 +2704,36 @@ function TriagePage() {
     );
   }
 
-  const isStepValid = step === 0 ? Boolean(symptom) : step === 1 ? Boolean(selectedPetId) : Boolean(timeframe);
+  const isStepValid =
+    step === 0
+      ? (symptom === "Otro" ? Boolean(customSymptom.trim()) : Boolean(symptom))
+      : step === 1
+      ? Boolean(selectedPetId)
+      : Boolean(timeframe);
 
   if (step === 3) {
-    const evaluation = evaluateClientTriage(symptom, timeframe);
+    const evaluation = evaluateClientTriage(effectiveSymptom, timeframe);
     return (
       <TriageResult
         evaluation={evaluation}
-        symptom={symptom}
+        symptom={effectiveSymptom}
         petId={selectedPetId}
         timeframe={timeframe}
+        isRoutine={isRoutine}
         onRestart={() => {
           setStep(0);
           setSymptom("");
+          setCustomSymptom("");
           setSelectedPetId("");
           setTimeframe("");
         }}
+        onBack={() => setStep(isRoutine ? 1 : 2)}
       />
     );
   }
+
+  const totalSteps = isRoutine ? 2 : 3;
+  const currentStepNumber = step + 1;
 
   return (
     <div className="triage-page">
@@ -2726,8 +2742,8 @@ function TriagePage() {
         <button onClick={() => go("/client/dashboard")}><Icon name="close"/> Salir</button>
       </div>
       <div className="triage-progress">
-        <span style={{ width: `${(step + 1) * 33}%` }}/>
-        <small>Paso {step + 1} de 3 · Cerca de 60 segundos</small>
+        <span style={{ width: `${(currentStepNumber / totalSteps) * 100}%` }}/>
+        <small>Paso {currentStepNumber} de {totalSteps} · Cerca de 60 segundos</small>
       </div>
       <main className="triage-card">
         <span className="triage-icon">
@@ -2746,8 +2762,14 @@ function TriagePage() {
           {step === 0 && options.map((option) => (
             <button
               className={symptom === option ? "is-selected" : ""}
-              onClick={() => setSymptom(option)}
+              onClick={() => {
+                setSymptom(option);
+                if (option !== "Otro") {
+                  setCustomSymptom("");
+                }
+              }}
               key={option}
+              data-testid={`triage-option-${option.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
             >
               <span>{option}</span>
               {symptom === option && <Icon name="check"/>}
@@ -2758,6 +2780,7 @@ function TriagePage() {
               className={selectedPetId === pet.id ? "is-selected" : ""}
               onClick={() => setSelectedPetId(pet.id)}
               key={pet.id}
+              data-testid={`triage-pet-${pet.id}`}
             >
               <img src={pet.photo} alt={pet.name}/>
               <span>
@@ -2772,15 +2795,77 @@ function TriagePage() {
               className={timeframe === option ? "is-selected" : ""}
               onClick={() => setTimeframe(option)}
               key={option}
+              data-testid={`triage-timeframe-${option.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
             >
               <span>{option}</span>
               {timeframe === option && <Icon name="check"/>}
             </button>
           ))}
         </div>
+
+        {/* FEAT-01: Campo de texto obligatorio al seleccionar "Otro" */}
+        {step === 0 && symptom === "Otro" && (
+          <div style={{ marginTop: 16 }} data-testid="triage-custom-symptom-container">
+            <label
+              htmlFor="triage-custom-symptom"
+              style={{
+                display: "block",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--ink, #1e293b)",
+                marginBottom: 6,
+              }}
+            >
+              Describí qué le ocurre a tu mascota *
+            </label>
+            <textarea
+              id="triage-custom-symptom"
+              data-testid="triage-custom-symptom-input"
+              value={customSymptom}
+              onChange={(e) => setCustomSymptom(e.target.value)}
+              placeholder="Contanos los síntomas o el motivo de la consulta..."
+              rows={3}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: "1px solid var(--line, #cbd5e1)",
+                fontSize: 14,
+                fontFamily: "inherit",
+                resize: "none",
+                outline: "none",
+                boxSizing: "border-box",
+                background: "#fff",
+              }}
+            />
+          </div>
+        )}
+
         <div className="triage-actions">
-          {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)}>Volver</Button>}
-          <Button disabled={!isStepValid} onClick={() => setStep(step + 1)}>
+          {step > 0 && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (step === 3 && isRoutine) {
+                  setStep(1);
+                } else {
+                  setStep(step - 1);
+                }
+              }}
+            >
+              Volver
+            </Button>
+          )}
+          <Button
+            disabled={!isStepValid}
+            onClick={() => {
+              if (step === 1 && isRoutine) {
+                setStep(3); // BUG-03: Saltar paso de duración si es rutina
+              } else {
+                setStep(step + 1);
+              }
+            }}
+          >
             Continuar <Icon name="arrow" size={17}/>
           </Button>
         </div>
@@ -2792,18 +2877,22 @@ function TriagePage() {
   );
 }
 
-function TriageResult({
+export function TriageResult({
   evaluation,
   symptom,
   petId,
   timeframe,
+  isRoutine = false,
   onRestart,
+  onBack,
 }: {
   evaluation: TriageTierInfo;
   symptom: string;
   petId: string;
   timeframe: string;
+  isRoutine?: boolean;
   onRestart: () => void;
+  onBack?: () => void;
 }) {
   const [matched, setMatched] = useState(false);
   const [createdConsId, setCreatedConsId] = useState<string | null>(null);
@@ -2821,11 +2910,19 @@ function TriageResult({
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
+      // BUG-03: Formateo determinista de notas clínicas sin duración en consultas de rutina
+      const formattedNotes = formatConsultationNotes({
+        tier: evaluation.tier,
+        symptom,
+        timeframe,
+        isRoutine,
+      });
+
       const res = await api.post<ApiResponse<BackendConsultation>>('/api/consultations', {
         petId,
-        notes: `[Prioridad: ${evaluation.tier}] ${symptom} (${timeframe})`,
+        notes: formattedNotes,
         symptoms: [symptom || "Consulta general"],
-        duration: timeframe.includes("hora") ? "LESS_THAN_2_HOURS" : "HOURS_2_TO_12",
+        duration: isRoutine || timeframe.includes("hora") ? "LESS_THAN_2_HOURS" : "HOURS_2_TO_12",
       });
       if (res.data.success && res.data.data) {
         queryClient.invalidateQueries({ queryKey: ['consultations', 'mine'] });
@@ -2905,7 +3002,7 @@ function TriageResult({
           </Button>
           {isCritical && <Button variant="secondary" onClick={() => go("/client/dashboard")}>Buscar atención presencial inmediata</Button>}
         </div>
-        <button className="text-button" onClick={onRestart}>Revisar respuestas</button>
+        <button className="text-button" onClick={onBack || onRestart}>Volver y revisar respuestas</button>
         <small className="triage-disclaimer">VetConnect no reemplaza una guardia veterinaria presencial.</small>
       </main>
     </div>

@@ -36,6 +36,7 @@ const AVAILABLE_SYMPTOMS: SymptomChip[] = [
   { key: 'deep_wound', label: 'Herida o corte', icon: Bandage },
   { key: 'eye_injury', label: 'Problema en los ojos', icon: Eye },
   { key: 'routine_checkup', label: 'Control general / Dudas', icon: HelpCircle },
+  { key: 'other', label: 'Otro motivo / consulta', icon: HelpCircle },
 ];
 
 const DURATION_OPTIONS: Array<{ value: SymptomDuration; label: string }> = [
@@ -77,6 +78,11 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
     (key) => AVAILABLE_SYMPTOMS.find((s) => s.key === key)?.isCritical
   );
 
+  // BUG-03: When only routine checkup is selected, skip duration question
+  const isRoutineSelected =
+    selectedSymptoms.length > 0 &&
+    selectedSymptoms.every((s) => s === 'routine_checkup');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPetId) {
@@ -87,12 +93,17 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
       setFormError('Por favor describa los síntomas o seleccione al menos un signo clínico');
       return;
     }
+    // FEAT-01: 'other' requires explicit description
+    if (selectedSymptoms.includes('other') && !notes.trim()) {
+      setFormError('Por favor describa el motivo o síntoma en las notas para continuar');
+      return;
+    }
     setFormError(null);
     await onSubmit({
       petId: selectedPetId,
       notes: notes.trim(),
       symptoms: selectedSymptoms,
-      duration,
+      duration: isRoutineSelected ? 'LESS_THAN_2_HOURS' : duration,
     });
   };
 
@@ -229,30 +240,32 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
         </div>
       )}
 
-      {/* 3. Tiempo de Evolución */}
-      <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-          Tiempo Aproximado de Evolución *
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {DURATION_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setDuration(opt.value)}
-              data-testid={`duration-${opt.value.toLowerCase()}`}
-              aria-pressed={duration === opt.value}
-              className={`py-2 px-2.5 min-h-[48px] flex items-center justify-center text-center text-xs rounded-xl border transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#03362A] focus:ring-offset-1 ${
-                duration === opt.value
-                  ? 'bg-slate-900 text-white border-slate-900 font-semibold shadow-sm'
-                  : 'bg-white hover:bg-slate-50 border-[#E8E2D5] text-slate-600 font-medium'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+      {/* 3. Tiempo de Evolución (BUG-03: omitido condicionalmente si es consulta de rutina) */}
+      {!isRoutineSelected && (
+        <div data-testid="intake-duration-section">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Tiempo Aproximado de Evolución *
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {DURATION_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setDuration(opt.value)}
+                data-testid={`duration-${opt.value.toLowerCase()}`}
+                aria-pressed={duration === opt.value}
+                className={`py-2 px-2.5 min-h-[48px] flex items-center justify-center text-center text-xs rounded-xl border transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#03362A] focus:ring-offset-1 ${
+                  duration === opt.value
+                    ? 'bg-slate-900 text-white border-slate-900 font-semibold shadow-sm'
+                    : 'bg-white hover:bg-slate-50 border-[#E8E2D5] text-slate-600 font-medium'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 4. Descripción Libre en Lenguaje Natural */}
       <div>
@@ -260,7 +273,9 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
           htmlFor="intake-notes"
           className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
         >
-          Motivo / Síntomas Observados *
+          {selectedSymptoms.includes('other')
+            ? 'Motivo / Síntomas Observados (Requerido al seleccionar Otro) *'
+            : 'Motivo / Síntomas Observados *'}
         </label>
         <textarea
           id="intake-notes"
@@ -270,7 +285,11 @@ export const ClinicalIntakeForm: React.FC<ClinicalIntakeFormProps> = ({
             setFormError(null);
             setNotes(e.target.value);
           }}
-          placeholder="Describí los síntomas con claridad: cuándo comenzaron, apetito, decaimiento o cambios de conducta..."
+          placeholder={
+            selectedSymptoms.includes('other')
+              ? 'Por favor describí qué le sucede a tu mascota o qué consulta tenés...'
+              : 'Describí los síntomas con claridad: cuándo comenzaron, apetito, decaimiento o cambios de conducta...'
+          }
           data-testid="intake-notes-textarea"
           className="w-full px-3 py-2.5 bg-slate-50 border border-[#E8E2D5] rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#03362A]/20 transition resize-none"
         />
