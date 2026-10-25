@@ -10,6 +10,7 @@ import { PrescriptionModal } from '../components/ui/PrescriptionModal';
 import { Message, ApiResponse, Consultation } from '../types';
 import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X, FileText, CheckCircle, ShieldCheck, ClipboardList, MessageSquare, Video } from 'lucide-react';
 import VetPatientProfile from '../components/dashboard/VetPatientProfile';
+import { HamsterMascot } from '../components/ui/HamsterMascot';
 
 const POLLING_INTERVAL_MS = 5000;
 
@@ -546,10 +547,10 @@ export const ConsultationRoom: React.FC = () => {
         aria-label="Estado de sala de espera"
         className="w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-slate-900 text-white items-center justify-between p-4 sm:p-6"
       >
-        {/* Top bar with Stethoscope and Waiting Header */}
+        {/* Top bar with Hamster mascot and Waiting Header */}
         <div className="w-full max-w-md flex flex-col items-center text-center pt-2 sm:pt-4">
-          <div className="w-12 h-12 rounded-full bg-sky-600/20 border border-sky-500/30 flex items-center justify-center animate-pulse mb-2">
-            <Stethoscope className="w-6 h-6 text-sky-400" />
+          <div data-testid="waiting-room-hamster" className="mb-2">
+            <HamsterMascot size="sm" />
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-white">Sala de Espera Virtual</h2>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">

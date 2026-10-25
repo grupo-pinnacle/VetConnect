@@ -8,6 +8,7 @@ import { getWsUrl } from "../vet/CallRoom";
 import type { ApiResponse, Pet as BackendPet, Consultation as BackendConsultation, Prescription as BackendPrescription } from "../types";
 import { parseConsultationNotes, formatConsultationNotes } from "../lib/consultationNotes";
 import { SPECIES_LIST, getBreedsForSpecies, getWeightAssessment, compressImageFile } from "../data/petBreeds";
+import { HamsterMascot } from "../components/ui/HamsterMascot";
 
 const VetApp = lazy(() => import("../vet/VetApp"));
 const CallRoom = lazy(() => import("../vet/CallRoom"));
@@ -776,11 +777,11 @@ function Dashboard() {
 
   return <>
     <PageHeader eyebrow="Portal del tutor" title={`Hola, ${firstName}`} description="¿Cómo podemos ayudarte hoy?"/>
-    <section className="attention-banner"><div className="attention-banner__icon"><Icon name="heart" size={28}/></div><div><span className="eyebrow">Orientación en pocos pasos</span><h2>¿Necesitás orientación veterinaria?</h2><p>Contanos qué está pasando y te ayudamos a encontrar el siguiente paso.</p></div><Button onClick={() => go("/client/triage")}>Necesito atención <Icon name="arrow" size={17}/></Button></section>
+    <section className="attention-banner"><div className="attention-banner__mascot" data-testid="dashboard-hamster-mascot"><HamsterMascot size="sm"/></div><div><span className="eyebrow">Orientación en pocos pasos</span><h2>¿Necesitás orientación veterinaria?</h2><p>Contanos qué está pasando y te ayudamos a encontrar el siguiente paso.</p></div><Button onClick={() => go("/client/triage")}>Necesito atención <Icon name="arrow" size={17}/></Button></section>
     
     {activeCall && (
       <section className="active-call">
-        <div className="active-call__pulse"><Icon name="video"/></div>
+        <div className="active-call__mascot" data-testid="active-call-hamster-mascot"><HamsterMascot size="xs"/></div>
         <div>
           <span className="eyebrow">{activeCall.rawStatus === "WAITING" ? "Consulta en espera" : "Consulta en curso"}</span>
           <h2>{activeCall.rawStatus === "WAITING" ? "Esperando asignación de veterinario" : "Tu consulta está por comenzar"}</h2>
@@ -1465,7 +1466,7 @@ export function ConsultationsPage({ initialTab = "Próximas" }: { initialTab?: s
       <AppointmentsCalendar consultations={consultations} />
     ) : (
       <>
-        {filter === "En curso" && shown[0] && <section className="active-call active-call--page"><div className="active-call__pulse"><Icon name="video"/></div><div><span className="eyebrow">En espera</span><h2>Tu consulta está en curso</h2><p>{`${shown[0].vet} se va a conectar en breve.`}</p></div><Button onClick={() => go(`/call/${shown[0].id}?from=client&state=waiting`)}>Entrar a la consulta</Button></section>}
+        {filter === "En curso" && shown[0] && <section className="active-call active-call--page"><div className="active-call__mascot" data-testid="consultations-hamster-mascot"><HamsterMascot size="xs"/></div><div><span className="eyebrow">En espera</span><h2>Tu consulta está en curso</h2><p>{`${shown[0].vet} se va a conectar en breve.`}</p></div><Button onClick={() => go(`/call/${shown[0].id}?from=client&state=waiting`)}>Entrar a la consulta</Button></section>}
         {shown.length === 0 ? <div className="panel"><EmptyState icon="video" title="No hay consultas en esta sección" text="Podés solicitar una nueva consulta de telemedicina veterinaria cuando lo necesites." action="Nueva consulta" onAction={() => go("/client/triage")}/></div> : <div className="consultation-list">{shown.map((item) => <ConsultationCard item={item} key={item.id}/>)}</div>}
       </>
     )}

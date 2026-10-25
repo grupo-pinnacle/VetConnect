@@ -1,20 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { EyeOff } from 'lucide-react';
 
-interface HamsterMascotProps {
+export interface HamsterMascotProps {
   isCoveringEyes?: boolean;
   isLookingAtInput?: boolean;
   className?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
 export const HamsterMascot: React.FC<HamsterMascotProps> = ({
   isCoveringEyes = false,
   isLookingAtInput = false,
   className = '',
+  size = 'md',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
   const [isDesktop, setIsDesktop] = useState(false);
+
+  const sizeClasses = {
+    xs: 'w-10 h-10 sm:w-12 sm:h-12',
+    sm: 'w-14 h-14 sm:w-16 sm:h-16',
+    md: 'w-20 h-20 sm:w-24 sm:h-24',
+    lg: 'w-28 h-28 sm:w-32 sm:h-32',
+  }[size] || 'w-20 h-20 sm:w-24 sm:h-24';
 
   useEffect(() => {
     // Solo habilitar tracking de cursor en desktop con mouse (desactivado en touch/móvil y JSDOM)
@@ -75,6 +84,7 @@ export const HamsterMascot: React.FC<HamsterMascotProps> = ({
       ref={containerRef}
       className={`relative flex flex-col items-center justify-center select-none transition-transform duration-300 ${className}`}
       aria-hidden="true"
+      data-testid="hamster-mascot"
     >
       {/* Cartel flotante tipo cómic: SOLO cuando se tapa los ojos con "Ver contraseña" */}
       <div
@@ -95,9 +105,10 @@ export const HamsterMascot: React.FC<HamsterMascotProps> = ({
       {/* Ilustración Vectorial Bold & Minimalista Estilo Duolingo */}
       <svg
         viewBox="0 0 140 130"
-        className="w-24 h-24 sm:w-28 sm:h-28 drop-shadow-[0_8px_20px_rgba(245,158,11,0.22)] transition-all duration-300 hover:scale-105 cursor-pointer"
+        className={`${sizeClasses} drop-shadow-[0_8px_20px_rgba(245,158,11,0.22)] transition-all duration-300 hover:scale-105 cursor-pointer`}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        data-testid="hamster-mascot-svg"
       >
         {/* OREJITAS REDONDAS BOLD */}
         {/* Oreja Izquierda */}
