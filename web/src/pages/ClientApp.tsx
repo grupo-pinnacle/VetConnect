@@ -326,16 +326,88 @@ export function NewPetModal({
   onSuccess?: () => void;
 }) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState("");
-  const [species, setSpecies] = useState("Perro");
-  const [sex, setSex] = useState("Macho");
-  const [breed, setBreed] = useState("Mestizo / Criollo");
-  const [customBreed, setCustomBreed] = useState("");
-  const [weightKg, setWeightKg] = useState("");
-  const [microchip, setMicrochip] = useState("");
-  const [allergies, setAllergies] = useState("");
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isClosingRef = useRef(false);
+
+  const getInitialDraft = () => {
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("vetconnect_new_pet_draft") : null;
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  };
+
+  const initialDraft = getInitialDraft();
+
+  const [name, setName] = useState(initialDraft?.name || "");
+  const [species, setSpecies] = useState(initialDraft?.species || "Perro");
+  const [sex, setSex] = useState(initialDraft?.sex || "Macho");
+  const [breed, setBreed] = useState(initialDraft?.breed || "Mestizo / Criollo");
+  const [customBreed, setCustomBreed] = useState(initialDraft?.customBreed || "");
+  const [weightKg, setWeightKg] = useState(initialDraft?.weightKg || "");
+  const [microchip, setMicrochip] = useState(initialDraft?.microchip || "");
+  const [allergies, setAllergies] = useState(initialDraft?.allergies || "");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initialDraft?.photoPreview || null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      isClosingRef.current = false;
+      try {
+        const saved = localStorage.getItem("vetconnect_new_pet_draft");
+        if (saved) {
+          const draft = JSON.parse(saved);
+          if (draft.name !== undefined) setName(draft.name);
+          if (draft.species !== undefined) setSpecies(draft.species);
+          if (draft.sex !== undefined) setSex(draft.sex);
+          if (draft.breed !== undefined) setBreed(draft.breed);
+          if (draft.customBreed !== undefined) setCustomBreed(draft.customBreed);
+          if (draft.weightKg !== undefined) setWeightKg(draft.weightKg);
+          if (draft.microchip !== undefined) setMicrochip(draft.microchip);
+          if (draft.allergies !== undefined) setAllergies(draft.allergies);
+          if (draft.photoPreview !== undefined) setPhotoPreview(draft.photoPreview);
+        }
+      } catch {}
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (open && !isClosingRef.current) {
+      try {
+        const draft = {
+          name,
+          species,
+          sex,
+          breed,
+          customBreed,
+          weightKg,
+          microchip,
+          allergies,
+          photoPreview,
+          isModalOpen: true,
+        };
+        localStorage.setItem("vetconnect_new_pet_draft", JSON.stringify(draft));
+      } catch {}
+    }
+  }, [open, name, species, sex, breed, customBreed, weightKg, microchip, allergies, photoPreview]);
+
+  const handleVoluntaryClose = () => {
+    isClosingRef.current = true;
+    try {
+      localStorage.removeItem("vetconnect_new_pet_draft");
+    } catch {}
+    setName("");
+    setSpecies("Perro");
+    setSex("Macho");
+    setBreed("Mestizo / Criollo");
+    setCustomBreed("");
+    setWeightKg("");
+    setMicrochip("");
+    setAllergies("");
+    setPhotoPreview(null);
+    setErrorMsg(null);
+    onClose();
+  };
 
   const breeds = useMemo(() => getBreedsForSpecies(species), [species]);
 
@@ -371,12 +443,16 @@ export function NewPetModal({
       return res.data;
     },
     onSuccess: (data) => {
+      isClosingRef.current = true;
       queryClient.invalidateQueries({ queryKey: ['pets'] });
       if (data?.data?.id && photoPreview) {
         try {
           localStorage.setItem(`vetconnect_pet_photo_${data.data.id}`, photoPreview);
         } catch {}
       }
+      try {
+        localStorage.removeItem("vetconnect_new_pet_draft");
+      } catch {}
       setName("");
       setSpecies("Perro");
       setSex("Macho");
@@ -442,9 +518,9 @@ export function NewPetModal({
 
   return (
     <div className="modal-layer" role="presentation">
-      <button className="modal-scrim" onClick={onClose} aria-label="Cerrar modal"/>
+      <button className="modal-scrim" onClick={handleVoluntaryClose} aria-label="Cerrar modal"/>
       <div className="modal" role="dialog" aria-modal="true" style={{ textAlign: "left", width: "min(500px, calc(100% - 32px))" }}>
-        <button className="button button--icon modal__close" onClick={onClose} aria-label="Cerrar"><Icon name="close" size={18}/></button>
+        <button className="button button--icon modal__close" onClick={handleVoluntaryClose} aria-label="Cerrar"><Icon name="close" size={18}/></button>
         <span className="modal__icon"><Icon name="paw"/></span>
         <h2 style={{ textAlign: "center" }}>Nueva mascota</h2>
         <p style={{ textAlign: "center", marginBottom: 20 }}>Ingresá los datos clínicos para abrir su expediente en VetConnect.</p>
@@ -477,10 +553,34 @@ export function NewPetModal({
               </div>
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, display: "block", color: "var(--ink, #1e293b)", marginBottom: 2 }}>Foto de la mascota (opcional)</span>
-                <label style={{ fontSize: 12, color: "var(--teal, #0d9488)", cursor: "pointer", textDecoration: "underline", display: "inline-block" }}>
-                  <span>{photoPreview ? "Cambiar foto elegida" : "Subir foto real de tu mascota"}</span>
-                  <input type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: "none" }} />
-                </label>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 12,
+                    color: "var(--teal, #0d9488)",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    display: "inline-block",
+                  }}
+                  data-testid="upload-pet-photo-btn"
+                >
+                  {photoPreview ? "Cambiar foto elegida" : "Subir imagen de mascota"}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoSelect}
+                  style={{ display: "none" }}
+                />
                 {photoPreview && (
                   <button type="button" onClick={() => setPhotoPreview(null)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: 12, marginLeft: 10, cursor: "pointer" }}>
                     Quitar
@@ -557,7 +657,7 @@ export function NewPetModal({
             <label className="field"><span>Alergias conocidas</span><input value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Ej: Polen / Penicilina / Ninguna"/></label>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
-            <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+            <Button variant="secondary" onClick={handleVoluntaryClose}>Cancelar</Button>
             <Button type="submit" variant="primary" disabled={createPetMutation.isPending}>{createPetMutation.isPending ? "Guardando..." : "Guardar mascota"}</Button>
           </div>
         </form>
@@ -571,7 +671,16 @@ function Dashboard() {
   const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
   const firstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tutor";
   const { pets, consultations, petsLoading, consultationsLoading } = useClientData();
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(() => {
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("vetconnect_new_pet_draft") : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Boolean(parsed.isModalOpen);
+      }
+    } catch {}
+    return false;
+  });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Active call only if there is a real ACTIVE or WAITING consultation in DB
@@ -671,7 +780,16 @@ function Dashboard() {
 
 function PetsPage() {
   const { pets } = useClientData();
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(() => {
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("vetconnect_new_pet_draft") : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Boolean(parsed.isModalOpen);
+      }
+    } catch {}
+    return false;
+  });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const isActuallyEmpty = pets.length === 0;

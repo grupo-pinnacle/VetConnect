@@ -9,6 +9,7 @@ import { SpeciesIcon } from '../components/icons/SpeciesIcons';
 import PetDossierModal from '../components/dashboard/PetDossierModal';
 import { ClinicalIntakeForm } from '../components/dashboard/ClinicalIntakeForm';
 import { parseConsultationNotes } from '../lib/consultationNotes';
+import { compressImageFile } from '../data/petBreeds';
 import {
   Heart,
   Stethoscope,
@@ -41,19 +42,33 @@ export const DashboardClient: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isClosingRef = useRef(false);
+
+  const getInitialDraft = () => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('vetconnect_new_pet_draft') : null;
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  };
+
+  const initialDraft = getInitialDraft();
+
   // Pet Form State (Create & Edit — ADR-029)
-  const [showPetModal, setShowPetModal] = useState(false);
+  const [showPetModal, setShowPetModal] = useState(() => Boolean(initialDraft?.isModalOpen));
   const [editingPetId, setEditingPetId] = useState<string | null>(null);
   const [petModalError, setPetModalError] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initialDraft?.photoPreview || null);
   const [petForm, setPetForm] = useState({
-    name: '',
-    species: 'Canine',
-    breed: '',
-    weightKg: '',
-    sex: '',
-    microchip: '',
-    allergies: '',
-    chronicConditions: '',
+    name: initialDraft?.name || '',
+    species: initialDraft?.species || 'Canine',
+    breed: initialDraft?.breed || '',
+    weightKg: initialDraft?.weightKg != null ? String(initialDraft.weightKg) : '',
+    sex: initialDraft?.sex || '',
+    microchip: initialDraft?.microchip || '',
+    allergies: initialDraft?.allergies || '',
+    chronicConditions: initialDraft?.chronicConditions || '',
   });
 
   // Triage Request Form State
@@ -91,9 +106,35 @@ export const DashboardClient: React.FC = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (showPetModal && !editingPetId && !isClosingRef.current) {
+      try {
+        const draft = {
+          ...petForm,
+          photoPreview,
+          isModalOpen: true,
+        };
+        localStorage.setItem('vetconnect_new_pet_draft', JSON.stringify(draft));
+      } catch {}
+    }
+  }, [showPetModal, editingPetId, petForm, photoPreview]);
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImageFile(file);
+      setPhotoPreview(compressed);
+    } catch {
+      setPetModalError('No se pudo procesar la imagen seleccionada.');
+    }
+  };
+
   const handleOpenCreatePet = () => {
+    isClosingRef.current = false;
     setEditingPetId(null);
     setPetModalError(null);
+    setPhotoPreview(null);
     setPetForm({
       name: '',
       species: 'Canine',
@@ -108,8 +149,11 @@ export const DashboardClient: React.FC = () => {
   };
 
   const handleOpenEditPet = (pet: Pet) => {
+    isClosingRef.current = false;
     setEditingPetId(pet.id);
     setPetModalError(null);
+    const savedPhoto = typeof window !== 'undefined' ? localStorage.getItem(`vetconnect_pet_photo_${pet.id}`) : null;
+    setPhotoPreview(savedPhoto || null);
     setPetForm({
       name: pet.name || '',
       species: pet.species || 'Canine',
@@ -128,9 +172,14 @@ export const DashboardClient: React.FC = () => {
   };
 
   const handleClosePetModal = () => {
+    isClosingRef.current = true;
     setShowPetModal(false);
     setEditingPetId(null);
     setPetModalError(null);
+    setPhotoPreview(null);
+    try {
+      localStorage.removeItem('vetconnect_new_pet_draft');
+    } catch {}
   };
 
   const handleSavePet = async (e: React.FormEvent) => {
@@ -153,6 +202,15 @@ export const DashboardClient: React.FC = () => {
         const res = await api.patch<ApiResponse<Pet>>(`/api/pets/${editingPetId}`, payload);
         if (res.data.success && res.data.data) {
           const updated = res.data.data;
+          if (photoPreview) {
+            try {
+              localStorage.setItem(`vetconnect_pet_photo_${editingPetId}`, photoPreview);
+            } catch {}
+          }
+          isClosingRef.current = true;
+          try {
+            localStorage.removeItem('vetconnect_new_pet_draft');
+          } catch {}
           setPets((prev) => prev.map((p) => (p.id === editingPetId ? updated : p)));
           setSelectedDossierPet((prev) => (prev?.id === editingPetId ? updated : prev));
           handleClosePetModal();
@@ -160,6 +218,15 @@ export const DashboardClient: React.FC = () => {
       } else {
         const res = await api.post<ApiResponse<Pet>>('/api/pets', payload);
         if (res.data.success && res.data.data) {
+          if (photoPreview && res.data.data.id) {
+            try {
+              localStorage.setItem(`vetconnect_pet_photo_${res.data.data.id}`, photoPreview);
+            } catch {}
+          }
+          isClosingRef.current = true;
+          try {
+            localStorage.removeItem('vetconnect_new_pet_draft');
+          } catch {}
           setPets((prev) => [res.data.data!, ...prev]);
           handleClosePetModal();
         }
@@ -759,6 +826,49 @@ export const DashboardClient: React.FC = () => {
                     <span>{petModalError}</span>
                   </div>
                 )}
+
+                {/* Pet Photo Upload with WebView-safe trigger */}
+                <div className="flex items-center gap-3 p-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+                  <div className="w-12 h-12 rounded-lg bg-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Foto mascota" className="w-full h-full object-cover" />
+                    ) : (
+                      <Heart className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="block text-xs font-bold text-slate-700">Foto del Paciente (opcional)</span>
+                    <button
+                      type="button"
+                      data-testid="upload-pet-photo-btn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold underline cursor-pointer"
+                    >
+                      {photoPreview ? 'Cambiar foto elegida' : 'Subir imagen de mascota'}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                    {photoPreview && (
+                      <button
+                        type="button"
+                        onClick={() => setPhotoPreview(null)}
+                        className="text-xs text-rose-500 hover:text-rose-600 ml-2.5 font-medium cursor-pointer"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Nombre del Paciente *
