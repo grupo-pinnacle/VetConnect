@@ -5,6 +5,8 @@ import {
   isLoopbackUrl,
   parseHost,
   resolveWebCallUrl,
+  HARDENED_WEBVIEW_CONFIG,
+  handleContentProcessTermination,
 } from '../lib/webviewBridge';
 import { User } from '../types';
 
@@ -118,5 +120,37 @@ describe('loopback base URL detection', () => {
     );
     expect(parseHost('http://[::1]:5173')).toBe('::1');
     expect(parseHost('nonsense')).toBeNull();
+  });
+});
+
+describe('BUG-07: Hardened React Native WebView Configuration', () => {
+  it('enforces localStorage and cookie session persistence', () => {
+    expect(HARDENED_WEBVIEW_CONFIG.domStorageEnabled).toBe(true);
+    expect(HARDENED_WEBVIEW_CONFIG.javaScriptEnabled).toBe(true);
+    expect(HARDENED_WEBVIEW_CONFIG.sharedCookiesEnabled).toBe(true);
+    expect(HARDENED_WEBVIEW_CONFIG.thirdPartyCookiesEnabled).toBe(true);
+  });
+
+  it('enforces seamless inline WebRTC audio/video playback and capture', () => {
+    expect(HARDENED_WEBVIEW_CONFIG.allowsInlineMediaPlayback).toBe(true);
+    expect(HARDENED_WEBVIEW_CONFIG.mediaPlaybackRequiresUserAction).toBe(false);
+    expect(HARDENED_WEBVIEW_CONFIG.mediaCapturePermissionGrantType).toBe('grant');
+  });
+
+  it('enforces allowFileAccess for native Android/iOS file picker', () => {
+    expect(HARDENED_WEBVIEW_CONFIG.allowFileAccess).toBe(true);
+  });
+
+  it('reloads webview safely when content process terminates in background', () => {
+    const mockReload = jest.fn();
+    const result = handleContentProcessTermination({ nativeEvent: {} }, { reload: mockReload });
+
+    expect(result).toBe(true);
+    expect(mockReload).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not crash or reload if termination event lacks nativeEvent or webview ref', () => {
+    expect(handleContentProcessTermination({}, null)).toBe(false);
+    expect(handleContentProcessTermination({ nativeEvent: {} }, null)).toBe(false);
   });
 });

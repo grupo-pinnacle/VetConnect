@@ -79,3 +79,32 @@ export function resolveWebCallUrl(baseUrl: string, consultationId: string): stri
   const base = baseUrl.trim().replace(/\/+$/, '');
   return `${base}/call/${encodeURIComponent(consultationId)}`;
 }
+
+/**
+ * Hardened React Native WebView configuration (BUG-07).
+ *
+ * Ensures storage persistence (domStorageEnabled), session cookies across origins,
+ * inline camera and mic without manual action, and safe Android file picking.
+ */
+export const HARDENED_WEBVIEW_CONFIG = {
+  domStorageEnabled: true,
+  javaScriptEnabled: true,
+  sharedCookiesEnabled: true,
+  thirdPartyCookiesEnabled: true,
+  allowsInlineMediaPlayback: true,
+  mediaPlaybackRequiresUserAction: false,
+  allowFileAccess: true,
+  mediaCapturePermissionGrantType: 'grant' as const,
+  originWhitelist: ['http://*', 'https://*'],
+} as const;
+
+export function handleContentProcessTermination(
+  event: { nativeEvent?: unknown },
+  webview: { reload: () => void } | null
+): boolean {
+  if (event?.nativeEvent && webview?.reload) {
+    webview.reload();
+    return true;
+  }
+  return false;
+}

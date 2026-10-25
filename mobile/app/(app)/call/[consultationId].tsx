@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import type { ComponentClass } from 'react';
 import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../src/lib/authStore';
 import { PrimaryButton } from '../../../src/components/PrimaryButton';
 import { evaluateCallPermissions } from '../../../src/lib/callPermissions';
-import { buildAuthSeedScript, isLoopbackUrl, resolveWebCallUrl } from '../../../src/lib/webviewBridge';
+import { buildAuthSeedScript, isLoopbackUrl, resolveWebCallUrl, HARDENED_WEBVIEW_CONFIG, handleContentProcessTermination } from '../../../src/lib/webviewBridge';
 import { colors, radius, spacing } from '../../../src/theme/tokens';
 
 // webview@13.17 declara `class WebView<P = undefined> extends Component<Props & P>`:
@@ -21,6 +21,7 @@ const DEFAULT_WEB_BASE_URL = 'http://localhost:5173';
 export default function CallScreen() {
   const { consultationId } = useLocalSearchParams<{ consultationId: string }>();
   const router = useRouter();
+  const webviewRef = useRef<RNWebView>(null);
 
   // The access token lives in memory only; SecureStore holds just the refresh
   // token, so the store is the only place it can be read from.
@@ -158,6 +159,7 @@ export default function CallScreen() {
         </View>
       )}
       <WebView
+        ref={webviewRef as any}
         source={{ uri: callRoomUrl }}
         onMessage={handleWebViewMessage}
         // Runs before the document's own scripts: the only point where seeding
@@ -177,12 +179,18 @@ export default function CallScreen() {
             );
           }
         }}
-        allowsInlineMediaPlayback
-        mediaPlaybackRequiresUserAction={false}
-        javaScriptEnabled
-        // Required for the seeded storage to persist and be readable.
-        domStorageEnabled
-        originWhitelist={['http://*', 'https://*']}
+        onContentProcessDidTerminate={(syntheticEvent) => {
+          handleContentProcessTermination(syntheticEvent, webviewRef.current);
+        }}
+        domStorageEnabled={HARDENED_WEBVIEW_CONFIG.domStorageEnabled}
+        javaScriptEnabled={HARDENED_WEBVIEW_CONFIG.javaScriptEnabled}
+        sharedCookiesEnabled={HARDENED_WEBVIEW_CONFIG.sharedCookiesEnabled}
+        thirdPartyCookiesEnabled={HARDENED_WEBVIEW_CONFIG.thirdPartyCookiesEnabled}
+        allowsInlineMediaPlayback={HARDENED_WEBVIEW_CONFIG.allowsInlineMediaPlayback}
+        mediaPlaybackRequiresUserAction={HARDENED_WEBVIEW_CONFIG.mediaPlaybackRequiresUserAction}
+        allowFileAccess={HARDENED_WEBVIEW_CONFIG.allowFileAccess}
+        mediaCapturePermissionGrantType={HARDENED_WEBVIEW_CONFIG.mediaCapturePermissionGrantType}
+        originWhitelist={HARDENED_WEBVIEW_CONFIG.originWhitelist as any}
         style={styles.webview}
       />
       {webViewError ? (
