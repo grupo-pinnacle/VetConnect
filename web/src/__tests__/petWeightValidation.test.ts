@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getWeightAssessment, BREED_WEIGHT_STANDARDS, SPECIES_WEIGHT_LIMITS } from '../data/petBreeds';
+import { getWeightAssessment, BREED_WEIGHT_STANDARDS, SPECIES_WEIGHT_LIMITS } from '../lib/petWeightValidation';
 
 describe('Pet Weight Validation and Biometric Standards', () => {
   it('should return null when weight is not provided or zero/negative', () => {

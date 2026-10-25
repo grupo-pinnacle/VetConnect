@@ -11,6 +11,7 @@ import { Message, ApiResponse, Consultation } from '../types';
 import { Stethoscope, CheckCircle2, Search, Paperclip, Loader2, X, FileText, CheckCircle, ShieldCheck, ClipboardList, MessageSquare, Video } from 'lucide-react';
 import VetPatientProfile from '../components/dashboard/VetPatientProfile';
 import { HamsterMascot } from '../components/ui/HamsterMascot';
+import { parseConsultationNotes } from '../lib/consultationNotes';
 
 const POLLING_INTERVAL_MS = 5000;
 
@@ -1000,7 +1001,7 @@ export const ConsultationRoom: React.FC = () => {
                   <span className="font-semibold">Paciente:</span> {consultation.pet.name} ({consultation.pet.species})
                   {consultation.notes && (
                     <div className="mt-1 text-slate-600">
-                      <span className="font-semibold">Motivo inicial:</span> {consultation.notes}
+                      <span className="font-semibold">Motivo inicial:</span> {parseConsultationNotes(consultation.notes).cleanNotes}
                     </div>
                   )}
                 </div>
