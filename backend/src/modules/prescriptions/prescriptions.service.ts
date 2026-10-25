@@ -100,6 +100,7 @@ export class PrescriptionsService {
           clientName: prescription.consultation.client.firstName || 'Tutor',
           petName: prescription.consultation.pet?.name || 'tu mascota',
           vetName: vetFullName,
+          licenseNumber: prescription.vet?.licenseNumber || (user as any).licenseNumber || undefined,
           medication: prescription.medication,
           dosage: prescription.dosage,
           frequency: prescription.frequency,

@@ -97,11 +97,12 @@ export class EmailService {
     medication: string;
     dosage: string;
     frequency: string;
+    licenseNumber?: string;
     durationDays: number;
     indications: string;
     verifyUrl: string;
   }): Promise<boolean> {
-    const { to, clientName, petName, vetName, medication, dosage, frequency, durationDays, indications, verifyUrl } = params;
+    const { to, clientName, petName, vetName, medication, dosage, frequency, durationDays, licenseNumber, indications, verifyUrl } = params;
     const subject = `Receta médica emitida para ${petName} - VetConnect`;
     const html = `
       <!DOCTYPE html>
@@ -123,9 +124,13 @@ export class EmailService {
         <div class="container">
           <span class="badge">Receta Médica Digital</span>
           <h2>Indicaciones de tratamiento para ${petName}</h2>
-          <p>Hola <strong>${clientName}</strong>, el profesional <strong>${vetName}</strong> ha emitido una receta médica oficial para tu mascota.</p>
+          <p>Hola <strong>${clientName}</strong>, el profesional <strong>${vetName}</strong> ${licenseNumber ? ` (Matrícula: <strong>${licenseNumber}</strong>)` : ''} ha emitido una receta médica oficial para tu mascota.</p>
           
-          <div class="rx-card">
+          <div class="rx-card">${licenseNumber ? `
+            <div class="rx-row">
+              <strong>Profesional Emisor</strong>
+              <span>${vetName} · M.P. ${licenseNumber}</span>
+            </div>` : ''}
             <div class="rx-row">
               <strong>Medicamento</strong>
               <span>${medication}</span>
@@ -148,13 +153,14 @@ export class EmailService {
           <a class="btn" href="${verifyUrl}" target="_blank">Ver Receta y QR Oficial</a>
 
           <p style="margin-top: 28px; font-size: 12px; color: #648482;">
-            Esta receta electrónica cuenta con trazabilidad y firma profesional verificable conforme a normativas de telemedicina veterinaria.
+            Esta receta electrónica cuenta con trazabilidad y firma profesional verificable conforme a la normativa vigente de telemedicina veterinaria (SENASA / Res. 1442/2021).
           </p>
         </div>
       </body>
       </html>
     `;
-    return this.sendEmail({ to, subject, html });
+    const text = `Receta médica para ${petName} emitida por ${vetName}${licenseNumber ? ` (M.P. ${licenseNumber})` : ''}. Medicamento: ${medication}, Dosis: ${dosage}, Frecuencia: Cada ${frequency}, Duración: ${durationDays} días. Indicaciones: ${indications}. Verificación: ${verifyUrl}`;
+    return this.sendEmail({ to, subject, html, text });
   }
 
   public async sendReminderEmail(params: {
