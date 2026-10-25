@@ -58,6 +58,7 @@ export const DashboardClient: React.FC = () => {
   // Pet Form State (Create & Edit — ADR-029)
   const [showPetModal, setShowPetModal] = useState(() => Boolean(initialDraft?.isModalOpen));
   const [editingPetId, setEditingPetId] = useState<string | null>(null);
+  const [unknownWeight, setUnknownWeight] = useState<boolean>(Boolean(initialDraft?.unknownWeight));
   const [petModalError, setPetModalError] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(initialDraft?.photoPreview || null);
   const [petForm, setPetForm] = useState({
@@ -111,13 +112,15 @@ export const DashboardClient: React.FC = () => {
       try {
         const draft = {
           ...petForm,
+          weightKg: unknownWeight ? "" : petForm.weightKg,
+          unknownWeight,
           photoPreview,
           isModalOpen: true,
         };
         localStorage.setItem('vetconnect_new_pet_draft', JSON.stringify(draft));
       } catch {}
     }
-  }, [showPetModal, editingPetId, petForm, photoPreview]);
+  }, [showPetModal, editingPetId, petForm, unknownWeight, photoPreview]);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -133,6 +136,7 @@ export const DashboardClient: React.FC = () => {
   const handleOpenCreatePet = () => {
     isClosingRef.current = false;
     setEditingPetId(null);
+    setUnknownWeight(false);
     setPetModalError(null);
     setPhotoPreview(null);
     setPetForm({
@@ -151,6 +155,7 @@ export const DashboardClient: React.FC = () => {
   const handleOpenEditPet = (pet: Pet) => {
     isClosingRef.current = false;
     setEditingPetId(pet.id);
+    setUnknownWeight(pet.weightKg == null);
     setPetModalError(null);
     const savedPhoto = typeof window !== 'undefined' ? localStorage.getItem(`vetconnect_pet_photo_${pet.id}`) : null;
     setPhotoPreview(savedPhoto || null);
@@ -175,6 +180,7 @@ export const DashboardClient: React.FC = () => {
     isClosingRef.current = true;
     setShowPetModal(false);
     setEditingPetId(null);
+    setUnknownWeight(false);
     setPetModalError(null);
     setPhotoPreview(null);
     try {
@@ -191,7 +197,7 @@ export const DashboardClient: React.FC = () => {
         name: petForm.name.trim(),
         species: petForm.species,
         breed: petForm.breed.trim(),
-        weightKg: petForm.weightKg ? parseFloat(petForm.weightKg) : undefined,
+        weightKg: unknownWeight || !petForm.weightKg ? undefined : parseFloat(petForm.weightKg),
         sex: petForm.sex.trim() ? petForm.sex.trim() : undefined,
         microchip: petForm.microchip.trim() ? petForm.microchip.trim() : undefined,
         allergies: petForm.allergies.trim() ? petForm.allergies.trim() : undefined,
@@ -496,13 +502,21 @@ export const DashboardClient: React.FC = () => {
                                 {pet.sex}
                               </span>
                             )}
-                            {pet.weightKg && (
+                            {pet.weightKg != null ? (
                               <span
                                 data-testid={`pet-weight-${pet.id}`}
                                 className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md font-semibold"
                               >
                                 <Scale className="w-3 h-3 text-amber-600" />
                                 {pet.weightKg} kg
+                              </span>
+                            ) : (
+                              <span
+                                data-testid={`pet-weight-${pet.id}`}
+                                className="inline-flex items-center gap-1 bg-slate-50 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md font-medium"
+                              >
+                                <Scale className="w-3 h-3 text-slate-400" />
+                                Peso: Sin especificar
                               </span>
                             )}
                             {pet.microchip && (
@@ -942,11 +956,28 @@ export const DashboardClient: React.FC = () => {
                       data-testid="input-pet-weight"
                       type="number"
                       step="0.1"
-                      placeholder="Ej. 12.5"
-                      value={petForm.weightKg}
+                      placeholder={unknownWeight ? "Sin especificar" : "Ej. 12.5"}
+                      value={unknownWeight ? '' : petForm.weightKg}
                       onChange={(e) => setPetForm({ ...petForm, weightKg: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-medium transition-all"
+                      disabled={unknownWeight}
+                      className="w-full px-3 py-2.5 border border-[#E8E2D5] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-sm font-medium transition-all disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                     />
+                    <label className="flex items-center gap-2 mt-2 text-xs text-slate-600 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        data-testid="checkbox-unknown-weight"
+                        checked={unknownWeight}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setUnknownWeight(checked);
+                          if (checked) {
+                            setPetForm((prev) => ({ ...prev, weightKg: '' }));
+                          }
+                        }}
+                        className="w-3.5 h-3.5 rounded text-[#03362A] focus:ring-[#03362A] border-slate-300 cursor-pointer"
+                      />
+                      <span>No sé el peso exacto</span>
+                    </label>
                   </div>
                 </div>
 

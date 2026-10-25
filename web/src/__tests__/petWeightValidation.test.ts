@@ -13,6 +13,12 @@ describe('Pet Weight Validation and Biometric Standards', () => {
     );
   });
 
+  it('FEAT-02: should accept undefined / null weight as optional without blocking or error', () => {
+    expect(getWeightAssessment('Perro', 'Labrador Retriever', undefined)).toBeNull();
+    expect(getWeightAssessment('Perro', 'Labrador Retriever', null as any)).toBeNull();
+    expect(getWeightAssessment('Gato', 'Común Europeo', undefined)).toBeNull();
+  });
+
   it('should assess standard healthy weight as valid_ideal for a known breed', () => {
     // Labrador: ideal is 25 - 36 kg
     const assessment = getWeightAssessment('Perro', 'Labrador Retriever', 30);

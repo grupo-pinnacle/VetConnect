@@ -76,7 +76,7 @@ function mapBackendPet(p: BackendPet): ClientViewPet {
     kind: p.species,
     breed: p.breed || "Mestizo",
     age: "Registrado",
-    weight: p.weightKg != null ? `${p.weightKg} kg` : "No informado",
+    weight: p.weightKg != null ? `${p.weightKg} kg` : "Sin especificar",
     state: "Al día",
     last: new Date(p.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" }),
     next: "Sin turno próximo",
@@ -345,6 +345,7 @@ export function NewPetModal({
   const [breed, setBreed] = useState(initialDraft?.breed || "Mestizo / Criollo");
   const [customBreed, setCustomBreed] = useState(initialDraft?.customBreed || "");
   const [weightKg, setWeightKg] = useState(initialDraft?.weightKg || "");
+  const [unknownWeight, setUnknownWeight] = useState(Boolean(initialDraft?.unknownWeight));
   const [microchip, setMicrochip] = useState(initialDraft?.microchip || "");
   const [allergies, setAllergies] = useState(initialDraft?.allergies || "");
   const [photoPreview, setPhotoPreview] = useState<string | null>(initialDraft?.photoPreview || null);
@@ -363,6 +364,7 @@ export function NewPetModal({
           if (draft.breed !== undefined) setBreed(draft.breed);
           if (draft.customBreed !== undefined) setCustomBreed(draft.customBreed);
           if (draft.weightKg !== undefined) setWeightKg(draft.weightKg);
+          if (draft.unknownWeight !== undefined) setUnknownWeight(Boolean(draft.unknownWeight));
           if (draft.microchip !== undefined) setMicrochip(draft.microchip);
           if (draft.allergies !== undefined) setAllergies(draft.allergies);
           if (draft.photoPreview !== undefined) setPhotoPreview(draft.photoPreview);
@@ -380,7 +382,8 @@ export function NewPetModal({
           sex,
           breed,
           customBreed,
-          weightKg,
+          weightKg: unknownWeight ? "" : weightKg,
+          unknownWeight,
           microchip,
           allergies,
           photoPreview,
@@ -389,7 +392,7 @@ export function NewPetModal({
         localStorage.setItem("vetconnect_new_pet_draft", JSON.stringify(draft));
       } catch {}
     }
-  }, [open, name, species, sex, breed, customBreed, weightKg, microchip, allergies, photoPreview]);
+  }, [open, name, species, sex, breed, customBreed, weightKg, unknownWeight, microchip, allergies, photoPreview]);
 
   const handleVoluntaryClose = () => {
     isClosingRef.current = true;
@@ -402,6 +405,7 @@ export function NewPetModal({
     setBreed("Mestizo / Criollo");
     setCustomBreed("");
     setWeightKg("");
+    setUnknownWeight(false);
     setMicrochip("");
     setAllergies("");
     setPhotoPreview(null);
@@ -492,7 +496,7 @@ export function NewPetModal({
       return;
     }
 
-    if (weightAssessment && weightAssessment.isBlocking) {
+    if (!unknownWeight && weightAssessment && weightAssessment.isBlocking) {
       setErrorMsg(weightAssessment.message);
       return;
     }
@@ -510,7 +514,7 @@ export function NewPetModal({
       species,
       sex,
       breed: finalBreed,
-      weightKg: weightKg ? parseFloat(weightKg) : undefined,
+      weightKg: unknownWeight || !weightKg ? undefined : parseFloat(weightKg),
       microchip: cleanMicrochip || undefined,
       allergies: allergies.trim() || undefined,
     });
@@ -616,7 +620,38 @@ export function NewPetModal({
                   ))}
                 </select>
               </label>
-              <label className="field"><span>Peso (kg)</span><input type="number" step="0.1" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Ej: 14.5"/></label>
+              <div>
+                <label className="field" style={{ marginBottom: 0 }}>
+                  <span>Peso (kg)</span>
+                  <input
+                    data-testid="input-pet-weight"
+                    type="number"
+                    step="0.1"
+                    value={unknownWeight ? "" : weightKg}
+                    onChange={(e) => setWeightKg(e.target.value)}
+                    disabled={unknownWeight}
+                    placeholder={unknownWeight ? "Sin especificar" : "Ej: 14.5"}
+                    style={unknownWeight ? { background: "#f1f5f9", cursor: "not-allowed", color: "#94a3b8" } : undefined}
+                  />
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--ink-soft, #64748b)", cursor: "pointer", marginTop: 4 }}>
+                  <input
+                    type="checkbox"
+                    data-testid="checkbox-unknown-weight"
+                    checked={unknownWeight}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setUnknownWeight(checked);
+                      if (checked) {
+                        setWeightKg("");
+                        setErrorMsg(null);
+                      }
+                    }}
+                    style={{ accentColor: "var(--teal, #0d9488)", cursor: "pointer", width: 14, height: 14 }}
+                  />
+                  <span>No sé el peso exacto</span>
+                </label>
+              </div>
             </div>
             {weightAssessment && (
               <div style={{
@@ -831,7 +866,8 @@ function PetDetail({ id }: { id: string }) {
   const [editKind, setEditKind] = useState(pet?.kind || "Perro");
   const [editBreed, setEditBreed] = useState(pet?.breed || "Mestizo / Criollo");
   const [editCustomBreed, setEditCustomBreed] = useState("");
-  const [editWeight, setEditWeight] = useState(pet?.weight ? pet.weight.replace(" kg", "").replace(" g", "").trim() : "");
+  const [editWeight, setEditWeight] = useState(pet?.weight && !pet.weight.includes("Sin especificar") && !pet.weight.includes("No informado") ? pet.weight.replace(" kg", "").replace(" g", "").trim() : "");
+  const [editUnknownWeight, setEditUnknownWeight] = useState(!pet?.weight || pet.weight.includes("Sin especificar") || pet.weight.includes("No informado"));
   const [editSex, setEditSex] = useState("Macho");
   const [editMicrochip, setEditMicrochip] = useState(pet?.microchip && pet.microchip !== "No informado" ? pet.microchip : "");
   const [editAllergies, setEditAllergies] = useState(pet?.allergies && pet.allergies !== "Sin alergias conocidas" ? pet.allergies : "");
@@ -901,7 +937,9 @@ function PetDetail({ id }: { id: string }) {
       setEditName(pet.name);
       setEditKind(pet.kind);
       setEditBreed(pet.breed);
-      setEditWeight(pet.weight ? pet.weight.replace(" kg", "").replace(" g", "").trim() : "");
+      const hasNoWeight = !pet.weight || pet.weight.includes("Sin especificar") || pet.weight.includes("No informado");
+      setEditUnknownWeight(hasNoWeight);
+      setEditWeight(hasNoWeight ? "" : pet.weight.replace(" kg", "").replace(" g", "").trim());
       setEditMicrochip(pet.microchip && pet.microchip !== "No informado" ? pet.microchip : "");
       setEditAllergies(pet.allergies && pet.allergies !== "Sin alergias conocidas" ? pet.allergies : "");
       try {
@@ -944,7 +982,7 @@ function PetDetail({ id }: { id: string }) {
     e.preventDefault();
     if (!editName.trim()) return;
 
-    if (editWeightAssessment && editWeightAssessment.isBlocking) {
+    if (!editUnknownWeight && editWeightAssessment && editWeightAssessment.isBlocking) {
       setToastMsg(editWeightAssessment.message);
       setTimeout(() => setToastMsg(null), 4500);
       return;
@@ -956,7 +994,7 @@ function PetDetail({ id }: { id: string }) {
       name: editName.trim(),
       species: editKind,
       breed: finalBreed || "Mestizo",
-      weightKg: editWeight ? parseFloat(editWeight) : undefined,
+      weightKg: editUnknownWeight || !editWeight ? undefined : parseFloat(editWeight),
       sex: editSex,
       microchip: editMicrochip.trim() ? editMicrochip.trim() : undefined,
       allergies: editAllergies.trim() ? editAllergies.trim() : undefined,
@@ -1205,7 +1243,35 @@ function PetDetail({ id }: { id: string }) {
                     ))}
                   </select>
                 </label>
-                <label className="field"><span>Peso (kg)</span><input type="number" step="0.1" value={editWeight} onChange={(e) => setEditWeight(e.target.value)}/></label>
+                <div>
+                  <label className="field" style={{ marginBottom: 0 }}>
+                    <span>Peso (kg)</span>
+                    <input
+                      data-testid="input-edit-pet-weight"
+                      type="number"
+                      step="0.1"
+                      value={editUnknownWeight ? "" : editWeight}
+                      onChange={(e) => setEditWeight(e.target.value)}
+                      disabled={editUnknownWeight}
+                      placeholder={editUnknownWeight ? "Sin especificar" : "Ej: 14.5"}
+                      style={editUnknownWeight ? { background: "#f1f5f9", cursor: "not-allowed", color: "#94a3b8" } : undefined}
+                    />
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--ink-soft, #64748b)", cursor: "pointer", marginTop: 4 }}>
+                    <input
+                      type="checkbox"
+                      data-testid="checkbox-edit-unknown-weight"
+                      checked={editUnknownWeight}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setEditUnknownWeight(checked);
+                        if (checked) setEditWeight("");
+                      }}
+                      style={{ accentColor: "var(--teal, #0d9488)", cursor: "pointer", width: 14, height: 14 }}
+                    />
+                    <span>No sé el peso exacto</span>
+                  </label>
+                </div>
               </div>
               {editWeightAssessment && (
                 <div style={{
