@@ -12,7 +12,7 @@ interface AuthContextType {
   login: (credentials: Record<string, any>) => Promise<User>;
   register: (data: Record<string, any>) => Promise<User>;
   logout: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: (silent?: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
    * embedding (the mobile call screen) carries no refresh cookie, so that token
    * was the only credential and the page always bounced to /login.
    */
-  const refreshSession = async () => {
+  const refreshSession = async (silent = false) => {
     try {
       const res = await api.get<ApiResponse<{ user: User }>>('/api/auth/me');
       if (res.data.success && res.data.data?.user) {
@@ -88,7 +88,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Offline or network error: keep the cached user so a transient failure
       // does not disrupt navigation.
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -106,10 +108,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
     };
 
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        // Silent background session re-validation without unmounting unauthenticated forms like /register
+        refreshSession(true);
+      }
+    };
+
     if (typeof window !== 'undefined') {
       window.addEventListener('vetconnect:session_terminated', handleSessionTerminated);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
       return () => {
         window.removeEventListener('vetconnect:session_terminated', handleSessionTerminated);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
       };
     }
   }, []);

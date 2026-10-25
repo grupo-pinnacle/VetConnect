@@ -1,8 +1,53 @@
-import React, { useState, type ChangeEvent, type FormEvent } from "react";
+import React, { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Role } from "../types";
 import "../styles/auth.css";
+
+export const REGISTER_DRAFT_KEY = "vetconnect_register_draft";
+
+export interface RegisterDraft {
+  role?: Role | string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  licenseNumber?: string;
+  bio?: string;
+  province?: string;
+  specialty?: string;
+  experienceYears?: string;
+  step?: number | string;
+  acceptedTerms?: boolean;
+}
+
+export function getRegisterDraft(): RegisterDraft | null {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const raw = window.localStorage.getItem(REGISTER_DRAFT_KEY);
+      if (raw) return JSON.parse(raw);
+    }
+  } catch {}
+  return null;
+}
+
+export function saveRegisterDraft(draft: RegisterDraft): void {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const safeDraft: RegisterDraft = { ...draft };
+      delete (safeDraft as Record<string, unknown>).password;
+      window.localStorage.setItem(REGISTER_DRAFT_KEY, JSON.stringify(safeDraft));
+    }
+  } catch {}
+}
+
+export function clearRegisterDraft(): void {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.removeItem(REGISTER_DRAFT_KEY);
+    }
+  } catch {}
+}
 
 const authPhoto =
   "https://images.unsplash.com/photo-1774218318818-c201207699d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGF0JTIwaG9tZSUyMHdpdGglMjBwZXQlMjByYWJiaXQlMjB3YXJtJTIwbmF0dXJhbCUyMGxpZ2h0fGVufDF8fHx8MTc5MTIyODc4Mnww&ixlib=rb-4.1.0&q=85&w=1400";
@@ -62,15 +107,18 @@ function Logo() {
 }
 
 export function Register() {
-  const [role, setRole] = useState<Role>("CLIENT");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const initialDraft = getRegisterDraft();
+
+  const [role, setRole] = useState<Role>((initialDraft?.role as Role) || "CLIENT");
+  const [firstName, setFirstName] = useState(initialDraft?.firstName || "");
+  const [lastName, setLastName] = useState(initialDraft?.lastName || "");
+  const [email, setEmail] = useState(initialDraft?.email || "");
+  const [phone, setPhone] = useState(initialDraft?.phone || "");
   const [password, setPassword] = useState("");
-  const [licenseNumber, setLicenseNumber] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState(initialDraft?.licenseNumber || "");
+  const [bio, setBio] = useState(initialDraft?.bio || "");
   const [showPassword, setShowPassword] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(Boolean(initialDraft?.acceptedTerms));
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -78,7 +126,45 @@ export function Register() {
   const { user: currentUser, register } = useAuth();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  const draftRef = useRef<RegisterDraft>({
+    role,
+    firstName,
+    lastName,
+    email,
+    phone,
+    licenseNumber,
+    bio,
+    acceptedTerms,
+  });
+
+  useEffect(() => {
+    draftRef.current = {
+      role,
+      firstName,
+      lastName,
+      email,
+      phone,
+      licenseNumber,
+      bio,
+      acceptedTerms,
+    };
+    saveRegisterDraft(draftRef.current);
+  }, [role, firstName, lastName, email, phone, licenseNumber, bio, acceptedTerms]);
+
+  useEffect(() => {
+    const flushDraft = () => {
+      saveRegisterDraft(draftRef.current);
+    };
+
+    document.addEventListener("visibilitychange", flushDraft);
+    window.addEventListener("pagehide", flushDraft);
+    return () => {
+      document.removeEventListener("visibilitychange", flushDraft);
+      window.removeEventListener("pagehide", flushDraft);
+    };
+  }, []);
+
+  useEffect(() => {
     if (currentUser) {
       if (currentUser.role === "VET") navigate("/vet/dashboard", { replace: true });
       else if (currentUser.role === "ADMIN") navigate("/admin/dashboard", { replace: true });
@@ -129,6 +215,8 @@ export function Register() {
         role,
         licenseNumber: role === "VET" ? licenseNumber : undefined,
       });
+
+      clearRegisterDraft();
 
       if (user.role === "VET") {
         navigate("/vet/dashboard");

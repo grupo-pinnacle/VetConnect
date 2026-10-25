@@ -2,6 +2,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ChangeEvent,
   type FormEvent,
   type ReactNode,
@@ -9,6 +10,7 @@ import {
 import { Icon, Logo } from "./Landing";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import { getRegisterDraft, saveRegisterDraft, clearRegisterDraft } from "./Register";
 import "../styles/auth.css";
 
 type AuthRoute =
@@ -524,11 +526,51 @@ function Terms({
 
 function TutorRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
   const { register } = useAuth();
-  const [data, setData] = useState<PersonalData>(emptyPersonal);
+  const initialDraft = getRegisterDraft();
+
+  const [data, setData] = useState<PersonalData>(() => ({
+    ...emptyPersonal,
+    firstName: initialDraft?.firstName || "",
+    lastName: initialDraft?.lastName || "",
+    email: initialDraft?.email || "",
+    terms: Boolean(initialDraft?.acceptedTerms),
+  }));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState("");
+
+  const draftRef = useRef(data);
+  useEffect(() => {
+    draftRef.current = data;
+    saveRegisterDraft({
+      role: "CLIENT",
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      acceptedTerms: data.terms,
+      step: 1,
+    });
+  }, [data]);
+
+  useEffect(() => {
+    const flush = () => {
+      saveRegisterDraft({
+        role: "CLIENT",
+        firstName: draftRef.current.firstName,
+        lastName: draftRef.current.lastName,
+        email: draftRef.current.email,
+        acceptedTerms: draftRef.current.terms,
+        step: 1,
+      });
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+    };
+  }, []);
 
   const update = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setData((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -552,6 +594,7 @@ function TutorRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
         lastName: data.lastName,
         role: "CLIENT",
       });
+      clearRegisterDraft();
       setSuccess(true);
     } catch (err: any) {
       const msg = err.response?.data?.error?.message || err.message || "Error al registrar la cuenta. Revisá los datos ingresados.";
@@ -607,18 +650,71 @@ function Stepper({ step }: { step: number }) {
 
 function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
   const { register } = useAuth();
-  const [step, setStep] = useState(1);
-  const [data, setData] = useState({
-    ...emptyPersonal,
-    licenseNumber: "",
-    province: "",
-    specialty: "",
-    experienceYears: "",
+  const initialDraft = getRegisterDraft();
+
+  const [step, setStep] = useState<number>(() => {
+    if (initialDraft?.step && typeof initialDraft.step === "number") {
+      return initialDraft.step;
+    }
+    return 1;
   });
+
+  const [data, setData] = useState(() => ({
+    ...emptyPersonal,
+    firstName: initialDraft?.firstName || "",
+    lastName: initialDraft?.lastName || "",
+    email: initialDraft?.email || "",
+    licenseNumber: initialDraft?.licenseNumber || "",
+    province: initialDraft?.province || "",
+    specialty: initialDraft?.specialty || "",
+    experienceYears: initialDraft?.experienceYears || "",
+    terms: Boolean(initialDraft?.acceptedTerms),
+  }));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState("");
+
+  const draftRef = useRef({ data, step });
+  useEffect(() => {
+    draftRef.current = { data, step };
+    saveRegisterDraft({
+      role: "VET",
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      licenseNumber: data.licenseNumber,
+      province: data.province,
+      specialty: data.specialty,
+      experienceYears: data.experienceYears,
+      acceptedTerms: data.terms,
+      step,
+    });
+  }, [data, step]);
+
+  useEffect(() => {
+    const flush = () => {
+      const cur = draftRef.current;
+      saveRegisterDraft({
+        role: "VET",
+        firstName: cur.data.firstName,
+        lastName: cur.data.lastName,
+        email: cur.data.email,
+        licenseNumber: cur.data.licenseNumber,
+        province: cur.data.province,
+        specialty: cur.data.specialty,
+        experienceYears: cur.data.experienceYears,
+        acceptedTerms: cur.data.terms,
+        step: cur.step,
+      });
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+    };
+  }, []);
 
   const update = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setData((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -662,6 +758,7 @@ function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
         licenseNumber: data.licenseNumber,
         specialty: data.specialty,
       });
+      clearRegisterDraft();
       setSuccess(true);
     } catch (err: any) {
       const msg = err.response?.data?.error?.message || err.message || "Error al registrar el perfil profesional.";
