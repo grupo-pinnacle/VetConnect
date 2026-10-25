@@ -339,8 +339,8 @@ function useClientData() {
     enabled: !!user,
   });
 
-  const petsList = petsQuery.data ?? [];
-  const consultationsList = consultationsQuery.data ?? [];
+  const petsList = useMemo(() => petsQuery.data ?? [], [petsQuery.data]);
+  const consultationsList = useMemo(() => consultationsQuery.data ?? [], [consultationsQuery.data]);
 
   const syncedPets = useMemo(() => {
     return petsList.map((pet) => {
@@ -1721,20 +1721,16 @@ export function AppointmentsPage() {
   return <ConsultationsPage initialTab="Agenda" />;
 }
 
-function MessagesPage() {
+export function MessagesPage() {
   const { pets, consultations } = useClientData();
   const { user } = useAuth();
-  const rawFirstName = user?.firstName || (user?.email ? user.email.split("@")[0] : "");
-  const clientFirstName = rawFirstName ? (rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)) : "Tutor";
   const petName = pets[0]?.name || "tu mascota";
 
   const [activeChip, setActiveChip] = useState<string>("Todos");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showBanner, setShowBanner] = useState(true);
   const [activeChatId, setActiveChatId] = useState<string>("");
   const [inputText, setInputText] = useState("");
   const [showAttachMenu, setShowAttachMenu] = useState(false);
-  const [showEmojiMenu, setShowEmojiMenu] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
@@ -1747,10 +1743,8 @@ function MessagesPage() {
 
   const filteredChats = useMemo(() => {
     return conversations.filter((chat) => {
-      if (activeChip === "No leídos" && (!chat.unreadCount || chat.unreadCount === 0)) return false;
-      if (activeChip === "Consultas" && chat.category !== "consults") return false;
-      if (activeChip === "Veterinarios" && chat.category !== "vets") return false;
-      if (activeChip === "Archivados") return false;
+      if (activeChip === "En curso" && !chat.isOnline && !chat.role.includes("Confirmada") && !chat.role.includes("Pendiente")) return false;
+      if (activeChip === "Finalizadas" && !chat.role.includes("Finalizada")) return false;
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
@@ -1759,12 +1753,18 @@ function MessagesPage() {
   }, [conversations, activeChip, searchQuery]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (typeof messagesEndRef.current?.scrollIntoView === "function") {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [activeChatId, activeChat?.messages, isTyping]);
+
+  const consultationsKey = useMemo(() => {
+    return (consultations || []).map((c) => `${c.id}:${c.status}:${c.rawStatus}`).join(",");
+  }, [consultations]);
 
   useEffect(() => {
     if (consultations && consultations.length > 0) {
@@ -1782,7 +1782,7 @@ function MessagesPage() {
           role: `Consulta de ${c.pet} · ${c.status}`,
           avatarText: initials,
           isOnline: c.rawStatus === "ACTIVE",
-          statusText: c.rawStatus === "ACTIVE" ? "en línea" : `Estado: ${c.status}`,
+          statusText: c.rawStatus === "ACTIVE" ? "En consulta activa" : `Estado: ${c.status}`,
           lastTime: c.time || "Hoy",
           preview: c.reason || "Consulta clínica",
           isPinned: c.rawStatus === "ACTIVE",
@@ -1813,10 +1813,10 @@ function MessagesPage() {
         return curr;
       });
     } else {
-      setConversations([]);
-      setActiveChatId("");
+      setConversations((prev) => (prev.length === 0 ? prev : []));
+      setActiveChatId((curr) => (curr === "" ? curr : ""));
     }
-  }, [consultations]);
+  }, [consultationsKey]);
 
   useEffect(() => {
     const matchingCons = consultations.find((c) => c.id === activeChatId);
@@ -1856,7 +1856,7 @@ function MessagesPage() {
             return {
               ...c,
               lastTime: time,
-              preview: isMine ? `✓✓ ${msg.content}` : msg.content,
+              preview: msg.content,
               messages: [...c.messages, newWAMsg],
             };
           }
@@ -1933,7 +1933,7 @@ function MessagesPage() {
           return {
             ...chat,
             lastTime: nowTime,
-            preview: `✓✓ ${content}`,
+            preview: content,
             messages: [...chat.messages, newMsg],
           };
         }
@@ -1942,7 +1942,6 @@ function MessagesPage() {
     );
 
     setInputText("");
-    setShowEmojiMenu(false);
     setShowAttachMenu(false);
 
     const matchingCons = consultations.find((c) => c.id === activeChat.id);
@@ -1954,16 +1953,6 @@ function MessagesPage() {
         })
         .catch((err) => console.error("Error sending real message:", err));
     }
-
-    // Transition ticks: sent -> delivered
-    setTimeout(() => {
-      setConversations((prev) =>
-        prev.map((chat) => ({
-          ...chat,
-          messages: chat.messages.map((m) => (m.id === newMsgId ? { ...m, state: "delivered" } : m)),
-        }))
-      );
-    }, 450);
   };
 
   const handleAttachDoc = (docTitle: string) => {
@@ -1978,7 +1967,7 @@ function MessagesPage() {
         title: docTitle,
         sub: "Documento clínico • PDF",
         bannerTag: "DOCUMENTO ADJUNTO",
-        bannerTitle: "VetConnect · Certificado Médico",
+        bannerTitle: "VetConnect · Expediente Clínico",
       },
       time: nowTime,
       state: "sent",
@@ -1990,7 +1979,7 @@ function MessagesPage() {
           return {
             ...chat,
             lastTime: nowTime,
-            preview: `✓✓ 📄 ${docTitle}`,
+            preview: `📄 ${docTitle}`,
             messages: [...chat.messages, newDocMsg],
           };
         }
@@ -2009,26 +1998,49 @@ function MessagesPage() {
     }, 1200);
   };
 
-  const chips = ["Todos", "No leídos", "Consultas", "Veterinarios", "Archivados"];
-  const quickEmojis = ["🐾", "🐶", "🐱", "🩺", "💊", "❤️", "👍", "🙏", "😊", "✨"];
+  const chips = ["Todos", "En curso", "Finalizadas"];
+
+  if (!consultations || consultations.length === 0) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Comunicación médica"
+          title="Mensajes"
+          description="Canal directo y seguimiento clínico con los veterinarios asignados a tus consultas."
+        />
+
+        <div className="panel" style={{ marginTop: 14 }} data-testid="messages-empty-state">
+          <EmptyState
+            icon="message"
+            title="Todavía no tenés conversaciones clínicas activas"
+            text="Cuando inicies una consulta de telemedicina veterinaria, vas a poder comunicarte directamente con tu profesional asignado acá."
+            action="Solicitar atención"
+            onAction={() => go("/client/triage")}
+          />
+        </div>
+
+        {toastMsg && <Toast message={toastMsg} tone="success" />}
+      </>
+    );
+  }
 
   return (
     <>
       <PageHeader
-        eyebrow="Chat clínico oficial"
+        eyebrow="Comunicación médica"
         title="Mensajes"
-        description="Comunicación directa y seguimiento médico con tus veterinarios tratantes."
+        description="Canal directo y seguimiento clínico con los veterinarios asignados a tus consultas."
       />
 
-      <div className="wa-container">
+      <div className="wa-container" data-testid="messages-chat-container">
         {/* LEFT SIDEBAR */}
         <aside className={`wa-sidebar ${mobileThreadOpen ? "is-hidden" : ""}`}>
           <div className="wa-sidebar__top">
             <div className="wa-sidebar__brand">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#00a884">
-                <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c4.54 0 8.24 3.7 8.24 8.24 0 2.2-.86 4.27-2.42 5.82a8.18 8.18 0 0 1-5.82 2.42c-1.45 0-2.87-.38-4.12-1.11l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.25-4.42c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.24-.74-.66-1.24-1.48-1.39-1.73-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.08s.89 2.41 1.01 2.58c.13.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.53.6.19 1.14.16 1.57.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.17-.48-.29" />
-              </svg>
-              <span>WhatsApp</span>
+              <span style={{ display: "flex", alignItems: "center", color: "var(--teal-deep)" }}>
+                <Icon name="message" size={20} />
+              </span>
+              <span>Mensajería Clínica</span>
             </div>
             <div className="wa-sidebar__actions">
               <button
@@ -2036,28 +2048,9 @@ function MessagesPage() {
                 title="Nueva consulta"
                 onClick={() => go("/client/triage")}
                 aria-label="Nueva consulta"
+                data-testid="new-consultation-btn"
               >
-                <Icon name="plus" size={19} />
-              </button>
-              <button
-                className="wa-icon-btn"
-                title="Agenda de turnos"
-                onClick={() => go("/client/appointments")}
-                aria-label="Agenda"
-              >
-                <Icon name="calendar" size={19} />
-              </button>
-              <button
-                className="wa-icon-btn"
-                title="Opciones"
-                onClick={() => setToastMsg("VetConnect Chat clínico v2.4 activo")}
-                aria-label="Opciones"
-              >
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="5" r="2" />
-                  <circle cx="12" cy="12" r="2" />
-                  <circle cx="12" cy="19" r="2" />
-                </svg>
+                <Icon name="plus" size={18} />
               </button>
             </div>
           </div>
@@ -2067,15 +2060,17 @@ function MessagesPage() {
               <Icon name="search" size={17} />
               <input
                 type="text"
-                placeholder="Buscar un chat o iniciar uno nuevo"
+                placeholder="Buscar por veterinario, mascota o motivo..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                data-testid="search-chat-input"
               />
               {searchQuery && (
                 <button
                   className="wa-icon-btn"
                   style={{ width: 24, height: 24 }}
                   onClick={() => setSearchQuery("")}
+                  aria-label="Limpiar búsqueda"
                 >
                   <Icon name="close" size={14} />
                 </button>
@@ -2088,6 +2083,7 @@ function MessagesPage() {
                   key={chip}
                   className={`wa-chip ${activeChip === chip ? "is-active" : ""}`}
                   onClick={() => setActiveChip(chip)}
+                  data-testid={`chat-chip-${chip.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   {chip}
                 </button>
@@ -2095,39 +2091,10 @@ function MessagesPage() {
             </div>
           </div>
 
-          {showBanner && (
-            <div className="wa-banner">
-              <span className="wa-banner__icon">
-                <Icon name="bell" size={18} />
-              </span>
-              <div className="wa-banner__text">
-                Las notificaciones de mensajes y llamadas están activadas.{" "}
-                <a onClick={() => go("/client/notifications")}>Configurar</a>
-              </div>
-              <button
-                className="wa-banner__close"
-                onClick={() => setShowBanner(false)}
-                aria-label="Cerrar aviso"
-              >
-                <Icon name="close" size={15} />
-              </button>
-            </div>
-          )}
-
           <div className="wa-chats-list">
             {filteredChats.length === 0 ? (
-              <div style={{ padding: "36px 20px", textAlign: "center", color: "#667781", fontSize: 13 }}>
-                {conversations.length === 0 ? (
-                  <>
-                    <p style={{ fontWeight: 600, color: "#111b21", marginBottom: 6 }}>Sin consultas registradas</p>
-                    <p style={{ marginBottom: 14 }}>Tus conversaciones con veterinarios aparecerán acá una vez iniciada la atención.</p>
-                    <button className="btn btn--primary btn--sm" onClick={() => go("/client/triage")}>
-                      Iniciar consulta
-                    </button>
-                  </>
-                ) : (
-                  "No se encontraron conversaciones con ese filtro."
-                )}
+              <div style={{ padding: "36px 20px", textAlign: "center", color: "#64748b", fontSize: 13 }}>
+                No se encontraron conversaciones con ese filtro.
               </div>
             ) : (
               filteredChats.map((chat) => {
@@ -2138,6 +2105,7 @@ function MessagesPage() {
                     key={chat.id}
                     className={`wa-chat-item ${isSelected ? "is-active" : ""} ${hasUnread ? "has-unread" : ""}`}
                     onClick={() => handleSelectChat(chat.id)}
+                    data-testid={`chat-item-${chat.id}`}
                   >
                     <div className="wa-chat-item__avatar">
                       {chat.avatarText}
@@ -2153,7 +2121,7 @@ function MessagesPage() {
                         <span className="wa-chat-item__preview">{chat.preview}</span>
                         <div className="wa-chat-item__badges">
                           {chat.isPinned && (
-                            <span className="wa-pin-icon" title="Chat fijado">
+                            <span className="wa-pin-icon" title="Chat activo">
                               📌
                             </span>
                           )}
@@ -2173,22 +2141,12 @@ function MessagesPage() {
         {/* RIGHT CHAT PANE */}
         <section className={`wa-chat-pane ${!mobileThreadOpen ? "is-hidden" : ""}`}>
           {!activeChat ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 32, textAlign: "center", color: "#667781" }}>
-              <div style={{ fontSize: 44, marginBottom: 16 }}>🩺</div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111b21", marginBottom: 8 }}>VetConnect Mensajería Clínica</h2>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 32, textAlign: "center", color: "#64748b" }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>🩺</div>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Mensajería Clínica VetConnect</h2>
               <p style={{ maxWidth: 420, fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
-                {conversations.length === 0
-                  ? "No tenés consultas médicas activas. Iniciá una atención para comunicarte directamente con tu veterinario."
-                  : "Seleccioná una conversación de la lista para ver el historial y comunicarte con el profesional."}
+                Seleccioná una conversación de la lista para ver el historial y comunicarte con el profesional tratante.
               </p>
-              {conversations.length === 0 && (
-                <button
-                  className="btn btn--primary"
-                  onClick={() => go("/client/triage")}
-                >
-                  Iniciar consulta clínica
-                </button>
-              )}
             </div>
           ) : (
             <>
@@ -2196,14 +2154,13 @@ function MessagesPage() {
                 <div className="wa-chat-pane__header-contact">
                   <button
                     className="wa-icon-btn mobile-only-btn"
-                    style={{ marginRight: -4 }}
                     onClick={(e) => {
                       e.stopPropagation();
                       setMobileThreadOpen(false);
                     }}
-                    aria-label="Volver a chats"
+                    aria-label="Volver a lista"
                   >
-                    <Icon name="left" size={18} />
+                    <Icon name="arrow" size={16} />
                   </button>
                   <div className="wa-chat-pane__header-avatar">
                     {activeChat.avatarText}
@@ -2212,7 +2169,7 @@ function MessagesPage() {
                   <div className="wa-chat-pane__header-info">
                     <h2>{activeChat.name}</h2>
                     <span className={activeChat.isOnline ? "is-online" : ""}>
-                      {activeChat.statusText}
+                      {activeChat.role}
                     </span>
                   </div>
                 </div>
@@ -2220,53 +2177,32 @@ function MessagesPage() {
                 <div className="wa-chat-pane__header-actions">
                   <button
                     className="wa-icon-btn"
-                    title="Iniciar videoconsulta"
+                    title="Entrar a la videoconsulta"
                     onClick={() => {
                       const targetCons = consultations.find((c) => c.id === activeChat.id) || consultations[0];
                       if (targetCons) go(`/call/${targetCons.id}?from=client`);
                       else go("/client/triage");
                     }}
                     aria-label="Videollamada"
+                    data-testid="start-videocall-btn"
                   >
-                    <Icon name="video" size={20} />
-                  </button>
-                  <button
-                    className="wa-icon-btn"
-                    title="Buscar en el chat"
-                    onClick={() => setToastMsg("Buscador dentro del chat activo")}
-                    aria-label="Buscar"
-                  >
-                    <Icon name="search" size={19} />
-                  </button>
-                  <button
-                    className="wa-icon-btn"
-                    title="Más opciones"
-                    onClick={() => setToastMsg(`Conversación con ${activeChat.name}`)}
-                    aria-label="Más opciones"
-                  >
-                    <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="12" cy="5" r="2" />
-                      <circle cx="12" cy="12" r="2" />
-                      <circle cx="12" cy="19" r="2" />
-                    </svg>
+                    <Icon name="video" size={19} />
                   </button>
                 </div>
               </header>
 
-              {/* CHAT BODY WITH DOODLE BACKGROUND */}
-              <div className="wa-chat-body">
-                <div className="wa-encryption-pill">
-                  <span>🔒</span>
-                  <span>
-                    Los mensajes y llamadas están cifrados de extremo a extremo. Nadie fuera de este chat, ni siquiera VetConnect, puede leerlos ni escucharlos.
-                  </span>
+              {/* CLEAN CLINICAL CHAT BODY */}
+              <div className="wa-chat-body" data-testid="chat-body">
+                <div className="clinical-security-pill" data-testid="clinical-security-note">
+                  <Icon name="shield" size={13} />
+                  <span>Canal clínico auditado · Los mensajes forman parte de la historia clínica</span>
                 </div>
 
-                <div className="wa-date-pill">HOY</div>
-
                 {activeChat.messages.length === 0 ? (
-                  <div style={{ padding: "24px 20px", textAlign: "center", color: "#667781", fontSize: 13, background: "rgba(255,255,255,0.7)", borderRadius: 12, margin: "24px auto", maxWidth: 420 }}>
-                    Iniciá la conversación con {activeChat.name}. Todo mensaje e indicación queda registrado en la historia clínica.
+                  <div className="clinical-empty-conversation" data-testid="empty-conversation-notice">
+                    <Icon name="message" size={26} />
+                    <p>Iniciá la comunicación con <strong>{activeChat.name}</strong>.</p>
+                    <span>Todo mensaje, indicación médica y archivo adjunto queda registrado en el expediente de tu mascota.</span>
                   </div>
                 ) : (
                   activeChat.messages.map((msg) => {
@@ -2277,6 +2213,7 @@ function MessagesPage() {
                         <div
                           key={msg.id}
                           className={`wa-bubble wa-doc-bubble ${isSent ? "wa-bubble--sent" : "wa-bubble--received"}`}
+                          data-testid="chat-message-bubble"
                         >
                           {!isSent && msg.senderName && (
                             <div className="wa-bubble__sender">{msg.senderName}</div>
@@ -2284,10 +2221,10 @@ function MessagesPage() {
                           <div className="wa-doc-card">
                             <div className="wa-doc-card__banner">
                               <span className="wa-doc-card__banner-tag">
-                                {msg.doc.bannerTag || "DOCUMENTO PDF"}
+                                {msg.doc.bannerTag || "DOCUMENTO CLÍNICO"}
                               </span>
                               <div className="wa-doc-card__banner-preview">
-                                <Icon name="file" size={26} />
+                                <Icon name="file" size={24} />
                                 <span>{msg.doc.bannerTitle || "VetConnect Clinical Record"}</span>
                               </div>
                             </div>
@@ -2306,14 +2243,13 @@ function MessagesPage() {
                                 title="Descargar documento"
                                 aria-label="Descargar documento"
                               >
-                                <Icon name="download" size={17} />
+                                <Icon name="download" size={16} />
                               </button>
                             </div>
                           </div>
 
                           <div className="wa-bubble__meta">
                             <span>{msg.time}</span>
-                            {isSent && <WhatsAppCheck state={msg.state} />}
                           </div>
                         </div>
                       );
@@ -2323,6 +2259,7 @@ function MessagesPage() {
                       <div
                         key={msg.id}
                         className={`wa-bubble ${isSent ? "wa-bubble--sent" : "wa-bubble--received"}`}
+                        data-testid="chat-message-bubble"
                       >
                         {!isSent && msg.senderName && (
                           <div className="wa-bubble__sender">{msg.senderName}</div>
@@ -2330,7 +2267,6 @@ function MessagesPage() {
                         <p className="wa-bubble__text">{msg.text}</p>
                         <div className="wa-bubble__meta">
                           <span>{msg.time}</span>
-                          {isSent && <WhatsAppCheck state={msg.state} />}
                         </div>
                       </div>
                     );
@@ -2347,24 +2283,6 @@ function MessagesPage() {
 
                 <div ref={messagesEndRef} />
               </div>
-
-              {/* QUICK EMOJI BAR */}
-              {showEmojiMenu && (
-                <div className="wa-emoji-bar">
-                  {quickEmojis.map((emoji) => (
-                    <button
-                      key={emoji}
-                      className="wa-emoji-btn"
-                      onClick={() => {
-                        setInputText((prev) => prev + emoji);
-                        setShowEmojiMenu(false);
-                      }}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {/* QUICK ATTACH POPUP */}
               {showAttachMenu && (
@@ -2410,32 +2328,20 @@ function MessagesPage() {
                 <div className="wa-chat-footer__actions">
                   <button
                     className="wa-icon-btn"
-                    title="Emojis"
-                    onClick={() => {
-                      setShowEmojiMenu(!showEmojiMenu);
-                      setShowAttachMenu(false);
-                    }}
-                    aria-label="Emojis"
-                  >
-                    😊
-                  </button>
-                  <button
-                    className="wa-icon-btn"
-                    title="Adjuntar archivo o documento"
+                    title="Adjuntar estudio o receta"
                     onClick={() => {
                       setShowAttachMenu(!showAttachMenu);
-                      setShowEmojiMenu(false);
                     }}
                     aria-label="Adjuntar"
                   >
-                    <Icon name="paperclip" size={20} />
+                    <Icon name="paperclip" size={19} />
                   </button>
                 </div>
 
                 <div className="wa-input-pill">
                   <input
                     type="text"
-                    placeholder="Escribe un mensaje"
+                    placeholder="Escribí un mensaje clínico para el veterinario..."
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={(e) => {
@@ -2444,28 +2350,20 @@ function MessagesPage() {
                         handleSend();
                       }
                     }}
+                    data-testid="chat-message-input"
                   />
                 </div>
 
-                {inputText.trim() ? (
-                  <button
-                    className="wa-send-btn"
-                    onClick={() => handleSend()}
-                    title="Enviar mensaje"
-                    aria-label="Enviar"
-                  >
-                    <Icon name="send" size={19} />
-                  </button>
-                ) : (
-                  <button
-                    className="wa-mic-btn"
-                    onClick={() => setToastMsg("Mensaje de voz: mantén presionado para grabar")}
-                    title="Mensaje de voz"
-                    aria-label="Mensaje de voz"
-                  >
-                    <Icon name="mic" size={20} />
-                  </button>
-                )}
+                <button
+                  className="wa-send-btn"
+                  onClick={() => handleSend()}
+                  disabled={!inputText.trim()}
+                  title="Enviar mensaje"
+                  aria-label="Enviar"
+                  data-testid="chat-send-btn"
+                >
+                  <Icon name="send" size={17} />
+                </button>
               </footer>
             </>
           )}
