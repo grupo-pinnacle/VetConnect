@@ -1,6 +1,10 @@
 .call-shell {
-  min-height: 100svh;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: #142f2e;
   color: var(--cream);
 }
@@ -67,7 +71,9 @@
 
 .call-layout {
   display: grid;
-  height: calc(100svh - 70px);
+  height: calc(100dvh - 70px);
+  max-height: calc(100dvh - 70px);
+  overflow: hidden;
   grid-template-columns: 1fr 350px;
   padding: 12px;
 }
@@ -737,21 +743,32 @@
   }
 
   .call-self-view {
-    width: 100px;
-    height: 135px;
-    border-radius: 14px;
+    bottom: 80px;
+    right: 12px;
+    width: 96px;
+    height: 128px;
+    border-radius: 12px;
+    z-index: 20;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
   }
 
   .call-controls {
-    bottom: 22px;
-    gap: 6px;
+    bottom: 18px;
+    gap: 4px;
+    padding: 0 6px;
+    width: 100%;
+    max-width: 100vw;
+    justify-content: space-around;
   }
 
   .call-controls button {
-    min-width: 48px;
+    min-width: 44px;
+    max-width: 60px;
     min-height: 48px;
-    border-radius: 15px;
-    padding: 6px;
+    border-radius: 12px;
+    padding: 4px 2px;
+    flex: 1 1 0;
   }
 
   .call-controls button span {

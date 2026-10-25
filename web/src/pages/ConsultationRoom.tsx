@@ -19,6 +19,96 @@ const POLLING_INTERVAL_MS = 5000;
 // ------------------------------------------------------------
 type RoomPhase = 'loading' | 'waiting' | 'active' | 'completed' | 'cancelled' | 'error';
 
+export interface WaitingSlide {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+export const WAITING_SLIDES: WaitingSlide[] = [
+  {
+    id: 'permissions',
+    title: 'Asegurate de habilitar los permisos de cámara y micrófono',
+    description: 'Será importante para una buena comunicación.',
+    icon: (
+      <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 19a3 3 0 01-6 0" />
+      </svg>
+    ),
+  },
+  {
+    id: 'stay-screen',
+    title: 'Por favor, permanezca en esta pantalla y evite bloquear el celular.',
+    description: 'En breve será atendido.',
+    icon: (
+      <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 9v3" />
+      </svg>
+    ),
+  },
+  {
+    id: 'lighting',
+    title: 'Ubicá a tu mascota en un lugar bien iluminado',
+    description: 'Facilitará la revisión visual del veterinario.',
+    icon: (
+      <svg className="w-8 h-8 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+    ),
+  },
+];
+
+export const WaitingRoomCarousel: React.FC = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % WAITING_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const slide = WAITING_SLIDES[currentSlide];
+
+  return (
+    <div
+      data-testid="waiting-room-carousel"
+      className="w-full max-w-sm bg-slate-800/80 border border-slate-700/60 rounded-2xl p-5 text-center shadow-lg backdrop-blur-sm mx-auto flex flex-col items-center gap-3 transition-all duration-300"
+    >
+      <div className="w-14 h-14 rounded-full bg-slate-700/70 border border-slate-600/50 flex items-center justify-center shadow-inner">
+        {slide.icon}
+      </div>
+      <div className="min-h-[72px] flex flex-col justify-center">
+        <h3 className="text-sm font-bold text-white leading-snug">
+          {slide.title}
+        </h3>
+        <p className="text-xs text-slate-300 mt-1">
+          {slide.description}
+        </p>
+      </div>
+      <div className="flex items-center gap-1.5 mt-1" role="tablist" aria-label="Consejos de la sala de espera">
+        {WAITING_SLIDES.map((s, idx) => (
+          <button
+            key={s.id}
+            type="button"
+            role="tab"
+            aria-selected={idx === currentSlide}
+            aria-label={"Consejo " + (idx + 1)}
+            onClick={() => setCurrentSlide(idx)}
+            className={"h-2 rounded-full transition-all duration-300 cursor-pointer " + (
+              idx === currentSlide ? "w-6 bg-emerald-400" : "w-2 bg-slate-600 hover:bg-slate-500"
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
 export const ConsultationRoom: React.FC = () => {
   const { id: consultationId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -193,6 +283,57 @@ export const ConsultationRoom: React.FC = () => {
       (window as any).ReactNativeWebView.postMessage(JSON.stringify({ type: 'page:ready' }));
     }
   }, []);
+
+  // ----------------------------------------------------------------
+  // FEAT-05: Screen WakeLock in WebView / Mobile browser
+  // ----------------------------------------------------------------
+  useEffect(() => {
+    let wakeLockSentinel: any = null;
+
+    const requestWakeLock = async () => {
+      try {
+        if (typeof navigator !== 'undefined' && 'wakeLock' in navigator && (navigator as any).wakeLock?.request) {
+          wakeLockSentinel = await (navigator as any).wakeLock.request('screen');
+        }
+      } catch {
+        // Silently swallow per specification
+      }
+    };
+
+    if (phase === 'waiting' || phase === 'active') {
+      requestWakeLock();
+      if (typeof window !== 'undefined' && (window as any).ReactNativeWebView) {
+        try {
+          (window as any).ReactNativeWebView.postMessage(
+            JSON.stringify({ type: 'wakelock:acquire' })
+          );
+        } catch {}
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && (phase === 'waiting' || phase === 'active')) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
+        wakeLockSentinel = null;
+      }
+      if (typeof window !== 'undefined' && (window as any).ReactNativeWebView) {
+        try {
+          (window as any).ReactNativeWebView.postMessage(
+            JSON.stringify({ type: 'wakelock:release' })
+          );
+        } catch {}
+      }
+    };
+  }, [phase]);
 
   // ----------------------------------------------------------------
   // Connect Socket.io for Realtime Chat — only while ACTIVE
@@ -374,7 +515,7 @@ export const ConsultationRoom: React.FC = () => {
   // --- Loading ---
   if (phase === 'loading') {
     return (
-      <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex items-center justify-center">
+      <div className="w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-slate-900 text-white items-center justify-center">
         <p className="text-lg">Cargando información de la consulta...</p>
       </div>
     );
@@ -383,7 +524,7 @@ export const ConsultationRoom: React.FC = () => {
   // --- Error ---
   if (phase === 'error') {
     return (
-      <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-slate-900 text-white items-center justify-center p-4">
         <h2 className="text-xl font-bold text-red-400 mb-2">Error de Conexión</h2>
         <p className="text-slate-300 mb-6">{errorMsg || 'No se pudo obtener credenciales WebRTC'}</p>
         <button
@@ -403,33 +544,42 @@ export const ConsultationRoom: React.FC = () => {
         role="region"
         aria-live="polite"
         aria-label="Estado de sala de espera"
-        className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex flex-col items-center justify-center p-6 gap-6"
+        className="w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-slate-900 text-white items-center justify-between p-4 sm:p-6"
       >
-        <div className="flex flex-col items-center gap-4 max-w-md text-center">
-          <div className="w-16 h-16 rounded-full bg-sky-600/20 flex items-center justify-center animate-pulse">
-            <Stethoscope className="w-8 h-8 text-sky-400" />
+        {/* Top bar with Stethoscope and Waiting Header */}
+        <div className="w-full max-w-md flex flex-col items-center text-center pt-2 sm:pt-4">
+          <div className="w-12 h-12 rounded-full bg-sky-600/20 border border-sky-500/30 flex items-center justify-center animate-pulse mb-2">
+            <Stethoscope className="w-6 h-6 text-sky-400" />
           </div>
-          <h2 className="text-xl font-bold text-white">Sala de Espera</h2>
-          <p className="text-slate-300">
+          <h2 className="text-lg sm:text-xl font-bold text-white">Sala de Espera Virtual</h2>
+          <p className="text-xs sm:text-sm text-slate-300 mt-1">
             Tu consulta ha sido recibida. Estamos asignando al próximo veterinario de guardia disponible.
-            Por favor, aguarda un momento.
           </p>
           {consultation?.pet && (
-            <p className="text-xs text-slate-400">
-              Paciente: <span className="font-semibold text-slate-200">{consultation.pet.name}</span>
+            <p className="text-[11px] text-slate-400 mt-1.5">
+              Paciente: <span className="font-semibold text-slate-200">{consultation.pet.name}</span> ({consultation.pet.species || 'Mascota'})
             </p>
           )}
-          <div className="flex items-center gap-2 text-xs text-sky-400 animate-pulse">
-            <span className="inline-block w-2 h-2 rounded-full bg-sky-400"></span>
+          <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full bg-sky-950/80 border border-sky-500/30 text-xs text-sky-300 font-medium animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-sky-400"></span>
             Buscando veterinario de guardia...
           </div>
         </div>
-        <button
-          onClick={handleCancel}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold cursor-pointer"
-        >
-          Cancelar y volver
-        </button>
+
+        {/* Center: Tips Carousel */}
+        <div className="w-full flex justify-center my-auto py-2">
+          <WaitingRoomCarousel />
+        </div>
+
+        {/* Bottom: Action button */}
+        <div className="w-full max-w-md pb-2 sm:pb-4 flex justify-center">
+          <button
+            onClick={handleCancel}
+            className="w-full max-w-xs px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs sm:text-sm font-semibold border border-slate-700 shadow-sm transition active:scale-95 cursor-pointer"
+          >
+            Cancelar y volver
+          </button>
+        </div>
       </div>
     );
   }
@@ -437,7 +587,7 @@ export const ConsultationRoom: React.FC = () => {
   // --- Cancelled ---
   if (phase === 'cancelled') {
     return (
-      <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-slate-900 text-white items-center justify-center p-4">
         <h2 className="text-xl font-bold text-amber-400 mb-2">Consulta Cancelada</h2>
         <p className="text-slate-300 mb-6">Esta consulta fue cancelada. Podés iniciar una nueva desde tu panel.</p>
         <button
@@ -453,7 +603,7 @@ export const ConsultationRoom: React.FC = () => {
   // --- Completed (show summary / review prompt) ---
   if (phase === 'completed') {
     return (
-      <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-slate-900 text-white items-center justify-center p-4">
         <div className="bg-slate-800 rounded-xl p-8 max-w-md w-full text-center shadow-xl">
           <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2">
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
@@ -500,7 +650,7 @@ export const ConsultationRoom: React.FC = () => {
 
   // --- Active (ACTIVE status — render call room + chat) ---
   return (
-    <div className="w-full min-h-[100dvh] h-[100dvh] bg-slate-950 flex flex-col lg:flex-row overflow-hidden relative">
+    <div className="w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col lg:flex-row bg-slate-950 relative">
       {/* Mobile Tab Switcher (< 1024px) */}
       <div className="lg:hidden z-30 bg-slate-900 border-b border-slate-800 px-3 py-1.5 flex items-center justify-center gap-2 shrink-0">
         <button

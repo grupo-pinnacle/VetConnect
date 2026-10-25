@@ -423,6 +423,41 @@ function Room({ id }: { id: string }) {
     }
   }, [consultation?.status, id, livekitToken, livekitFailed]);
 
+  // Mobile WebView handshake
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).ReactNativeWebView) {
+      (window as any).ReactNativeWebView.postMessage(JSON.stringify({ type: "page:ready" }));
+    }
+  }, []);
+
+  // Screen WakeLock during call/waiting
+  useEffect(() => {
+    let wakeLockSentinel: any = null;
+    const requestWakeLock = async () => {
+      try {
+        if (typeof navigator !== "undefined" && "wakeLock" in navigator && (navigator as any).wakeLock?.request) {
+          wakeLockSentinel = await (navigator as any).wakeLock.request("screen");
+        }
+      } catch {}
+    };
+    if (callState === "waiting" || callState === "connected") {
+      requestWakeLock();
+    }
+    const handleVis = () => {
+      if (document.visibilityState === "visible" && (callState === "waiting" || callState === "connected")) {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVis);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVis);
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
+        wakeLockSentinel = null;
+      }
+    };
+  }, [callState]);
+
   // Local camera preview via getUserMedia (only when LiveKit is not active)
   useEffect(() => {
     if (!cam || livekitToken) {
@@ -624,7 +659,7 @@ function Room({ id }: { id: string }) {
   }[callState];
 
   return (
-    <div className={`v-call ${panel ? "has-panel" : ""}`}>
+    <div className={`v-call ${panel ? "has-panel" : ""} h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col`}>
       <header className="v-call__top">
         <button className="v-call__back" onClick={() => setEnding(true)} aria-label="Salir de la videollamada">
           <Icon name="left" size={20} />
@@ -731,7 +766,7 @@ function Room({ id }: { id: string }) {
 
         {/* Local user pip with live webcam stream - only when LiveKit room is not active */}
         {!livekitToken && (
-          <div className={`v-call__self ${cam ? "" : "is-off"}`}>
+          <div className={`v-call__self ${cam ? "" : "is-off"} ${callState === "waiting" ? "v-call__self--waiting" : "v-call__self--active bottom-20 right-3 z-20 w-24 h-32 rounded-xl overflow-hidden shadow-lg"}`}>
             {cam ? (
               <video
                 ref={localVideoRef}
@@ -746,7 +781,7 @@ function Room({ id }: { id: string }) {
                 <small>Cámara apagada</small>
               </>
             )}
-            <em>Vos ({selfInitials})</em>
+            <em className="v-call__self-name">Vos ({selfInitials})</em>
             {!mic && (
               <span className="v-call__muted">
                 <Icon name="micoff" size={13} />
