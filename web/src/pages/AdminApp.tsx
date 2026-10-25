@@ -597,7 +597,7 @@ export function AdminApp() {
               {user ? `${user.firstName} ${user.lastName}` : 'Super Admin'}
             </span>
             <span className="adm-sidebar__profile-email">
-              {user?.email || 'admin@vetconnect.com'}
+              {user?.email || 'admin@huellicam.com'}
             </span>
           </div>
         </div>

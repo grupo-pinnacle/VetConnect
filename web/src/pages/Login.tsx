@@ -40,15 +40,11 @@ function Icon({ name }: { name: string }) {
 
 function Logo() {
   return (
-    <Link className="logo" to="/" aria-label="VetConnect, inicio" data-testid="brand-logo">
+    <Link className="logo" to="/" aria-label="Huellicam, inicio" data-testid="brand-logo">
       <span className="logo__mark">
-        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <path d="M9 11.5c5.8 0 10.5 4.7 10.5 10.5v8.5C13.7 30.5 9 25.8 9 20V11.5Z" fill="currentColor" />
-          <path d="M31 11.5c-5.8 0-10.5 4.7-10.5 10.5v8.5C26.3 30.5 31 25.8 31 20V11.5Z" fill="currentColor" opacity=".72" />
-          <circle cx="20" cy="9" r="4" fill="currentColor" />
-        </svg>
+        <img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
       </span>
-      <span>VetConnect</span>
+      <span>Huellicam</span>
     </Link>
   );
 }
@@ -118,7 +114,7 @@ export function Login() {
 
   return (
     <main className="auth-shell">
-      <section className="auth-visual" aria-label="VetConnect, conexión y cuidado veterinario">
+      <section className="auth-visual" aria-label="Huellicam, conexión y cuidado veterinario">
         <Link className="auth-visual__back" to="/">
           <Icon name="arrow" />
           Volver al sitio
@@ -152,7 +148,7 @@ export function Login() {
           <header className="auth-header">
             <Logo />
             <h2>Bienvenido de nuevo</h2>
-            <p>Accedé a tu cuenta para continuar con VetConnect.</p>
+            <p>Accedé a tu cuenta para continuar con Huellicam.</p>
           </header>
 
           {serverError && (
@@ -172,7 +168,7 @@ export function Login() {
                 <input
                   name="email"
                   type="email"
-                  placeholder="ejemplo@vetconnect.com"
+                  placeholder="ejemplo@huellicam.com"
                   value={email}
                   autoComplete="email"
                   onChange={(e) => {
@@ -237,7 +233,7 @@ export function Login() {
           </p>
         </div>
         <p className="auth-panel__legal">
-          © {new Date().getFullYear()} VetConnect · <Link to="/privacy">Privacidad</Link> · <Link to="/terms">Términos</Link>
+          © {new Date().getFullYear()} Huellicam · <Link to="/privacy">Privacidad</Link> · <Link to="/terms">Términos</Link>
         </p>
       </section>
     </main>

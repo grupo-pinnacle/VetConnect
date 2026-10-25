@@ -11,14 +11,14 @@ export const RefundPolicy: React.FC = () => {
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-lg px-2 py-1 transition-colors"
-            aria-label="Volver a la portada de VetConnect"
+            aria-label="Volver a la portada de Huellicam"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             <span>Volver al Inicio</span>
           </Link>
           <div className="flex items-center gap-2">
             <CircleDollarSign className="w-5 h-5 text-emerald-600" aria-hidden="true" />
-            <span className="font-extrabold text-slate-900 text-sm sm:text-base">VetConnect Legal</span>
+            <span className="font-extrabold text-slate-900 text-sm sm:text-base">Huellicam Legal</span>
           </div>
         </div>
       </header>
@@ -46,7 +46,7 @@ export const RefundPolicy: React.FC = () => {
                 1. Compromiso de Transparencia
               </h2>
               <p className="text-slate-600">
-                En <strong>VetConnect</strong> (operado por <strong>Pinnacle Group S.A.</strong>, CUIT: 30-71234567-8) creemos en la transparencia total. Nuestra política de cancelaciones y reembolsos se basa en el cumplimiento estricto del Art. 34 de la Ley Nacional N° 24.240 de Defensa del Consumidor y en los Acuerdos de Nivel de Servicio (SLA) clínicos de nuestra plataforma.
+                En <strong>Huellicam</strong> (operado por <strong>Pinnacle Group S.A.</strong>, CUIT: 30-71234567-8) creemos en la transparencia total. Nuestra política de cancelaciones y reembolsos se basa en el cumplimiento estricto del Art. 34 de la Ley Nacional N° 24.240 de Defensa del Consumidor y en los Acuerdos de Nivel de Servicio (SLA) clínicos de nuestra plataforma.
               </p>
             </section>
 

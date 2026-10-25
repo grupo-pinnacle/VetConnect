@@ -93,15 +93,11 @@ function Icon({ name }: { name: string }) {
 
 function Logo() {
   return (
-    <Link className="logo" to="/" aria-label="VetConnect, inicio" data-testid="brand-logo">
+    <Link className="logo" to="/" aria-label="Huellicam, inicio" data-testid="brand-logo">
       <span className="logo__mark">
-        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <path d="M9 11.5c5.8 0 10.5 4.7 10.5 10.5v8.5C13.7 30.5 9 25.8 9 20V11.5Z" fill="currentColor" />
-          <path d="M31 11.5c-5.8 0-10.5 4.7-10.5 10.5v8.5C26.3 30.5 31 25.8 31 20V11.5Z" fill="currentColor" opacity=".72" />
-          <circle cx="20" cy="9" r="4" fill="currentColor" />
-        </svg>
+        <img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
       </span>
-      <span>VetConnect</span>
+      <span>Huellicam</span>
     </Link>
   );
 }
@@ -238,7 +234,7 @@ export function Register() {
 
   return (
     <main className={`auth-shell ${isVet ? "auth-shell--professional" : ""}`}>
-      <section className="auth-visual" aria-label="VetConnect, registro oficial">
+      <section className="auth-visual" aria-label="Huellicam, registro oficial">
         <Link className="auth-visual__back" to="/">
           <Icon name="arrow" />
           Volver al sitio
@@ -287,7 +283,7 @@ export function Register() {
         <div className="auth-panel__content">
           <header className="auth-header">
             <Logo />
-            <h2>Registro en VetConnect</h2>
+            <h2>Registro en Huellicam</h2>
             <p>Completá tus datos para crear tu cuenta oficial.</p>
           </header>
 
@@ -508,7 +504,7 @@ export function Register() {
           </p>
         </div>
         <p className="auth-panel__legal">
-          © {new Date().getFullYear()} VetConnect · <Link to="/privacy">Privacidad</Link> · <Link to="/terms">Términos</Link>
+          © {new Date().getFullYear()} Huellicam · <Link to="/privacy">Privacidad</Link> · <Link to="/terms">Términos</Link>
         </p>
       </section>
     </main>

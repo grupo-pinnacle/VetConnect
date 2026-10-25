@@ -12,7 +12,7 @@ describe('Landing Page', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getAllByLabelText(/VetConnect, inicio/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(/Huellicam, inicio/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Atención veterinaria online/i)).toBeDefined();
     expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
     expect(screen.getByText(/Conectados\./i)).toBeDefined();
@@ -38,7 +38,7 @@ describe('Landing Page', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/VetConnect\. Todos los derechos reservados\./i)).toBeDefined();
+    expect(screen.getByText(/Huellicam\. Todos los derechos reservados\./i)).toBeDefined();
     expect(screen.getByText(/Términos y condiciones/i)).toBeDefined();
     expect(screen.getAllByText(/Privacidad/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Preguntas frecuentes/i).length).toBeGreaterThan(0);

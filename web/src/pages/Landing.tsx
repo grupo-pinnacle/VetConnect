@@ -123,15 +123,11 @@ export function Icon({ name, className = "icon" }: { name: IconName; className?:
 
 export function Logo({ light = false }: { light?: boolean }) {
   return (
-    <a className={`logo ${light ? "logo--light" : ""}`} href="/#inicio" aria-label="VetConnect, inicio">
+    <a className={`logo ${light ? "logo--light" : ""}`} href="/#inicio" aria-label="Huellicam, inicio">
       <span className="logo__mark">
-        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <path d="M9 11.5c5.8 0 10.5 4.7 10.5 10.5v8.5C13.7 30.5 9 25.8 9 20V11.5Z" fill="currentColor" />
-          <path d="M31 11.5c-5.8 0-10.5 4.7-10.5 10.5v8.5C26.3 30.5 31 25.8 31 20V11.5Z" fill="currentColor" opacity=".72" />
-          <circle cx="20" cy="9" r="4" fill="currentColor" />
-        </svg>
+        <img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
       </span>
-      <span>VetConnect</span>
+      <span>Huellicam</span>
     </a>
   );
 }
@@ -253,13 +249,13 @@ function ScheduleCard() {
 }
 
 const faqs = [
-  ["¿Qué es VetConnect?", "VetConnect es una plataforma que conecta tutores de mascotas con profesionales veterinarios para recibir orientación y atención online de forma simple y cercana."],
+  ["¿Qué es Huellicam?", "Huellicam es una plataforma que conecta tutores de mascotas con profesionales veterinarios para recibir orientación y atención online de forma simple y cercana."],
   ["¿Cómo funciona una consulta online?", "Elegís el tipo de atención, completás la información básica de tu mascota y seleccionás un profesional disponible. La consulta se realiza por videollamada dentro de la plataforma."],
   ["¿Qué animales puedo atender?", "La plataforma está pensada para perros, gatos y también animales no convencionales como conejos, aves, hurones, reptiles, roedores y peces."],
   ["¿Puedo consultar por una emergencia?", "Podés recibir orientación rápida para entender los próximos pasos. Ante riesgo vital o una urgencia grave, siempre debés acudir a un centro veterinario presencial."],
   ["¿Las consultas online reemplazan una visita presencial?", "No siempre. La consulta online complementa la atención presencial y permite orientar, acompañar y definir cuándo es necesario un examen físico."],
   ["¿Cómo encuentro un veterinario?", "Podés filtrar profesionales por especialidad, especies atendidas, disponibilidad y tipo de consulta."],
-  ["¿Cómo trabajan los veterinarios en VetConnect?", "Los profesionales gestionan su perfil, disponibilidad, consultas y seguimiento desde un espacio diseñado específicamente para la atención veterinaria."],
+  ["¿Cómo trabajan los veterinarios en Huellicam?", "Los profesionales gestionan su perfil, disponibilidad, consultas y seguimiento desde un espacio diseñado específicamente para la atención veterinaria."],
   ["¿Qué información necesito para comenzar?", "Datos básicos de tu mascota, el motivo de la consulta y, si los tenés, antecedentes o estudios recientes. Podés completar el perfil progresivamente."],
 ];
 
@@ -486,7 +482,7 @@ export function Landing() {
             <SectionHeading
               eyebrow="Todas las especies"
               title={<>Porque no todas las<br />mascotas son iguales.</>}
-              copy="Encontrar atención adecuada puede ser especialmente difícil cuando tu compañero no es un perro o un gato. VetConnect también fue pensado para ellos."
+              copy="Encontrar atención adecuada puede ser especialmente difícil cuando tu compañero no es un perro o un gato. Huellicam también fue pensado para ellos."
             />
             <Button href="/register" variant="secondary">Encontrar un especialista</Button>
           </div>
@@ -533,7 +529,7 @@ export function Landing() {
           <div className="vets__copy">
             <Eyebrow light>Para profesionales</Eyebrow>
             <h2>Tu conocimiento también<br />puede llegar <span>más lejos.</span></h2>
-            <p>VetConnect brinda un espacio profesional para ofrecer atención online, organizar la disponibilidad y acompañar a cada paciente con contexto.</p>
+            <p>Huellicam brinda un espacio profesional para ofrecer atención online, organizar la disponibilidad y acompañar a cada paciente con contexto.</p>
             <div className="vets__features">
               {[
                 ["calendar", "Agenda y disponibilidad"],
@@ -544,7 +540,7 @@ export function Landing() {
                 <div key={text}><Icon name={icon as IconName} /><span>{text}</span></div>
               ))}
             </div>
-            <Button href="/register/veterinarian" variant="cream">Quiero ser veterinario en VetConnect</Button>
+            <Button href="/register/veterinarian" variant="cream">Quiero ser veterinario en Huellicam</Button>
           </div>
           <div className="vet-interface">
             <ScheduleCard />
@@ -686,7 +682,7 @@ export function Landing() {
         <div className="container faq__grid">
           <div className="faq__intro">
             <SectionHeading eyebrow="Preguntas frecuentes" title={<>Todo lo que<br />necesitás saber.</>} copy="Si todavía tenés dudas, nuestro equipo puede orientarte antes de comenzar." />
-            <Button href="mailto:hola@vetconnect.com" variant="secondary">Hablar con el equipo</Button>
+            <Button href="mailto:hola@huellicam.com" variant="secondary">Hablar con el equipo</Button>
           </div>
           <div className="accordion">
             {faqs.map(([question, answer], index) => {
@@ -729,7 +725,7 @@ export function Landing() {
               <div className="socials"><a href="#" aria-label="Instagram">ig</a><a href="#" aria-label="LinkedIn">in</a><a href="#" aria-label="Facebook">f</a></div>
             </div>
             {[
-              ["VetConnect", ["Inicio", "Cómo funciona", "Sobre nosotros"]],
+              ["Huellicam", ["Inicio", "Cómo funciona", "Sobre nosotros"]],
               ["Atención", ["Consultas", "Emergencias", "Prevención"]],
               ["Profesionales", ["Para veterinarios", "Registrarse", "Información profesional"]],
               ["Ayuda", ["Preguntas frecuentes", "Contacto", "Términos y condiciones", "Privacidad"]],
@@ -740,7 +736,7 @@ export function Landing() {
               </div>
             ))}
           </div>
-          <div className="footer__bottom"><span>© 2025 VetConnect. Todos los derechos reservados.</span><span>Hecho para conectar y cuidar.</span></div>
+          <div className="footer__bottom"><span>© 2025 Huellicam. Todos los derechos reservados.</span><span>Hecho para conectar y cuidar.</span></div>
         </div>
       </footer>
     </main>

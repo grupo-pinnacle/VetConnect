@@ -11,14 +11,14 @@ export const PrivacyPolicy: React.FC = () => {
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-lg px-2 py-1 transition-colors"
-            aria-label="Volver a la portada de VetConnect"
+            aria-label="Volver a la portada de Huellicam"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             <span>Volver al Inicio</span>
           </Link>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-600" aria-hidden="true" />
-            <span className="font-extrabold text-slate-900 text-sm sm:text-base">VetConnect Legal</span>
+            <span className="font-extrabold text-slate-900 text-sm sm:text-base">Huellicam Legal</span>
           </div>
         </div>
       </header>
@@ -46,7 +46,7 @@ export const PrivacyPolicy: React.FC = () => {
                 1. Identidad y Domicilio del Responsable del Tratamiento
               </h2>
               <p className="text-slate-600">
-                La plataforma <strong>VetConnect</strong> es desarrollada y operada por <strong>Pinnacle Group S.A.</strong> (CUIT: 30-71234567-8), con domicilio legal en Av. Santa Fe 1234, Ciudad Autónoma de Buenos Aires, República Argentina. Correo electrónico de privacidad: <a href="mailto:privacidad@vetconnect.com.ar" className="text-emerald-700 font-semibold underline">privacidad@vetconnect.com.ar</a>.
+                La plataforma <strong>Huellicam</strong> es desarrollada y operada por <strong>Pinnacle Group S.A.</strong> (CUIT: 30-71234567-8), con domicilio legal en Av. Santa Fe 1234, Ciudad Autónoma de Buenos Aires, República Argentina. Correo electrónico de privacidad: <a href="mailto:privacidad@vetconnect.com.ar" className="text-emerald-700 font-semibold underline">privacidad@vetconnect.com.ar</a>.
               </p>
             </section>
 
