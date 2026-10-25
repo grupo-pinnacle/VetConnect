@@ -143,6 +143,44 @@ describe('Media Module (/api/media)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.id).toBe('media-uuid-1');
     });
+    it('should ACCEPT valid WebP image file with RIFF/WEBP magic bytes', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockOwner);
+      mockPrismaCounter.findUnique.mockResolvedValue(null);
+      mockPrismaCounter.upsert.mockResolvedValue({} as any);
+
+      const validWebpPath = path.join(tmpTestDir, 'valid_image.webp');
+      // RIFF header (4 bytes) + 4 bytes size + WEBP signature (4 bytes)
+      const webpBuffer = Buffer.concat([
+        Buffer.from('52494646', 'hex'),
+        Buffer.from('24000000', 'hex'),
+        Buffer.from('57454250', 'hex'),
+        Buffer.alloc(50),
+      ]);
+      fs.writeFileSync(validWebpPath, webpBuffer);
+
+      mockPrismaMediaFile.create.mockResolvedValue({
+        id: 'media-uuid-webp',
+        ownerId: mockOwner.id,
+        consultationId: null,
+        fileName: 'valid_image.webp',
+        fileSize: webpBuffer.length,
+        mimeType: 'image/webp',
+        localPath: '/app/uploads/valid_image.webp',
+        s3Key: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      });
+
+      const res = await request(app)
+        .post('/api/media')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .attach('file', validWebpPath);
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.id).toBe('media-uuid-webp');
+    });
 
     it('should REJECT file upload when daily quota of 50 MB is exceeded with 429 Too Many Requests', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(mockOwner);

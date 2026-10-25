@@ -57,13 +57,15 @@ export const verifyMagicBytes = async (req: Request, res: Response, next: NextFu
     const isJpeg = hex.startsWith('FFD8FF');
     const isPng = hex.startsWith('89504E47');
     const isPdf = hex.startsWith('25504446');
+    // WebP: RIFF header (bytes 0-3: 52494646) + WEBP signature (bytes 8-11: 57454250)
+    const isWebp = hex.startsWith('52494646') && buffer.toString('hex', 8, 12).toUpperCase() === '57454250';
 
-    if (!isJpeg && !isPng && !isPdf) {
+    if (!isJpeg && !isPng && !isPdf && !isWebp) {
       // Clean up invalid temporary file
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
-      return next(new AppError('Tipo de archivo no permitido. Solo se permiten formatos JPEG, PNG y PDF', 400, 'INVALID_FILE_TYPE'));
+      return next(new AppError('Tipo de archivo no permitido. Solo se permiten formatos JPEG, PNG, WEBP y PDF', 400, 'INVALID_FILE_TYPE'));
     }
 
     next();

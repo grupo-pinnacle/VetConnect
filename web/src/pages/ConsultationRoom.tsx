@@ -196,6 +196,40 @@ export const ConsultationRoom: React.FC = () => {
   }, []);
 
   // ----------------------------------------------------------------
+  // Wake Lock API: prevent screen timeout during waiting or active call
+  // ----------------------------------------------------------------
+  useEffect(() => {
+    let wakeLockSentinel: any = null;
+
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator && (phase === 'waiting' || phase === 'active')) {
+          wakeLockSentinel = await (navigator as any).wakeLock.request('screen');
+        }
+      } catch {
+        // Silently catch wakeLock refusal (e.g. battery saver mode, unfocused tab)
+      }
+    };
+
+    requestWakeLock();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && (phase === 'waiting' || phase === 'active')) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockSentinel && typeof wakeLockSentinel.release === 'function') {
+        wakeLockSentinel.release().catch(() => {});
+      }
+    };
+  }, [phase]);
+
+  // ----------------------------------------------------------------
   // Main state machine: on mount, fetch consultation and react
   // ----------------------------------------------------------------
   useEffect(() => {
