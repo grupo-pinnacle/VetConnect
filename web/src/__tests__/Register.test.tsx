@@ -18,7 +18,7 @@ describe('Register Page', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Registro en VetConnect')).toBeDefined();
+    expect(screen.getByText('Registro en Huellicam')).toBeDefined();
     expect(screen.getByText('Crear Cuenta')).toBeDefined();
     expect(screen.getByLabelText(/He leído y acepto los/i)).toBeDefined();
   });

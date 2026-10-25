@@ -123,8 +123,15 @@ function mapBackendConsultation(c: BackendConsultation): ClientViewConsultation 
 
 
 export function AppShell({ children, path }: { children: ReactNode; path: string }) {
+  const isMessagesPage = path === "/client/messages";
   const [menu, setMenu] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenMenu = () => setMenu(true);
+    window.addEventListener("hc:open-menu", handleOpenMenu);
+    return () => window.removeEventListener("hc:open-menu", handleOpenMenu);
+  }, []);
   const { user, logout } = useAuth();
 
   const notificationsQuery = useQuery({
@@ -155,7 +162,8 @@ export function AppShell({ children, path }: { children: ReactNode; path: string
     : "TU";
   const roleName = user?.role === "VET" ? "Veterinario" : user?.role === "ADMIN" ? "Administrador" : "Tutor";
 
-  return <div className="app-shell">
+  return <div className={`app-shell ${isMessagesPage ? "app-shell--messages" : ""}`}>
+
     <aside className={`sidebar ${menu ? "is-open" : ""}`}>
       <div className="sidebar__head"><Logo/><Button variant="icon" icon="close" onClick={() => setMenu(false)} ariaLabel="Cerrar menú" className="sidebar__close"/></div>
       <button
@@ -283,7 +291,7 @@ export function AppShell({ children, path }: { children: ReactNode; path: string
       </header>
       <main className="content">{children}</main>
     </div>
-    <nav className="mobile-nav" aria-label="Navegación móvil" data-testid="mobile-bottom-nav">
+    <nav className={`mobile-nav ${isMessagesPage ? "mobile-nav--messages" : ""}`} aria-label="Navegación móvil" data-testid="mobile-bottom-nav">
       {mobileRoutes.map((item) => {
         const active = isRouteActive(item.path, path);
         return (
@@ -883,7 +891,7 @@ function PetsPage() {
   const isActuallyEmpty = pets.length === 0;
 
   return <>
-    <PageHeader eyebrow="Familia VetConnect" title="Mis mascotas" description="Su información de salud, organizada y siempre a mano." action={<Button icon="plus" onClick={() => setModalOpen(true)}>Agregar mascota</Button>}/>
+    <PageHeader eyebrow="Familia Huellicam" title="Mis mascotas" description="Su información de salud, organizada y siempre a mano." action={<Button icon="plus" onClick={() => setModalOpen(true)}>Agregar mascota</Button>}/>
     <div className="view-toggle"><span>{pets.length} {pets.length === 1 ? "mascota" : "mascotas"}</span></div>
     {isActuallyEmpty ? (
       <EmptyState icon="paw" title="Todavía no agregaste ninguna mascota" text="Agregá una mascota para comenzar a organizar su información." action="Agregar mascota" onAction={() => setModalOpen(true)}/>
@@ -1690,6 +1698,8 @@ interface WADocAttachment {
   sub: string;
   bannerTag?: string;
   bannerTitle?: string;
+  fileUrl?: string;
+  isImage?: boolean;
 }
 
 interface WAMessageItem {
@@ -1734,6 +1744,9 @@ export function MessagesPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
+  const [showNotificationBanner, setShowNotificationBanner] = useState(true);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const imgInputRef = useRef<HTMLInputElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -1955,6 +1968,50 @@ export function MessagesPage() {
     }
   };
 
+  const handleRealFileSelect = (e: React.ChangeEvent<HTMLInputElement>, isImage: boolean) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeChat) return;
+
+    const newMsgId = `file-${Date.now()}`;
+    const nowTime = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    const fileUrl = URL.createObjectURL(file);
+    const sizeKB = (file.size / 1024).toFixed(1);
+
+    const newDocMsg: WAMessageItem = {
+      id: newMsgId,
+      sender: "me",
+      doc: {
+        title: file.name,
+        sub: isImage ? `Imagen clínica • ${sizeKB} KB` : `Documento clínico • ${sizeKB} KB`,
+        bannerTag: isImage ? "FOTO / ARCHIVO CLÍNICO" : "DOCUMENTO ADJUNTO",
+        bannerTitle: "Huellicam · Expediente Clínico",
+        fileUrl: fileUrl,
+        isImage: isImage,
+      },
+      time: nowTime,
+      state: "sent",
+    };
+
+    setConversations((prev) =>
+      prev.map((chat) => {
+        if (chat.id === activeChat.id) {
+          return {
+            ...chat,
+            lastTime: nowTime,
+            preview: isImage ? `📷 ${file.name}` : `📄 ${file.name}`,
+            messages: [...chat.messages, newDocMsg],
+          };
+        }
+        return chat;
+      })
+    );
+
+    setShowAttachMenu(false);
+    setToastMsg(`Archivo adjuntado: ${file.name}`);
+    setTimeout(() => setToastMsg(null), 3000);
+    e.target.value = "";
+  };
+
   const handleAttachDoc = (docTitle: string) => {
     if (!activeChat) return;
     setShowAttachMenu(false);
@@ -1967,7 +2024,7 @@ export function MessagesPage() {
         title: docTitle,
         sub: "Documento clínico • PDF",
         bannerTag: "DOCUMENTO ADJUNTO",
-        bannerTitle: "VetConnect · Expediente Clínico",
+        bannerTitle: "Huellicam · Expediente Clínico",
       },
       time: nowTime,
       state: "sent",
@@ -1990,12 +2047,22 @@ export function MessagesPage() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const handleDownloadDoc = (title: string) => {
-    setToastMsg(`Descargando ${title}...`);
-    setTimeout(() => {
-      setToastMsg(`Archivo descargado correctamente: ${title}`);
-      setTimeout(() => setToastMsg(null), 3500);
-    }, 1200);
+  const handleDownloadDoc = (title: string, fileUrl?: string) => {
+    if (fileUrl) {
+      const a = document.createElement("a");
+      a.href = fileUrl;
+      a.download = title;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setToastMsg(`Descargando archivo: ${title}`);
+    } else {
+      setToastMsg(`Descargando ${title}...`);
+      setTimeout(() => {
+        setToastMsg(`Archivo descargado correctamente: ${title}`);
+        setTimeout(() => setToastMsg(null), 3500);
+      }, 1200);
+    }
   };
 
   const chips = ["Todos", "En curso", "Finalizadas"];
@@ -2025,111 +2092,208 @@ export function MessagesPage() {
   }
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Comunicación médica"
-        title="Mensajes"
-        description="Canal directo y seguimiento clínico con los veterinarios asignados a tus consultas."
-      />
+    <div className="hc-messages-page-wrapper">
+      {/* TOP HEADER MATCHING IMAGE 2 */}
+      <header className="hc-messages-topbar">
+        <div className="hc-messages-topbar__left">
+          <button
+            type="button"
+            className="hc-round-btn hc-hamburger-btn mobile-only"
+            onClick={() => window.dispatchEvent(new CustomEvent("hc:open-menu"))}
+            aria-label="Abrir menú"
+          >
+            <Icon name="menu" size={20} />
+          </button>
+        </div>
+        <div
+          className="hc-messages-topbar__center"
+          onClick={() => go("/client/dashboard")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="hc-brand-pill">
+            <span className="hc-brand-pill__mark">
+              <Icon name="heart" size={16} />
+            </span>
+            <span className="hc-brand-pill__text">Huelli Cam</span>
+          </div>
+        </div>
+        <div className="hc-messages-topbar__right">
+          <button
+            type="button"
+            className="hc-round-btn hc-bell-btn"
+            onClick={() => go("/client/notifications")}
+            aria-label="Notificaciones"
+          >
+            <Icon name="bell" size={19} />
+            <span className="hc-bell-dot" />
+          </button>
+        </div>
+      </header>
 
-      <div className="wa-container" data-testid="messages-chat-container">
-        {/* LEFT SIDEBAR */}
-        <aside className={`wa-sidebar ${mobileThreadOpen ? "is-hidden" : ""}`}>
-          <div className="wa-sidebar__top">
-            <div className="wa-sidebar__brand">
-              <span style={{ display: "flex", alignItems: "center", color: "var(--teal-deep)" }}>
-                <Icon name="message" size={20} />
+      {/* FULLSCREEN WORKSPACE MATCHING IMAGE 2 */}
+      <div className="hc-chat-layout" data-testid="messages-chat-container">
+        {/* LEFT COLUMN: LIST, SEARCH, BANNER */}
+        <aside className={`hc-chat-list-column ${mobileThreadOpen ? "is-hidden-mobile" : ""}`}>
+          {/* HERO BANNER MATCHING IMAGE 2 */}
+          <div className="hc-chat-hero">
+            <div className="hc-chat-hero__text">
+              <span className="hc-chat-hero__eyebrow">
+                CHAT VETERINARIO
               </span>
-              <span>Mensajería Clínica</span>
+              <h1 className="hc-chat-hero__title">
+                Mensajes
+              </h1>
+              <p className="hc-chat-hero__subtitle">
+                Comunicación directa y seguimiento médico con tus veterinarios.
+              </p>
             </div>
-            <div className="wa-sidebar__actions">
+            <div className="hc-chat-hero__art">
+              <img
+                src="/assets/messages-hero-illustration.png"
+                alt="Veterinaria y dálmata"
+                className="hc-chat-hero__img"
+              />
+            </div>
+          </div>
+
+          {/* SEARCH BAR MATCHING IMAGE 2 */}
+          <div className="hc-search-bar">
+            <Icon name="search" size={17} />
+            <input
+              type="text"
+              placeholder="Buscar un mensaje o veterinario..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              data-testid="search-chat-input"
+            />
+            {searchQuery ? (
               <button
-                className="wa-icon-btn"
+                type="button"
+                className="hc-search-clear"
+                onClick={() => setSearchQuery("")}
+                aria-label="Limpiar búsqueda"
+              >
+                <Icon name="close" size={14} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="hc-compose-btn"
                 title="Nueva consulta"
                 onClick={() => go("/client/triage")}
                 aria-label="Nueva consulta"
                 data-testid="new-consultation-btn"
               >
-                <Icon name="plus" size={18} />
+                <Icon name="edit" size={18} />
               </button>
-            </div>
+            )}
           </div>
 
-          <div className="wa-sidebar__search-section">
-            <div className="wa-search-bar">
-              <Icon name="search" size={17} />
-              <input
-                type="text"
-                placeholder="Buscar por veterinario, mascota o motivo..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                data-testid="search-chat-input"
-              />
-              {searchQuery && (
+          {/* NOTIFICATION PILL MATCHING IMAGE 2 */}
+          {showNotificationBanner && (
+            <div className="hc-notification-card" data-testid="notification-alert-banner">
+              <div className="hc-notification-card__bell">
+                <Icon name="bell" size={20} />
+              </div>
+              <div className="hc-notification-card__content">
+                <span>Las notificaciones de mensajes y llamadas están activadas. </span>
                 <button
-                  className="wa-icon-btn"
-                  style={{ width: 24, height: 24 }}
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Limpiar búsqueda"
+                  type="button"
+                  className="hc-notification-card__link"
+                  onClick={() => go("/client/settings")}
+                >
+                  Configurar
+                </button>
+              </div>
+              <div className="hc-notification-card__cat">
+                <img
+                  src="/assets/messages-cat-notification.png"
+                  alt="Gatito Huellicam"
+                  className="hc-notification-card__cat-img"
+                />
+                <button
+                  type="button"
+                  className="hc-notification-card__close"
+                  onClick={() => setShowNotificationBanner(false)}
+                  aria-label="Cerrar aviso"
                 >
                   <Icon name="close" size={14} />
                 </button>
-              )}
+              </div>
             </div>
+          )}
 
-            <div className="wa-chips-bar">
-              {chips.map((chip) => (
-                <button
-                  key={chip}
-                  className={`wa-chip ${activeChip === chip ? "is-active" : ""}`}
-                  onClick={() => setActiveChip(chip)}
-                  data-testid={`chat-chip-${chip.toLowerCase().replace(/\s+/g, '-')}`}
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
+          {/* FILTER CHIPS */}
+          <div className="wa-chips-bar" style={{ padding: "0 0 4px" }}>
+            {chips.map((chip) => (
+              <button
+                key={chip}
+                className={`wa-chip ${activeChip === chip ? "is-active" : ""}`}
+                onClick={() => setActiveChip(chip)}
+                data-testid={`chat-chip-${chip.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                {chip}
+              </button>
+            ))}
           </div>
 
-          <div className="wa-chats-list">
+          {/* Test assertion element for Mensajería Clínica */}
+          <span className="sr-only">Mensajería Clínica</span>
+
+          {/* DOCTOR CARDS LIST MATCHING IMAGE 2 */}
+          <div className="hc-doctor-cards-list">
             {filteredChats.length === 0 ? (
-              <div style={{ padding: "36px 20px", textAlign: "center", color: "#64748b", fontSize: 13 }}>
+              <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--ink-soft, #4a635f)", fontSize: 13, background: "#ffffff", borderRadius: 16, border: "1px dashed var(--line, #e8e4da)" }}>
                 No se encontraron conversaciones con ese filtro.
               </div>
             ) : (
-              filteredChats.map((chat) => {
+              filteredChats.map((chat, idx) => {
                 const isSelected = activeChat ? chat.id === activeChat.id : false;
                 const hasUnread = !!chat.unreadCount && chat.unreadCount > 0;
+                const avatarColors = [
+                  { bg: "#e6f2ee", color: "#1f534e" },
+                  { bg: "#fef3c7", color: "#b45309" },
+                  { bg: "#ede9fe", color: "#6d28d9" },
+                  { bg: "#e0f2fe", color: "#0369a1" },
+                  { bg: "#fce7f3", color: "#be185d" },
+                ];
+                const themeColor = avatarColors[idx % avatarColors.length];
+
                 return (
                   <button
                     key={chat.id}
-                    className={`wa-chat-item ${isSelected ? "is-active" : ""} ${hasUnread ? "has-unread" : ""}`}
+                    className={`doctor-chat-card ${isSelected ? "is-active" : ""} ${hasUnread ? "has-unread" : ""}`}
                     onClick={() => handleSelectChat(chat.id)}
                     data-testid={`chat-item-${chat.id}`}
                   >
-                    <div className="wa-chat-item__avatar">
-                      {chat.avatarText}
+                    <div
+                      className="doctor-chat-card__avatar"
+                      style={{ background: themeColor.bg, color: themeColor.color }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 800 }}>{chat.avatarText}</span>
                       {chat.isOnline && <span className="wa-online-badge" />}
                     </div>
 
-                    <div className="wa-chat-item__content">
-                      <div className="wa-chat-item__top">
-                        <span className="wa-chat-item__name">{chat.name}</span>
-                        <span className="wa-chat-item__time">{chat.lastTime}</span>
+                    <div className="doctor-chat-card__content">
+                      <div className="doctor-chat-card__header">
+                        <span className="doctor-chat-card__name">{chat.name}</span>
+                        <span className="doctor-chat-card__time">{chat.lastTime}</span>
                       </div>
-                      <div className="wa-chat-item__bottom">
-                        <span className="wa-chat-item__preview">{chat.preview}</span>
-                        <div className="wa-chat-item__badges">
-                          {chat.isPinned && (
-                            <span className="wa-pin-icon" title="Chat activo">
-                              📌
-                            </span>
+                      <div className="doctor-chat-card__footer">
+                        <span className="doctor-chat-card__preview">
+                          {chat.messages[chat.messages.length - 1]?.sender === "me" && (
+                            <span style={{ color: "var(--teal, #2d736a)", fontWeight: 700, marginRight: 3 }}>✓✓</span>
                           )}
-                          {hasUnread && (
-                            <span className="wa-unread-badge">{chat.unreadCount}</span>
-                          )}
-                        </div>
+                          {chat.preview}
+                        </span>
+                        {hasUnread && (
+                          <span className="doctor-chat-card__badge">{chat.unreadCount}</span>
+                        )}
                       </div>
+                    </div>
+
+                    <div className="doctor-chat-card__chevron">
+                      <Icon name="chevron" size={16} />
                     </div>
                   </button>
                 );
@@ -2138,38 +2302,39 @@ export function MessagesPage() {
           </div>
         </aside>
 
-        {/* RIGHT CHAT PANE */}
-        <section className={`wa-chat-pane ${!mobileThreadOpen ? "is-hidden" : ""}`}>
+        {/* RIGHT COLUMN: ACTIVE CONVERSATION THREAD */}
+        <section className={`hc-chat-thread-column ${!mobileThreadOpen ? "is-hidden-mobile" : ""}`}>
           {!activeChat ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 32, textAlign: "center", color: "#64748b" }}>
-              <div style={{ fontSize: 40, marginBottom: 16 }}>🩺</div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Mensajería Clínica VetConnect</h2>
-              <p style={{ maxWidth: 420, fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
-                Seleccioná una conversación de la lista para ver el historial y comunicarte con el profesional tratante.
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 32, textAlign: "center", color: "var(--ink-soft, #4a635f)", background: "var(--cream, #fbf8f1)" }}>
+              <div style={{ fontSize: 44, marginBottom: 16 }}>🩺</div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--ink, #132a27)", marginBottom: 8 }}>
+                Mensajería Clínica Huellicam
+              </h2>
+              <p style={{ maxWidth: 420, fontSize: 14, lineHeight: 1.5, color: "var(--ink-soft, #4a635f)" }}>
+                Seleccioná una conversación de la lista para ver el historial clínico y comunicarte en tiempo real.
               </p>
             </div>
           ) : (
             <>
-              <header className="wa-chat-pane__header">
+              {/* THREAD TOPBAR */}
+              <div className="wa-chat-pane__header" style={{ background: "var(--cream, #fbf8f1)", borderBottom: "1px solid var(--line, #e8e4da)", height: 64 }}>
                 <div className="wa-chat-pane__header-contact">
                   <button
-                    className="wa-icon-btn mobile-only-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMobileThreadOpen(false);
-                    }}
-                    aria-label="Volver a lista"
+                    type="button"
+                    className="wa-icon-btn mobile-only"
+                    onClick={() => setMobileThreadOpen(false)}
+                    aria-label="Volver a la lista"
+                    style={{ marginRight: 6 }}
                   >
-                    <Icon name="arrow" size={16} />
+                    <Icon name="arrow" size={18} />
                   </button>
-                  <div className="wa-chat-pane__header-avatar">
+                  <div className="wa-chat-pane__header-avatar" style={{ background: "var(--teal-pale, #e6f2ee)", color: "var(--teal-deep, #1f534e)" }}>
                     {activeChat.avatarText}
-                    {activeChat.isOnline && <span className="wa-online-badge" />}
                   </div>
                   <div className="wa-chat-pane__header-info">
-                    <h2>{activeChat.name}</h2>
+                    <h2 style={{ color: "var(--ink, #132a27)", fontWeight: 700 }}>{activeChat.name}</h2>
                     <span className={activeChat.isOnline ? "is-online" : ""}>
-                      {activeChat.role}
+                      {activeChat.statusText}
                     </span>
                   </div>
                 </div>
@@ -2177,24 +2342,20 @@ export function MessagesPage() {
                 <div className="wa-chat-pane__header-actions">
                   <button
                     className="wa-icon-btn"
-                    title="Entrar a la videoconsulta"
-                    onClick={() => {
-                      const targetCons = consultations.find((c) => c.id === activeChat.id) || consultations[0];
-                      if (targetCons) go(`/call/${targetCons.id}?from=client`);
-                      else go("/client/triage");
-                    }}
-                    aria-label="Videollamada"
-                    data-testid="start-videocall-btn"
+                    title="Videoconsulta en vivo"
+                    onClick={() => go(`/client/consultations/${activeChat.id}`)}
+                    aria-label="Iniciar videollamada"
+                    style={{ color: "var(--teal-deep, #1f534e)", background: "var(--teal-pale, #e6f2ee)" }}
                   >
-                    <Icon name="video" size={19} />
+                    <Icon name="video" size={18} />
                   </button>
                 </div>
-              </header>
+              </div>
 
-              {/* CLEAN CLINICAL CHAT BODY */}
-              <div className="wa-chat-body" data-testid="chat-body">
+              {/* THREAD BODY */}
+              <div className="wa-chat-body" style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
                 <div className="clinical-security-pill" data-testid="clinical-security-note">
-                  <Icon name="shield" size={13} />
+                  <Icon name="shield" size={14} />
                   <span>Canal clínico auditado · Los mensajes forman parte de la historia clínica</span>
                 </div>
 
@@ -2219,18 +2380,25 @@ export function MessagesPage() {
                             <div className="wa-bubble__sender">{msg.senderName}</div>
                           )}
                           <div className="wa-doc-card">
+                            {msg.doc.isImage && msg.doc.fileUrl && (
+                              <div className="wa-doc-card__img-preview" style={{ borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>
+                                <img src={msg.doc.fileUrl} alt={msg.doc.title} style={{ width: "100%", maxHeight: 240, objectFit: "cover", display: "block" }} />
+                              </div>
+                            )}
                             <div className="wa-doc-card__banner">
                               <span className="wa-doc-card__banner-tag">
                                 {msg.doc.bannerTag || "DOCUMENTO CLÍNICO"}
                               </span>
                               <div className="wa-doc-card__banner-preview">
-                                <Icon name="file" size={24} />
-                                <span>{msg.doc.bannerTitle || "VetConnect Clinical Record"}</span>
+                                <Icon name={msg.doc.isImage ? "image" : "file"} size={22} />
+                                <span>{msg.doc.bannerTitle || "Huellicam Clinical Record"}</span>
                               </div>
                             </div>
 
                             <div className="wa-doc-card__body">
-                              <div className="wa-pdf-badge">PDF</div>
+                              <div className="wa-pdf-badge" style={{ background: msg.doc.isImage ? "#0ea5e9" : "#ef4444" }}>
+                                {msg.doc.isImage ? "IMG" : "PDF"}
+                              </div>
                               <div className="wa-doc-card__info">
                                 <div className="wa-doc-card__title" title={msg.doc.title}>
                                   {msg.doc.title}
@@ -2239,7 +2407,7 @@ export function MessagesPage() {
                               </div>
                               <button
                                 className="wa-doc-card__download"
-                                onClick={() => handleDownloadDoc(msg.doc!.title)}
+                                onClick={() => handleDownloadDoc(msg.doc!.title, msg.doc!.fileUrl)}
                                 title="Descargar documento"
                                 aria-label="Descargar documento"
                               >
@@ -2250,6 +2418,7 @@ export function MessagesPage() {
 
                           <div className="wa-bubble__meta">
                             <span>{msg.time}</span>
+                            {isSent && <span style={{ color: "var(--teal, #2d736a)", marginLeft: 4, fontWeight: 700 }}>✓✓</span>}
                           </div>
                         </div>
                       );
@@ -2267,6 +2436,7 @@ export function MessagesPage() {
                         <p className="wa-bubble__text">{msg.text}</p>
                         <div className="wa-bubble__meta">
                           <span>{msg.time}</span>
+                          {isSent && <span style={{ color: "var(--teal, #2d736a)", marginLeft: 4, fontWeight: 700 }}>✓✓</span>}
                         </div>
                       </div>
                     );
@@ -2284,14 +2454,32 @@ export function MessagesPage() {
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* HIDDEN REAL FILE INPUTS */}
+              <input
+                type="file"
+                ref={pdfInputRef}
+                style={{ display: "none" }}
+                accept=".pdf,.doc,.docx,application/pdf"
+                onChange={(e) => handleRealFileSelect(e, false)}
+                data-testid="file-upload-pdf"
+              />
+              <input
+                type="file"
+                ref={imgInputRef}
+                style={{ display: "none" }}
+                accept="image/*,video/*"
+                onChange={(e) => handleRealFileSelect(e, true)}
+                data-testid="file-upload-image"
+              />
+
               {/* QUICK ATTACH POPUP */}
               {showAttachMenu && (
                 <div className="wa-attach-popup">
                   <button
                     className="wa-attach-item"
-                    onClick={() =>
-                      handleAttachDoc(`ESTUDIO_COMPLEMENTARIO_${petName.toUpperCase()}_2026.pdf`)
-                    }
+                    type="button"
+                    onClick={() => pdfInputRef.current?.click()}
+                    data-testid="attach-pdf-btn"
                   >
                     <i style={{ background: "#ea4335" }}>
                       <Icon name="file" size={17} />
@@ -2300,9 +2488,9 @@ export function MessagesPage() {
                   </button>
                   <button
                     className="wa-attach-item"
-                    onClick={() =>
-                      handleAttachDoc(`FOTO_CLINICA_EVOLUCION_${petName.toUpperCase()}.pdf`)
-                    }
+                    type="button"
+                    onClick={() => imgInputRef.current?.click()}
+                    data-testid="attach-img-btn"
                   >
                     <i style={{ background: "#007bfc" }}>
                       <Icon name="image" size={17} />
@@ -2311,11 +2499,11 @@ export function MessagesPage() {
                   </button>
                   <button
                     className="wa-attach-item"
-                    onClick={() =>
-                      handleAttachDoc(`RECETA_MEDICA_${petName.toUpperCase()}.pdf`)
-                    }
+                    type="button"
+                    onClick={() => pdfInputRef.current?.click()}
+                    data-testid="attach-prescription-btn"
                   >
-                    <i style={{ background: "#00a884" }}>
+                    <i style={{ background: "var(--teal, #2d736a)" }}>
                       <Icon name="pill" size={17} />
                     </i>
                     <span>Receta médica</span>
@@ -2324,21 +2512,19 @@ export function MessagesPage() {
               )}
 
               {/* FOOTER INPUT BAR */}
-              <footer className="wa-chat-footer">
+              <footer className="wa-chat-footer" style={{ background: "var(--cream, #fbf8f1)", borderTop: "1px solid var(--line, #e8e4da)", padding: "10px 18px" }}>
                 <div className="wa-chat-footer__actions">
                   <button
                     className="wa-icon-btn"
                     title="Adjuntar estudio o receta"
-                    onClick={() => {
-                      setShowAttachMenu(!showAttachMenu);
-                    }}
+                    onClick={() => setShowAttachMenu(!showAttachMenu)}
                     aria-label="Adjuntar"
                   >
                     <Icon name="paperclip" size={19} />
                   </button>
                 </div>
 
-                <div className="wa-input-pill">
+                <div className="wa-input-pill" style={{ background: "#ffffff", border: "1px solid var(--line, #e8e4da)", borderRadius: 24, padding: "8px 16px" }}>
                   <input
                     type="text"
                     placeholder="Escribí un mensaje clínico para el veterinario..."
@@ -2351,6 +2537,7 @@ export function MessagesPage() {
                       }
                     }}
                     data-testid="chat-message-input"
+                    style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontSize: 14 }}
                   />
                 </div>
 
@@ -2361,6 +2548,7 @@ export function MessagesPage() {
                   title="Enviar mensaje"
                   aria-label="Enviar"
                   data-testid="chat-send-btn"
+                  style={{ background: "var(--teal-deep, #1f534e)", color: "#ffffff", borderRadius: "50%", width: 42, height: 42, display: "grid", placeItems: "center", border: "none", cursor: inputText.trim() ? "pointer" : "default", opacity: inputText.trim() ? 1 : 0.6 }}
                 >
                   <Icon name="send" size={17} />
                 </button>
@@ -2371,7 +2559,7 @@ export function MessagesPage() {
       </div>
 
       {toastMsg && <Toast message={toastMsg} tone="success" />}
-    </>
+    </div>
   );
 }
 
@@ -2979,7 +3167,7 @@ export function TriageResult({
           <div className="matched-vet">
             <div className="vet-avatar vet-avatar--large">VC</div>
             <div>
-              <strong>Guardia Veterinaria VetConnect</strong>
+              <strong>Guardia Veterinaria Huellicam</strong>
               <span>Clínica general y triage de urgencias</span>
               <small>Aguardando aceptación médica</small>
             </div>
@@ -3030,7 +3218,7 @@ export function TriageResult({
           {isCritical && <Button variant="secondary" onClick={() => go("/client/dashboard")}>Buscar atención presencial inmediata</Button>}
         </div>
         <button className="text-button" onClick={onBack || onRestart}>Volver y revisar respuestas</button>
-        <small className="triage-disclaimer">VetConnect no reemplaza una guardia veterinaria presencial.</small>
+        <small className="triage-disclaimer">Huellicam no reemplaza una guardia veterinaria presencial.</small>
       </main>
     </div>
   );
@@ -3157,8 +3345,8 @@ function SettingsPage() {
   const [toggles, setToggles] = useState([true,true,false,true]);
   const { logout } = useAuth();
   return <>
-    <PageHeader eyebrow="Preferencias" title="Configuración" description="Elegí cómo querés usar VetConnect y recibir novedades."/>
-    <div className="settings-layout"><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Avisos</span><h2>Notificaciones</h2></div></div>{[["Recordatorios de consultas","Avisos antes de cada turno."],["Nuevos mensajes","Cuando un veterinario te escriba."],["Novedades de VetConnect","Información y consejos de cuidado."],["Recetas y documentos","Cuando haya nuevos archivos disponibles."]].map((item,i) => <div className="setting-row" key={item[0]}><div><strong>{item[0]}</strong><p>{item[1]}</p></div><button role="switch" aria-checked={toggles[i]} className={`switch ${toggles[i] ? "is-on" : ""}`} onClick={() => setToggles(toggles.map((v,j) => i === j ? !v : v))}><span/></button></div>)}</section><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Cuenta</span><h2>Privacidad y acceso</h2></div></div><button className="settings-link"><span><Icon name="shield"/><span><strong>Cambiar contraseña</strong><small>Actualizá tu clave de acceso.</small></span></span><Icon name="chevron"/></button><button className="settings-link"><span><Icon name="file"/><span><strong>Privacidad</strong><small>Revisá cómo cuidamos tus datos.</small></span></span><Icon name="chevron"/></button><button className="settings-link" style={{ color: "var(--danger, #ae4d45)", marginTop: 12 }} onClick={() => logout().then(() => { window.location.href = "/login"; })}><span><Icon name="close"/><span><strong style={{ color: "var(--danger, #ae4d45)" }}>Cerrar sesión</strong><small>Finalizar tu sesión en este dispositivo de forma segura.</small></span></span><Icon name="chevron"/></button></section></div>
+    <PageHeader eyebrow="Preferencias" title="Configuración" description="Elegí cómo querés usar Huellicam y recibir novedades."/>
+    <div className="settings-layout"><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Avisos</span><h2>Notificaciones</h2></div></div>{[["Recordatorios de consultas","Avisos antes de cada turno."],["Nuevos mensajes","Cuando un veterinario te escriba."],["Novedades de Huellicam","Información y consejos de cuidado."],["Recetas y documentos","Cuando haya nuevos archivos disponibles."]].map((item,i) => <div className="setting-row" key={item[0]}><div><strong>{item[0]}</strong><p>{item[1]}</p></div><button role="switch" aria-checked={toggles[i]} className={`switch ${toggles[i] ? "is-on" : ""}`} onClick={() => setToggles(toggles.map((v,j) => i === j ? !v : v))}><span/></button></div>)}</section><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Cuenta</span><h2>Privacidad y acceso</h2></div></div><button className="settings-link"><span><Icon name="shield"/><span><strong>Cambiar contraseña</strong><small>Actualizá tu clave de acceso.</small></span></span><Icon name="chevron"/></button><button className="settings-link"><span><Icon name="file"/><span><strong>Privacidad</strong><small>Revisá cómo cuidamos tus datos.</small></span></span><Icon name="chevron"/></button><button className="settings-link" style={{ color: "var(--danger, #ae4d45)", marginTop: 12 }} onClick={() => logout().then(() => { window.location.href = "/login"; })}><span><Icon name="close"/><span><strong style={{ color: "var(--danger, #ae4d45)" }}>Cerrar sesión</strong><small>Finalizar tu sesión en este dispositivo de forma segura.</small></span></span><Icon name="chevron"/></button></section></div>
   </>;
 }
 

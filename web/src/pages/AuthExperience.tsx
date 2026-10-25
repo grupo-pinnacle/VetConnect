@@ -80,7 +80,7 @@ function AuthShell({
 }) {
   return (
     <main className={`auth-shell ${professional ? "auth-shell--professional" : ""}`}>
-      <section className="auth-visual" aria-label="VetConnect, conexión y cuidado veterinario">
+      <section className="auth-visual" aria-label="Huellicam, conexión y cuidado veterinario">
         <a className="auth-visual__back" href="/">
           <Icon name="arrow" />
           Volver al sitio
@@ -130,7 +130,7 @@ function AuthShell({
       <section className="auth-panel">
         <div className="auth-panel__mobile-brand"><Logo /></div>
         <div className="auth-panel__content">{children}</div>
-        <p className="auth-panel__legal">© 2025 VetConnect · Privacidad · Términos</p>
+        <p className="auth-panel__legal">© 2025 Huellicam · Privacidad · Términos</p>
       </section>
     </main>
   );
@@ -303,7 +303,7 @@ function SuccessState({
       <h2>{title}</h2>
       <p>{copy}</p>
       <button className="auth-submit" type="button" onClick={onContinue}>{action}<Icon name="arrow" /></button>
-      <div className="auth-success__note"><Icon name="shield" />Tu información queda protegida dentro de VetConnect.</div>
+      <div className="auth-success__note"><Icon name="shield" />Tu información queda protegida dentro de Huellicam.</div>
     </div>
   );
 }
@@ -352,7 +352,7 @@ function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
     return (
       <SuccessState
         title="Inicio de sesión correcto"
-        copy="Ya estás dentro de VetConnect. Estamos preparando tu espacio personal."
+        copy="Ya estás dentro de Huellicam. Estamos preparando tu espacio personal."
         action="Continuar"
         onContinue={() => {
           window.location.href = destination;
@@ -363,7 +363,7 @@ function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
 
   return (
     <>
-      <AuthHeader title="Bienvenido de nuevo" copy="Accedé a tu cuenta para continuar con VetConnect." />
+      <AuthHeader title="Bienvenido de nuevo" copy="Accedé a tu cuenta para continuar con Huellicam." />
       {serverError && <Alert variant="error" title="No pudimos iniciar sesión">{serverError}</Alert>}
       <form className="auth-form" onSubmit={submit} noValidate>
         <Field
@@ -391,7 +391,7 @@ function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
       </form>
       <div className="auth-separator"><span>o</span></div>
       <p className="auth-switch">¿Todavía no tenés una cuenta? <AuthLink to="/register" navigate={navigate}>Crear una cuenta</AuthLink></p>
-      <p className="auth-demo-note">Usá un email que comience con <strong>vet</strong> para ingresar al portal profesional, o <strong>error@vetconnect.com</strong> para visualizar un error.</p>
+      <p className="auth-demo-note">Usá un email que comience con <strong>vet</strong> para ingresar al portal profesional, o <strong>error@huellicam.com</strong> para visualizar un error.</p>
     </>
   );
 }
@@ -400,7 +400,7 @@ function RoleSelection({ navigate }: { navigate: (route: AuthRoute) => void }) {
   const [selected, setSelected] = useState<"tutor" | "veterinarian" | null>(null);
   return (
     <>
-      <AuthHeader title="¿Cómo querés usar VetConnect?" copy="Elegí el espacio que mejor representa lo que necesitás hoy." />
+      <AuthHeader title="¿Cómo querés usar Huellicam?" copy="Elegí el espacio que mejor representa lo que necesitás hoy." />
       <div className="role-options" role="radiogroup" aria-label="Tipo de cuenta">
         <button
           className={`role-card ${selected === "tutor" ? "role-card--selected" : ""}`}
@@ -497,7 +497,7 @@ function validatePersonal(data: PersonalData) {
   if (!data.firstName.trim()) next.firstName = "Este campo es obligatorio.";
   if (!data.lastName.trim()) next.lastName = "Este campo es obligatorio.";
   if (!isValidEmail(data.email)) next.email = "Ingresá un email válido.";
-  if (data.email.toLowerCase() === "hola@vetconnect.com") next.email = "Ya existe una cuenta asociada a este email.";
+  if (data.email.toLowerCase() === "hola@huellicam.com") next.email = "Ya existe una cuenta asociada a este email.";
   if (passwordScore(data.password) < 2) next.password = "Usá al menos 8 caracteres, mayúsculas y números.";
   if (data.password !== data.confirmPassword) next.confirmPassword = "Las contraseñas no coinciden.";
   return next;
@@ -772,7 +772,7 @@ function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
     return (
       <SuccessState
         title="Tu perfil fue creado."
-        copy="Completá tu información profesional para comenzar a formar parte de VetConnect."
+        copy="Completá tu información profesional para comenzar a formar parte de Huellicam."
         action="Continuar con mi perfil"
         onContinue={() => {
           window.location.href = "/vet/dashboard";

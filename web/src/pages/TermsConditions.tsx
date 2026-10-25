@@ -11,14 +11,14 @@ export const TermsConditions: React.FC = () => {
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-lg px-2 py-1 transition-colors"
-            aria-label="Volver a la portada de VetConnect"
+            aria-label="Volver a la portada de Huellicam"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             <span>Volver al Inicio</span>
           </Link>
           <div className="flex items-center gap-2">
             <Scale className="w-5 h-5 text-emerald-600" aria-hidden="true" />
-            <span className="font-extrabold text-slate-900 text-sm sm:text-base">VetConnect Legal</span>
+            <span className="font-extrabold text-slate-900 text-sm sm:text-base">Huellicam Legal</span>
           </div>
         </div>
       </header>
@@ -48,7 +48,7 @@ export const TermsConditions: React.FC = () => {
                 Descargo de Responsabilidad por Emergencias Críticas
               </p>
               <p>
-                <strong>VetConnect es una plataforma de teleorientación veterinaria, triaje primario y seguimiento.</strong> NO es un servicio hospitalario de urgencias de rescate animal. Si su mascota experimenta convulsiones continuas, hemorragias profusas, disnea severa (dificultad para respirar), abdomen hinchado y duro con arqueo, pérdida de conciencia o traumatismos vehiculares, <strong>acérquese de manera urgente a la clínica u hospital veterinario presencial de guardia 24 horas más próximo</strong>.
+                <strong>Huellicam es una plataforma de teleorientación veterinaria, triaje primario y seguimiento.</strong> NO es un servicio hospitalario de urgencias de rescate animal. Si su mascota experimenta convulsiones continuas, hemorragias profusas, disnea severa (dificultad para respirar), abdomen hinchado y duro con arqueo, pérdida de conciencia o traumatismos vehiculares, <strong>acérquese de manera urgente a la clínica u hospital veterinario presencial de guardia 24 horas más próximo</strong>.
               </p>
             </div>
           </div>
@@ -59,7 +59,7 @@ export const TermsConditions: React.FC = () => {
                 1. Información de la Entidad Titular
               </h2>
               <p className="text-slate-600">
-                La plataforma <strong>VetConnect</strong> (en adelante, &quot;la Plataforma&quot;) es operada por <strong>Pinnacle Group S.A.</strong> (CUIT: 30-71234567-8), con domicilio legal constituido en Av. Santa Fe 1234, Ciudad Autónoma de Buenos Aires, República Argentina. Canal de contacto legal y regulatorio: <a href="mailto:legal@vetconnect.com.ar" className="text-emerald-700 font-semibold underline">legal@vetconnect.com.ar</a>.
+                La plataforma <strong>Huellicam</strong> (en adelante, &quot;la Plataforma&quot;) es operada por <strong>Pinnacle Group S.A.</strong> (CUIT: 30-71234567-8), con domicilio legal constituido en Av. Santa Fe 1234, Ciudad Autónoma de Buenos Aires, República Argentina. Canal de contacto legal y regulatorio: <a href="mailto:legal@vetconnect.com.ar" className="text-emerald-700 font-semibold underline">legal@vetconnect.com.ar</a>.
               </p>
             </section>
 
@@ -77,7 +77,7 @@ export const TermsConditions: React.FC = () => {
                 3. Alcance de los Servicios de Teleorientación
               </h2>
               <p className="text-slate-600">
-                VetConnect provee infraestructura tecnológica de telecomunicaciones sincrónicas en tiempo real (video, audio de alta definición y mensajería encriptada) para interconectar a tutores con profesionales médicos veterinarios matriculados:
+                Huellicam provee infraestructura tecnológica de telecomunicaciones sincrónicas en tiempo real (video, audio de alta definición y mensajería encriptada) para interconectar a tutores con profesionales médicos veterinarios matriculados:
               </p>
               <ul className="list-disc pl-5 space-y-1.5 text-slate-600 mt-2">
                 <li><strong>Triaje preliminar y pautas de alarma:</strong> Evaluación remota de síntomas no letales, orientación nutricional y conductual.</li>
@@ -91,7 +91,7 @@ export const TermsConditions: React.FC = () => {
                 4. Régimen de Responsabilidad Profesional (Ley 14.072)
               </h2>
               <p className="text-slate-600">
-                Los médicos veterinarios registrados en VetConnect actúan en ejercicio libre e independiente de su profesión conforme a la Ley Nacional N° 14.072 y las normas deontológicas de los Colegios y Consejos Veterinarios de sus respectivas jurisdicciones. Cada profesional es el único y exclusivo responsable civil y deontológico del acto médico veterinario, de los diagnósticos presuntivos emitidos y de los fármacos recetados. VetConnect no interviene en el criterio clínico ni garantiza resultados médicos.
+                Los médicos veterinarios registrados en Huellicam actúan en ejercicio libre e independiente de su profesión conforme a la Ley Nacional N° 14.072 y las normas deontológicas de los Colegios y Consejos Veterinarios de sus respectivas jurisdicciones. Cada profesional es el único y exclusivo responsable civil y deontológico del acto médico veterinario, de los diagnósticos presuntivos emitidos y de los fármacos recetados. Huellicam no interviene en el criterio clínico ni garantiza resultados médicos.
               </p>
             </section>
 
@@ -109,7 +109,7 @@ export const TermsConditions: React.FC = () => {
                 6. Propiedad Intelectual y Marcas
               </h2>
               <p className="text-slate-600">
-                El software, código fuente, logotipos, arquitectura de bases de datos, marcas y elementos gráficos de VetConnect son propiedad exclusiva de Pinnacle Group S.A. o de sus licenciantes, encontrándose protegidos por la Ley Nacional de Propiedad Intelectual N° 11.723 y tratados internacionales. Queda terminantemente prohibida su reproducción, ingeniería inversa o explotación no autorizada.
+                El software, código fuente, logotipos, arquitectura de bases de datos, marcas y elementos gráficos de Huellicam son propiedad exclusiva de Pinnacle Group S.A. o de sus licenciantes, encontrándose protegidos por la Ley Nacional de Propiedad Intelectual N° 11.723 y tratados internacionales. Queda terminantemente prohibida su reproducción, ingeniería inversa o explotación no autorizada.
               </p>
             </section>
 

@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🐾 VetConnect v2.0
+# 🐾 Huellicam v2.0 (anteriormente VetConnect)
 ### *Plataforma Integral de Telemedicina Veterinaria & Gestión Clínica de Alta Disponibilidad*
 **Arquitectura Nivel 4.5: Pre-Gold Master & Agent-First (Optimizada para Google Jules & Agentes de IA Autónomos)**
 

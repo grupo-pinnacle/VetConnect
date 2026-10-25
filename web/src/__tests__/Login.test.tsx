@@ -18,7 +18,7 @@ describe('Login Page', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByPlaceholderText('ejemplo@vetconnect.com')).toBeDefined();
+    expect(screen.getByPlaceholderText('ejemplo@huellicam.com')).toBeDefined();
     expect(screen.getByPlaceholderText('********')).toBeDefined();
     expect(screen.getByText('Iniciar Sesión')).toBeDefined();
   });

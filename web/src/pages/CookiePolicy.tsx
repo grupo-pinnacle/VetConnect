@@ -16,14 +16,14 @@ export const CookiePolicy: React.FC = () => {
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-lg px-2 py-1 transition-colors"
-            aria-label="Volver a la portada de VetConnect"
+            aria-label="Volver a la portada de Huellicam"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             <span>Volver al Inicio</span>
           </Link>
           <div className="flex items-center gap-2">
             <Cookie className="w-5 h-5 text-emerald-600" aria-hidden="true" />
-            <span className="font-extrabold text-slate-900 text-sm sm:text-base">VetConnect Legal</span>
+            <span className="font-extrabold text-slate-900 text-sm sm:text-base">Huellicam Legal</span>
           </div>
         </div>
       </header>
@@ -51,7 +51,7 @@ export const CookiePolicy: React.FC = () => {
                 1. ¿Qué son las cookies y para qué las utilizamos?
               </h2>
               <p className="text-slate-600">
-                Una cookie es un pequeño archivo de texto enviado por el servidor web y almacenado en su navegador. En <strong>VetConnect</strong> (operado por <strong>Pinnacle Group S.A.</strong>) empleamos cookies y almacenamiento local estrictamente para garantizar la seguridad de su sesión médica, la operatividad del sistema de llamadas y la mejora continua del servicio.
+                Una cookie es un pequeño archivo de texto enviado por el servidor web y almacenado en su navegador. En <strong>Huellicam</strong> (operado por <strong>Pinnacle Group S.A.</strong>) empleamos cookies y almacenamiento local estrictamente para garantizar la seguridad de su sesión médica, la operatividad del sistema de llamadas y la mejora continua del servicio.
               </p>
             </section>
 

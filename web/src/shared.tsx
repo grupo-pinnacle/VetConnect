@@ -121,7 +121,7 @@ export function Logo({ to }: { to?: string }) {
     }
   } catch {}
   const target = to || defaultTo;
-  return <button className="logo" onClick={() => go(target)} aria-label="Ir al inicio"><span className="logo__mark"><Icon name="heart" size={20}/></span><span>VetConnect</span></button>;
+  return <button className="logo" onClick={() => go(target)} aria-label="Ir al inicio"><span className="logo__mark"><img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} /></span><span>Huellicam</span></button>;
 }
 
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
