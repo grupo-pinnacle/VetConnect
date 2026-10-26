@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+﻿import { useEffect, useState, useRef, useCallback } from "react";
 import "./vet.css";
 import { Button, Icon, Modal, go } from "../shared";
-import { getPatient, initialConsults, initialQueue, registerPatient, type Consult, type QueueItem } from "./data";
+import { getPatient, initialConsults, initialQueue, registerPatient, type Consult, type QueueItem, type Triage } from "./data";
 import { TriageBadge, VetProvider, useVet } from "./vetkit";
 import { EvolutionEditor, FichaClinica } from "./Consultations";
 import { useAuth } from "../context/AuthContext";
@@ -13,6 +13,101 @@ import { io, Socket } from "socket.io-client";
 import { LiveKitRoom, VideoConference, useLocalParticipant } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { ReviewModal } from "../components/ui/ReviewModal";
+import { HamsterMascot } from "../components/ui/HamsterMascot";
+import { parseConsultationNotes } from "../lib/consultationNotes";
+
+const WAITING_TIPS = [
+  { title: "Habilitá tu cámara y micrófono", text: "Asegurate de dar permisos en tu navegador para que el veterinario pueda ver y escuchar a tu mascota." },
+  { title: "Prepará un lugar bien iluminado", text: "Acercá a tu mascota a una fuente de luz clara por si el profesional necesita revisar mucosas, ojos o piel." },
+  { title: "Mantené esta pantalla abierta", text: "No cierres la app ni bloquees el celular. Te conectaremos automáticamente apenas el médico acepte." },
+];
+
+const TRIAGE_BY_TIER: Record<"ROJO" | "AMARILLO" | "VERDE", Triage> = { ROJO: "Crítico", AMARILLO: "Moderado", VERDE: "General" };
+
+function WaitingRoomExperience({
+  petName,
+  tutorName,
+  symptom,
+  clock,
+  tierLabel,
+  onBack,
+  onCancel,
+}: {
+  petName: string;
+  tutorName: string;
+  symptom: string;
+  clock: string;
+  tierLabel: string | null;
+  onBack: () => void;
+  onCancel: () => void;
+}) {
+  const [tip, setTip] = useState(0);
+  const [pulse, setPulse] = useState(false);
+  const tapRadar = () => {
+    setPulse(true);
+    window.setTimeout(() => setPulse(false), 2500);
+  };
+  const current = WAITING_TIPS[tip];
+  return (
+    <main
+      data-testid="waiting-room-experience"
+      className="v-wait"
+      role="region"
+      aria-live="polite"
+      aria-label="Sala de espera de guardia"
+    >
+      <header className="v-wait__top">
+        <button className="v-call__back" onClick={onBack} aria-label="Volver">
+          <Icon name="left" size={20} />
+        </button>
+        <div>
+          <b>{petName} · {tutorName}</b>
+          <span>{symptom}</span>
+        </div>
+        {tierLabel && <span className="v-wait__tier">{tierLabel}</span>}
+        <time className="v-call__time" aria-label="Tiempo de espera">{clock}</time>
+      </header>
+
+      <section className="v-wait__center">
+        <button type="button" className="v-wait__radar" onClick={tapRadar} aria-label="Radar clínico">
+          <i className="v-wait__ring v-wait__ring--1" />
+          <i className="v-wait__ring v-wait__ring--2" />
+          <i className="v-wait__ring v-wait__ring--3" />
+          <span className={`v-wait__core ${pulse ? "is-pulse" : ""}`}>
+            <HamsterMascot size="md" />
+          </span>
+        </button>
+        {pulse && <p className="v-wait__toast" role="status">¡Estamos priorizando a {petName}! 🐾</p>}
+        <svg className="v-wait__ecg" viewBox="0 0 200 40" aria-hidden="true">
+          <polyline points="0,20 50,20 60,20 68,4 78,36 88,20 130,20 140,20 148,8 156,30 164,20 200,20" />
+        </svg>
+        <ol className="v-wait__steps">
+          <li className="is-done">✓ Historia clínica y triage recibidos</li>
+          <li className="is-active">● Buscando veterinario de guardia disponible...</li>
+          <li>○ Iniciando sala de video HD cifrada</li>
+        </ol>
+        <div className="v-wait__tips" data-testid="waiting-room-tips">
+          <small>Mientras esperás</small>
+          <b>{current.title}</b>
+          <p>{current.text}</p>
+          <div className="v-wait__tips-nav">
+            <button type="button" aria-label="Consejo anterior" onClick={() => setTip((tip + WAITING_TIPS.length - 1) % WAITING_TIPS.length)}>&lt;</button>
+            {WAITING_TIPS.map((_, i) => (
+              <i key={i} className={i === tip ? "is-on" : ""} />
+            ))}
+            <button type="button" aria-label="Consejo siguiente" onClick={() => setTip((tip + 1) % WAITING_TIPS.length)}>&gt;</button>
+          </div>
+        </div>
+      </section>
+
+      <footer className="v-wait__foot">
+        <button type="button" className="v-wait__cancel" onClick={onCancel}>
+          Cancelar solicitud de consulta
+        </button>
+      </footer>
+    </main>
+  );
+}
 
 export function LiveKitTrackSynchronizer({ mic, cam }: { mic: boolean; cam: boolean }) {
   const { localParticipant } = useLocalParticipant();
@@ -343,7 +438,12 @@ function Room({ id }: { id: string }) {
   const [secs, setSecs] = useState(0);
   const [mic, setMic] = useState(true);
   const [cam, setCam] = useState(true);
-  const [panel, setPanel] = useState<"" | "Chat" | "Ficha" | "Evolución">("Chat");
+  // Desktop starts with the chat open; mobile starts closed so the video is fully visible.
+  const [panel, setPanel] = useState<"" | "Chat" | "Ficha" | "Evolución">(
+    typeof window !== "undefined" && window.innerWidth < 820 ? "" : "Chat"
+  );
+  const [celebrating, setCelebrating] = useState(false);
+  const wasWaitingRef = useRef(false);
   const [ending, setEnding] = useState(false);
   const endingRef = useRef(false);
   const disconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -400,6 +500,18 @@ function Room({ id }: { id: string }) {
       setCallState("connected");
     }
   }, [consultation?.status, consultation]);
+
+  // WAITING -> ACTIVE: celebrate for 1.2s before mounting the call console
+  useEffect(() => {
+    if (consultation?.status === "WAITING") {
+      wasWaitingRef.current = true;
+    } else if (consultation?.status === "ACTIVE" && wasWaitingRef.current) {
+      wasWaitingRef.current = false;
+      setCelebrating(true);
+      const t = window.setTimeout(() => setCelebrating(false), 1200);
+      return () => window.clearTimeout(t);
+    }
+  }, [consultation?.status]);
 
   // LiveKit WebRTC state
   const [livekitToken, setLivekitToken] = useState<string | null>(null);
@@ -658,17 +770,60 @@ function Room({ id }: { id: string }) {
     ended: ["", ""],
   }[callState];
 
+  const parsedNotes = parseConsultationNotes(reason);
+  const cleanReason = parsedNotes.cleanNotes;
+  const effectiveTriage = triage ?? (parsedNotes.priority ? TRIAGE_BY_TIER[parsedNotes.priority] : undefined);
+
+  // FEAT-07: the tutor never sees the call console while no vet has accepted
+  if (fromClient && consultation?.status === "WAITING") {
+    const tierLabel = parsedNotes.priority
+      ? { ROJO: "CRÍTICO", AMARILLO: "MODERADO", VERDE: "RUTINA" }[parsedNotes.priority]
+      : null;
+    return (
+      <WaitingRoomExperience
+        petName={petName}
+        tutorName={tutorName}
+        symptom={cleanReason}
+        clock={clock}
+        tierLabel={tierLabel}
+        onBack={() => go("/client/consultations")}
+        onCancel={async () => {
+          try {
+            await api.patch(`/api/consultations/${id}/cancel`);
+          } catch (err) {
+            console.warn("Notice cancelling consultation:", err);
+          }
+          queryClient.invalidateQueries({ queryKey: ["consultation", id] });
+          queryClient.invalidateQueries({ queryKey: ["consultations"] });
+          go("/client/consultations");
+        }}
+      />
+    );
+  }
+
+  if (fromClient && celebrating) {
+    return (
+      <main className="v-wait" role="status" aria-live="assertive" data-testid="waiting-room-connected">
+        <section className="v-wait__center">
+          <span className="v-wait__core is-pulse"><HamsterMascot size="md" /></span>
+          <h1>¡Veterinario conectado!</h1>
+          <p>Ingresando a la consulta...</p>
+        </section>
+      </main>
+    );
+  }
+
   return (
-    <div className={`v-call ${panel ? "has-panel" : ""} h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col`}>
+    <div className={`v-call ${panel ? "has-panel" : ""} h-[100dvh] max-h-[100dvh] overflow-hidden`}>
       <header className="v-call__top">
         <button className="v-call__back" onClick={() => setEnding(true)} aria-label="Salir de la videollamada">
           <Icon name="left" size={20} />
         </button>
         <div>
           <b>{petName} · {tutorName}</b>
-          <span>{reason}</span>
+          <span>{cleanReason}</span>
         </div>
-        {triage && <TriageBadge level={triage} compact />}
+        {effectiveTriage && <TriageBadge level={effectiveTriage} compact />}
         <span className={`v-call__net ${callState === "reconnecting" ? "is-warning" : ""}`}>
           <Icon name={callState === "reconnecting" ? "repeat" : "check"} size={13} />
           {callState === "reconnecting" ? "Reconectando" : "Conexión estable"}
