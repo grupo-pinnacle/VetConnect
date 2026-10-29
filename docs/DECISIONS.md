@@ -1,10 +1,10 @@
 # 🏛️ Decisiones de Arquitectura (ADRs) — VetConnect
 
-Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (ADR-001 al ADR-025 — FAANG Architecture).
+Este registro documenta las 32 decisiones arquitectónicas clave tomadas durante el diseño y evolución del sistema VetConnect (ADR-001 al ADR-032 — FAANG Architecture).
 
 ---
 
-## Índice de Decisiones (ADRs — ADR-001 al ADR-025)
+## Índice de Decisiones (ADRs — ADR-001 al ADR-032)
 
 | ID | Título | Estado | Impacto |
 |---|---|---|---|
@@ -39,6 +39,7 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
 | **ADR-029** | Desacoplamiento entre Ficha Declarativa de Mascota (Editable por Tutor) y Expediente Clínico Inmutable (Auditoría Médica) | Aprobado | Clínico / Paciente / Legal |
 | **ADR-030** | Sanitización de Metadatos de Sistema en Notas Clínicas y Reorganización Responsiva de Acciones en Tarjetas de Paciente | Aprobado | UX / Frontend / Clínico |
 | **ADR-031** | Resolución de Singleton de React y Metro Resolver Pinning en Monorepo Expo SDK 54 | Aprobado | Mobile / Bundler / Arquitectura |
+| **ADR-032** | Arquitectura de Pagos Marca Blanca con Adapter Pattern y Plan B PagoFlex | Aprobado | Negocio / Monetización / Arquitectura |
 
 ---
 
@@ -330,6 +331,22 @@ Este registro documenta las 25 decisiones arquitectónicas clave tomadas durante
   - Garantía absoluta de copia única (singleton) de React 19.1.0 durante el bundling y hot-reloading de Expo Go.
   - Eliminación definitiva del error `Invalid hook call` y `Cannot read property 'useId' of null`.
   - Respeto del principio de no-regresión en el workspace web.
+
+### ADR-032: Arquitectura de Pagos Marca Blanca con Adapter Pattern y Plan de Contingencia PagoFlex (Plan B)
+- **Contexto:**
+  - Se planteó la necesidad de definir el modelo de cobro y monetización para consultas veterinarias (fee-per-consultation), evaluando una propuesta de colaboración local con la fintech argentina PagoFlex (donde veterinarios cobran exclusivamente en la app PagoFlex y clientes pagan vía Mercado Pago u otras billeteras).
+  - La vinculación rígida con un PSP local amenazaba con desvirtuar la naturaleza de software exportable y marca blanca neutral de la plataforma, acarreando además responsabilidades fiscales de operador de marketplace en Argentina.
+- **Decisión:**
+  1. **Marca Blanca Agnóstica como Estándar Core (Plan A):**
+     - Huellicam / VetConnect se define formalmente como software Marca Blanca (White-Label) exportable y multi-organización.
+     - Se establece la interfaz desacoplada `IPaymentGateway` mediante el Adapter Pattern, permitiendo conectar cualquier procesador (Stripe, Mercado Pago, etc.) sin contaminar las reglas clínicas ni la máquina de estados de las consultas.
+  2. **Encapsulamiento de PagoFlex como Plan B:**
+     - La integración con PagoFlex queda clasificada como Plan B / Alternativa Local, sujeta a confirmación ejecutiva.
+     - En caso de activarse, se materializa exclusivamente en la clase `PagoFlexAdapter`, dejando intacta la arquitectura exportable del producto para terceros.
+- **Consecuencias:**
+  - Preservación del valor del activo tecnológico como software internacionalizable.
+  - Aislamiento de riesgos regulatorios e impositivos del núcleo de la aplicación.
+  - Documentación técnica detallada en `docs/payments/`.
 
 
 

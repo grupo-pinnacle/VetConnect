@@ -1,8 +1,8 @@
 <div align="center">
 
 # 🐾 Huellicam v2.0 (anteriormente VetConnect)
-### *Plataforma Integral de Telemedicina Veterinaria & Gestión Clínica de Alta Disponibilidad*
-**Arquitectura Nivel 4.5: Pre-Gold Master & Agent-First (Optimizada para Google Jules & Agentes de IA Autónomos)**
+### *Plataforma Marca Blanca de Telemedicina Veterinaria & Gestión Clínica de Alta Disponibilidad*
+**Arquitectura Nivel 4.5: Pre-Gold Master & Agent-First | Software Marca Blanca (White-Label) Exportable**
 
 [![Node.js](https://img.shields.io/badge/Node.js-20.x_LTS-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -33,6 +33,7 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 | 📋 **Backlog Operativo de Agentes** | Backlog técnico por fases F0..F7 (TASK-0.1 a TASK-7.2) con DoR y DoD para Jules. | [Ver PLAN_ACCION_VETCONNECT.md](PLAN_ACCION_VETCONNECT.md) |
 | 📊 **Plan de Proyecto y Gestión** | Product Backlog PB-01..40, Sprints 1..10, RACI balanceado y métricas KPIs. | [Ver PLAN_DE_PROYECTO_Y_GESTION.md](docs/PLAN_DE_PROYECTO_Y_GESTION.md) |
 | 🤖 **Agent Operating System (AOS)** | Protocolo operativo supremo, ciclo TDD, guardarraíles y antipatrones con código. | [Ver AGENTS.md](AGENTS.md) |
+| 💳 **Monetización & Pagos Marca Blanca** | Arquitectura agnóstica de pagos (Adapter Pattern), cobro por consulta y Plan B PagoFlex. | [Ver Sistema de Pagos](docs/payments/README.md) |
 
 ### 🧊 Nivel 2 (Tier 2) — Baselines de Inicio & Archivo Histórico (Read-Only Post-Kickoff)
 > **Línea Base Congelada:** Documentos aprobados para la fase de inicio que actúan como registro estático o de referencia contextual. No requieren mantenimiento diario sincronizado:
@@ -64,6 +65,7 @@ Toda la documentación técnica, operativa y de agentes de VetConnect se encuent
 - **💊 Recetas Digitales Estructuradas:** Prescripciones con dosificación, frecuencia y duración persistidas en la historia clínica del paciente.
 - **🛡️ Blindaje Legal & Sala de Espera (SENASA):** Verificación manual de matrícula profesional (`vetStatus: PENDING → APPROVED`) antes de habilitar la atención médica; cumplimiento estricto de la **Ley de Protección de Datos Personales N° 25.326** con *Soft-Deletes* y minimización de PII.
 - **📊 Registro Inmutable de Auditoría:** Registro de todas las mutaciones administrativas críticas (`AuditLog`) para trazabilidad total.
+- **🏷️ Arquitectura Marca Blanca & Monetización Modular (ADR-032):** Diseño agnóstico de pasarelas de pago (`IPaymentGateway`) con soporte multi-tenant, permitiendo cobro por consulta (*fee-per-consult*) configurable para cualquier pasarela internacional (Stripe, Mercado Pago) o adaptadores locales específicos.
 
 ---
 

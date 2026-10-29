@@ -1,49 +1,62 @@
-> ⚠️ **Reconstrucción mobile v3 en curso (2026-10-12):** el espacio de trabajo y las decisiones vigentes están en `odd/mobile-v3/`. La fila 3 ("Sin TanStack Query") y el bridge WebView quedan revocados por los ADR M-03 y M-02. Este índice se reescribe en la fase F8.
+# 📱 VetConnect Mobile — Índice Maestro y Arquitectura (SSOT)
 
-# 📱 VetConnect Mobile — Índice Maestro (SSOT)
+> **Decisión Arquitectónica Consolidada:**  
+> La aplicación móvil de VetConnect es formalmente un **Shell / Contenedor Híbrido** basado en React Native (Expo SDK 54) con `react-native-webview`, encargado de encapsular y servir la aplicación Web responsive de VetConnect (`web/`).  
+> La lógica de negocio clínica, los flujos de tutores y veterinarios, la gestión de mascotas, el chat interactivo y las videoconsultas WebRTC (LiveKit) residen y se mantienen en la Web App, la cual está expresamente optimizada y adaptada para operar dentro del WebView móvil.
 
-> **Precedencia (ADR-025).** Nivel 1 `backend/prisma/schema.prisma` + `backend/src/modules/` → Nivel 2 `01_TECH_REFERENCE_MOBILE.md` + `AGENT_CODING_SPEC_MOBILE.md` → Nivel 3 `docs/ARCHITECTURE.md` + `docs/DECISIONS.md` → Nivel 4 narrativa web/wireframes.
-> Ante conflicto **manda el nivel superior**. Prohibido inventar endpoints, campos o estados desde narrativa o wireframes.
+---
 
-## Mapa de documentos — cada archivo tiene UN dueño, cero solapamiento
+## 1. Misión del Contenedor Mobile (WebView Shell)
 
-| Archivo | Nivel | Dueño único de este contenido |
+El contenedor móvil nativo no busca duplicar la interfaz de usuario ni las pantallas del cliente web, sino dotar a la plataforma web de capacidades y presencia de app nativa:
+
+1. **Empaquetado y Distribución:** Distribución en Android (APK/AAB vía EAS Build) y presencia en el launcher del dispositivo.
+2. **Puente de Hardware y Permisos:** Solicitud y gestión centralizada de permisos nativos de Cámara, Micrófono y Notificaciones.
+3. **Inyección y Sincronización de Sesión (Auth Seeding):** Sincronización segura de credenciales de autenticación en `localStorage` del WebView antes del montaje de los scripts web (`injectedJavaScriptBeforeContentLoaded`).
+4. **Protocolo de Bridge Bidireccional (`window.ReactNativeWebView`):** Señalización reactiva de ciclo de vida (`page:ready`, `call:ended`), gestión de Screen WakeLock para videoconsultas, y manejo de cámara/archivos.
+5. **Notificaciones Push y Deep Linking:** Recepción de push remotas vía Expo Push Notifications y redirección inteligente a rutas internas del WebView (`vetconnect://`).
+6. **Resiliencia ante Reciclado de Memoria:** Soporte en la capa web de persistencia en `localStorage` para tolerar la destrucción y rehidratación de actividades en Android cuando el sistema operativo reclama recursos.
+
+---
+
+## 2. Mapa de Documentos — Estructura de la Sección
+
+Cada archivo en `docs/mobile/` posee una responsabilidad única y delimita el contrato del contenedor:
+
+| Archivo | Nivel | Responsabilidad Única |
 |---|---|---|
-| `AGENT_CODING_SPEC_MOBILE.md` | 2 | **Contrato ejecutable de código**: stack, auth, router+guards, sockets, bridge LiveKit, 5 estados UI, tokens, guardrails |
-| `01_TECH_REFERENCE_MOBILE.md` | 2 | **Contratos de backend consumidos** + tabla de deuda backend con su workaround mobile |
-| `02_QA_DISTRIBUCION_Y_SEGURIDAD.md` | 3 | **Operación**: build EAS/local, distribución, QA, performance, seguridad y legal |
-| `03_ESTADO_Y_DEUDA_MOBILE.md` | — | **Foto verificada del estado real** + registro de deuda + roadmap restante |
+| `README.md` | 1 | **Índice Maestro y SSOT**: Definición arquitectónica del WebView Shell, mapa de responsabilidades y verificación. |
+| `AGENT_CODING_SPEC_MOBILE.md` | 2 | **Especificación del Contenedor Nativo**: Configuración de `react-native-webview`, scripts de auth seeding, bridge bidireccional de eventos y guardrails. |
+| `01_TECH_REFERENCE_MOBILE.md` | 2 | **Contratos y Rutas Embebidas**: Endpoints nativos (Push tokens), mapeo de rutas web envueltas y protocolo de mensajería `postMessage`. |
+| `02_QA_DISTRIBUCION_Y_SEGURIDAD.md` | 3 | **Operación y Calidad**: Build EAS/local, variables de entorno (`EXPO_PUBLIC_WEB_URL`), permisos en `app.json`, debugging y seguridad. |
+| `03_ESTADO_Y_DEUDA_MOBILE.md` | — | **Diagnóstico y Hoja de Ruta**: Estado verificado del wrapper, mitigaciones implementadas (BUG-01, BUG-02, BUG-06/FEAT-05) y deuda técnica del contenedor. |
 
-**Regla anti-ambigüedad:** si un dato aparece en dos de estos archivos, es un error. Cada tabla, endpoint o regla vive en exactamente un lugar.
+---
 
-## Qué NO heredar (inconsistencias neutralizadas a propósito)
+## 3. Principios de Integración Web ↔ WebView
 
-Estas contradicciones existen en documentación general del repo. Mobile las ignora deliberadamente.
+Estas reglas neutralizan inconsistencias y guían el desarrollo de ambas capas:
 
-| # | Usar (verdad mobile) | Ignorar (contradicto) |
+| Principio | Regla de Oro | Razón Técnica |
 |---|---|---|
-| 1 | **25 ADRs** (`docs/DECISIONS.md:3`) | `AGENTS.md §1.1`=24, `RECONCILIACION_*`=24, `PLAN_ACCION_*` |
-| 2 | Mensajes **solo por socket** + `GET …/messages?after=` | `SPEC.md:320` `POST /:id/messages` — no existe en `consultations.routes.ts` |
-| 3 | **Sin TanStack Query.** Estado con `zustand` + `axios` (`src/lib/authStore.ts`, `src/lib/api.ts`) | `TECH_REFERENCE §2.9` / ADR-015 (describen web) |
-| 4 | FSM de 4 estados `WAITING/ACTIVE/COMPLETED/CANCELLED` (`schema.prisma:22-27`) | `SISTEMA_DE_DISENO §1.2` `PENDING/IN_PROGRESS` |
-| 5 | Cookies `SameSite=lax` (dev) / `none;Secure` (prod) — **solo web** (ADR-004) | `FRONTEND_ARCHITECTURE.md` `strict` |
-| 6 | Mobile: **11 suites / 29 tests** en `src/__tests__/` | Web: 123 baseline, no 129 del `DOSSIER` |
-| 7 | Mobile: **React 19.1.0** (exigido por SDK 54 / RN 0.81) | Web: React 18.3.1 LTS (motivo: LiveKit nativo; mobile usa bridge WebView) |
-| 8 | Códigos reales `INVALID_CONSULTATION_STATE` + `NOT_CONSULTATION_PARTICIPANT` (`calls.service.ts:60,98,105`) | `INVALID_STATE` / `FORBIDDEN` de `TECH_REFERENCE:158` |
-| 9 | `GET /api/notifications` = `take:50` **fijo, sin cursor** (`notifications.service.ts:23-29`) | Documentación que prometa `take`+`skip` |
-| 10 | `GET /api/media/:id` = **302 redirect** a presigned TTL 300s (`media.controller.ts:28-29`), no JSON | Contratos que esperen payload JSON |
+| **Cero Duplicación de UI** | Las pantallas de negocio viven exclusivamente en `web/`. El contenedor móvil provee el visor y los componentes de shell (splash, error de conexión, selector de permisos). | Evita divergencias de diseño, simplifica el mantenimiento a un solo codebase visual y unifica la experiencia. |
+| **Videollamadas WebRTC Web** | Las videoconsultas se ejecutan a través del componente web de LiveKit dentro del WebView con permisos inline concedidos. | Prohibido incluir SDK nativo de LiveKit en React Native (`@livekit/react-native`); el WebView soporta WebRTC directamente. |
+| **Auth Seeding Temprano** | Los tokens de sesión se inyectan en `window.localStorage` en `injectedJavaScriptBeforeContentLoaded`. | La aplicación web lee su token en tiempo de evaluación de módulos. Inyectar post-carga (`page:ready`) provocaría redirects erróneos al login. |
+| **Persistencia Anti-Crash** | Los formularios clave en web implementan auto-guardado en borrador (`localStorage`). | Si Android destruye la actividad del WebView al abrir la cámara o por baja memoria, el usuario no pierde datos al regresar. |
+| **Screen WakeLock** | La web solicita mantener la pantalla activa mediante mensajes al bridge (`wakelock:request`). | Evita que el dispositivo suspenda la pantalla o corte la cámara durante una videoconsulta activa. |
 
-### v2.1+ — NO EXISTEN, no implementar
+---
 
-`FavoriteVet` · `GET /pets/:id/calendar.ics` · `VaccinationRecord` · `MedicationSchedule` · `PetDocument` · `GET /consultations/pending` · campo `priority` con enum · `raza = otros` · baja de paciente por fallecimiento. Todas ausentes de `schema.prisma`. Cerradas como wontfix para v2.0 (`SPEC.md:479-491`, `docs/MINUTA_STAKEHOLDER_2026-09.md`).
-
-## Verificación
+## 4. Comandos de Verificación del Workspace
 
 ```powershell
-# Requiere `npm install` en la raíz del monorepo (workspaces)
-npm run typecheck -w mobile          # tsc --noEmit, cero `any`
-npm test -w mobile                   # jest, 11 suites / 29 tests
-cd backend; npx prisma validate      # si se toca contrato de datos
-```
+# Verificación estática de tipos en el contenedor móvil
+npm run typecheck -w mobile
 
-> ⚠️ La cadena de build Android requiere JDK 21 + Android SDK/NDK y una **ruta sin tildes ni caracteres no-ASCII** (el toolchain NDK/clang y el embedder de Metro fallan con `ó` en la ruta). Detalle en `02_QA_DISTRIBUCION_Y_SEGURIDAD.md`.
+# Ejecución de pruebas unitarias del wrapper y utilidades de bridge
+npm test -w mobile
+
+# Validación del paquete web (que corre dentro del WebView)
+npm run typecheck -w web
+npm test -w web
+```

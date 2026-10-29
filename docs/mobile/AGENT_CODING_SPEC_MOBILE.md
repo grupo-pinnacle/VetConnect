@@ -1,220 +1,172 @@
-> ⚠️ **Parcialmente reemplazado (2026-10-12):** durante la reconstrucción mobile v3 manda `odd/mobile-v3/CONTEXT.md`. Quedan revocados el bridge WebView de LiveKit (→ ADR M-02) y "sin TanStack Query" (→ ADR M-03). Este archivo se reescribe en la fase F8.
+# 📱 AGENT_CODING_SPEC_MOBILE — Especificación Técnica del Contenedor WebView (Nivel 2)
 
-# 📱 AGENT_CODING_SPEC_MOBILE — Contrato Canónico Ejecutable (Nivel 2)
-
-> Precedencia: este archivo + `01_TECH_REFERENCE_MOBILE.md` invalidan a `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/web/00-11`, `docs/SISTEMA_DE_DISENO.md` y `docs/SPEC.md` si hay conflicto (ADR-025).
-> Fuentes reales: `mobile/`, `backend/src/modules/`, `backend/prisma/schema.prisma`.
-> Este archivo es el **único dueño** del stack, auth, router, sockets, bridge LiveKit, estados UI y tokens. No repetir esos temas en otro documento.
+> **Contrato de Código del Contenedor:**  
+> Define el stack, la configuración del WebView endurecido, el protocolo de sincronización de autenticación, el bridge de eventos nativos y las reglas operativas del shell móvil.
 
 ---
 
-## 1. Stack congelado
+## 1. Stack Técnico del Contenedor Mobile
 
-| Paquete | Versión | Nota |
+| Paquete | Versión | Rol en la Arquitectura |
 |---|---|---|
-| `expo` | `~54.0.0` | Baseline exigido, instalado |
-| `expo-router` | `~6.0.0` | `"main": "expo-router/entry"` |
-| `react-native` | `0.81.4` | |
-| `react` / `react-dom` | `19.1.0` | **Excepción documentada**: lo exige SDK 54 / RN 0.81. Web queda en 18.3.1 LTS (usa LiveKit nativo; mobile usa bridge WebView) |
-| `nativewind` | `^4.1.0` + `tailwindcss` `^3.4.17` | Cableado activo: `tailwind.config.js` + `global.css` + `nativewind/babel` + `withNativeWind` |
-| `typescript` | `^5.7.3` | Estricto. **Cero `any`** |
-| `jest` / `jest-expo` | `^29.7.0` / `~54.0.0` | |
+| `expo` | `~54.0.0` | Runtime nativo y herramientas de empaquetado (EAS / CNG) |
+| `expo-router` | `~6.0.0` | Entry point y enrutador base (`main: expo-router/entry`) |
+| `react-native` | `0.81.4` | Framework base para Android e iOS |
+| `react` / `react-dom` | `19.1.0` | Baseline requerido por Expo SDK 54 / RN 0.81 |
+| `react-native-webview` | `^13.15.0` | Motor central que aloja y renderiza la Web App de VetConnect |
+| `expo-camera` | `~17.0.0` | Gestión de permisos nativos de hardware de cámara |
+| `expo-notifications` | `~0.32.0` | Manejador de notificaciones push y registro de token APNs/FCM |
+| `expo-secure-store` | `~15.0.0` | Almacenamiento cifrado en hardware de credenciales/tokens nativos |
+| `expo-keep-awake` | `~14.0.0` | Prevención de suspensión de pantalla durante videoconsultas (WakeLock) |
+| `typescript` | `^5.7.3` | Tipado estricto. **Cero `any`** en el puente nativo |
 
-Librerías de dominio: `axios ^1.12.0`, `socket.io-client ^4.8.1`, `zod ^3.24.2`, `zustand ^5.0.3`, `expo-secure-store ~15.0.0`, `expo-notifications ~0.32.0`, `expo-camera ~17.0.0`, `expo-image-picker ~17.0.0`, `expo-linking ~8.0.0`, `react-native-webview ^13.15.0`.
-
-> ❌ **Prohibido** instalar `@tanstack/react-query` en mobile. El estado vive en `zustand` + services con `axios` (ADR-015 aplica solo a web).
-> ❌ **Prohibido** LiveKit nativo (`@livekit/components-react`) en mobile. El video va por bridge WebView (§6).
-
-### 1.1 Cableado de NativeWind v4 (monorepo) — no revertir
-
-Hallazgos verificados en build, registrados en `metro.config.js` y `babel.config.js`:
-
-- `blockList` de copia única de React Native: la versión stale del root (`0.76.7`) y la anidada (`0.87.1`) están vetadas.
-- `extraNodeModules` fija `react`/`react-native` canónicos del workspace mobile.
-- Plugin `expo-router-plugin` declarado explícitamente: el preset hoisted no detecta `expo-router` anidado.
-- Único cast `WebView` permitido (13.15 → 17 de tipos) vía `unknown`, documentado en `call/[consultationId].tsx`.
+> ❌ **Reglas Críticas del Stack:**  
+> - **Prohibido el SDK nativo de LiveKit en mobile** (`@livekit/react-native` o `@livekit/react-native-webrtc`). Todo el flujo de telemedicina se procesa directamente por WebRTC en el motor del WebView.  
+> - **Prohibido duplicar pantallas de negocio en React Native.** Vistas de mascotas, chat, historial, recetas y perfiles se consumen desde la aplicación web.
 
 ---
 
-## 2. Auth dual (ADR-004) — única forma válida
+## 2. Configuración Endurecida del WebView (`HARDENED_WEBVIEW_CONFIG`)
 
-- **Header obligatorio** `X-Client-Platform: mobile` (`src/lib/api.ts:13`). Sin él el backend devuelve refresh token en cookie HttpOnly y mobile no puede leerlo.
-- `login` / `register` / `refresh` retornan `{ accessToken, refreshToken, user }` en JSON **solo** con ese header (`backend/src/modules/auth/auth.controller.ts:35,57,74-82`).
-- **Refresh token** → solo `expo-secure-store`, clave `vetconnect_refresh_token`.
-- **Access token** → **solo memoria** (`authStore.ts`). Nunca `SecureStore`, nunca `AsyncStorage` (ver §8).
-- `initAuth()` corre en `app/_layout.tsx` al arrancar: lee SecureStore → `POST /api/auth/refresh` → rehidrata `user`.
-- Refresh en vuelo: `failedQueue` + single-flight en `api.ts:17-32,47-53` — **un solo** refresh para N requests 401 concurrentes.
-- Logout: `POST /api/auth/logout` + borrar SecureStore + limpiar header Authorization. **Borrar el token local aunque la red falle.**
+Para garantizar que WebRTC, el audio bidireccional, el selector de fotos y el almacenamiento local funcionen sin fricción en Android e iOS, el componente `WebView` debe instanciarse con la configuración exportada en `src/lib/webviewBridge.ts`:
 
-### 2.1 Roles y bloqueo SENASA (ADR-013)
-
-| Rol | Comportamiento en mobile |
-|---|---|
-| `CLIENT` | Home tutor, pets, triage, chat, llamada, receta, calificar |
-| `VET` + `APPROVED` | Guardia: cola `WAITING`, asignar, atender, emitir receta, cerrar con `diagnosisNotes` |
-| `VET` + `PENDING`/`REJECTED` | **Bloqueado**: `(app)/_layout.tsx:30` renderiza `VetPendingBlock` (testID `vet-pending-block`). Sin acceso a salas |
-| `ADMIN` | Solo lectura de lo propio. Mobile **no** expone `/api/admin/*` (ver `03_ESTADO_Y_DEUDA_MOBILE.md`) |
-
----
-
-## 3. Router — árbol real (19 pantallas)
-
-```
-app/_layout.tsx                     Stack root + initAuth + Splash(ActivityIndicator)
-app/index.tsx                       Redirect por sesión y rol
-app/(auth)/_layout.tsx              Stack sin tabs: login, register
-app/(app)/_layout.tsx               Tabs + bloqueo SENASA
-```
-
-| Ruta | Pantalla | Responsabilidad |
-|---|---|---|
-| `(auth)/login.tsx` | Login | `POST /api/auth/login` |
-| `(auth)/register.tsx` | Registro | `POST /api/auth/register` |
-| `(app)/index.tsx` | Home | `GET /pets` + `GET /consultations/mine`; delega a `VetWorkspace` si VET |
-| `(app)/history.tsx` | Historial | `GET /consultations/mine` + filtros + `PATCH :id/cancel` |
-| `(app)/notifications.tsx` | Alertas | `GET /notifications` + `PATCH :id/read` |
-| `(app)/profile.tsx` | Perfil | `PATCH /api/users/profile` (bio, photoUrl, isOnline) + logout |
-| `(app)/pets/new.tsx` | Alta mascota | `POST /api/pets` |
-| `(app)/pets/[id].tsx` | Mascota | `GET/PATCH/DELETE /api/pets/:id` (CRUD completo) |
-| `(app)/consultation/new.tsx` | Triage | `GET /pets` + `POST /consultations` |
-| `(app)/consultation/[id].tsx` | Detalle | `GET /consultations/:id` + acciones vet |
-| `(app)/consultation/[id]/prescribe.tsx` | Emitir receta | `POST /consultations/:id/prescriptions` |
-| `(app)/chat/[consultationId].tsx` | Chat | `GET …/messages?after=` + sockets + `POST /media` |
-| `(app)/call/[consultationId].tsx` | Videoconsulta | `POST /calls/:id/token` + bridge WebView (§6) |
-| `(app)/prescriptions/[id].tsx` | Receta + QR | `GET /api/prescriptions/:id` + `Share` |
-| `(app)/review/[consultationId].tsx` | Calificar | `POST /consultations/:id/review` |
-
-**Convenciones**
-
-- `useLocalSearchParams<{ consultationId: string }>()`; el parámetro de ruta se llama `consultationId` (no `id`) en `chat/`, `call/` y `review/`.
-- Navegación push → `/call/:id` o `/consultation/:id` (`src/services/notifications.service.ts:54-57`).
-- Fin de llamada → `router.back()`.
-- Rutas sin tab visible: `options={{ href: null }}`.
-
-### 3.1 Deep links
-
-Esquema declarado en `app.json:9` (`vetconnect`). Rutas profundas soportadas: `vetconnect://call/:id`, `vetconnect://consultation/:id`, `vetconnect://prescriptions/:id`.
-⚠️ Estado actual: `expo-linking` está instalado pero **sin cablear** — ver `03_ESTADO_Y_DEUDA_MOBILE.md`.
-
----
-
-## 4. Sockets (ADR-009) — solo estos eventos
-
-**Connect** (`src/lib/socket.ts:19-23`):
 ```ts
-io(WS_URL, { auth: { token: `Bearer ${accessToken}` }, transports: ['websocket'] })
+export const HARDENED_WEBVIEW_CONFIG = {
+  domStorageEnabled: true,                      // Obligatorio para localStorage de auth y drafts
+  javaScriptEnabled: true,                     // Ejecución del bundle SPA de React
+  sharedCookiesEnabled: true,                  // Sincronización de cookies de sesión
+  thirdPartyCookiesEnabled: true,              // Soporte de cookies seguras cross-origin
+  allowsInlineMediaPlayback: true,             // Video inline de LiveKit sin forzar fullscreen
+  mediaPlaybackRequiresUserAction: false,      // Reproducción inmediata de tracks de video/audio
+  allowFileAccess: true,                       // Permite subir imágenes y reportes clínicos
+  mediaCapturePermissionGrantType: 'grant',    // Concede permisos de getUserMedia en Android
+  originWhitelist: ['http://*', 'https://*'],  // Bloquea esquemas no seguros o URLs externas no autorizadas
+} as const;
 ```
-`WS_URL` = `EXPO_PUBLIC_WS_URL` o `http://localhost:3001`.
 
-**Cliente → servidor**
+---
 
-| Evento | Payload | Notas |
+## 3. Mecanismo de Sincronización de Sesión (Auth Seeding)
+
+### 3.1 El Problema del Timing
+La aplicación web (`web/src/services/api.ts` y `AuthContext.tsx`) inicializa su estado leyendo `localStorage` en el **momento en que se evalúa el primer módulo** del bundle de Javascript.  
+Inyectar las credenciales después de que el documento termina de cargar (`onLoadEnd` o `page:ready`) provocaría una condición de carrera: la SPA leería `null`, asumiría que no hay sesión activa y dispararía una redirección automática a `/login`.
+
+### 3.2 Solución Canónica: `injectedJavaScriptBeforeContentLoaded`
+El shell móvil inyecta el script de inicialización **antes de que cualquier script de la página web sea ejecutado**:
+
+```ts
+// src/lib/webviewBridge.ts
+export const WEB_TOKEN_STORAGE_KEY = 'vetconnect_token';
+export const WEB_USER_STORAGE_KEY = 'vetconnect_user';
+
+export function buildAuthSeedScript(accessToken: string, user: User): string {
+  const token = JSON.stringify(accessToken);
+  const userJson = JSON.stringify(user);
+
+  return (
+    'try{' +
+    `window.localStorage.setItem(${JSON.stringify(WEB_TOKEN_STORAGE_KEY)},${token});` +
+    `window.localStorage.setItem(${JSON.stringify(WEB_USER_STORAGE_KEY)},${userJson});` +
+    '}catch(e){};' +
+    'true;' // Obligatorio: debe evaluar a true para evitar advertencias de react-native-webview
+  );
+}
+```
+
+En la vista del WebView:
+```tsx
+<WebView
+  ref={webviewRef}
+  source={{ uri: targetUrl }}
+  injectedJavaScriptBeforeContentLoaded={
+    accessToken && user ? buildAuthSeedScript(accessToken, user) : undefined
+  }
+  {...HARDENED_WEBVIEW_CONFIG}
+  onMessage={handleBridgeMessage}
+/>
+```
+
+---
+
+## 4. Protocolo de Bridge Bidireccional (`postMessage`)
+
+La comunicación entre el cliente web hospedado y el contenedor nativo utiliza la interfaz estándar `window.ReactNativeWebView.postMessage`.
+
+### 4.1 Eventos Emitidos por la Web hacia Mobile (Web → Mobile)
+
+| Evento (`type`) | Payload | Responsabilidad del Contenedor Mobile |
 |---|---|---|
-| `join:consultation` | `{ consultationId }` | Al entrar al chat |
-| `message:send` | `{ consultationId, content, clientMsgId }` | `clientMsgId = mobile-${Date.now()}-rand`. Idempotente: `P2002` → el servidor responde **200** con el mensaje existente, nunca 500 ni duplicado |
-| `call:answered` | `{ consultationId }` | Al aceptar videoconsulta entrante |
-| `call:rejected` | `{ consultationId }` | Al rechazar |
+| `page:ready` | `{}` | Informa que la vista web completó su hidratación. Mobile oculta el splash nativo de carga. |
+| `call:ended` | `{ consultationId?: string }` | Notifica el fin de la videollamada. Mobile puede navegar hacia atrás o resetear la pantalla. |
+| `wakelock:request` | `{ tag?: string }` | Solicita activar `activateKeepAwakeAsync()` para impedir que la pantalla se apague en consulta. |
+| `wakelock:release` | `{}` | Invoca `deactivateKeepAwake()` para restituir el comportamiento normal de suspensión. |
+| `photo:picker` | `{ targetInputId?: string }` | Señaliza el disparo seguro del selector de fotos evitando recargas accidentales. |
 
-**Servidor → cliente**
-
-| Evento | Payload | Notas |
-|---|---|---|
-| `message:new` | `Message` | Append + `updateLastKnownTimestamp` |
-| `call:incoming` | `{ consultationId, callerName, roomName }` | `callerName` es **`firstName`**. Cero PII |
-| `call:ended` | — | El bridge web la usa para cerrar |
-
-- **Background:** `AppState → background` desconecta; `→ active` reconecta y llama `syncIncrementalMessages()` (`socket.ts:46-60`), que sincroniza con `GET /consultations/:id/messages?after=ISO`.
-- `prescription:new` está **tipado pero NO emitido** por el backend. Para recetas: **polling** `GET /api/prescriptions/:id`, nunca esperar el socket.
-
----
-
-## 5. Push + in-app (ADR-011)
-
-- `Notifications.setNotificationHandler` a nivel de módulo (`src/services/notifications.service.ts:6-12`). Usar únicamente las claves vigentes de la API de Expo Notifications; no mezclar `shouldShowAlert` con sus reemplazos.
-- `registerPushToken()`: `getPermissions` → `getExpoPushTokenAsync` → `POST /api/notifications/register-token { token, platform }` (idempotente, `pushToken.token` es `@unique`).
-- `platform` es un enum cerrado `ios | android | web` (`notifications.schemas.ts:5`). **Nunca enviar `Platform.OS` sin validar**: bajo Expo Go puede valer `macos`/`windows` y el backend responde 400.
-- Tap: `data.consultationId` + `type === CALL_INCOMING` → `/call/:id`; el resto → `/consultation/:id`.
-- ⚠️ Estado actual: cableado incompleto — ver `03_ESTADO_Y_DEUDA_MOBILE.md`.
-
----
-
-## 6. Bridge LiveKit (ADR-012) — prohibido SDK nativo
-
-1. `POST /api/calls/:consultationId/token` → `{ token, wsUrl }`. Solo `ACTIVE` y participantes. Token **sin PII**: `identity: user.id`, `name: user.firstName`.
-2. `WebView` carga `${EXPO_PUBLIC_WEB_URL}/call/${consultationId}` con `allowsInlineMediaPlayback`, `mediaPlaybackRequiresUserAction=false`, `javaScriptEnabled`, `domStorageEnabled`.
-3. Handshake: la web embebida emite `page:ready` → mobile inyecta el token vía `window.initLiveKitCall(...)` → overlay `Preparando cámara…` hasta `isPageReady`.
-4. `call:ended` → alerta → `router.back()`.
-5. La web embebida monta **solo** `<VideoConference/>`, nunca `RoomAudioRenderer` (provoca eco y doble audio).
-6. Cámara trasera `facingMode: 'environment'` con autoenfoque, para que el tutor narre mientras enfoca.
-
-### 6.1 UX clínica
-
-- Chat durante la videoconsulta: la web embebida ya incluye su propio chat (`ConsultationRoom`). Mobile no lo duplica.
-- Multicanal: foto clínica (`POST /api/media`) en paralelo **sin desmontar** el `WebView`.
-- Ventana de gracia 3 min ante corte del vet (`VET_DISCONNECTED_TIMEOUT` → reencolado prioritario en `WAITING`).
-- Timeout de triage 15 min (`TIMEOUT_NO_VET_AVAILABLE`) vía push + socket.
-- Timbrar al par: `POST /api/calls/:consultationId/ring`.
+### 4.2 Manejo de Eventos en Mobile
+```ts
+const handleBridgeMessage = (event: WebViewMessageEvent) => {
+  try {
+    const data = JSON.parse(event.nativeEvent.data);
+    switch (data.type) {
+      case 'page:ready':
+        setIsPageReady(true);
+        break;
+      case 'call:ended':
+        handleCallTermination(data.consultationId);
+        break;
+      case 'wakelock:request':
+        activateKeepAwakeAsync();
+        break;
+      case 'wakelock:release':
+        deactivateKeepAwake();
+        break;
+    }
+  } catch (err) {
+    // Prohibido crashear ante payloads no estructurados
+  }
+};
+```
 
 ---
 
-## 7. Los 5 estados UI obligatorios (5/5)
+## 5. Resiliencia de Hardware y Sistema Operativo
 
-Toda pantalla asíncrona debe manejar los cinco:
+### 5.1 Detección de Loopback en Desarrollo (`isLoopbackUrl`)
+En dispositivos físicos, `localhost` o `127.0.0.1` apuntan al hardware del teléfono, no a la máquina host.  
+`src/lib/webviewBridge.ts` provee `isLoopbackUrl()` para alertar de inmediato al desarrollador con un mensaje constructivo (`Configurar EXPO_PUBLIC_WEB_URL con la IP de red local o usar ADB reverse`) en vez de mostrar una pantalla blanca opaca.
 
-| Estado | Requisito |
-|---|---|
-| `loading` | `ActivityIndicator` o skeleton con `colors.primary` (`#0284C7`) |
-| `error` | **Caja de error visible + botón Reintentar**. Prohibido `console.warn` como único reporte |
-| `empty` | Estado informativo ("No tienes…"), nunca datos simulados |
-| `success` | Contenido real del backend |
-| `reconnecting` / `offline` | Banner de conexión + acción de reintento |
-
-Componentes del kit (`src/components/`): `ScreenState` (loading/error/empty), `Field`, `PrimaryButton`, `Stars`, `StatusBadge`, `AttachmentView`, `VetConsultationActions`, `VetWorkspace`.
-❌ Prohibido `Alert.alert` para errores de datos en pantallas con estado asíncrono — usar `ScreenState`. `Alert` queda solo para confirmación e irreversibles (baja, cancelar).
+### 5.2 Reciclado de Procesos en Android (`onContentProcessDidTerminate`)
+Cuando el sistema operativo Android sufre presión de memoria (ej. al abrir la cámara de alta resolución para fotografiar a la mascota), el proceso de renderizado del WebView puede ser finalizado.  
+- **En Mobile:** `onContentProcessDidTerminate` detecta el evento e invoca `webviewRef.current?.reload()`.
+- **En Web:** Los formularios clave (`NewPet`, `Register`) implementan persistencia automática de borradores en `localStorage` (mitigaciones BUG-01 y BUG-02), recuperando los datos del usuario al recargar sin pérdida de información.
 
 ---
 
-## 8. Design tokens
+## 6. Notificaciones Push y Deep Linking
 
-Fuente única: **`src/theme/tokens.ts`**. Prohibido hex literal fuera de ese archivo.
+### 6.1 Registro de Push Token
+- Al iniciar la aplicación, el shell solicita permisos de notificación mediante `expo-notifications`.
+- El token obtenido (`ExponentPushToken[...]`) se envía a `POST /api/notifications/register-token` indicando la plataforma (`android` o `ios`).
 
-| Rol | Valor |
-|---|---|
-| Primary | `#0284C7` |
-| Fondo | `#F8FAFC` |
-| Texto / ink | `#0F172A`, secundario `#334155` |
-| Muted | `#64748B`, `#94A3B8` |
-| Borde | `#E2E8F0`, `#CBD5E1` |
-| Burbuja propia | fondo `#0284C7`, texto `#FFF` |
-| Burbuja ajena | fondo `#E2E8F0`, texto `#0F172A` |
-
-- Radio 8. Cards `padding: 16`, `borderWidth: 1`. Header 16 bold.
-- Distribución 60-30-10 heredada de `docs/SISTEMA_DE_DISENO.md`.
-- Tipografía nativa del sistema en mobile (Inter es web).
-- NativeWind v4 está cableado; la migración `style=` → `className` es **progresiva por pantalla**, manteniendo `testID` y snapshot visual. No mezclar NativeWind v2 con v4.
+### 6.2 Enrutamiento por Deep Link
+El esquema declarado en `app.json` es `vetconnect://`. Al recibir una push o abrir un enlace externo:
+- `vetconnect://call/:id` → Carga `${EXPO_PUBLIC_WEB_URL}/call/:id` dentro del WebView.
+- `vetconnect://consultation/:id` → Carga `${EXPO_PUBLIC_WEB_URL}/consultations/:id`.
+- `vetconnect://prescriptions/:id` → Carga `${EXPO_PUBLIC_WEB_URL}/prescriptions/:id`.
 
 ---
 
-## 9. Guardrails — fallo de CI si se violan
+## 7. Guardrails del Contenedor (Fallo Inmediato de CI si se Violan)
 
-❌ **Prohibido**
-- `any` explícito o implícito. Usar `unknown` + Zod. Cast solo vía `unknown` documentado.
-- `localStorage` / `AsyncStorage` para el refresh token.
-- Omitir el header `X-Client-Platform`.
-- `@livekit/components-react` o `RoomAudioRenderer` en mobile.
-- `POST /:id/messages` (no existe; los mensajes son por socket).
-- `express.static` sobre `/uploads`.
-- Email o teléfono en tokens LiveKit, logs de auditoría o respuestas públicas.
-- `prisma.<model>.delete()` físico (siempre `deletedAt`).
-- Escala de rating distinta de 1–5 entero.
-- Campos v2.1+ (`FavoriteVet`, `isHidden`, `VaccinationRecord`…).
-- Métricas, contadores o KPIs hardcodeados. Todo número visible sale de PostgreSQL o se calcula con `useMemo` sobre entidades reales.
-- Ramas de mocking (`?mock=true`, `id === 'demo'`).
+❌ **Prohibido:**
+1. Instalar `@livekit/react-native`, `@livekit/react-native-webrtc` o cualquier SDK de videollamadas nativo.
+2. Replicar pantallas visuales de negocio dentro de `mobile/app/(app)/*`.
+3. Utilizar tipos `any` o directivas `@ts-ignore` en el código de integración del bridge.
+4. Incluir credenciales o información médica personal identificable (PII) en parámetros de URLs o logs.
+5. Desactivar `domStorageEnabled` o `javaScriptEnabled` en el WebView.
 
-✅ **Obligatorio**
-- Zod en todo input antes de tocar la red (`src/validation/{auth,pet,clinical,profile}.ts`).
-- Envelope `ApiResponse<T>` RFC 7807: `{ success, data?, error: { code, message, details?, timestamp } }`.
-- `testID` en pantallas de llamada y chat: `call-loading-screen`, `permission-denied-screen`, `call-room-view`, `vet-pending-block`.
-- `keyExtractor` estable (`id || clientMsgId`).
-- `FlatList` para listas, nunca `ScrollView`.
-- Un solo escritor por vez; sin `any`, sin `@ts-ignore`.
+✅ **Obligatorio:**
+1. Gestionar siempre los estados de carga, error de red y denegación de permisos en la UI del contenedor.
+2. Utilizar `buildAuthSeedScript` con escape JSON estricto para inyectar credenciales de sesión.
+3. Proveer feedback claro al usuario si el servidor web no responde o no hay conexión a Internet.
