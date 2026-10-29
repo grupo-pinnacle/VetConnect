@@ -99,3 +99,31 @@ export interface IPaymentGateway {
 * **Exportabilidad Real:** La propiedad intelectual del software puede licenciarse a clientes de Estados Unidos, México, Chile, Colombia o Europa sin fricciones de territorialidad.
 * **Aislamiento Fiscal:** La empresa desarrolladora vende o licencia el **software** (factura por software / SaaS). La responsabilidad fiscal de facturar el acto médico al paciente recae en el licenciatario u operador de la clínica en cada país.
 * **Flexibilidad Comercial:** Permite esquemas B2B (empresas aseguradoras de mascotas que compran el sistema y no le cobran al usuario final) o B2C (clínicas que cobran por videoconsulta).
+
+---
+
+## 6. Estructura de Licenciamiento Comercial B2B (Pricing & Packaging para Exportación)
+
+Para rondas de negocios, licitaciones y exportación B2B (ej. rondas de PromArgentina o compradores corporativos internacionales), la comercialización de la plataforma se estructura en un modelo híbrido probado de **Setup Fee + Suscripción SaaS / Revenue Share**:
+
+```mermaid
+flowchart TD
+    Client["🏢 Cliente B2B\n(Clínica / Red / Aseguradora)"] --> Setup["1️⃣ Setup Fee Inicial\n(Personalización, Branding & Onboarding)"]
+    Client --> ModelChoice{"2️⃣ Elección de Modelo Operativo"}
+    ModelChoice --> ModelA["SaaS Recurrente\n(Fee Mensual Fijo por Profesional)"]
+    ModelChoice --> ModelB["Revenue Share Transaccional\n(Comisión % por Consulta Atendida)"]
+    ModelChoice --> ModelC["Licencia Enterprise Híbrida\n(Infraestructura Dedicada + SLA 99.9%)"]
+```
+
+### Matriz de Planes Comerciales de Marca Blanca
+
+| Nivel Comercial | Perfil de Cliente | Setup Fee (One-Off) | Modelo Recurrente / Transaccional | Alcance y Servicios Incluidos |
+|---|---|---|---|---|
+| **Tier 1 — Starter Clinic** | Clínicas veterinarias independientes (1 a 5 profesionales) | **$1,500 USD** | **$250 USD / mes**<br/>*(0% comisión transaccional)* | • Despliegue en subdominio con colores y logotipo propio.<br/>• Configuración de pasarela de pago local (Stripe/Mercado Pago).<br/>• Soporte estándar por ticket y hosting cloud administrado. |
+| **Tier 2 — Hospital Network** | Redes de veterinarias y hospitales zonales (6 a 25 profesionales) | **$3,500 USD** | **$450 USD / mes**<br/>+ **2.5% take-rate** por consulta | • Dominio propio con apps móviles (WebView Shell) publicadas en Google Play con la marca del cliente.<br/>• Módulo de split payments automatizado para liquidar a los veterinarios.<br/>• Panel de analítica avanzada y exportación de historias clínicas. |
+| **Tier 3 — Enterprise & InsurTech** | Empresas aseguradoras de mascotas, consorcios o cadenas nacionales (+25 profesionales) | **$8,000 USD** | **$1.50 USD** por consulta atendida *(o tarifa plana anual negociada)* | • Despliegue en infraestructura dedicada (VPC o Kubernetes on-premise).<br/>• Integración vía API/Webhooks con sistemas ERP / HIS preexistentes.<br/>• Adaptador regulatorio personalizado según país de operación.<br/>• Soporte 24/7 y SLA garantizado del 99.9%. |
+
+### ¿Por qué este modelo resulta atractivo para compradores e inversores?
+1. **Time-to-Market Inmediato:** En lugar de invertir 12 a 18 meses y más de $80,000 USD en desarrollar una plataforma telemédica WebRTC desde cero, el comprador adquiere una solución probada y homologada lista para operar en 14 días.
+2. **Predecibilidad de Costos:** El comprador puede optar por pagar un fee fijo por profesional o trasladar el costo a un porcentaje variable sobre las consultas efectivamente cobradas.
+3. **Control Absoluto del Margen:** El licenciatario fija el arancel de la consulta a sus clientes tutores y define libremente el porcentaje que retiene y el que liquida a sus médicos veterinarios.

@@ -11,13 +11,14 @@
 
 ## 1. Resumen Ejecutivo (Executive Summary)
 
-**VetConnect** es una plataforma tecnológica integral de telemedicina veterinaria de alta disponibilidad diseñada para conectar de forma instantánea, segura y auditable a tutores de mascotas con médicos veterinarios matriculados y certificados en América Latina.
+**Huellicam v2.0 (anteriormente VetConnect)** es una plataforma tecnológica integral de telemedicina veterinaria y gestión clínica de alta disponibilidad, concebida bajo una arquitectura **Marca Blanca (White-Label)** exportable. El sistema está diseñado para que hospitales veterinarios, redes de clínicas, consorcios de salud animal y empresas aseguradoras puedan desplegar su propia infraestructura telemédica con identidad visual personalizada, reglas de negocio adaptables y modelos arancelarios independientes.
 
 La plataforma resuelve el vacío existente entre la consulta física programada y la emergencia veterinaria crítica, sustituyendo canales de comunicación informales y de alto riesgo (mensajería por WhatsApp, llamadas no reguladas) por un ecosistema digital clínico que combina:
 1. **Atención Inmediata por Triaje:** Cola inteligente de espera con auto-asignación y balanceo en tiempo real.
 2. **Consultas Multimedia de Alta Fidelidad:** Mensajería sincrónica (WebSockets) y videoconsultas en vivo de ultra baja latencia (WebRTC / LiveKit SFU).
 3. **Historia Clínica Digital Centralizada:** Repositorio inmutable de pacientes con antecedentes, evolución y cumplimiento de normativas de privacidad.
 4. **Receta Digital Oficial:** Prescripciones médicas estructuradas con validación por código QR y firma digital habilitada.
+5. **Monetización & Pagos Modulares:** Soporte para pasarelas de pago agnósticas (Adapter Pattern) bajo esquemas arancelados por consulta, suscripción o cobertura institucional.
 
 ---
 
@@ -25,12 +26,12 @@ La plataforma resuelve el vacío existente entre la consulta física programada 
 
 ### 2.1 El Problema Clínico y Operativo
 - **Consultas Informales y Peligro de Automedicación:** Ante síntomas nocturnos o dudas repentinas, los dueños de mascotas recurren a consejos en internet o mensajes directos a profesionales, propiciando diagnósticos erróneos y administración de fármacos tóxicos para animales (ej. paracetamol o ibuprofeno).
-- **Falta de Validación de Matrícula e Idoneidad:** Proliferación de personas no habilitadas ejerciendo la medicina veterinaria en canales digitales sin control de los Colegios Médicos Veterinarios ni organismos regulatorios sanitarios (**SENASA** en Argentina).
+- **Falta de Validación de Matrícula e Idoneidad Sanitaria:** Proliferación de personas no habilitadas ejerciendo la medicina veterinaria en canales digitales sin control oficial. La plataforma incorpora un **Motor Configurable de Validación de Matrículas Sanitarias y Fiscalización Profesional**, que en su despliegue para Argentina se homologa con **SENASA** y Colegios Veterinarios (CVPBA/CPMV), pero cuenta con adaptadores modulares para integrarse con la **AVMA / State Boards** en Estados Unidos, **SENASICA** en México o la **OCV** en España.
 - **Fragmentación Histórica y Pérdida de Información:** Inexistencia de un registro interoperable; cuando una mascota requiere atención de guardia o derivación a especialista, el profesional carece de antecedentes terapéuticos, peso histórico y alergias previas.
 - **Inseguridad Jurídica y Vulnerabilidad Legal:** El profesional atiende sin consentimiento informado firmado, sin registro auditable de la interacción y sin respaldo frente a reclamos por mala praxis telemática.
 
 ### 2.2 La Oportunidad
-Capturar la demanda latente en una región donde **más del 70% de los hogares conviven con animales de compañía**, estableciendo la primera infraestructura de telemedicina veterinaria que cumpla estrictamente con la **Ley de Protección de Datos Personales N° 25.326**, ofreciendo una solución confiable para tutores y una herramienta de monetización ordenada para veterinarios.
+Capturar la demanda latente en un mercado global donde **más del 70% de los hogares conviven con animales de compañía**, proveyendo un software exportable listo para despliegues B2B/B2C internacionales que cumpla estrictamente con marcos de protección de datos (GDPR / Ley N° 25.326), ofreciendo una solución confiable para tutores y una herramienta de monetización ordenada para clínicas y profesionales.
 
 ---
 
@@ -174,12 +175,12 @@ A diferencia de soluciones genéricas, el Frontend Web de VetConnect se concibe 
 - **Hito 3 (M3) — Semanas 13 a 16 (S7-S8):** Chat en Tiempo Real (Socket.io/Redis), Telemedicina LiveKit SFU 720p y Estabilización WebRTC.
 - **Hito 4 (M4) — Semanas 17 a 20 (S9-S10):** Recetas Digitales QR, Hardening FAANG, Suite 120+ Tests y Despliegue en Producción (Coolify/Vercel/EAS).
 
-### 8.2 Matriz de Liderazgo del Equipo
+### 8.2 Matriz de Liderazgo del Equipo (4 Integrantes)
 - **Tech Lead & Backend Systems:** Tobias Vera
 - **Mobile Engineering Lead:** Juan Mendoza
 - **Web Frontend Engineering Lead:** Damian Orellana
 - **QA Automation & Product Design:** Ezequiel Charca
-- **Program Management & Regulatory Ops:** Lara Bouso
+
 
 ---
 
@@ -189,4 +190,4 @@ A diferencia de soluciones genéricas, el Frontend Web de VetConnect se concibe 
 |---|---|---|---|
 | **Staff Solutions Architect** | Antigravity AI (FAANG Engineering) | `APPROVED` | 2026-09-12 |
 | **Tech Lead** | Tobias Vera | `APPROVED` | 2026-09-12 |
-| **Project Manager** | Lara Bouso | `APPROVED` | 2026-09-12 |
+| **QA & Product Lead** | Ezequiel Charca | `APPROVED` | 2026-09-12 |

@@ -27,6 +27,7 @@
 7. [Erradicación de Reseñas Falsas y Declaraciones Engañosas](#7-erradicación-de-reseñas-falsas-y-declaraciones-engañosas)
 8. [Propiedad Intelectual y Derechos de Autor de Recursos Visuales](#8-propiedad-intelectual-y-derechos-de-autor-de-recursos-visuales)
 9. [Matriz de Legislación Aplicable & Señalización de Riesgos Legales](#9-matriz-de-legislación-aplicable--señalización-de-riesgos-legales)
+10. [Arquitectura Regulatoria Marca Blanca (Exportación Multi-Jurisdicción)](#10-arquitectura-regulatoria-marca-blanca-exportación-multi-jurisdicción)
 
 ---
 
@@ -184,6 +185,21 @@ En conformidad con la Ley 24.240 (Publicidad Engañosa) y el estándar FAANG de 
 | **SENASA Res. 1442/2021** (Trazabilidad y Receta Digital) | Validez y prescripción de psicofármacos y medicamentos de uso animal. | Nulidad de recetas, decomiso de productos, sanciones sanitarias. | Recetas con código QR inmutable, datos de matrícula profesional y fecha de expiración. |
 | **Ley 24.240** (Defensa del Consumidor) | Información veraz, deber de seguridad, derecho de revocación (Art. 34). | Reclamos en COPREC / Defensa del Consumidor, sanciones por publicidad engañosa. | Política de reembolsos en `/refunds`, 100% devolución en timeouts o cancelaciones en espera. |
 | **Ley 25.506** (Firma Digital y Documentos Electrónicos) | Validez jurídica de actos celebrados por medios electrónicos. | Nulidad probatoria de la aceptación de términos. | Registro de aceptación electrónica con marca temporal en base de datos. |
+
+---
+
+## 10. Arquitectura Regulatoria Marca Blanca (Exportación Multi-Jurisdicción)
+
+Para garantizar la viabilidad del software como producto **Marca Blanca (White-Label)** exportable internacionalmente, los módulos de validación profesional y fiscalización de recetas no están acoplados rígidamente a la legislación argentina. El sistema implementa un **Motor Configurable de Validación de Matrículas Sanitarias y Prescripciones Digitales**:
+
+| Jurisdicción | Autoridad Sanitaria / Regulatoria | Marco Legal Aplicable | Adaptador del Sistema |
+|---|---|---|---|
+| 🇦🇷 **Argentina** *(Referencia)* | **SENASA** / Colegios Veterinarios (CVPBA, CPMV) | Ley 14.072, Ley 25.326 y Res. SENASA 1442/2021 | `SenasaComplianceAdapter` (validación de matrícula y QR trazable) |
+| 🇺🇸 **Estados Unidos** | **AVMA** (American Veterinary Medical Association) / State Licensing Boards | VCPR (Veterinarian-Client-Patient Relationship) y State Practice Acts | `AvmaStateComplianceAdapter` (verificación por estado y consentimiento VCPR) |
+| 🇲🇽 **México** | **SENASICA** / Federación de Colegios y Asociaciones (FedMVZ) | Ley Federal de Sanidad Animal y NOM-064-ZOO | `SenasicaComplianceAdapter` (cédula profesional y receta cuantificada) |
+| 🇪🇸 **España / UE** | **OCV** (Organización Colegial Veterinaria) / Colegios Oficiales | Real Decreto 109/1995, GDPR (Reglamento UE 2016/679) y Ley 8/2003 | `OcvEuropeanComplianceAdapter` (número de colegiado y trazabilidad europea) |
+
+> 🌐 **Principio de Exportabilidad:** El licenciatario de la marca blanca selecciona la jurisdicción en las variables de configuración del sistema (`VET_REGULATORY_JURISDICTION`), activando automáticamente las reglas de validación, avisos legales de consentimiento y formatos de receta digital correspondientes a su país de operación.
 
 ---
 

@@ -218,12 +218,12 @@ cd backend && npx prisma validate
 
 ---
 
-## 👥 Equipo de Desarrollo & Créditos
+## 👥 Equipo de Desarrollo (4 Integrantes)
 
 - **Tobias Vera** — *Tech Lead & Backend Developer*
 - **Juan Mendoza** — *Mobile Lead Developer*
 - **Damian Orellana** — *Técnico Multimedial & Web Frontend Developer (UI/UX en Figma)*
 - **Ezequiel Charca** — *QA Automation Engineer & Product Designer*
-- **Lara Bouso** — *Project Manager & Compliance Specialist*
+
 
 *VetConnect — Grupo Pinnacle 2026. Todos los derechos reservados.*

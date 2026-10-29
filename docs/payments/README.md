@@ -38,3 +38,13 @@ Para preservar la naturaleza de **software exportable y marca blanca neutral**, 
 | **Pago de Clientes (Tutores)** | Tarjetas de crédito/débito, transferencias o checkout web | Mercado Pago, transferencias o billeteras con QR |
 | **Responsabilidad Fiscal** | Del licenciatario / operador final | De la empresa operadora (retenciones impositivas de ARCA, IIBB, IVA) |
 | **Escalabilidad Internacional** | Global (listo para cualquier país) | Restringida a Argentina |
+
+---
+
+## 4. Estructura de Licenciamiento Comercial B2B (Pricing para Ronda de Negocios)
+
+Para rondas de negocios (ej. PromArgentina / compradores corporativos), la comercialización de la Marca Blanca se estructura en 3 modalidades:
+
+* **Tier 1 (Starter Clinic — Clínicas 1 a 5 profesionales):** Setup Fee **$1,500 USD** + **$250 USD / mes** (0% comisión transaccional, hosting administrado).
+* **Tier 2 (Hospital Network — Redes 6 a 25 profesionales):** Setup Fee **$3,500 USD** + **$450 USD / mes** + **2.5% take-rate** por consulta (dominio y app propia en Google Play).
+* **Tier 3 (Enterprise & InsurTech — Aseguradoras y Cadenas +25 profesionales):** Setup Fee **$8,000 USD** + **$1.50 USD** por consulta (infraestructura dedicada, integración ERP/HIS y SLA 99.9%).
