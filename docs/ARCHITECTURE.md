@@ -40,7 +40,7 @@ graph TD
 - **Función:** Presentar información clínica, renderizar formularios reactivos, menús de navegación, salas de videollamada y paneles interactivos. La experiencia de uso (UX), la accesibilidad (a11y) y la fluidez visual residen en esta capa.
 - **Implementación en VetConnect:** Doble cliente omnicanal:
   - **Web SPA:** Desarrollada con **React 18.3.1 (LTS / React 19 Ready)**, **Vite**, **Tailwind CSS** y **TanStack Query v5** *(versión 18.3.1 fijada por compatibilidad estricta de peer-dependencies con LiveKit WebRTC y Testing Library)*.
-  - **Mobile App:** Desarrollada con **React Native**, **Expo SDK 54**, **Expo Router** y **NativeWind**.
+  - **Mobile App:** Contenedor híbrido (WebView Shell) desarrollado con **React Native**, **Expo SDK 54** y **react-native-webview**, que proyecta la Web App responsive con puente nativo de hardware (cámara, micrófono, Screen WakeLock y notificaciones push).
 
 ### 2.2 Backend (Capa Interna & Lógica de Negocio)
 - **Definición:** Corresponde al cerebro interno del sistema. Los usuarios no interactúan de forma directa con él, pero toda la confiabilidad y seguridad de la aplicación dependen de sus servicios.
@@ -51,6 +51,11 @@ graph TD
 - **Definición:** Es el espacio destinado al almacenamiento estructurado, transaccional y persistente de los datos del sistema.
 - **Función:** Registrar de forma segura y permanente usuarios, credenciales, mascotas, historias clínicas, consultas médicas, mensajes de chat, recetas y registros de auditoría. Permite consultar, filtrar, actualizar y anonimizar datos según las reglas de negocio.
 - **Implementación en VetConnect:** Motor relacional **PostgreSQL 16** gestionado mediante **Prisma ORM 6** con pool de conexiones optimizado y políticas de eliminación lógica (*Soft-Deletes*).
+
+### 2.4 Monetización & Pagos Marca Blanca (ADR-032)
+- **Definición:** Capa desacoplada para la gestión arancelaria de consultas telemédicas (*fee-per-consultation*) con soporte multi-tenant.
+- **Función:** Gestionar intenciones de pago, retenciones temporales (*hold*) durante el triage y captura al iniciar la atención médica, transfiriendo honorarios netos al profesional tras deducir la comisión de plataforma.
+- **Implementación en VetConnect:** Patrón Adaptador (`IPaymentGateway`) con soporte agnóstico para pasarelas internacionales (Stripe, Mercado Pago) y aislamiento de adaptadores de contingencia local (Plan B PagoFlex en `docs/payments/`).
 
 ---
 

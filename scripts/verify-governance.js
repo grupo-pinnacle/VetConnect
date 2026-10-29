@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
-const planAccionPath = path.join(repoRoot, 'PLAN_ACCION_VETCONNECT.md');
+const planAccionPath = path.join(repoRoot, 'docs', 'archive', 'PLAN_ACCION_VETCONNECT.md');
 const planGestionPath = path.join(repoRoot, 'docs', 'PLAN_DE_PROYECTO_Y_GESTION.md');
 const techRefPath = path.join(repoRoot, 'docs', 'TECH_REFERENCE.md');
 const specPath = path.join(repoRoot, 'docs', 'SPEC.md');
