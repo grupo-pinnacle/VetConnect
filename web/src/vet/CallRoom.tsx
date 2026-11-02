@@ -399,6 +399,8 @@ function CallChatPanel({
   );
 }
 
+export type CallRoomPanel = "" | "Chat" | "Ficha" | "Evolución";
+
 function Room({ id }: { id: string }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -438,10 +440,10 @@ function Room({ id }: { id: string }) {
   const [secs, setSecs] = useState(0);
   const [mic, setMic] = useState(true);
   const [cam, setCam] = useState(true);
-  // Desktop starts with the chat open; mobile starts closed so the video is fully visible.
-  const [panel, setPanel] = useState<"" | "Chat" | "Ficha" | "Evolución">(
-    typeof window !== "undefined" && window.innerWidth < 820 ? "" : "Chat"
-  );
+  // Inicialización limpia: iniciar siempre en "" (cerrado) para dar prioridad
+  // total a la cámara/video del paciente y médico, evitando que el drawer
+  // fixed de 66vh tape la pantalla al ingresar (BUG-01 test1.md):
+  const [panel, setPanel] = useState<CallRoomPanel>("");
   const [celebrating, setCelebrating] = useState(false);
   const wasWaitingRef = useRef(false);
   const [ending, setEnding] = useState(false);
