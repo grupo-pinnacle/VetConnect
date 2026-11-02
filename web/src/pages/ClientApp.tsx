@@ -217,7 +217,21 @@ export function AppShell({ children, path }: { children: ReactNode; path: string
       )}
     </aside>
     {menu && <button className="scrim" onClick={() => setMenu(false)} aria-label="Cerrar menú"/>}
-    <div className="app-main">
+    <div className={`app-main ${isMessagesPage ? "app-main--messages" : ""}`}>
+      <style>{`
+        .app-main--messages {
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100vh !important;
+          max-height: 100vh !important;
+          overflow: hidden !important;
+        }
+        .app-main--messages .wa-chat-container {
+          flex: 1 1 0% !important;
+          min-height: 0 !important;
+          height: auto !important;
+        }
+      `}</style>
       <header className="topbar">
         <div className="topbar__mobile"><Button variant="icon" icon="menu" onClick={() => setMenu(true)} ariaLabel="Abrir menú"/><Logo/></div>
         <div className="topbar__spacer"/>
@@ -347,6 +361,16 @@ function useClientData() {
     enabled: !!user,
   });
 
+  const prescriptionsQuery = useQuery({
+    queryKey: ['prescriptions', user?.id],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<any[]>>('/api/prescriptions');
+      return (res.data?.success && res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const petsList = useMemo(() => petsQuery.data ?? [], [petsQuery.data]);
   const consultationsList = useMemo(() => consultationsQuery.data ?? [], [consultationsQuery.data]);
 
@@ -373,6 +397,8 @@ function useClientData() {
     consultationsLoading: consultationsQuery.isLoading,
     hasRealConsultations: consultationsList.length > 0,
     rawPetsData: petsQuery.data,
+    prescriptions: prescriptionsQuery.data ?? [],
+    prescriptionsLoading: prescriptionsQuery.isLoading,
     rawConsultationsData: consultationsQuery.data,
   };
 }
@@ -1777,6 +1803,27 @@ export function AppointmentsPage() {
   return <ConsultationsPage initialTab="Agenda" />;
 }
 
+function getSavedChatMessages(chatId: string): WAMessageItem[] {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const raw = localStorage.getItem(`vetconnect_chat_${chatId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    }
+  } catch {}
+  return [];
+}
+
+function saveChatMessages(chatId: string, messages: WAMessageItem[]) {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem(`vetconnect_chat_${chatId}`, JSON.stringify(messages));
+    }
+  } catch {}
+}
+
 export function MessagesPage() {
   const { pets, consultations } = useClientData();
   const { user } = useAuth();
@@ -1846,7 +1893,7 @@ export function MessagesPage() {
           preview: c.reason || "Consulta clínica",
           isPinned: c.rawStatus === "ACTIVE",
           category: "consults",
-          messages: [],
+          messages: getSavedChatMessages(c.id),
         };
       });
 
@@ -1912,11 +1959,13 @@ export function MessagesPage() {
         prev.map((c) => {
           if (c.id === matchingCons.id) {
             if (c.messages.some((m) => m.id === newWAMsg.id)) return c;
+            const updated = [...c.messages, newWAMsg];
+            saveChatMessages(c.id, updated);
             return {
               ...c,
               lastTime: time,
               preview: msg.content,
-              messages: [...c.messages, newWAMsg],
+              messages: updated,
             };
           }
           return c;
@@ -1946,9 +1995,11 @@ export function MessagesPage() {
           setConversations((prev) =>
             prev.map((c) => {
               if (c.id === matchingCons.id) {
+                const merged = mappedMsgs.length > 0 ? mappedMsgs : c.messages;
+                saveChatMessages(c.id, merged);
                 return {
                   ...c,
-                  messages: mappedMsgs.length > 0 ? mappedMsgs : c.messages,
+                  messages: merged,
                 };
               }
               return c;
@@ -1989,11 +2040,13 @@ export function MessagesPage() {
     setConversations((prev) =>
       prev.map((chat) => {
         if (chat.id === activeChat.id) {
+          const updated = [...chat.messages, newMsg];
+          saveChatMessages(chat.id, updated);
           return {
             ...chat,
             lastTime: nowTime,
             preview: content,
-            messages: [...chat.messages, newMsg],
+            messages: updated,
           };
         }
         return chat;
@@ -2708,28 +2761,7 @@ function NotificationsPage() {
 
 function PrescriptionsPage() {
   const [active, setActive] = useState("Activas");
-  const [prescriptions, setPrescriptions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    api
-      .get("/api/prescriptions")
-      .then((res) => {
-        if (isMounted && res.data?.data) {
-          setPrescriptions(res.data.data);
-        }
-      })
-      .catch((err) => {
-        console.warn("Error fetching client prescriptions:", err);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { prescriptions = [], prescriptionsLoading: loading } = useClientData();
 
   return (
     <>
