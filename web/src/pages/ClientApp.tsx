@@ -3405,7 +3405,7 @@ function ProfilePage() {
       }
     />
     <div className="profile-grid">
-      <section className="panel profile-card">
+      <section className="panel profile-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
         <div className="profile-avatar">{initials}</div>
         <h2>{displayName}</h2>
         <p>Tutor registrado</p>
