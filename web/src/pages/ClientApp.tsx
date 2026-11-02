@@ -3263,6 +3263,16 @@ function ProfilePage() {
       return;
     }
 
+    const trimmedPhone = formPhone.trim();
+    if (trimmedPhone !== "") {
+      const phoneDigits = trimmedPhone.replace(/\D/g, "");
+      const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+      if (!phoneRegex.test(trimmedPhone) || phoneDigits.length < 7 || phoneDigits.length > 15) {
+        setToastMsg("Error: Ingresá un número de teléfono válido (ej. +5491155551234)");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const res = await api.patch<ApiResponse<unknown>>("/api/users/profile", {
@@ -3331,7 +3341,7 @@ function ProfilePage() {
           <Field label="Nombre" value={editing ? formFirstName : (user?.firstName || firstName)} editing={editing} onChange={setFormFirstName}/>
           <Field label="Apellido" value={editing ? formLastName : (user?.lastName || lastName)} editing={editing} onChange={setFormLastName}/>
           <Field label="Email" value={email} editing={false}/>
-          <Field label="Teléfono" value={editing ? formPhone : phone} editing={editing} onChange={setFormPhone}/>
+          <Field label="Teléfono" value={editing ? formPhone : phone} editing={editing} onChange={(val) => setFormPhone(val.slice(0, 20))}/>
           <Field label="Ciudad" value="Buenos Aires" editing={false}/>
           <Field label="Zona horaria" value="Argentina (GMT-3)" editing={false}/>
         </div>
