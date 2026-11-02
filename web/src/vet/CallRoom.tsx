@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import "./vet.css";
 import { Button, Icon, Modal, go } from "../shared";
 import { getPatient, initialConsults, initialQueue, registerPatient, type Consult, type QueueItem, type Triage } from "./data";

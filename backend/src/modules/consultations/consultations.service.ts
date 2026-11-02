@@ -235,7 +235,7 @@ export class ConsultationsService {
     return updated;
   }
 
-  public async completeConsultation(consultationId: string, requester: User, dto: CompleteConsultationDTO) {
+  public async completeConsultation(consultationId: string, requester: User, dto: CompleteConsultationDTO & { status?: string }) {
     const consultation = await prisma.consultation.findUnique({
       where: { id: consultationId },
     });
