@@ -281,6 +281,18 @@ export function Landing() {
 
   return (
     <main className="site-shell" id="inicio">
+      <style>{`
+        @media (max-width: 1023px) {
+          .site-header .desktop-nav,
+          .site-header .site-header__actions {
+            display: none !important;
+          }
+          .site-header .menu-button {
+            display: grid !important;
+            margin-left: auto !important;
+          }
+        }
+      `}</style>
       <header className={`site-header ${scrolled ? "site-header--scrolled" : ""}`}>
         <div className="container site-header__inner">
           <Logo />
