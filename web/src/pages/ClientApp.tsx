@@ -3398,14 +3398,139 @@ function ProfilePage() {
 
 
 function SettingsPage() {
-  const [toggles, setToggles] = useState([true,true,false,true]);
+  const [toggles, setToggles] = useState<boolean[]>(() => {
+    try {
+      const saved = localStorage.getItem('vetconnect_notification_preferences');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 4) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return [true, true, false, true];
+  });
+  const [loggingOut, setLoggingOut] = useState(false);
   const { logout } = useAuth();
-  return <>
-    <PageHeader eyebrow="Preferencias" title="Configuración" description="Elegí cómo querés usar Huellicam y recibir novedades."/>
-    <div className="settings-layout"><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Avisos</span><h2>Notificaciones</h2></div></div>{[["Recordatorios de consultas","Avisos antes de cada turno."],["Nuevos mensajes","Cuando un veterinario te escriba."],["Novedades de Huellicam","Información y consejos de cuidado."],["Recetas y documentos","Cuando haya nuevos archivos disponibles."]].map((item,i) => <div className="setting-row" key={item[0]}><div><strong>{item[0]}</strong><p>{item[1]}</p></div><button role="switch" aria-checked={toggles[i]} className={`switch ${toggles[i] ? "is-on" : ""}`} onClick={() => setToggles(toggles.map((v,j) => i === j ? !v : v))}><span/></button></div>)}</section><section className="panel"><div className="panel__heading"><div><span className="eyebrow">Cuenta</span><h2>Privacidad y acceso</h2></div></div><button className="settings-link"><span><Icon name="shield"/><span><strong>Cambiar contraseña</strong><small>Actualizá tu clave de acceso.</small></span></span><Icon name="chevron"/></button><button className="settings-link"><span><Icon name="file"/><span><strong>Privacidad</strong><small>Revisá cómo cuidamos tus datos.</small></span></span><Icon name="chevron"/></button><button className="settings-link" style={{ color: "var(--danger, #ae4d45)", marginTop: 12 }} onClick={() => logout().then(() => { window.location.href = "/login"; })}><span><Icon name="close"/><span><strong style={{ color: "var(--danger, #ae4d45)" }}>Cerrar sesión</strong><small>Finalizar tu sesión en este dispositivo de forma segura.</small></span></span><Icon name="chevron"/></button></section></div>
-  </>;
-}
 
+  const handleToggle = (index: number) => {
+    setToggles((prev) => {
+      const next = prev.map((v, j) => (j === index ? !v : v));
+      try {
+        localStorage.setItem('vetconnect_notification_preferences', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await Promise.race([
+        logout(),
+        new Promise((resolve) => setTimeout(resolve, 800)),
+      ]);
+    } finally {
+      window.location.href = "/login";
+    }
+  };
+
+  return (
+    <>
+      <PageHeader eyebrow="Preferencias" title="Configuración" description="Elegí cómo querés usar Huellicam y recibir novedades."/>
+      <div className="settings-layout">
+        <section className="panel">
+          <div className="panel__heading">
+            <div>
+              <span className="eyebrow">Avisos</span>
+              <h2>Notificaciones</h2>
+            </div>
+          </div>
+          {[
+            ["Recordatorios de consultas", "Avisos antes de cada turno."],
+            ["Nuevos mensajes", "Cuando un veterinario te escriba."],
+            ["Novedades de Huellicam", "Información y consejos de cuidado."],
+            ["Recetas y documentos", "Cuando haya nuevos archivos disponibles."]
+          ].map((item, i) => (
+            <div className="setting-row" key={item[0]}>
+              <div>
+                <strong>{item[0]}</strong>
+                <p>{item[1]}</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={toggles[i]}
+                className={`switch ${toggles[i] ? "is-on" : ""}`}
+                onClick={() => handleToggle(i)}
+              >
+                <span/>
+              </button>
+            </div>
+          ))}
+        </section>
+        <section className="panel">
+          <div className="panel__heading">
+            <div>
+              <span className="eyebrow">Cuenta</span>
+              <h2>Privacidad y acceso</h2>
+            </div>
+          </div>
+          <button
+            className="settings-link"
+            type="button"
+            onClick={() => {
+              window.location.href = "/forgot-password";
+            }}
+          >
+            <span>
+              <Icon name="shield"/>
+              <span>
+                <strong>Cambiar contraseña</strong>
+                <small>Actualizá tu clave de acceso.</small>
+              </span>
+            </span>
+            <Icon name="chevron"/>
+          </button>
+          <button
+            className="settings-link"
+            type="button"
+            onClick={() => {
+              window.location.href = "/privacy";
+            }}
+          >
+            <span>
+              <Icon name="file"/>
+              <span>
+                <strong>Privacidad</strong>
+                <small>Revisá cómo cuidamos tus datos.</small>
+              </span>
+            </span>
+            <Icon name="chevron"/>
+          </button>
+          <button
+            className="settings-link"
+            type="button"
+            disabled={loggingOut}
+            style={{ color: "var(--danger, #ae4d45)", marginTop: 12, opacity: loggingOut ? 0.7 : 1 }}
+            onClick={handleLogout}
+          >
+            <span>
+              <Icon name="close"/>
+              <span>
+                <strong style={{ color: "var(--danger, #ae4d45)" }}>
+                  {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+                </strong>
+                <small>Finalizar tu sesión en este dispositivo de forma segura.</small>
+              </span>
+            </span>
+            <Icon name="chevron"/>
+          </button>
+        </section>
+      </div>
+    </>
+  );
+}
 
 function SkeletonPage({ type }: { type: "dashboard" | "list" | "messages" }) {
   return <div className={`skeleton-page skeleton-page--${type}`} aria-busy="true" aria-live="polite">
