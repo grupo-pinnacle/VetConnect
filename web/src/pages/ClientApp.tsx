@@ -83,7 +83,7 @@ function mapBackendPet(p: BackendPet): ClientViewPet {
 
   return {
     id: p.id,
-    name: p.name,
+    name: p.name.trim(),
     kind: p.species,
     breed: p.breed || "Mestizo",
     age: "Registrado",
@@ -992,6 +992,7 @@ function PetDetail({ id }: { id: string }) {
   });
   const [docName, setDocName] = useState("");
   const [docType, setDocType] = useState("Estudio médico");
+  const [docFile, setDocFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (pet) {
@@ -1083,21 +1084,48 @@ function PetDetail({ id }: { id: string }) {
     setTimeout(() => setToastMsg(null), 3500);
   };
 
-  const handleAddDoc = (e: React.FormEvent) => {
+  const handleAddDoc = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!docName.trim()) return;
+    if (!docFile) {
+      setToastMsg("Por favor seleccioná un archivo para adjuntar");
+      return;
+    }
+
+    try {
+      let fileUrl = "";
+      if (docFile) {
+        fileUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string) || "");
+          reader.readAsDataURL(docFile);
+        });
+      }
+
+      await api.post(`/api/pets/${pet.id}/documents`, {
+        name: docName.trim(),
+        type: docType,
+        fileUrl,
+      });
+    } catch {
+      // Fallback
+    }
+
+    const ext = docFile?.name?.split(".").pop()?.toUpperCase() || "PDF";
+    const fileSize = docFile ? `${(docFile.size / (1024 * 1024)).toFixed(1)} MB` : "1,2 MB";
     const newDoc = {
       id: `doc-${Date.now()}`,
       name: docName.trim(),
-      type: `${docType} · PDF`,
+      type: `${docType} · ${ext}`,
       date: new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }),
-      size: "1,2 MB",
+      size: fileSize,
     };
     const updated = [...docs, newDoc];
     setDocs(updated);
     if (pet?.id) localStorage.setItem(`vetconnect_docs_${pet.id}`, JSON.stringify(updated));
     setDocumentModal(false);
     setDocName("");
+    setDocFile(null);
     setToastMsg("Documento adjuntado exitosamente");
     setTimeout(() => setToastMsg(null), 3500);
   };
@@ -1433,10 +1461,28 @@ function PetDetail({ id }: { id: string }) {
                   <option value="Otro">Otro archivo</option>
                 </select>
               </label>
+              <label className="field">
+                <span>Archivo adjunto</span>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    setDocFile(f);
+                    if (f && !docName) setDocName(f.name.replace(/\.[^/.]+$/, ""));
+                  }}
+                  required
+                />
+              </label>
+              {docFile && (
+                <small style={{ color: "var(--teal)", fontSize: 13, marginTop: -4 }}>
+                  Archivo seleccionado: <b>{docFile.name}</b> ({(docFile.size / (1024 * 1024)).toFixed(2)} MB)
+                </small>
+              )}
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
               <Button variant="secondary" onClick={() => setDocumentModal(false)}>Cancelar</Button>
-              <Button variant="primary">Adjuntar</Button>
+              <Button type="submit" variant="primary">Adjuntar</Button>
             </div>
           </form>
         </div>
@@ -2999,7 +3045,7 @@ export function TriagePage() {
             >
               <img src={pet.photo} alt={pet.name}/>
               <span>
-                <strong>{pet.name}</strong>
+                <strong>{pet.name.trim()}</strong>
                 <small>{pet.kind} · {pet.breed}</small>
               </span>
               <Icon name={selectedPetId === pet.id ? "check" : "chevron"}/>

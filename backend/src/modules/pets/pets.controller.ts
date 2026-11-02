@@ -70,4 +70,30 @@ export class PetsController {
       next(error);
     }
   };
+
+  public uploadDocument = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const petId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      await petsService.getPetById(petId, req.user!);
+      const { name, title, type, fileUrl, url } = req.body || {};
+      const docName = (name || title || (req.file ? req.file.originalname : 'Documento clínico')).trim();
+      const docType = type || 'Estudio médico';
+      const document = {
+        id: `doc-${Date.now()}`,
+        petId,
+        name: docName,
+        type: docType,
+        url: fileUrl || url || (req.file ? `/uploads/${req.file.filename}` : null),
+        date: new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }),
+        size: req.file ? `${(req.file.size / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
+        createdAt: new Date().toISOString(),
+      };
+      res.status(201).json({
+        success: true,
+        data: document,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

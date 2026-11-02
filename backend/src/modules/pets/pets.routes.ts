@@ -10,6 +10,7 @@ router.use(authenticate);
 router.post('/', controller.create);
 router.get('/', controller.listMine);
 router.get('/:id', controller.getById);
+router.post('/:id/documents', controller.uploadDocument);
 router.patch('/:id', controller.update);
 router.delete('/:id', controller.delete);
 
