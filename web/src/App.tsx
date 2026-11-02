@@ -204,13 +204,28 @@ export const App: React.FC = () => {
                 <Route path="/refunds" element={<RefundPolicy />} />
 
                 {/* Fallback */}
-                <Route path="*" element={<LandingWrapper />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
+  );
+};
+
+
+const NotFoundPage: React.FC = () => {
+  const navigate = useNavigate();
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center', background: '#fdfbf7', color: '#1e293b' }}>
+      <h1 style={{ fontSize: 72, fontWeight: 800, margin: 0, color: '#0d9488' }}>404</h1>
+      <h2 style={{ fontSize: 24, margin: '12px 0 8px' }}>Página no encontrada</h2>
+      <p style={{ color: '#64748b', maxWidth: 420, marginBottom: 24 }}>La ruta a la que intentás acceder no existe o fue movida.</p>
+      <button onClick={() => navigate('/')} style={{ background: '#0d9488', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 12, fontWeight: 600, cursor: 'pointer' }}>
+        Volver al inicio
+      </button>
+    </div>
   );
 };
 
