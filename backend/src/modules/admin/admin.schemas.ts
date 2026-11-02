@@ -1,19 +1,21 @@
 import { z } from 'zod';
 
+const emptyToNull = (val: unknown) => (typeof val === 'string' && val.trim() === '') ? null : val;
+
 export const rejectVetSchema = z.object({
   reason: z.string().min(3, 'La razon de rechazo es requerida').max(500),
 });
 
 export const adminCreateUserSchema = z.object({
-  email: z.string().email('Email inválido'),
+  email: z.string().trim().toLowerCase().email('Email inválido'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
-  firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
-  phone: z.string().optional().nullable(),
+  firstName: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  lastName: z.string().trim().min(2, 'El apellido debe tener al menos 2 caracteres'),
+  phone: z.preprocess(emptyToNull, z.string().trim().nullable().optional()),
   role: z.enum(['CLIENT', 'VET', 'ADMIN']).default('CLIENT'),
   vetStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional().nullable(),
-  licenseNumber: z.string().optional().nullable(),
-  bio: z.string().optional().nullable(),
+  licenseNumber: z.preprocess(emptyToNull, z.string().trim().nullable().optional()),
+  bio: z.preprocess(emptyToNull, z.string().trim().nullable().optional()),
 });
 
 export const adminUpdateUserSchema = z.object({
@@ -21,11 +23,11 @@ export const adminUpdateUserSchema = z.object({
   password: z.string().min(8).optional(),
   firstName: z.string().min(2).optional(),
   lastName: z.string().min(2).optional(),
-  phone: z.string().optional().nullable(),
+  phone: z.preprocess(emptyToNull, z.string().trim().nullable().optional()),
   role: z.enum(['CLIENT', 'VET', 'ADMIN']).optional(),
   vetStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional().nullable(),
-  licenseNumber: z.string().optional().nullable(),
-  bio: z.string().optional().nullable(),
+  licenseNumber: z.preprocess(emptyToNull, z.string().trim().nullable().optional()),
+  bio: z.preprocess(emptyToNull, z.string().trim().nullable().optional()),
 });
 
 export const adminCreatePetSchema = z.object({

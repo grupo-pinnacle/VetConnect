@@ -336,10 +336,10 @@ export function AdminApp() {
         const payload: Record<string, unknown> = {
           firstName: userForm.firstName,
           lastName: userForm.lastName,
-          phone: userForm.phone || null,
+          phone: userForm.phone?.trim() || null,
           role: userForm.role,
-          licenseNumber: userForm.role === 'VET' ? userForm.licenseNumber || null : null,
-          bio: userForm.bio || null,
+          licenseNumber: userForm.role === 'VET' ? (userForm.licenseNumber?.trim() || null) : null,
+          bio: userForm.bio?.trim() || null,
         };
         if (userForm.password) payload.password = userForm.password;
 
@@ -350,7 +350,17 @@ export function AdminApp() {
           fetchAllData();
         }
       } else {
-        const res = await api.post<ApiResponse<User>>('/api/admin/users', userForm);
+        const payload = {
+          firstName: userForm.firstName.trim(),
+          lastName: userForm.lastName.trim(),
+          email: userForm.email.trim().toLowerCase(),
+          password: userForm.password,
+          phone: userForm.phone?.trim() || null,
+          role: userForm.role,
+          licenseNumber: userForm.role === 'VET' ? (userForm.licenseNumber?.trim() || null) : null,
+          bio: userForm.bio?.trim() || null,
+        };
+        const res = await api.post<ApiResponse<User>>('/api/admin/users', payload);
         if (res.data.success) {
           notify(`Usuario ${userForm.firstName} ${userForm.lastName} creado exitosamente.`);
           setUserModalOpen(false);

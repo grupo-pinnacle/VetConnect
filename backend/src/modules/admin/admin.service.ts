@@ -207,7 +207,8 @@ export class AdminService {
   }
 
   public async createUser(adminId: string, dto: AdminCreateUserDTO) {
-    const existing = await prisma.user.findUnique({ where: { email: dto.email } });
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       throw new AppError('El email ya está registrado', 409, 'EMAIL_ALREADY_EXISTS');
     }
@@ -215,15 +216,15 @@ export class AdminService {
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const user = await prisma.user.create({
       data: {
-        email: dto.email,
+        email: normalizedEmail,
         password: passwordHash,
         firstName: dto.firstName,
         lastName: dto.lastName,
-        phone: dto.phone,
+        phone: dto.phone?.trim() || null,
         role: dto.role,
         vetStatus: dto.role === 'VET' ? (dto.vetStatus || VetStatus.APPROVED) : null,
-        licenseNumber: dto.role === 'VET' ? dto.licenseNumber : null,
-        bio: dto.bio,
+        licenseNumber: dto.role === 'VET' ? (dto.licenseNumber?.trim() || null) : null,
+        bio: dto.bio?.trim() || null,
       },
       select: userSelectFields,
     });
@@ -256,9 +257,10 @@ export class AdminService {
     if (dto.bio !== undefined) data.bio = dto.bio;
 
     if (dto.email && dto.email !== user.email) {
-      const existing = await prisma.user.findUnique({ where: { email: dto.email } });
+      const normalizedEmail = dto.email.trim().toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
       if (existing) throw new AppError('El nuevo email ya está en uso', 409, 'EMAIL_ALREADY_EXISTS');
-      data.email = dto.email;
+      data.email = normalizedEmail;
     }
 
     if (dto.password) {
