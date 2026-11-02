@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
-import api, { setAccessToken } from '../services/api';
+import api, { setAccessToken, getAccessToken } from '../services/api';
 import { User, ApiResponse } from '../types';
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   loading: boolean;
   sessionTerminated: { reason: string; message: string } | null;
@@ -62,6 +62,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
    * was the only credential and the page always bounced to /login.
    */
   const refreshSession = async (silent = false) => {
+    if (silent && !getAccessToken() && !user) {
+      return;
+    }
     try {
       const res = await api.get<ApiResponse<{ user: User }>>('/api/auth/me');
       if (res.data.success && res.data.data?.user) {
@@ -111,7 +114,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const handleVisibilityChange = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         // Silent background session re-validation without unmounting unauthenticated forms like /register
-        refreshSession(true);
+        if (Boolean(getAccessToken()) || Boolean(user)) {
+          refreshSession(true);
+        }
       }
     };
 
