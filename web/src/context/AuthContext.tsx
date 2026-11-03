@@ -15,6 +15,23 @@ export interface AuthContextType {
   refreshSession: (silent?: boolean) => Promise<void>;
 }
 
+const PUBLIC_AUTH_PATHS = [
+  '/login',
+  '/register',
+  '/register/tutor',
+  '/register/veterinarian',
+  '/forgot-password',
+];
+
+const isPublicAuthPath = (pathname: string): boolean => {
+  return (
+    PUBLIC_AUTH_PATHS.includes(pathname) ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/forgot-password')
+  );
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -65,6 +82,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (silent && !getAccessToken() && !user) {
       return;
     }
+
+    if (
+      typeof window !== 'undefined' &&
+      isPublicAuthPath(window.location.pathname) &&
+      !getAccessToken() &&
+      !user
+    ) {
+      if (!silent) {
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       const res = await api.get<ApiResponse<{ user: User }>>('/api/auth/me');
       if (res.data.success && res.data.data?.user) {
