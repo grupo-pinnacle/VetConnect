@@ -456,6 +456,27 @@ function Room({ id }: { id: string }) {
   const isVet = user?.role === "VET";
   const fromClient = user ? user.role === "CLIENT" : new URLSearchParams(window.location.search).get("from") === "client";
 
+  // Auto-asignación defensiva e idempotente para rol VET si la consulta sigue en WAITING
+  const assignAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (consultation?.status === "WAITING" && isVet && !assignAttemptedRef.current) {
+      assignAttemptedRef.current = true;
+      api
+        .patch<ApiResponse<BackendConsultation>>(`/api/consultations/${id}/assign`)
+        .then((res) => {
+          if (res.data?.success && res.data?.data) {
+            queryClient.setQueryData(["consultation", id], res.data.data);
+            queryClient.invalidateQueries({ queryKey: ["consultation", id] });
+            queryClient.invalidateQueries({ queryKey: ["consultations"] });
+          }
+        })
+        .catch((err) => {
+          console.warn("Defensive assign in CallRoom notice:", err);
+        });
+    }
+  }, [consultation?.status, isVet, id, queryClient]);
+
   // Participant naming derived directly from DB
   const petName = consultation?.pet?.name || p.name || "Mascota";
   const petKind = consultation?.pet?.species || p.kind || "Canino";
