@@ -20,8 +20,14 @@ vi.mock('../services/api', () => ({
   getAccessToken: () => 'tok',
   getDeviceId: () => 'dev',
 }));
+const { mockAuthState } = vi.hoisted(() => ({
+  mockAuthState: {
+    user: { id: 'u1', role: 'CLIENT', firstName: 'Tobias', lastName: 'Vera' } as any,
+  },
+}));
+
 vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'u1', role: 'CLIENT', firstName: 'Tobias', lastName: 'Vera' } }),
+  useAuth: () => ({ user: mockAuthState.user }),
 }));
 vi.mock('socket.io-client', () => ({
   io: () => ({ on: vi.fn(), off: vi.fn(), emit: vi.fn(), disconnect: vi.fn() }),
@@ -59,6 +65,7 @@ function renderRoom() {
 
 describe('CallRoom WAITING vs ACTIVE gate (FEAT-07 / BUG-08)', () => {
   beforeEach(() => {
+    mockAuthState.user = { id: 'u1', role: 'CLIENT', firstName: 'Tobias', lastName: 'Vera' };
     Element.prototype.scrollIntoView = vi.fn();
     postMock.mockClear();
     window.history.pushState({}, '', '/call/c1?from=client');
@@ -88,5 +95,17 @@ describe('CallRoom WAITING vs ACTIVE gate (FEAT-07 / BUG-08)', () => {
     expect(root.className).not.toMatch(/\bflex\b/);
     expect(container.textContent).not.toContain('[Prioridad');
     expect(screen.queryByTestId('waiting-room-experience')).toBeNull();
+  });
+
+  it('WAITING renders the vet pairing room with equipment checklist when user is VET', async () => {
+    mockAuthState.user = { id: 'v1', role: 'VET', firstName: 'Diego', lastName: 'Suárez' };
+    window.history.pushState({}, '', '/call/c1');
+    consultationData = { ...base, status: 'WAITING', vetId: 'v1', vet: { firstName: 'Diego', lastName: 'Suárez' } };
+    renderRoom();
+    expect(await screen.findByTestId('waiting-room-experience')).toBeTruthy();
+    expect(screen.getByText('Salir de guardia')).toBeTruthy();
+    expect(screen.getByText('Cámara lista')).toBeTruthy();
+    expect(screen.getByText('Micrófono listo')).toBeTruthy();
+    expect(screen.getByText('Conexión estable')).toBeTruthy();
   });
 });

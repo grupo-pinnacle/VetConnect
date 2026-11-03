@@ -28,11 +28,18 @@ const TRIAGE_BY_TIER: Record<"ROJO" | "AMARILLO" | "VERDE", Triage> = {
   VERDE: "General"
 };
 
-const WAITING_STATUS_MSGS = [
+const WAITING_STATUS_MSGS_CLIENT = [
   "Recibimos la historia clínica",
   "Buscando veterinario de guardia",
   "Abriendo la sala de video",
   "¡Veterinario encontrado!"
+];
+
+const WAITING_STATUS_MSGS_VET = [
+  "Esperando que se empareje la llamada",
+  "Abriendo la sala de video",
+  "Conectando con el paciente",
+  "¡Consulta lista!"
 ];
 
 const HUELLICAM_LETTERS = [
@@ -48,22 +55,29 @@ const HUELLICAM_LETTERS = [
 ];
 
 function WaitingRoomExperience({
+  isVet = false,
   petName,
   tutorName,
+  vetName,
+  vetInitials,
   symptom,
   clock,
   tierLabel,
   onBack,
   onCancel,
 }: {
-  petName: string;
-  tutorName: string;
-  symptom: string;
+  isVet?: boolean;
+  petName?: string;
+  tutorName?: string;
+  vetName?: string;
+  vetInitials?: string;
+  symptom?: string;
   clock: string;
-  tierLabel: string | null;
+  tierLabel?: string | null;
   onBack: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
 }) {
+  const statusMsgs = isVet ? WAITING_STATUS_MSGS_VET : WAITING_STATUS_MSGS_CLIENT;
   const [tipIndex, setTipIndex] = useState(0);
   const [tipOut, setTipOut] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
@@ -261,8 +275,9 @@ function WaitingRoomExperience({
     return () => cancelAnimationFrame(animId);
   }, []);
 
-  // Tips rotation
+  // Tips rotation (only in client mode)
   useEffect(() => {
+    if (isVet) return;
     const interval = window.setInterval(() => {
       setTipOut(true);
       window.setTimeout(() => {
@@ -271,7 +286,7 @@ function WaitingRoomExperience({
       }, 1500);
     }, 8000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [isVet]);
 
   return (
     <main
@@ -279,7 +294,7 @@ function WaitingRoomExperience({
       className="v-wait"
       role="region"
       aria-live="polite"
-      aria-label="Sala de espera de guardia"
+      aria-label={isVet ? "Sala de guardia veterinaria" : "Sala de espera de guardia"}
     >
       <div className="v-wait__inner">
         <header className="v-wait__header">
@@ -288,23 +303,38 @@ function WaitingRoomExperience({
               <path d="M15 5l-7 7 7 7" />
             </svg>
           </button>
-          <div className="v-wait__pet" role="group" aria-label={`${petName}, de ${tutorName}. Prioridad ${tierLabel || "general"}`}>
-            <span className="v-wait__ava">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <ellipse cx="12" cy="16" rx="5.5" ry="4.5" />
-                <ellipse cx="5" cy="10.5" rx="2.2" ry="3" />
-                <ellipse cx="9.5" cy="5.5" rx="2.2" ry="3" />
-                <ellipse cx="14.5" cy="5.5" rx="2.2" ry="3" />
-                <ellipse cx="19" cy="10.5" rx="2.2" ry="3" />
-              </svg>
-              <i className="v-wait__urg"></i>
-            </span>
-            <span className="v-wait__nm">
-              <b>{petName}</b>
-              <span>de {tutorName}</span>
-            </span>
-          </div>
-          <div className="v-wait__timer" role="timer" aria-label="Tiempo de espera">
+
+          {isVet ? (
+            <div className="v-wait__pet" role="group" aria-label={`${vetName || "Veterinario"}, en guardia`}>
+              <span className="v-wait__ava">
+                <b className="v-wait__ini">{vetInitials || "DR"}</b>
+                <i className="v-wait__urg ok"></i>
+              </span>
+              <span className="v-wait__nm">
+                <b>{vetName || "Dr. Veterinario"}</b>
+                <span>En guardia</span>
+              </span>
+            </div>
+          ) : (
+            <div className="v-wait__pet" role="group" aria-label={`${petName || "Mascota"}, de ${tutorName || "Tutor"}. Prioridad ${tierLabel || "general"}`}>
+              <span className="v-wait__ava">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <ellipse cx="12" cy="16" rx="5.5" ry="4.5" />
+                  <ellipse cx="5" cy="10.5" rx="2.2" ry="3" />
+                  <ellipse cx="9.5" cy="5.5" rx="2.2" ry="3" />
+                  <ellipse cx="14.5" cy="5.5" rx="2.2" ry="3" />
+                  <ellipse cx="19" cy="10.5" rx="2.2" ry="3" />
+                </svg>
+                <i className="v-wait__urg"></i>
+              </span>
+              <span className="v-wait__nm">
+                <b>{petName || "Mascota"}</b>
+                <span>de {tutorName || "Tutor"}</span>
+              </span>
+            </div>
+          )}
+
+          <div className="v-wait__timer" role="timer" aria-label={isVet ? "Tiempo de guardia" : "Tiempo de espera"}>
             <svg viewBox="0 0 48 48" aria-hidden="true">
               <circle className="v-wait__tr" cx="24" cy="24" r="21" />
               <circle className="v-wait__tf" cx="24" cy="24" r="21" pathLength={100} />
@@ -313,9 +343,13 @@ function WaitingRoomExperience({
           </div>
         </header>
 
-        <p className="v-wait__reason">
+        <p className={`v-wait__reason ${isVet ? "ok" : ""}`}>
           <i></i>
-          <span>{symptom || "Consulta veterinaria de guardia"}</span>
+          <span>
+            {isVet
+              ? `Guardia activa · Conectando con ${tutorName || petName || "el paciente"}`
+              : (symptom || "Consulta veterinaria de guardia")}
+          </span>
         </p>
 
         <section className="v-wait__center">
@@ -431,7 +465,7 @@ function WaitingRoomExperience({
           <div className="v-wait__status">
             <div className="v-wait__line" aria-live="polite">
               <span key={statusIndex}>
-                {WAITING_STATUS_MSGS[statusIndex]}
+                {statusMsgs[statusIndex]}
                 {statusIndex < 3 && (
                   <span className="v-wait__dots">
                     <b>.</b>
@@ -455,23 +489,41 @@ function WaitingRoomExperience({
               <circle ref={ecgHeadRef} className="head" r="4.5" />
             </svg>
 
-            <p className={`v-wait__tip ${tipOut ? "out" : ""}`}>
-              {WAITING_TIPS[tipIndex]}
-            </p>
+            {isVet ? (
+              <ul className="v-wait__checks" id="checks" aria-label="Estado del equipo">
+                <li>Cámara lista</li>
+                <li>Micrófono listo</li>
+                <li>Conexión estable</li>
+              </ul>
+            ) : (
+              <p className={`v-wait__tip ${tipOut ? "out" : ""}`}>
+                {WAITING_TIPS[tipIndex]}
+              </p>
+            )}
           </div>
         </section>
 
         <footer className="v-wait__foot">
-          <button
-            type="button"
-            className="v-wait__cancel"
-            onClick={() => {
-              setIsCancelling(true);
-              onCancel();
-            }}
-          >
-            {isCancelling ? "Cancelando..." : "Cancelar solicitud de consulta"}
-          </button>
+          {isVet ? (
+            <button
+              type="button"
+              className="v-wait__cancel"
+              onClick={onBack}
+            >
+              Salir de guardia
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="v-wait__cancel"
+              onClick={() => {
+                setIsCancelling(true);
+                onCancel?.();
+              }}
+            >
+              {isCancelling ? "Cancelando..." : "Cancelar solicitud de consulta"}
+            </button>
+          )}
         </footer>
       </div>
     </main>
@@ -1182,13 +1234,14 @@ function Room({ id }: { id: string }) {
   const cleanReason = parsedNotes.cleanNotes;
   const effectiveTriage = triage ?? (parsedNotes.priority ? TRIAGE_BY_TIER[parsedNotes.priority] : undefined);
 
-  // FEAT-07: the tutor never sees the call console until a vet has accepted and call is ACTIVE
+    // FEAT-07 / VET-WAIT: tutor in waiting room until active; vet in pairing room while waiting
   if (fromClient && consultation?.status !== "ACTIVE") {
     const tierLabel = parsedNotes.priority
       ? { ROJO: "CRÍTICO", AMARILLO: "MODERADO", VERDE: "RUTINA" }[parsedNotes.priority]
       : null;
     return (
       <WaitingRoomExperience
+        isVet={false}
         petName={petName}
         tutorName={tutorName}
         symptom={cleanReason}
@@ -1205,6 +1258,20 @@ function Room({ id }: { id: string }) {
           queryClient.invalidateQueries({ queryKey: ["consultations"] });
           go("/client/consultations");
         }}
+      />
+    );
+  }
+
+  if (!fromClient && consultation?.status === "WAITING") {
+    return (
+      <WaitingRoomExperience
+        isVet={true}
+        vetName={vetName}
+        vetInitials={vetInitials}
+        petName={petName}
+        tutorName={tutorName}
+        clock={clock}
+        onBack={() => go("/vet/dashboard")}
       />
     );
   }
