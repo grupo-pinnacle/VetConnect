@@ -2192,42 +2192,6 @@ export function MessagesPage() {
 
   return (
     <div className="hc-messages-page-wrapper">
-      {/* TOP HEADER MATCHING IMAGE 2 */}
-      <header className="hc-messages-topbar">
-        <div className="hc-messages-topbar__left">
-          <button
-            type="button"
-            className="hc-round-btn hc-hamburger-btn mobile-only"
-            onClick={() => window.dispatchEvent(new CustomEvent("hc:open-menu"))}
-            aria-label="Abrir menú"
-          >
-            <Icon name="menu" size={20} />
-          </button>
-        </div>
-        <div
-          className="hc-messages-topbar__center"
-          onClick={() => go("/client/dashboard")}
-          style={{ cursor: "pointer" }}
-        >
-          <div className="hc-brand-pill">
-            <span className="hc-brand-pill__mark">
-              <Icon name="heart" size={16} />
-            </span>
-            <span className="hc-brand-pill__text">Huelli Cam</span>
-          </div>
-        </div>
-        <div className="hc-messages-topbar__right">
-          <button
-            type="button"
-            className="hc-round-btn hc-bell-btn"
-            onClick={() => go("/client/notifications")}
-            aria-label="Notificaciones"
-          >
-            <Icon name="bell" size={19} />
-            <span className="hc-bell-dot" />
-          </button>
-        </div>
-      </header>
 
       {/* FULLSCREEN WORKSPACE MATCHING IMAGE 2 */}
       <div className="hc-chat-layout" data-testid="messages-chat-container">
