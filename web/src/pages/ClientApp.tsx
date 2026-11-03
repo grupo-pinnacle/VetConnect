@@ -123,7 +123,7 @@ function mapBackendConsultation(c: BackendConsultation): ClientViewConsultation 
 
 
 export function AppShell({ children, path }: { children: ReactNode; path: string }) {
-  const isMessagesPage = path === "/client/messages";
+  const isMessagesPage = path.startsWith("/client/messages");
   const [menu, setMenu] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -303,7 +303,7 @@ export function AppShell({ children, path }: { children: ReactNode; path: string
           )}
         </div>
       </header>
-      <main className="content">{children}</main>
+      <main className={`content${isMessagesPage ? " content--messages" : ""}`}>{children}</main>
     </div>
     <nav className={`mobile-nav ${isMessagesPage ? "mobile-nav--messages" : ""}`} aria-label="Navegación móvil" data-testid="mobile-bottom-nav">
       {mobileRoutes.map((item) => {
