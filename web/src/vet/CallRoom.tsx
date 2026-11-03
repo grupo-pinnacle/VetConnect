@@ -56,6 +56,7 @@ const HUELLICAM_LETTERS = [
 
 function WaitingRoomExperience({
   isVet = false,
+  isReady = false,
   petName,
   tutorName,
   vetName,
@@ -67,6 +68,7 @@ function WaitingRoomExperience({
   onCancel,
 }: {
   isVet?: boolean;
+  isReady?: boolean;
   petName?: string;
   tutorName?: string;
   vetName?: string;
@@ -221,15 +223,19 @@ function WaitingRoomExperience({
 
   // Status transitions
   useEffect(() => {
+    if (isReady) {
+      setStatusIndex(statusMsgs.length - 1);
+      return;
+    }
     const t1 = window.setTimeout(() => setStatusIndex(1), 2200);
-    const t2 = window.setTimeout(() => setStatusIndex(2), 7500);
+    const t2 = window.setTimeout(() => setStatusIndex(2), 6500);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, []);
+  }, [isReady, statusMsgs.length]);
 
-  // ECG progress waveform
+  // ECG progress waveform (animates as loading bar to 100% on ready)
   useEffect(() => {
     const W = 300;
     const N = 4;
@@ -252,15 +258,27 @@ function WaitingRoomExperience({
 
     const len = typeof base.getTotalLength === "function" ? base.getTotalLength() : 300;
     let p = 0;
-    const target = 0.38;
     let creep = 0;
     let animId: number;
 
     const frame = () => {
-      p += (target + creep - p) * 0.035;
-      creep = Math.min(creep + 0.0004, 0.12);
-      const q = Math.min(p, 1);
+      let currentTarget = 0.25;
+      if (isReady) {
+        currentTarget = 1.0;
+      } else if (statusIndex === 1) {
+        currentTarget = 0.55;
+      } else if (statusIndex >= 2) {
+        currentTarget = 0.85;
+      }
+
+      const speed = isReady ? 0.08 : 0.035;
+      p += (currentTarget + creep - p) * speed;
+      if (!isReady) {
+        creep = Math.min(creep + 0.0003, 0.08);
+      }
+      const q = Math.min(Math.max(p, 0), 1);
       fill.setAttribute("stroke-dashoffset", String(1000 * (1 - q)));
+
       if (typeof base.getPointAtLength === "function") {
         const pt = base.getPointAtLength(len * q);
         head.setAttribute("cx", String(pt.x));
@@ -268,12 +286,13 @@ function WaitingRoomExperience({
         halo.setAttribute("cx", String(pt.x));
         halo.setAttribute("cy", String(pt.y));
       }
+
       animId = requestAnimationFrame(frame);
     };
 
     animId = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(animId);
-  }, []);
+  }, [isReady, statusIndex]);
 
   // Tips rotation (only in client mode)
   useEffect(() => {
@@ -971,7 +990,7 @@ function Room({ id }: { id: string }) {
     }
   }, [consultation?.status, consultation, fromClient]);
 
-  // WAITING -> ACTIVE: celebrate for 1.2s before mounting the call console
+  // WAITING -> ACTIVE: celebrate for 1.4s (fill ECG to 100%) before mounting the call console
   useEffect(() => {
     const isWaitingStatus =
       consultation?.status === "WAITING" ||
@@ -983,7 +1002,7 @@ function Room({ id }: { id: string }) {
     } else if (isConsultationActive && wasWaitingRef.current) {
       wasWaitingRef.current = false;
       setCelebrating(true);
-      const t = window.setTimeout(() => setCelebrating(false), 1200);
+      const t = window.setTimeout(() => setCelebrating(false), 1400);
       return () => window.clearTimeout(t);
     }
   }, [consultation?.status, isConsultationActive]);
@@ -1250,13 +1269,14 @@ function Room({ id }: { id: string }) {
   const effectiveTriage = triage ?? (parsedNotes.priority ? TRIAGE_BY_TIER[parsedNotes.priority] : undefined);
 
     // FEAT-07 / VET-WAIT: tutor in waiting room until active; vet in pairing room while waiting
-  if (fromClient && !isConsultationActive) {
+  if (fromClient && (!isConsultationActive || celebrating)) {
     const tierLabel = parsedNotes.priority
       ? { ROJO: "CRÍTICO", AMARILLO: "MODERADO", VERDE: "RUTINA" }[parsedNotes.priority]
       : null;
     return (
       <WaitingRoomExperience
         isVet={false}
+        isReady={celebrating}
         petName={petName}
         tutorName={tutorName}
         symptom={cleanReason}
@@ -1277,10 +1297,11 @@ function Room({ id }: { id: string }) {
     );
   }
 
-  if (!fromClient && (!isConsultationActive || callState === "connecting" || callState === "waiting")) {
+  if (!fromClient && (!isConsultationActive || celebrating || callState === "connecting" || callState === "waiting")) {
     return (
       <WaitingRoomExperience
         isVet={true}
+        isReady={celebrating || (isConsultationActive && callState === "connected")}
         vetName={vetName}
         vetInitials={vetInitials}
         petName={petName}
@@ -1288,18 +1309,6 @@ function Room({ id }: { id: string }) {
         clock={clock}
         onBack={() => go("/vet/dashboard")}
       />
-    );
-  }
-
-  if (fromClient && celebrating) {
-    return (
-      <main className="v-wait" role="status" aria-live="assertive" data-testid="waiting-room-connected">
-        <section className="v-wait__center">
-          <span className="v-wait__core is-pulse"><HamsterMascot size="md" /></span>
-          <h1>¡Veterinario conectado!</h1>
-          <p>Ingresando a la consulta...</p>
-        </section>
-      </main>
     );
   }
 
