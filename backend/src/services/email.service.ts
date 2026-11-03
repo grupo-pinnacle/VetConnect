@@ -8,12 +8,14 @@ export interface EmailOptions {
   text?: string;
 }
 
+const RESEND_FALLBACK_FROM = 'VetConnect <onboarding@resend.dev>';
+
 export class EmailService {
   private resend: Resend | null = null;
   private readonly fromEmail: string;
 
   constructor() {
-    this.fromEmail = config.EMAIL_FROM || 'VetConnect <notificaciones@vetconnect.com.ar>';
+    this.fromEmail = config.EMAIL_FROM && !config.EMAIL_FROM.includes('vetconnect.com.ar') ? config.EMAIL_FROM : RESEND_FALLBACK_FROM;
     if (config.RESEND_API_KEY) {
       this.resend = new Resend(config.RESEND_API_KEY);
     }
@@ -35,7 +37,7 @@ export class EmailService {
     }
 
     try {
-      const response = await this.resend.emails.send({
+      let response = await this.resend.emails.send({
         from: this.fromEmail,
         to,
         subject,
@@ -44,7 +46,24 @@ export class EmailService {
       });
 
       if (response.error) {
+        if (this.fromEmail !== RESEND_FALLBACK_FROM) {
+          console.warn(`[EmailService] Resend rejected sender "${this.fromEmail}". Retrying with fallback "${RESEND_FALLBACK_FROM}"...`);
+          response = await this.resend.emails.send({
+            from: RESEND_FALLBACK_FROM,
+            to,
+            subject,
+            html,
+            text: text || subject,
+          });
+        }
+      }
+
+      if (response.error) {
         console.warn(`[EmailService] Resend error delivering to ${to}:`, response.error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[EmailService] Non-production fallback code dump for ${to}:`);
+          console.log(text || html);
+        }
         return false;
       }
 

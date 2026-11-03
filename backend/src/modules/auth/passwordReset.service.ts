@@ -9,10 +9,10 @@ export class PasswordResetService {
    * Genera un código de 6 dígitos seguro, lo guarda hasheado y envía el correo con Resend.
    */
   public async requestReset(emailInput: string): Promise<boolean> {
-    const email = String(emailInput).toLowerCase().trim();
+    const normalizedEmail = String(emailInput).trim().toLowerCase();
 
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     // OWASP: No revelar si el correo existe o no al cliente, pero solo enviar si existe
@@ -22,7 +22,7 @@ export class PasswordResetService {
 
     // Invalida tokens previos pendientes para este email
     await prisma.passwordResetToken.updateMany({
-      where: { email, usedAt: null },
+      where: { email: normalizedEmail, usedAt: null },
       data: { usedAt: new Date() },
     });
 
@@ -33,14 +33,14 @@ export class PasswordResetService {
 
     await prisma.passwordResetToken.create({
       data: {
-        email,
+        email: normalizedEmail,
         codeHash,
         expiresAt,
       },
     });
 
     // Enviar correo vía Resend
-    await emailService.sendPasswordResetCode(email, user.firstName, code);
+    await emailService.sendPasswordResetCode(normalizedEmail, user.firstName, code);
     return true;
   }
 

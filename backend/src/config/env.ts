@@ -112,7 +112,7 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().optional(),
   CLIENT_URL: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().default('VetConnect <notificaciones@vetconnect.com.ar>'),
+  EMAIL_FROM: z.string().default('VetConnect <onboarding@resend.dev>'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -146,7 +146,7 @@ export const config = Object.freeze(
         UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
         AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
         RESEND_API_KEY: process.env.RESEND_API_KEY,
-        EMAIL_FROM: process.env.EMAIL_FROM || 'VetConnect <notificaciones@vetconnect.com.ar>',
+        EMAIL_FROM: process.env.EMAIL_FROM || 'VetConnect <onboarding@resend.dev>',
         AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
         AWS_REGION: process.env.AWS_REGION || 'us-east-1',
         AWS_BUCKET_NAME:
