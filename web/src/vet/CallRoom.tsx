@@ -17,12 +17,35 @@ import { HamsterMascot } from "../components/ui/HamsterMascot";
 import { parseConsultationNotes } from "../lib/consultationNotes";
 
 const WAITING_TIPS = [
-  { title: "Habilitá tu cámara y micrófono", text: "Asegurate de dar permisos en tu navegador para que el veterinario pueda ver y escuchar a tu mascota." },
-  { title: "Prepará un lugar bien iluminado", text: "Acercá a tu mascota a una fuente de luz clara por si el profesional necesita revisar mucosas, ojos o piel." },
-  { title: "Mantené esta pantalla abierta", text: "No cierres la app ni bloquees el celular. Te conectaremos automáticamente apenas el médico acepte." },
+  "Habilitá la cámara y el micrófono en tu navegador para que el veterinario pueda ver y escuchar a tu mascota.",
+  "Ponete cerca de una ventana o prendé una luz: con buena luz se ve mejor.",
+  "Dejá a tu mascota en un lugar seguro y tené a mano su carnet de vacunas."
 ];
 
-const TRIAGE_BY_TIER: Record<"ROJO" | "AMARILLO" | "VERDE", Triage> = { ROJO: "Crítico", AMARILLO: "Moderado", VERDE: "General" };
+const TRIAGE_BY_TIER: Record<"ROJO" | "AMARILLO" | "VERDE", Triage> = {
+  ROJO: "Crítico",
+  AMARILLO: "Moderado",
+  VERDE: "General"
+};
+
+const WAITING_STATUS_MSGS = [
+  "Recibimos la historia clínica",
+  "Buscando veterinario de guardia",
+  "Abriendo la sala de video",
+  "¡Veterinario encontrado!"
+];
+
+const HUELLICAM_LETTERS = [
+  { char: "H", isTeal: false },
+  { char: "u", isTeal: false },
+  { char: "e", isTeal: false },
+  { char: "l", isTeal: false },
+  { char: "l", isTeal: false },
+  { char: "i", isTeal: false },
+  { char: "C", isTeal: true },
+  { char: "a", isTeal: true },
+  { char: "m", isTeal: true }
+];
 
 function WaitingRoomExperience({
   petName,
@@ -41,13 +64,215 @@ function WaitingRoomExperience({
   onBack: () => void;
   onCancel: () => void;
 }) {
-  const [tip, setTip] = useState(0);
-  const [pulse, setPulse] = useState(false);
-  const tapRadar = () => {
-    setPulse(true);
-    window.setTimeout(() => setPulse(false), 2500);
-  };
-  const current = WAITING_TIPS[tip];
+  const [tipIndex, setTipIndex] = useState(0);
+  const [tipOut, setTipOut] = useState(false);
+  const [statusIndex, setStatusIndex] = useState(0);
+  const [isLive, setIsLive] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const logoRef = useRef<SVGSVGElement | null>(null);
+  const wordRef = useRef<HTMLDivElement | null>(null);
+  const ecgBaseRef = useRef<SVGPathElement | null>(null);
+  const ecgFillRef = useRef<SVGPathElement | null>(null);
+  const ecgHeadRef = useRef<SVGCircleElement | null>(null);
+  const ecgHaloRef = useRef<SVGCircleElement | null>(null);
+
+  // Logo entrance animations
+  useEffect(() => {
+    const g = (id: string) => logoRef.current?.querySelector<SVGElement>(`#${id}`) || null;
+    const pop = (el: SVGElement | null, delay: number, rot = 0) => {
+      if (!el || typeof el.animate !== "function") return;
+      el.style.transformBox = "fill-box";
+      el.style.transformOrigin = "50% 50%";
+      el.animate(
+        [
+          { opacity: 0, transform: `scale(0) rotate(${rot}deg)` },
+          { opacity: 1, transform: `scale(1.18) rotate(${rot ? 6 : 0}deg)`, offset: 0.6 },
+          { opacity: 1, transform: "none" }
+        ],
+        { duration: 380, delay, easing: "cubic-bezier(.3,.7,.3,1)", fill: "backwards" }
+      );
+    };
+
+    const draw = (ids: string[], delay: number, dur: number) => {
+      ids.forEach((id) => {
+        const p = g(id);
+        if (!p || typeof p.animate !== "function") return;
+        p.style.strokeDasharray = "100 100";
+        const anim = p.animate(
+          [{ strokeDashoffset: 100 }, { strokeDashoffset: 0 }],
+          { duration: dur, delay, easing: "cubic-bezier(.5,0,.3,1)", fill: "backwards" }
+        );
+        anim.onfinish = () => {
+          p.style.strokeDasharray = "none";
+        };
+      });
+    };
+
+    draw(["tp1", "tp2"], 100, 800);
+    pop(g("tipL"), 150);
+    pop(g("tipR"), 800);
+    pop(g("joint"), 500);
+    pop(g("fill"), 250);
+    pop(g("arc_top"), 380, -40);
+    pop(g("tail"), 450, -40);
+    pop(g("arc_right"), 520, -40);
+    ["pad_t", "pad_l", "pad_r", "pad_m", "pad_b"].forEach((id, i) => pop(g(id), 620 + i * 70));
+    pop(g("cam"), 980);
+    draw(["cp1", "cp2"], 560, 800);
+    pop(g("chest"), 1300);
+
+    const partIds = ["arc_top", "arc_right", "tail", "pad_t", "pad_l", "pad_r", "pad_m", "pad_b", "cam", "tipL", "tipR", "chest"];
+    partIds.forEach((id) => {
+      const e = g(id);
+      if (e) {
+        e.style.transformBox = "fill-box";
+        e.style.transformOrigin = "50% 50%";
+      }
+    });
+
+    const liveTimer = window.setTimeout(() => setIsLive(true), 1900);
+    return () => window.clearTimeout(liveTimer);
+  }, []);
+
+  // Cycle animation for word and mascot
+  const triggerCycle = useCallback(() => {
+    const word = wordRef.current;
+    if (!word) return;
+    const letters = word.querySelectorAll<HTMLElement>(".v-wait__ch");
+    const g = (id: string) => logoRef.current?.querySelector<SVGElement>(`#${id}`) || null;
+    const partIds = ["arc_top", "arc_right", "tail", "pad_t", "pad_l", "pad_r", "pad_m", "pad_b", "cam", "tipL", "tipR", "chest"];
+    const mascotParts = partIds.map(g).filter(Boolean) as SVGElement[];
+
+    const jump = () => {
+      if (typeof word.animate === "function") {
+        word.animate(
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.18)", offset: 0.45 },
+            { transform: "scale(1)" }
+          ],
+          { duration: 650, easing: "cubic-bezier(.3,.7,.3,1)" }
+        );
+      }
+    };
+
+    letters.forEach((e, i) => {
+      if (typeof e.animate === "function") {
+        e.animate(
+          [{ transform: "scale(1)" }, { transform: "scale(1.4)", offset: 0.45 }, { transform: "scale(1)" }],
+          { duration: 320, delay: i * 85, easing: "ease-out" }
+        );
+      }
+    });
+
+    mascotParts.forEach((e, i) => {
+      if (typeof e.animate === "function") {
+        e.animate(
+          [{ transform: "scale(1)" }, { transform: "scale(1.1)", offset: 0.45 }, { transform: "scale(1)" }],
+          { duration: 320, delay: i * 60, easing: "ease-out" }
+        );
+      }
+    });
+
+    window.setTimeout(jump, letters.length * 85 + 300);
+  }, []);
+
+  // Wordmark letters initial entrance + periodic bounce
+  useEffect(() => {
+    const word = wordRef.current;
+    if (!word) return;
+    const letters = word.querySelectorAll<HTMLElement>(".v-wait__ch");
+
+    letters.forEach((e, i) => {
+      if (typeof e.animate === "function") {
+        e.animate(
+          [{ opacity: 0, transform: "scale(0)" }, { opacity: 1, transform: "scale(1.35)", offset: 0.6 }, { opacity: 1, transform: "scale(1)" }],
+          { duration: 420, delay: 1700 + i * 90, easing: "ease-out", fill: "backwards" }
+        );
+      }
+    });
+
+    let cycleInterval: number;
+    const initialCycleTimeout = window.setTimeout(() => {
+      triggerCycle();
+      cycleInterval = window.setInterval(triggerCycle, 6400);
+    }, 4900);
+
+    return () => {
+      window.clearTimeout(initialCycleTimeout);
+      window.clearInterval(cycleInterval);
+    };
+  }, [triggerCycle]);
+
+  // Status transitions
+  useEffect(() => {
+    const t1 = window.setTimeout(() => setStatusIndex(1), 2200);
+    const t2 = window.setTimeout(() => setStatusIndex(2), 7500);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, []);
+
+  // ECG progress waveform
+  useEffect(() => {
+    const W = 300;
+    const N = 4;
+    let d = "M0 22";
+    for (let i = 0; i < N; i++) {
+      const s = ((i + 0.5) * W) / N - 22;
+      d += ` H${s} l5 -3 l5 3 h3 l5 -17 l7 34 l7 -17 h3 l5 -3 l5 3`;
+    }
+    d += ` H${W}`;
+
+    const base = ecgBaseRef.current;
+    const fill = ecgFillRef.current;
+    const head = ecgHeadRef.current;
+    const halo = ecgHaloRef.current;
+
+    if (!base || !fill || !head || !halo) return;
+
+    base.setAttribute("d", d);
+    fill.setAttribute("d", d);
+
+    const len = typeof base.getTotalLength === "function" ? base.getTotalLength() : 300;
+    let p = 0;
+    const target = 0.38;
+    let creep = 0;
+    let animId: number;
+
+    const frame = () => {
+      p += (target + creep - p) * 0.035;
+      creep = Math.min(creep + 0.0004, 0.12);
+      const q = Math.min(p, 1);
+      fill.setAttribute("stroke-dashoffset", String(1000 * (1 - q)));
+      if (typeof base.getPointAtLength === "function") {
+        const pt = base.getPointAtLength(len * q);
+        head.setAttribute("cx", String(pt.x));
+        head.setAttribute("cy", String(pt.y));
+        halo.setAttribute("cx", String(pt.x));
+        halo.setAttribute("cy", String(pt.y));
+      }
+      animId = requestAnimationFrame(frame);
+    };
+
+    animId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  // Tips rotation
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setTipOut(true);
+      window.setTimeout(() => {
+        setTipIndex((prev) => (prev + 1) % WAITING_TIPS.length);
+        setTipOut(false);
+      }, 1500);
+    }, 8000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   return (
     <main
       data-testid="waiting-room-experience"
@@ -56,55 +281,199 @@ function WaitingRoomExperience({
       aria-live="polite"
       aria-label="Sala de espera de guardia"
     >
-      <header className="v-wait__top">
-        <button className="v-call__back" onClick={onBack} aria-label="Volver">
-          <Icon name="left" size={20} />
-        </button>
-        <div>
-          <b>{petName} · {tutorName}</b>
-          <span>{symptom}</span>
-        </div>
-        {tierLabel && <span className="v-wait__tier">{tierLabel}</span>}
-        <time className="v-call__time" aria-label="Tiempo de espera">{clock}</time>
-      </header>
-
-      <section className="v-wait__center">
-        <button type="button" className="v-wait__radar" onClick={tapRadar} aria-label="Radar clínico">
-          <i className="v-wait__ring v-wait__ring--1" />
-          <i className="v-wait__ring v-wait__ring--2" />
-          <i className="v-wait__ring v-wait__ring--3" />
-          <span className={`v-wait__core ${pulse ? "is-pulse" : ""}`}>
-            <HamsterMascot size="md" />
-          </span>
-        </button>
-        {pulse && <p className="v-wait__toast" role="status">¡Estamos priorizando a {petName}! 🐾</p>}
-        <svg className="v-wait__ecg" viewBox="0 0 200 40" aria-hidden="true">
-          <polyline points="0,20 50,20 60,20 68,4 78,36 88,20 130,20 140,20 148,8 156,30 164,20 200,20" />
-        </svg>
-        <ol className="v-wait__steps">
-          <li className="is-done">✓ Historia clínica y triage recibidos</li>
-          <li className="is-active">● Buscando veterinario de guardia disponible...</li>
-          <li>○ Iniciando sala de video HD cifrada</li>
-        </ol>
-        <div className="v-wait__tips" data-testid="waiting-room-tips">
-          <small>Mientras esperás</small>
-          <b>{current.title}</b>
-          <p>{current.text}</p>
-          <div className="v-wait__tips-nav">
-            <button type="button" aria-label="Consejo anterior" onClick={() => setTip((tip + WAITING_TIPS.length - 1) % WAITING_TIPS.length)}>&lt;</button>
-            {WAITING_TIPS.map((_, i) => (
-              <i key={i} className={i === tip ? "is-on" : ""} />
-            ))}
-            <button type="button" aria-label="Consejo siguiente" onClick={() => setTip((tip + 1) % WAITING_TIPS.length)}>&gt;</button>
+      <div className="v-wait__inner">
+        <header className="v-wait__header">
+          <button type="button" className="v-wait__back" onClick={onBack} aria-label="Volver">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <div className="v-wait__pet" role="group" aria-label={`${petName}, de ${tutorName}. Prioridad ${tierLabel || "general"}`}>
+            <span className="v-wait__ava">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <ellipse cx="12" cy="16" rx="5.5" ry="4.5" />
+                <ellipse cx="5" cy="10.5" rx="2.2" ry="3" />
+                <ellipse cx="9.5" cy="5.5" rx="2.2" ry="3" />
+                <ellipse cx="14.5" cy="5.5" rx="2.2" ry="3" />
+                <ellipse cx="19" cy="10.5" rx="2.2" ry="3" />
+              </svg>
+              <i className="v-wait__urg"></i>
+            </span>
+            <span className="v-wait__nm">
+              <b>{petName}</b>
+              <span>de {tutorName}</span>
+            </span>
           </div>
-        </div>
-      </section>
+          <div className="v-wait__timer" role="timer" aria-label="Tiempo de espera">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <circle className="v-wait__tr" cx="24" cy="24" r="21" />
+              <circle className="v-wait__tf" cx="24" cy="24" r="21" pathLength={100} />
+            </svg>
+            <span className="v-wait__clock">{clock}</span>
+          </div>
+        </header>
 
-      <footer className="v-wait__foot">
-        <button type="button" className="v-wait__cancel" onClick={onCancel}>
-          Cancelar solicitud de consulta
-        </button>
-      </footer>
+        <p className="v-wait__reason">
+          <i></i>
+          <span>{symptom || "Consulta veterinaria de guardia"}</span>
+        </p>
+
+        <section className="v-wait__center">
+          <button
+            type="button"
+            className={`v-wait__mark ${isLive ? "live" : ""}`}
+            onClick={triggerCycle}
+            aria-label="HuelliCam interactivo"
+          >
+            <svg ref={logoRef} id="logo" viewBox="40 140 965 751" aria-hidden="true">
+              <defs>
+                <pattern id="ht" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <circle cx="4.5" cy="4.5" r="1.7" fill="#1d4a43" />
+                </pattern>
+                <linearGradient id="gx" x1="0" x2="1">
+                  <stop offset="0" stopColor="#fff" />
+                  <stop offset="0.55" stopColor="#fff" stopOpacity="0" />
+                </linearGradient>
+                <mask id="mcam">
+                  <rect x="715" y="335" width="180" height="165" fill="url(#gx)" />
+                </mask>
+                <radialGradient id="gp" cx="0.15" cy="0.95" r="0.9">
+                  <stop offset="0" stopColor="#fff" />
+                  <stop offset="0.6" stopColor="#fff" stopOpacity="0" />
+                </radialGradient>
+                <mask id="mpad">
+                  <rect x="480" y="500" width="190" height="165" fill="url(#gp)" />
+                </mask>
+              </defs>
+              <g id="fill">
+                <circle cx="583" cy="495" r="255" fill="#fdf1d9" />
+                <path d="M365 650L338 748L452 706Z" fill="#fdf1d9" stroke="#fdf1d9" strokeWidth="16" strokeLinejoin="round" />
+              </g>
+              <g id="tail" fill="none" stroke="#6aa49b" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round">
+                <path pathLength={100} d="M327 578C340 610 360 635 378 655L340 745L450 703C520 735 620 735 686 702" />
+              </g>
+              <g id="arc_top" fill="none" stroke="#6aa49b" strokeWidth="24" strokeLinecap="round">
+                <path d="M436 312C500 262 560 250 610 252C680 255 735 285 768 322" />
+              </g>
+              <g id="arc_right" fill="none" stroke="#6aa49b" strokeWidth="22" strokeLinecap="round">
+                <path d="M829 507C835 535 828 560 815 583" />
+              </g>
+              <g id="pad_t">
+                <ellipse cx="577" cy="417" rx="43" ry="60" fill="#528f8a" />
+              </g>
+              <g id="pad_l">
+                <ellipse cx="485" cy="467" rx="42" ry="52" transform="rotate(-22 485 467)" fill="#528f8a" />
+              </g>
+              <g id="pad_r">
+                <ellipse cx="658" cy="490" rx="41" ry="51" transform="rotate(22 658 490)" fill="#528f8a" />
+              </g>
+              <g id="pad_m">
+                <path d="M565 508C595 508 618 535 645 568C667 594 665 626 638 636C612 646 590 628 560 650C530 664 495 652 488 622C483 595 520 535 540 515C548 510 556 508 565 508Z" fill="#528f8a" />
+                <path d="M565 508C595 508 618 535 645 568C667 594 665 626 638 636C612 646 590 628 560 650C530 664 495 652 488 622C483 595 520 535 540 515C548 510 556 508 565 508Z" fill="url(#ht)" opacity="0.28" mask="url(#mpad)" />
+              </g>
+              <g id="pad_b">
+                <ellipse cx="443" cy="551" rx="42" ry="37" transform="rotate(-25 443 551)" fill="#528f8a" />
+              </g>
+              <g id="cam">
+                <path d="M722 368Q722 340 750 340H860Q888 340 888 368V398L975 340Q990 332 990 350V485Q990 500 975 493L888 440V464Q888 492 860 492H750Q722 492 722 464Z" fill="#6ba39d" stroke="#4f8c87" strokeWidth="7" strokeLinejoin="round" />
+                <path d="M722 368Q722 340 750 340H860Q888 340 888 368V398L975 340Q990 332 990 350V485Q990 500 975 493L888 440V464Q888 492 860 492H750Q722 492 722 464Z" fill="url(#ht)" opacity="0.30" mask="url(#mcam)" />
+                <path d="M890 400L975 342Q988 336 988 350V485Q988 498 975 491L890 440Z" fill="url(#ht)" opacity="0.30" />
+              </g>
+              <g id="tube">
+                <path id="tp1" pathLength={100} fill="none" stroke="#245257" strokeWidth="42" strokeLinecap="round" strokeLinejoin="round" d="M138 193C95 205 72 245 74 300C76 360 98 410 118 450C140 515 185 548 232 548C280 548 328 515 348 452C372 410 396 360 398 300C400 245 378 205 340 190" />
+                <path id="tp2" pathLength={100} fill="none" stroke="#3f7476" strokeWidth="30" strokeLinecap="round" strokeLinejoin="round" d="M138 193C95 205 72 245 74 300C76 360 98 410 118 450C140 515 185 548 232 548C280 548 328 515 348 452C372 410 396 360 398 300C400 245 378 205 340 190" />
+              </g>
+              <g id="joint">
+                <rect x="86" y="418" width="64" height="56" rx="20" transform="rotate(22 118 446)" fill="#2f6a6c" stroke="#245257" strokeWidth="5" />
+                <rect x="326" y="418" width="64" height="56" rx="20" transform="rotate(-22 358 446)" fill="#2f6a6c" stroke="#245257" strokeWidth="5" />
+                <rect x="203" y="540" width="58" height="84" rx="12" fill="#2f6a6c" stroke="#245257" strokeWidth="5" />
+              </g>
+              <g id="tipL">
+                <circle cx="168" cy="187" r="31" fill="#f6ebd0" stroke="#245257" strokeWidth="8" />
+              </g>
+              <g id="tipR">
+                <circle cx="312" cy="185" r="31" fill="#f6ebd0" stroke="#245257" strokeWidth="8" />
+              </g>
+              <g id="cord">
+                <path id="cp1" pathLength={100} fill="none" stroke="#245257" strokeWidth="34" strokeLinecap="round" d="M232 600V690C232 800 330 858 470 858C610 858 710 800 785 698" />
+                <path id="cp2" pathLength={100} fill="none" stroke="#3f7476" strokeWidth="22" strokeLinecap="round" d="M232 600V690C232 800 330 858 470 858C610 858 710 800 785 698" />
+              </g>
+              <g id="chest">
+                <circle cx="797" cy="676" r="80" fill="#fdf1d9" />
+                <circle cx="797" cy="676" r="80" fill="none" stroke="#245257" strokeWidth="28" />
+                <circle cx="797" cy="676" r="80" fill="none" stroke="#5b9a93" strokeWidth="15" />
+                <path d="M748 722L797 674" stroke="#245257" strokeWidth="34" strokeLinecap="round" />
+                <path d="M748 722L797 674" stroke="#3f7476" strokeWidth="22" strokeLinecap="round" />
+                <circle cx="797" cy="674" r="34" fill="#2f6a6c" stroke="#245257" strokeWidth="5" />
+                <circle cx="797" cy="674" r="34" fill="url(#ht)" opacity="0.25" />
+              </g>
+            </svg>
+            <div className="v-wait__pulse">
+              <i></i>
+              <i></i>
+              <i></i>
+            </div>
+          </button>
+
+          <div ref={wordRef} className="v-wait__word" aria-hidden="true">
+            {HUELLICAM_LETTERS.map((item, idx) => (
+              <span key={idx} className={`v-wait__ch ${item.isTeal ? "c" : ""}`}>
+                {item.char}
+              </span>
+            ))}
+            <svg className="v-wait__spark" viewBox="0 0 26 26" aria-hidden="true">
+              <path d="M6 20L2 24" />
+              <path d="M12 12L10 4" />
+              <path d="M20 14L25 9" />
+            </svg>
+          </div>
+
+          <div className="v-wait__status">
+            <div className="v-wait__line" aria-live="polite">
+              <span key={statusIndex}>
+                {WAITING_STATUS_MSGS[statusIndex]}
+                {statusIndex < 3 && (
+                  <span className="v-wait__dots">
+                    <b>.</b>
+                    <b>.</b>
+                    <b>.</b>
+                  </span>
+                )}
+              </span>
+            </div>
+
+            <svg className="v-wait__ecg" viewBox="0 0 300 44" aria-hidden="true">
+              <path ref={ecgBaseRef} className="base" />
+              <path
+                ref={ecgFillRef}
+                className="fill"
+                pathLength={1000}
+                strokeDasharray="1000"
+                strokeDashoffset="1000"
+              />
+              <circle ref={ecgHaloRef} className="halo" r="5" />
+              <circle ref={ecgHeadRef} className="head" r="4.5" />
+            </svg>
+
+            <p className={`v-wait__tip ${tipOut ? "out" : ""}`}>
+              {WAITING_TIPS[tipIndex]}
+            </p>
+          </div>
+        </section>
+
+        <footer className="v-wait__foot">
+          <button
+            type="button"
+            className="v-wait__cancel"
+            onClick={() => {
+              setIsCancelling(true);
+              onCancel();
+            }}
+          >
+            {isCancelling ? "Cancelando..." : "Cancelar solicitud de consulta"}
+          </button>
+        </footer>
+      </div>
     </main>
   );
 }
