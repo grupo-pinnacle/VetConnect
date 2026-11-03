@@ -1,5 +1,6 @@
 import { photos } from "../shared";
 import type { Consultation as BackendConsultation, Pet as BackendPet, User as BackendUser } from "../types";
+export type { BackendConsultation };
 import { parseConsultationNotes } from "../lib/consultationNotes";
 import type { QueueItem, Consult, Patient, Triage } from "./data";
 
@@ -91,13 +92,28 @@ export function mapConsultationToQueueItem(c: BackendConsultation): QueueItem {
   };
 }
 
-export function mapConsultationToConsult(c: BackendConsultation): Consult {
+export function mapConsultationToConsult(c: BackendConsultation, nowOrIndex?: Date | number): Consult {
   const parsed = parseConsultationNotes(c.notes);
   const triage = mapBackendTriage(parsed.priority);
-  const dateStr = c.startedAt ? new Date(c.startedAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" }) :
-                  new Date(c.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" });
-  const timeStr = c.startedAt ? new Date(c.startedAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) :
-                  new Date(c.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  const targetDate = new Date(c.startedAt ?? c.createdAt);
+  const refNow = nowOrIndex instanceof Date ? nowOrIndex : new Date();
+
+  const isSameDay = (d1: Date, d2: Date) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  const yesterday = new Date(refNow);
+  yesterday.setDate(refNow.getDate() - 1);
+
+  const dateStr = targetDate.toLocaleDateString("es-AR", { day: "2-digit", month: "short" });
+  const timeStr = targetDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+
+  const day = isSameDay(targetDate, refNow)
+    ? "Hoy"
+    : isSameDay(targetDate, yesterday)
+    ? "Ayer"
+    : dateStr;
   
   const status: "Activa" | "Próxima" | "Finalizada" | "Cancelada" =
     c.status === "ACTIVE" ? "Activa" :
@@ -107,7 +123,7 @@ export function mapConsultationToConsult(c: BackendConsultation): Consult {
   return {
     id: c.id,
     petId: c.petId,
-    day: "Hoy",
+    day,
     date: dateStr,
     time: timeStr,
     reason: parsed.cleanNotes,
