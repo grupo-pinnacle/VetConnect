@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { startRingtone, stopRingtone } from '../../lib/ringtone';
 import { Video, PhoneCall, PhoneOff, Stethoscope, ShieldCheck } from 'lucide-react';
 
-import { getAccessToken, getDeviceId } from '../../services/api';
+import api, { getAccessToken, getDeviceId } from '../../services/api';
 import { getWsUrl } from '../../vet/CallRoom';
 
 interface IncomingCallData {
@@ -88,12 +88,18 @@ export const GlobalCallListener: React.FC = () => {
     };
   }, [user, navigate]);
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (!incomingCall) return;
     const cid = incomingCall.consultationId;
     stopRingtone();
     setIncomingCall(null);
-    navigate(`/call/${cid}`);
+    try {
+      await api.patch(`/api/consultations/${cid}/assign`);
+    } catch {
+      // Fallback defensivo: CallRoom.tsx reintentará si sigue en WAITING o ignorará si ya está ACTIVE
+    } finally {
+      navigate(`/call/${cid}`);
+    }
   };
 
   const handleReject = () => {
