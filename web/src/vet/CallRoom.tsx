@@ -822,8 +822,22 @@ function Room({ id }: { id: string }) {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
 
-  const isVet = user?.role === "VET";
-  const fromClient = user ? user.role === "CLIENT" : new URLSearchParams(window.location.search).get("from") === "client";
+  const cachedUser = (() => {
+    try {
+      const raw = typeof window !== "undefined" ? window.localStorage.getItem("vetconnect_user") : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const effectiveUser = user || cachedUser;
+  const isVet = effectiveUser?.role === "VET";
+  const fromClient = effectiveUser
+    ? effectiveUser.role === "CLIENT"
+    : typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("from") === "client" ||
+        window.location.pathname.startsWith("/client")
+      : false;
 
   // Auto-asignación defensiva e idempotente para rol VET si la consulta sigue en WAITING
   const assignAttemptedRef = useRef(false);
@@ -879,7 +893,9 @@ function Room({ id }: { id: string }) {
     : (tutorName || "el tutor");
 
   // Derive callState from consultation lifecycle
-  const [callState, setCallState] = useState<"connecting" | "waiting" | "connected" | "reconnecting" | "ended" | "error">("connecting");
+  const [callState, setCallState] = useState<"connecting" | "waiting" | "connected" | "reconnecting" | "ended" | "error">(
+    fromClient ? "waiting" : "connecting"
+  );
 
   useEffect(() => {
     if (consultation?.status === "WAITING") {
@@ -889,9 +905,9 @@ function Room({ id }: { id: string }) {
     } else if (consultation?.status === "ACTIVE") {
       setCallState("connected");
     } else if (!consultation) {
-      setCallState("connected");
+      setCallState(fromClient ? "waiting" : "connecting");
     }
-  }, [consultation?.status, consultation]);
+  }, [consultation?.status, consultation, fromClient]);
 
   // WAITING -> ACTIVE: celebrate for 1.2s before mounting the call console
   useEffect(() => {
@@ -1166,8 +1182,8 @@ function Room({ id }: { id: string }) {
   const cleanReason = parsedNotes.cleanNotes;
   const effectiveTriage = triage ?? (parsedNotes.priority ? TRIAGE_BY_TIER[parsedNotes.priority] : undefined);
 
-  // FEAT-07: the tutor never sees the call console while no vet has accepted
-  if (fromClient && consultation?.status === "WAITING") {
+  // FEAT-07: the tutor never sees the call console until a vet has accepted and call is ACTIVE
+  if (fromClient && consultation?.status !== "ACTIVE") {
     const tierLabel = parsedNotes.priority
       ? { ROJO: "CRÍTICO", AMARILLO: "MODERADO", VERDE: "RUTINA" }[parsedNotes.priority]
       : null;
