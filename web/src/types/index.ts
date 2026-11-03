@@ -6,7 +6,17 @@ import React from 'react';
 
 export type Role = 'CLIENT' | 'VET' | 'ADMIN';
 export type VetStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-export type ConsultationStatus = 'WAITING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+export type ConsultationStatus =
+  | 'WAITING'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'TRIAGE_CRITICAL_QUEUED'
+  | 'CLAIM_PENDING_SYNC'
+  | 'LIVEKIT_CONNECTING'
+  | 'IN_CALL_ACTIVE'
+  | 'AWAITING_EMERGENCY_CALLBACK'
+  | 'HANDOFF_IN_PROGRESS';
 export type CallStatus = 'INITIATED' | 'ACTIVE' | 'ENDED';
 
 // Triage: stored in Spanish in DB (inside `notes` field as "[Prioridad: ROJO] ...")

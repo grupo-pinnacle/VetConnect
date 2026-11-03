@@ -895,7 +895,12 @@ function Room({ id }: { id: string }) {
   const assignAttemptedRef = useRef(false);
 
   useEffect(() => {
-    if (consultation?.status === "WAITING" && isVet && !assignAttemptedRef.current) {
+    const isPendingAssign =
+      consultation?.status === "WAITING" ||
+      consultation?.status === "TRIAGE_CRITICAL_QUEUED" ||
+      consultation?.status === "CLAIM_PENDING_SYNC";
+
+    if (isPendingAssign && isVet && !assignAttemptedRef.current) {
       assignAttemptedRef.current = true;
       api
         .patch<ApiResponse<BackendConsultation>>(`/api/consultations/${id}/assign`)
@@ -945,33 +950,43 @@ function Room({ id }: { id: string }) {
     : (tutorName || "el tutor");
 
   // Derive callState from consultation lifecycle
+  const isConsultationActive =
+    consultation?.status === "ACTIVE" || consultation?.status === "IN_CALL_ACTIVE";
+
   const [callState, setCallState] = useState<"connecting" | "waiting" | "connected" | "reconnecting" | "ended" | "error">(
-    fromClient ? "waiting" : "connecting"
+    isConsultationActive ? "connected" : fromClient ? "waiting" : "connecting"
   );
 
   useEffect(() => {
-    if (consultation?.status === "WAITING") {
-      setCallState("waiting");
-    } else if (consultation?.status === "COMPLETED" || consultation?.status === "CANCELLED") {
+    const active = consultation?.status === "ACTIVE" || consultation?.status === "IN_CALL_ACTIVE";
+    const ended = consultation?.status === "COMPLETED" || consultation?.status === "CANCELLED";
+    if (ended) {
       setCallState("ended");
-    } else if (consultation?.status === "ACTIVE") {
+    } else if (active) {
       setCallState("connected");
-    } else if (!consultation) {
-      setCallState(fromClient ? "waiting" : "connecting");
+    } else if (fromClient) {
+      setCallState("waiting");
+    } else {
+      setCallState("connecting");
     }
   }, [consultation?.status, consultation, fromClient]);
 
   // WAITING -> ACTIVE: celebrate for 1.2s before mounting the call console
   useEffect(() => {
-    if (consultation?.status === "WAITING") {
+    const isWaitingStatus =
+      consultation?.status === "WAITING" ||
+      consultation?.status === "TRIAGE_CRITICAL_QUEUED" ||
+      consultation?.status === "CLAIM_PENDING_SYNC" ||
+      consultation?.status === "LIVEKIT_CONNECTING";
+    if (isWaitingStatus) {
       wasWaitingRef.current = true;
-    } else if (consultation?.status === "ACTIVE" && wasWaitingRef.current) {
+    } else if (isConsultationActive && wasWaitingRef.current) {
       wasWaitingRef.current = false;
       setCelebrating(true);
       const t = window.setTimeout(() => setCelebrating(false), 1200);
       return () => window.clearTimeout(t);
     }
-  }, [consultation?.status]);
+  }, [consultation?.status, isConsultationActive]);
 
   // LiveKit WebRTC state
   const [livekitToken, setLivekitToken] = useState<string | null>(null);
@@ -1235,7 +1250,7 @@ function Room({ id }: { id: string }) {
   const effectiveTriage = triage ?? (parsedNotes.priority ? TRIAGE_BY_TIER[parsedNotes.priority] : undefined);
 
     // FEAT-07 / VET-WAIT: tutor in waiting room until active; vet in pairing room while waiting
-  if (fromClient && consultation?.status !== "ACTIVE") {
+  if (fromClient && !isConsultationActive) {
     const tierLabel = parsedNotes.priority
       ? { ROJO: "CRÍTICO", AMARILLO: "MODERADO", VERDE: "RUTINA" }[parsedNotes.priority]
       : null;
@@ -1262,7 +1277,7 @@ function Room({ id }: { id: string }) {
     );
   }
 
-  if (!fromClient && consultation?.status === "WAITING") {
+  if (!fromClient && (!isConsultationActive || callState === "connecting" || callState === "waiting")) {
     return (
       <WaitingRoomExperience
         isVet={true}
@@ -1344,24 +1359,36 @@ function Room({ id }: { id: string }) {
               <VideoConference />
             </LiveKitRoom>
           ) : callState !== "connected" ? (
-            <div className={`v-call__state v-call__state--${callState}`} role="status" aria-live="assertive">
-              <span>
-                <Icon name={callState === "error" ? "alert" : "repeat"} size={26} />
-              </span>
-              <h1>{stateCopy[0]}</h1>
-              <p>{stateCopy[1]}</p>
-              {callState === "waiting" && (
-                <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, padding: "6px 14px", borderRadius: 20, background: "#254d4a", color: "#609f9c", border: "1px solid #3d6f6c" }}>
-                  <i className="is-online" style={{ width: 8, height: 8 }} />
-                  <span>Sala de espera activa · Notificando a médicos de guardia</span>
-                </div>
-              )}
-              {callState === "error" && (
-                <Button variant="secondary" icon="repeat" onClick={() => refetchConsultation()}>
-                  Reintentar
-                </Button>
-              )}
-            </div>
+            !fromClient ? (
+              <WaitingRoomExperience
+                isVet={true}
+                vetName={vetName}
+                vetInitials={vetInitials}
+                petName={petName}
+                tutorName={tutorName}
+                clock={clock}
+                onBack={() => go("/vet/dashboard")}
+              />
+            ) : (
+              <div className={`v-call__state v-call__state--${callState}`} role="status" aria-live="assertive">
+                <span>
+                  <Icon name={callState === "error" ? "alert" : "repeat"} size={26} />
+                </span>
+                <h1>{stateCopy[0]}</h1>
+                <p>{stateCopy[1]}</p>
+                {callState === "waiting" && (
+                  <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, padding: "6px 14px", borderRadius: 20, background: "#254d4a", color: "#609f9c", border: "1px solid #3d6f6c" }}>
+                    <i className="is-online" style={{ width: 8, height: 8 }} />
+                    <span>Sala de espera activa · Notificando a médicos de guardia</span>
+                  </div>
+                )}
+                {callState === "error" && (
+                  <Button variant="secondary" icon="repeat" onClick={() => refetchConsultation()}>
+                    Reintentar
+                  </Button>
+                )}
+              </div>
+            )
           ) : (
             <div className="v-call__professional" role="img" aria-label={`Video de ${remoteName}`}>
               <span className="avatar">{remoteInitials}</span>

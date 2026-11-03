@@ -108,4 +108,19 @@ describe('CallRoom WAITING vs ACTIVE gate (FEAT-07 / BUG-08)', () => {
     expect(screen.getByText('Micrófono listo')).toBeTruthy();
     expect(screen.getByText('Conexión estable')).toBeTruthy();
   });
+
+  it('TRIAGE_CRITICAL_QUEUED renders the vet pairing room with Dr name and checklist', async () => {
+    mockAuthState.user = { id: 'v1', role: 'VET', firstName: 'Diego', lastName: 'Suárez' };
+    window.history.pushState({}, '', '/call/c1');
+    consultationData = { ...base, status: 'TRIAGE_CRITICAL_QUEUED', vetId: null, vet: null };
+    renderRoom();
+    expect(await screen.findByTestId('waiting-room-experience')).toBeTruthy();
+    expect(screen.getByText('Salir de guardia')).toBeTruthy();
+    expect(screen.getByText('Dr. Diego Suárez')).toBeTruthy();
+    expect(screen.getByText('En guardia')).toBeTruthy();
+    expect(screen.getByText('DS')).toBeTruthy();
+    expect(screen.getByText('Cámara lista')).toBeTruthy();
+    expect(screen.getByText('Micrófono listo')).toBeTruthy();
+    expect(screen.getByText('Conexión estable')).toBeTruthy();
+  });
 });
