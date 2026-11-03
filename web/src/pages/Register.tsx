@@ -172,8 +172,17 @@ export function Register() {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
 
-    if (!firstName.trim()) nextErrors.firstName = "Ingresá tu nombre.";
-    if (!lastName.trim()) nextErrors.lastName = "Ingresá tu apellido.";
+    if (!firstName.trim()) {
+      nextErrors.firstName = "Ingresá tu nombre.";
+    } else if (firstName.trim().length < 2) {
+      nextErrors.firstName = "El nombre debe tener al menos 2 caracteres.";
+    }
+
+    if (!lastName.trim()) {
+      nextErrors.lastName = "Ingresá tu apellido.";
+    } else if (lastName.trim().length < 2) {
+      nextErrors.lastName = "El apellido debe tener al menos 2 caracteres.";
+    }
     if (!email.trim()) {
       nextErrors.email = "Ingresá tu email.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

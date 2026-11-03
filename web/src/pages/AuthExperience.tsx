@@ -38,6 +38,7 @@ function isValidEmail(value: string) {
 }
 
 function passwordScore(password: string) {
+  if (password.length < 8) return 0;
   let score = 0;
   if (password.length >= 8) score++;
   if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
@@ -494,11 +495,21 @@ function PersonalFields({
 
 function validatePersonal(data: PersonalData) {
   const next: FieldErrors = {};
-  if (!data.firstName.trim()) next.firstName = "Este campo es obligatorio.";
-  if (!data.lastName.trim()) next.lastName = "Este campo es obligatorio.";
+  if (!data.firstName.trim()) {
+    next.firstName = "Este campo es obligatorio.";
+  } else if (data.firstName.trim().length < 2) {
+    next.firstName = "El nombre debe tener al menos 2 caracteres.";
+  }
+  if (!data.lastName.trim()) {
+    next.lastName = "Este campo es obligatorio.";
+  } else if (data.lastName.trim().length < 2) {
+    next.lastName = "El apellido debe tener al menos 2 caracteres.";
+  }
   if (!isValidEmail(data.email)) next.email = "Ingresá un email válido.";
   if (data.email.toLowerCase() === "hola@huellicam.com") next.email = "Ya existe una cuenta asociada a este email.";
-  if (passwordScore(data.password) < 2) next.password = "Usá al menos 8 caracteres, mayúsculas y números.";
+  if (data.password.length < 8 || passwordScore(data.password) < 2) {
+    next.password = "Usá al menos 8 caracteres, mayúsculas y números.";
+  }
   if (data.password !== data.confirmPassword) next.confirmPassword = "Las contraseñas no coinciden.";
   return next;
 }
