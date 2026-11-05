@@ -9,6 +9,7 @@ import {
   AdminUpdateUserDTO,
   AdminCreatePetDTO,
   AdminUpdatePetDTO,
+  RevokeUserSessionsDTO,
 } from './admin.schemas';
 
 const userSelectFields = {
@@ -619,4 +620,125 @@ export class AdminService {
       take: 100,
     });
   }
+
+  public async revokeUserSessionsAndSuspend(
+    adminId: string,
+    targetUserId: string,
+    dto: RevokeUserSessionsDTO
+  ): Promise<{ revokedCount: number; status: string }> {
+    const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND');
+    }
+
+    if (dto.suspendAccount) {
+      await prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          deletedAt: new Date(),
+          isOnline: false,
+          tokenVersion: { increment: 1 },
+        },
+      });
+    }
+
+    let revokedCount = 0;
+    if ((prisma as any).refreshToken?.deleteMany) {
+      const res = await (prisma as any).refreshToken.deleteMany({
+        where: { userId: targetUserId },
+      });
+      revokedCount = res?.count ?? 0;
+    }
+
+    if (io) {
+      io.to(`user:${targetUserId}`).emit('auth:session_terminated', {
+        reason: 'SESSION_REVOKED',
+        message: dto.reason,
+      });
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        adminId,
+        action: 'ADMIN_REVOKE_SESSIONS',
+        targetId: targetUserId,
+        details: {
+          email: user.email,
+          reason: dto.reason,
+          suspendAccount: dto.suspendAccount,
+          revokedSessions: revokedCount,
+        },
+      },
+    }).catch(() => {});
+
+    return {
+      revokedCount,
+      status: dto.suspendAccount ? 'SUSPENDED' : 'ACTIVE',
+    };
+  }
+
+  public async getExecutiveMetrics(
+    defaultUnitPrice = 15000,
+    commissionRate = 0.20
+  ): Promise<ExecutiveMetricsResponse> {
+    const consultations = await prisma.consultation.findMany({
+      where: { deletedAt: null },
+    });
+
+    let completed = 0;
+    let cancelledOrNoShow = 0;
+    let waitingOrActive = 0;
+    let gmvTotal = 0;
+    let noShowLostRevenue = 0;
+
+    for (const c of consultations) {
+      const price =
+        typeof (c as any).price === 'number' && (c as any).price > 0
+          ? (c as any).price
+          : defaultUnitPrice;
+
+      if (c.status === 'COMPLETED') {
+        completed++;
+        gmvTotal += price;
+      } else if (c.status === 'CANCELLED') {
+        cancelledOrNoShow++;
+        noShowLostRevenue += price;
+      } else if (c.status === 'WAITING' || c.status === 'ACTIVE') {
+        waitingOrActive++;
+      }
+    }
+
+    const totalConsultations = consultations.length;
+    const netCommission = Math.round(gmvTotal * commissionRate * 100) / 100;
+    const triageToPaidConversionRate =
+      totalConsultations > 0
+        ? Math.round((completed / totalConsultations) * 10000) / 100
+        : 0;
+
+    return {
+      gmvTotal,
+      netCommission,
+      noShowLostRevenue,
+      triageToPaidConversionRate,
+      counts: {
+        totalConsultations,
+        completed,
+        cancelledOrNoShow,
+        waitingOrActive,
+      },
+    };
+  }
+}
+
+export interface ExecutiveMetricsResponse {
+  gmvTotal: number;
+  netCommission: number;
+  noShowLostRevenue: number;
+  triageToPaidConversionRate: number;
+  counts: {
+    totalConsultations: number;
+    completed: number;
+    cancelledOrNoShow: number;
+    waitingOrActive: number;
+  };
 }

@@ -77,3 +77,28 @@ export type AdminCreateUserDTO = z.infer<typeof adminCreateUserSchema>;
 export type AdminUpdateUserDTO = z.infer<typeof adminUpdateUserSchema>;
 export type AdminCreatePetDTO = z.infer<typeof adminCreatePetSchema>;
 export type AdminUpdatePetDTO = z.infer<typeof adminUpdatePetSchema>;
+
+// FEATURE-ADMIN-OPS-01: Feature Flags & Session Revocation Schemas
+export const FEATURE_FLAG_KEYS = [
+  'PAYMENTS_ENABLED',
+  'TRIAGE_ACTIVE',
+  'VIDEOCALLS_ENABLED',
+  'NEW_REGISTRATIONS_ENABLED',
+] as const;
+
+export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
+
+export const updateFeatureFlagSchema = z.object({
+  key: z.enum(FEATURE_FLAG_KEYS),
+  enabled: z.boolean(),
+  reason: z.string().trim().min(3, 'Debe especificar un motivo para el Audit Log').max(500).optional(),
+});
+
+export type UpdateFeatureFlagDTO = z.infer<typeof updateFeatureFlagSchema>;
+
+export const revokeUserSessionsSchema = z.object({
+  reason: z.string().trim().min(5, 'El motivo de suspensión/revocación debe tener al menos 5 caracteres').max(500),
+  suspendAccount: z.boolean().default(true),
+});
+
+export type RevokeUserSessionsDTO = z.infer<typeof revokeUserSessionsSchema>;
