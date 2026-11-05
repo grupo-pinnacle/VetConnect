@@ -102,3 +102,19 @@ export const revokeUserSessionsSchema = z.object({
 });
 
 export type RevokeUserSessionsDTO = z.infer<typeof revokeUserSessionsSchema>;
+
+// FEATURE-WHITE-LABEL-PRICING-01: White-Label Pricing Schemas
+export const SUPPORTED_CURRENCIES = ['ARS', 'USD', 'BRL', 'MXN', 'EUR'] as const;
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+
+export const updatePricingSettingsSchema = z.object({
+  baseConsultationFee: z.number().positive('El arancel base debe ser mayor a 0').max(10000000),
+  platformTakeRate: z
+    .number()
+    .min(0, 'La comisión no puede ser negativa')
+    .max(1, 'La comisión debe expresarse entre 0 y 1 (ej: 0.20 para 20%)'),
+  currency: z.enum(SUPPORTED_CURRENCIES).default('ARS'),
+  reason: z.string().trim().min(3, 'Debe especificar un motivo para el Audit Log').max(500).optional(),
+});
+
+export type UpdatePricingSettingsDTO = z.infer<typeof updatePricingSettingsSchema>;

@@ -2,7 +2,11 @@ import { featureFlagsService } from '../modules/admin/feature-flags.service';
 import { AdminService } from '../modules/admin/admin.service';
 import { AdminController } from '../modules/admin/admin.controller';
 import adminRouter from '../modules/admin/admin.routes';
-import { updateFeatureFlagSchema, revokeUserSessionsSchema } from '../modules/admin/admin.schemas';
+import {
+  updateFeatureFlagSchema,
+  revokeUserSessionsSchema,
+  updatePricingSettingsSchema,
+} from '../modules/admin/admin.schemas';
 import prisma from '../lib/prisma';
 
 // Ensure mockable refreshToken container on prisma client if not defined in generated schema
@@ -108,5 +112,64 @@ describe('AdminController & Routes - FEATURE-ADMIN-OPS-01', () => {
     expect(routePaths.some((r: any) => r.path === '/feature-flags' && r.methods.includes('patch'))).toBe(true);
     expect(routePaths.some((r: any) => r.path === '/users/:id/revoke-sessions' && r.methods.includes('post'))).toBe(true);
     expect(routePaths.some((r: any) => r.path === '/executive-metrics' && r.methods.includes('get'))).toBe(true);
+  });
+});
+
+describe('FEATURE-WHITE-LABEL-PRICING-01: White-Label Tariff Settings & Dynamic Unit Economics', () => {
+  it('debe actualizar PricingSettings, registrar AuditLog y recalcular getExecutiveMetrics con la nueva tarifa cuando no se pasan overrides', async () => {
+    const service = new AdminService();
+    (service as any).resetPricingForTests?.();
+    const auditSpy = jest.spyOn(prisma.auditLog, 'create').mockResolvedValueOnce({ id: 'audit-pricing-1' } as any);
+
+    const dto = updatePricingSettingsSchema.parse({
+      baseConsultationFee: 25000,
+      platformTakeRate: 0.15,
+      currency: 'ARS',
+      reason: 'Actualización arancel ético colegio veterinario Q4',
+    });
+
+    const updatedPricing = await (service as any).updatePricingSettings('admin-ceo-1', dto);
+    expect(updatedPricing.baseConsultationFee).toBe(25000);
+    expect(updatedPricing.platformTakeRate).toBe(0.15);
+    expect(updatedPricing.currency).toBe('ARS');
+    expect(auditSpy).toHaveBeenCalled();
+
+    jest.spyOn(prisma.consultation, 'findMany').mockResolvedValueOnce([
+      { id: 'c1', status: 'COMPLETED' },
+      { id: 'c2', status: 'COMPLETED' },
+      { id: 'c3', status: 'CANCELLED' },
+    ] as any);
+
+    // Llamada sin parámetros: debe tomar los 25.000 y 15% configurados en el tenant
+    const metrics = await service.getExecutiveMetrics();
+    expect(metrics.gmvTotal).toBe(50000);
+    expect(metrics.netCommission).toBe(7500);
+    expect(metrics.noShowLostRevenue).toBe(25000);
+    expect(metrics.pricing?.baseConsultationFee).toBe(25000);
+    expect(metrics.pricing?.platformTakeRate).toBe(0.15);
+  });
+
+  it('debe permitir platformTakeRate = 0 (Tier 1 SaaS B2B) y rechazar valores fuera de rango [0, 1] o arancel <= 0', () => {
+    const tier1Valid = updatePricingSettingsSchema.parse({
+      baseConsultationFee: 40,
+      platformTakeRate: 0,
+      currency: 'USD',
+    });
+    expect(tier1Valid.platformTakeRate).toBe(0);
+    expect(tier1Valid.currency).toBe('USD');
+
+    expect(() =>
+      updatePricingSettingsSchema.parse({
+        baseConsultationFee: -100,
+        platformTakeRate: 0.2,
+      })
+    ).toThrow();
+
+    expect(() =>
+      updatePricingSettingsSchema.parse({
+        baseConsultationFee: 15000,
+        platformTakeRate: 1.25,
+      })
+    ).toThrow();
   });
 });

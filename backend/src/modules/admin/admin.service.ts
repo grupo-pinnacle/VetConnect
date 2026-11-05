@@ -10,6 +10,8 @@ import {
   AdminCreatePetDTO,
   AdminUpdatePetDTO,
   RevokeUserSessionsDTO,
+  SupportedCurrency,
+  UpdatePricingSettingsDTO,
 } from './admin.schemas';
 
 const userSelectFields = {
@@ -677,10 +679,76 @@ export class AdminService {
     };
   }
 
+
+  private static defaultPricingSettings: PricingSettingsResponse = {
+    baseConsultationFee: 15000,
+    platformTakeRate: 0.2,
+    currency: 'ARS',
+    updatedAt: new Date().toISOString(),
+    updatedBy: null,
+  };
+
+  private static currentPricingSettings: PricingSettingsResponse = {
+    baseConsultationFee: 15000,
+    platformTakeRate: 0.2,
+    currency: 'ARS',
+    updatedAt: new Date().toISOString(),
+    updatedBy: null,
+  };
+
+  public getPricingSettings(): PricingSettingsResponse {
+    return { ...AdminService.currentPricingSettings };
+  }
+
+  public resetPricingForTests(): void {
+    AdminService.currentPricingSettings = {
+      ...AdminService.defaultPricingSettings,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  public async updatePricingSettings(
+    adminId: string,
+    dto: UpdatePricingSettingsDTO
+  ): Promise<PricingSettingsResponse> {
+    const updated: PricingSettingsResponse = {
+      baseConsultationFee: dto.baseConsultationFee,
+      platformTakeRate: dto.platformTakeRate,
+      currency: dto.currency ?? 'ARS',
+      updatedAt: new Date().toISOString(),
+      updatedBy: adminId,
+    };
+
+    AdminService.currentPricingSettings = updated;
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId,
+          action: 'PRICING_SETTINGS_UPDATED',
+          targetId: 'PRICING',
+          details: {
+            baseConsultationFee: dto.baseConsultationFee,
+            platformTakeRate: dto.platformTakeRate,
+            currency: dto.currency ?? 'ARS',
+            reason: dto.reason || null,
+          },
+        },
+      });
+    } catch {
+      // Non-blocking persistence
+    }
+
+    return updated;
+  }
+
   public async getExecutiveMetrics(
-    defaultUnitPrice = 15000,
-    commissionRate = 0.20
+    unitPrice?: number,
+    commissionRate?: number
   ): Promise<ExecutiveMetricsResponse> {
+    const activeUnitPrice = unitPrice !== undefined ? unitPrice : AdminService.currentPricingSettings.baseConsultationFee;
+    const activeCommissionRate = commissionRate !== undefined ? commissionRate : AdminService.currentPricingSettings.platformTakeRate;
+
     const consultations = await prisma.consultation.findMany({
       where: { deletedAt: null },
     });
@@ -695,7 +763,7 @@ export class AdminService {
       const price =
         typeof (c as any).price === 'number' && (c as any).price > 0
           ? (c as any).price
-          : defaultUnitPrice;
+          : activeUnitPrice;
 
       if (c.status === 'COMPLETED') {
         completed++;
@@ -709,7 +777,7 @@ export class AdminService {
     }
 
     const totalConsultations = consultations.length;
-    const netCommission = Math.round(gmvTotal * commissionRate * 100) / 100;
+    const netCommission = Math.round(gmvTotal * activeCommissionRate * 100) / 100;
     const triageToPaidConversionRate =
       totalConsultations > 0
         ? Math.round((completed / totalConsultations) * 10000) / 100
@@ -726,8 +794,17 @@ export class AdminService {
         cancelledOrNoShow,
         waitingOrActive,
       },
+      pricing: this.getPricingSettings(),
     };
   }
+}
+
+export interface PricingSettingsResponse {
+  baseConsultationFee: number;
+  platformTakeRate: number;
+  currency: SupportedCurrency;
+  updatedAt: string;
+  updatedBy?: string | null;
 }
 
 export interface ExecutiveMetricsResponse {
@@ -741,4 +818,5 @@ export interface ExecutiveMetricsResponse {
     cancelledOrNoShow: number;
     waitingOrActive: number;
   };
+  pricing?: PricingSettingsResponse;
 }
