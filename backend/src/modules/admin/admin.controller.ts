@@ -1,11 +1,14 @@
 import { Response, NextFunction } from 'express';
 import { AdminService } from './admin.service';
+import { featureFlagsService } from './feature-flags.service';
 import {
   rejectVetSchema,
   adminCreateUserSchema,
   adminUpdateUserSchema,
   adminCreatePetSchema,
   adminUpdatePetSchema,
+  updateFeatureFlagSchema,
+  revokeUserSessionsSchema,
 } from './admin.schemas';
 import { AuthenticatedRequest } from '../auth/auth.middleware';
 import { Role, ConsultationStatus } from '@prisma/client';
@@ -210,6 +213,45 @@ export class AdminController {
     try {
       const logs = await adminService.getAuditLogs();
       res.status(200).json({ success: true, data: logs });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getFeatureFlags = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const flags = featureFlagsService.getAllFlags();
+      res.status(200).json({ success: true, data: flags });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public toggleFeatureFlag = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const validated = updateFeatureFlagSchema.parse(req.body);
+      const updated = await featureFlagsService.toggleFlag(req.user!.id, validated);
+      res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public revokeUserSessions = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = getParamId(req.params.id);
+      const validated = revokeUserSessionsSchema.parse(req.body);
+      const result = await adminService.revokeUserSessionsAndSuspend(req.user!.id, id, validated);
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getExecutiveMetrics = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const metrics = await adminService.getExecutiveMetrics();
+      res.status(200).json({ success: true, data: metrics });
     } catch (error) {
       next(error);
     }

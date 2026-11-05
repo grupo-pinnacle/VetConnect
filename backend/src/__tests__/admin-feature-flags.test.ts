@@ -1,5 +1,7 @@
 import { featureFlagsService } from '../modules/admin/feature-flags.service';
 import { AdminService } from '../modules/admin/admin.service';
+import { AdminController } from '../modules/admin/admin.controller';
+import adminRouter from '../modules/admin/admin.routes';
 import { updateFeatureFlagSchema, revokeUserSessionsSchema } from '../modules/admin/admin.schemas';
 import prisma from '../lib/prisma';
 
@@ -82,5 +84,29 @@ describe('FEATURE-ADMIN-OPS-01: Kill Switches, Session Revocation & Executive Me
     expect(metrics.noShowLostRevenue).toBe(15000);
     expect(metrics.triageToPaidConversionRate).toBe(50);
     expect(metrics.counts.totalConsultations).toBe(4);
+  });
+});
+
+describe('AdminController & Routes - FEATURE-ADMIN-OPS-01', () => {
+  it('AdminController debe exponer los métodos getFeatureFlags, toggleFeatureFlag, revokeUserSessions y getExecutiveMetrics', () => {
+    const controller = new AdminController();
+    expect(typeof (controller as any).getFeatureFlags).toBe('function');
+    expect(typeof (controller as any).toggleFeatureFlag).toBe('function');
+    expect(typeof (controller as any).revokeUserSessions).toBe('function');
+    expect(typeof (controller as any).getExecutiveMetrics).toBe('function');
+  });
+
+  it('admin.routes.ts debe registrar las rutas /feature-flags, /users/:id/revoke-sessions y /executive-metrics', () => {
+    const routePaths = adminRouter.stack
+      .filter((layer: any) => layer.route)
+      .map((layer: any) => ({
+        path: layer.route.path,
+        methods: Object.keys(layer.route.methods),
+      }));
+
+    expect(routePaths.some((r: any) => r.path === '/feature-flags' && r.methods.includes('get'))).toBe(true);
+    expect(routePaths.some((r: any) => r.path === '/feature-flags' && r.methods.includes('patch'))).toBe(true);
+    expect(routePaths.some((r: any) => r.path === '/users/:id/revoke-sessions' && r.methods.includes('post'))).toBe(true);
+    expect(routePaths.some((r: any) => r.path === '/executive-metrics' && r.methods.includes('get'))).toBe(true);
   });
 });

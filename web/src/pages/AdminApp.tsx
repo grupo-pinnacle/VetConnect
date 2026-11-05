@@ -1,3 +1,5 @@
+import { AdminExecutiveMetrics } from '../components/admin/AdminExecutiveMetrics';
+import { AdminFeatureFlagsModal } from '../components/admin/AdminFeatureFlagsModal';
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -150,6 +152,7 @@ export function AdminApp() {
   };
 
   const [tab, setTab] = useState<'dashboard' | 'users' | 'pets' | 'consultations' | 'vets' | 'audit'>(getInitialTab);
+  const [featureFlagsModalOpen, setFeatureFlagsModalOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [toast, setToast] = useState<{ msg: string; id: number } | null>(null);
 
@@ -384,6 +387,10 @@ export function AdminApp() {
     if (!targetBanUser) return;
     setIsBanning(true);
     try {
+      await api.post(`/api/admin/users/${targetBanUser.id}/revoke-sessions`, {
+        reason: banReason.trim() || 'Infracción grave de términos del servicio.',
+        suspendAccount: true,
+      }).catch(() => {});
       const res = await api.patch<ApiResponse<User>>(`/api/admin/users/${targetBanUser.id}/ban`, {
         reason: banReason.trim() || 'Infracción grave de términos del servicio.',
       });
@@ -730,6 +737,14 @@ export function AdminApp() {
                   <p>Monitoreo unificado de telemedicina, usuarios, pacientes y cola de triage.</p>
                 </div>
                 <div className="adm-header__actions">
+                  <button
+                    type="button"
+                    onClick={() => setFeatureFlagsModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#dc2626] text-white hover:bg-[#b91c1c] transition-all shadow-sm"
+                  >
+                    <ShieldAlert className="w-4 h-4" />
+                    <span>Kill Switches / Resiliencia</span>
+                  </button>
                   <button
                     onClick={handleOpenCreateUser}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm"

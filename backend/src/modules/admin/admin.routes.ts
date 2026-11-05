@@ -37,4 +37,11 @@ router.patch('/pets/:id/restore', controller.restorePet);
 router.get('/consultations', controller.getConsultations);
 router.get('/consultations/:id/messages', controller.getConsultationMessages);
 
+
+// Feature Flags & Executive Metrics (FEATURE-ADMIN-OPS-01)
+router.get('/feature-flags', controller.getFeatureFlags);
+router.patch('/feature-flags', controller.toggleFeatureFlag);
+router.post('/users/:id/revoke-sessions', controller.revokeUserSessions);
+router.get('/executive-metrics', controller.getExecutiveMetrics);
+
 export default router;
