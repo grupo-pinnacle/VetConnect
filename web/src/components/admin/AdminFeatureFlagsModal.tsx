@@ -32,7 +32,7 @@ export function AdminFeatureFlagsModal({
     if (!isOpen || externalFlags !== undefined) return;
     setLoading(true);
     api
-      .get<{ success: boolean; data: FeatureFlagDTO[] }>('/admin/feature-flags')
+      .get<{ success: boolean; data: FeatureFlagDTO[] }>('/api/admin/feature-flags')
       .then((res) => {
         if (res.data?.data) {
           setInternalFlags(res.data.data);
@@ -59,7 +59,7 @@ export function AdminFeatureFlagsModal({
       if (onToggleFlag) {
         await onToggleFlag(flag.key, nextState, currentReason);
       } else {
-        const res = await api.patch<{ success: boolean; data: FeatureFlagDTO }>('/admin/feature-flags', {
+        const res = await api.patch<{ success: boolean; data: FeatureFlagDTO }>('/api/admin/feature-flags', {
           key: flag.key,
           enabled: nextState,
           reason: currentReason,

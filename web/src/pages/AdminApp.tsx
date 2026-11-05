@@ -762,6 +762,9 @@ export function AdminApp() {
                 </div>
               </div>
 
+              {/* Executive Metrics (CEO) */}
+              <AdminExecutiveMetrics />
+
               {/* KPI Cards Grid */}
               <div className="adm-kpi-grid">
                 <div className="adm-kpi-card">
@@ -2045,6 +2048,12 @@ export function AdminApp() {
           </div>
         </div>
       )}
+
+      {/* Modal de Kill Switches / Resiliencia */}
+      <AdminFeatureFlagsModal
+        isOpen={featureFlagsModalOpen}
+        onClose={() => setFeatureFlagsModalOpen(false)}
+      />
     </div>
   );
 }

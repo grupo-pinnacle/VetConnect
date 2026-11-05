@@ -34,7 +34,7 @@ export function AdminExecutiveMetrics({
     let isMounted = true;
     setInternalLoading(true);
     api
-      .get<{ success: boolean; data: ExecutiveMetricsData }>('/admin/executive-metrics')
+      .get<{ success: boolean; data: ExecutiveMetricsData }>('/api/admin/executive-metrics')
       .then((res) => {
         if (isMounted && res.data?.data) {
           setInternalMetrics(res.data.data);
