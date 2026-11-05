@@ -1,4 +1,4 @@
-import { AdminExecutiveMetrics } from '../components/admin/AdminExecutiveMetrics';
+import { AdminExecutiveMetrics, UpdatePricingPayload } from '../components/admin/AdminExecutiveMetrics';
 import { AdminFeatureFlagsModal } from '../components/admin/AdminFeatureFlagsModal';
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
@@ -302,6 +302,17 @@ export function AdminApp() {
   }, [consultations, consStatusFilter]);
 
   // Handlers for User CRUD
+  const handleUpdatePricing = async (payload: UpdatePricingPayload) => {
+    try {
+      await api.patch('/api/admin/pricing-settings', payload);
+      notify('Tarifas Marca Blanca actualizadas correctamente.');
+      fetchAllData();
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      alert(errorMsg || 'Error al actualizar las tarifas');
+    }
+  };
+
   const handleOpenCreateUser = () => {
     setEditingUser(null);
     setUserForm({
@@ -763,7 +774,7 @@ export function AdminApp() {
               </div>
 
               {/* Executive Metrics (CEO) */}
-              <AdminExecutiveMetrics />
+              <AdminExecutiveMetrics onUpdatePricing={handleUpdatePricing} />
 
               {/* KPI Cards Grid */}
               <div className="adm-kpi-grid">

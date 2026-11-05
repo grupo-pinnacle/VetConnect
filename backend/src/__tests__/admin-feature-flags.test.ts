@@ -98,6 +98,8 @@ describe('AdminController & Routes - FEATURE-ADMIN-OPS-01', () => {
     expect(typeof (controller as any).toggleFeatureFlag).toBe('function');
     expect(typeof (controller as any).revokeUserSessions).toBe('function');
     expect(typeof (controller as any).getExecutiveMetrics).toBe('function');
+    expect(typeof (controller as any).getPricingSettings).toBe('function');
+    expect(typeof (controller as any).updatePricingSettings).toBe('function');
   });
 
   it('admin.routes.ts debe registrar las rutas /feature-flags, /users/:id/revoke-sessions y /executive-metrics', () => {
@@ -112,6 +114,8 @@ describe('AdminController & Routes - FEATURE-ADMIN-OPS-01', () => {
     expect(routePaths.some((r: any) => r.path === '/feature-flags' && r.methods.includes('patch'))).toBe(true);
     expect(routePaths.some((r: any) => r.path === '/users/:id/revoke-sessions' && r.methods.includes('post'))).toBe(true);
     expect(routePaths.some((r: any) => r.path === '/executive-metrics' && r.methods.includes('get'))).toBe(true);
+    expect(routePaths.some((r: any) => r.path === '/pricing-settings' && r.methods.includes('get'))).toBe(true);
+    expect(routePaths.some((r: any) => r.path === '/pricing-settings' && r.methods.includes('patch'))).toBe(true);
   });
 });
 

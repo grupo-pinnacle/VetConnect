@@ -9,6 +9,7 @@ import {
   adminUpdatePetSchema,
   updateFeatureFlagSchema,
   revokeUserSessionsSchema,
+  updatePricingSettingsSchema,
 } from './admin.schemas';
 import { AuthenticatedRequest } from '../auth/auth.middleware';
 import { Role, ConsultationStatus } from '@prisma/client';
@@ -252,6 +253,25 @@ export class AdminController {
     try {
       const metrics = await adminService.getExecutiveMetrics();
       res.status(200).json({ success: true, data: metrics });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getPricingSettings = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const settings = adminService.getPricingSettings();
+      res.status(200).json({ success: true, data: settings });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public updatePricingSettings = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const validated = updatePricingSettingsSchema.parse(req.body);
+      const updated = await adminService.updatePricingSettings(req.user!.id, validated);
+      res.status(200).json({ success: true, data: updated });
     } catch (error) {
       next(error);
     }

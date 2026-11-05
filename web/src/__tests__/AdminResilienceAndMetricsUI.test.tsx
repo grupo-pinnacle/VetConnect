@@ -71,4 +71,61 @@ describe('FEATURE-ADMIN-OPS-01: UI Executive Metrics & Kill Switches Modal', () 
     expect(adminAppCode).toMatch(/AdminFeatureFlagsModal/);
     expect(adminAppCode).toMatch(/revoke-sessions/);
   });
+
+  it('AdminExecutiveMetrics debe mostrar la tarifa Marca Blanca activa y permitir actualizar arancel base y take-rate', async () => {
+    const onUpdatePricingMock = vi.fn().mockResolvedValue(undefined);
+    render(
+      <AdminExecutiveMetrics
+        metrics={{
+          gmvTotal: 45000,
+          netCommission: 9000,
+          noShowLostRevenue: 15000,
+          triageToPaidConversionRate: 66.67,
+          counts: {
+            totalConsultations: 3,
+            completed: 2,
+            cancelledOrNoShow: 1,
+            waitingOrActive: 0,
+          },
+          pricing: {
+            baseConsultationFee: 15000,
+            platformTakeRate: 0.2,
+            currency: 'ARS',
+          },
+        }}
+        onUpdatePricing={onUpdatePricingMock}
+      />
+    );
+
+    // Abrir o localizar controles de edición de tarifa marca blanca
+    const configBtn = screen.queryByRole('button', { name: /configurar tarifa|ajustar arancel|editar tarifa/i });
+    if (configBtn) {
+      fireEvent.click(configBtn);
+    }
+
+    const feeInput = screen.getByLabelText(/arancel base/i) as HTMLInputElement;
+    const takeRateInput = screen.getByLabelText(/take-rate|comisi[óo]n/i) as HTMLInputElement;
+
+    fireEvent.change(feeInput, { target: { value: '25000' } });
+    fireEvent.change(takeRateInput, { target: { value: '15' } });
+
+    const saveBtn = screen.getByRole('button', { name: /guardar tarifa|aplicar arancel|actualizar tarifa/i });
+    fireEvent.click(saveBtn);
+
+    expect(onUpdatePricingMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseConsultationFee: 25000,
+        platformTakeRate: 0.15,
+        currency: 'ARS',
+      })
+    );
+  });
+
+  it('AdminApp.tsx debe conectar el endpoint /pricing-settings y pasar onUpdatePricing a AdminExecutiveMetrics', () => {
+    const adminAppPath = path.resolve(__dirname, '../pages/AdminApp.tsx');
+    const adminAppCode = fs.readFileSync(adminAppPath, 'utf-8');
+
+    expect(adminAppCode).toMatch(/pricing-settings/);
+    expect(adminAppCode).toMatch(/onUpdatePricing/);
+  });
 });

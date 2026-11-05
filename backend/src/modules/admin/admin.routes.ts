@@ -43,5 +43,7 @@ router.get('/feature-flags', controller.getFeatureFlags);
 router.patch('/feature-flags', controller.toggleFeatureFlag);
 router.post('/users/:id/revoke-sessions', controller.revokeUserSessions);
 router.get('/executive-metrics', controller.getExecutiveMetrics);
+router.get('/pricing-settings', controller.getPricingSettings);
+router.patch('/pricing-settings', controller.updatePricingSettings);
 
 export default router;
