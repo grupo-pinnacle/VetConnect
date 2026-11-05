@@ -592,9 +592,9 @@ export function AdminApp() {
         <div className="adm-sidebar__head">
           <div className="flex items-center gap-2.5">
             <div className="adm-sidebar__logo-mark">
-              V
+              <img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
             </div>
-            <span className="font-extrabold text-lg tracking-tight text-white">VetConnect</span>
+            <span className="font-extrabold text-lg tracking-tight text-white">Huellicam</span>
           </div>
           <button
             className="adm-sidebar__close"
