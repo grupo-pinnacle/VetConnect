@@ -77,3 +77,44 @@ export type AdminCreateUserDTO = z.infer<typeof adminCreateUserSchema>;
 export type AdminUpdateUserDTO = z.infer<typeof adminUpdateUserSchema>;
 export type AdminCreatePetDTO = z.infer<typeof adminCreatePetSchema>;
 export type AdminUpdatePetDTO = z.infer<typeof adminUpdatePetSchema>;
+
+// FEATURE-ADMIN-OPS-01: Feature Flags & Session Revocation Schemas
+export const FEATURE_FLAG_KEYS = [
+  'PAYMENTS_ENABLED',
+  'TRIAGE_ACTIVE',
+  'VIDEOCALLS_ENABLED',
+  'NEW_REGISTRATIONS_ENABLED',
+] as const;
+
+export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
+
+export const updateFeatureFlagSchema = z.object({
+  key: z.enum(FEATURE_FLAG_KEYS),
+  enabled: z.boolean(),
+  reason: z.string().trim().min(3, 'Debe especificar un motivo para el Audit Log').max(500).optional(),
+});
+
+export type UpdateFeatureFlagDTO = z.infer<typeof updateFeatureFlagSchema>;
+
+export const revokeUserSessionsSchema = z.object({
+  reason: z.string().trim().min(5, 'El motivo de suspensión/revocación debe tener al menos 5 caracteres').max(500),
+  suspendAccount: z.boolean().default(true),
+});
+
+export type RevokeUserSessionsDTO = z.infer<typeof revokeUserSessionsSchema>;
+
+// FEATURE-WHITE-LABEL-PRICING-01: White-Label Pricing Schemas
+export const SUPPORTED_CURRENCIES = ['ARS', 'USD', 'BRL', 'MXN', 'EUR'] as const;
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+
+export const updatePricingSettingsSchema = z.object({
+  baseConsultationFee: z.number().positive('El arancel base debe ser mayor a 0').max(10000000),
+  platformTakeRate: z
+    .number()
+    .min(0, 'La comisión no puede ser negativa')
+    .max(1, 'La comisión debe expresarse entre 0 y 1 (ej: 0.20 para 20%)'),
+  currency: z.enum(SUPPORTED_CURRENCIES).default('ARS'),
+  reason: z.string().trim().min(3, 'Debe especificar un motivo para el Audit Log').max(500).optional(),
+});
+
+export type UpdatePricingSettingsDTO = z.infer<typeof updatePricingSettingsSchema>;

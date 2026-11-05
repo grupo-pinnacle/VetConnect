@@ -9,6 +9,9 @@ import {
   AdminUpdateUserDTO,
   AdminCreatePetDTO,
   AdminUpdatePetDTO,
+  RevokeUserSessionsDTO,
+  SupportedCurrency,
+  UpdatePricingSettingsDTO,
 } from './admin.schemas';
 
 const userSelectFields = {
@@ -619,4 +622,201 @@ export class AdminService {
       take: 100,
     });
   }
+
+  public async revokeUserSessionsAndSuspend(
+    adminId: string,
+    targetUserId: string,
+    dto: RevokeUserSessionsDTO
+  ): Promise<{ revokedCount: number; status: string }> {
+    const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND');
+    }
+
+    if (dto.suspendAccount) {
+      await prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          deletedAt: new Date(),
+          isOnline: false,
+          tokenVersion: { increment: 1 },
+        },
+      });
+    }
+
+    let revokedCount = 0;
+    if ((prisma as any).refreshToken?.deleteMany) {
+      const res = await (prisma as any).refreshToken.deleteMany({
+        where: { userId: targetUserId },
+      });
+      revokedCount = res?.count ?? 0;
+    }
+
+    if (io) {
+      io.to(`user:${targetUserId}`).emit('auth:session_terminated', {
+        reason: 'SESSION_REVOKED',
+        message: dto.reason,
+      });
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        adminId,
+        action: 'ADMIN_REVOKE_SESSIONS',
+        targetId: targetUserId,
+        details: {
+          email: user.email,
+          reason: dto.reason,
+          suspendAccount: dto.suspendAccount,
+          revokedSessions: revokedCount,
+        },
+      },
+    }).catch(() => {});
+
+    return {
+      revokedCount,
+      status: dto.suspendAccount ? 'SUSPENDED' : 'ACTIVE',
+    };
+  }
+
+
+  private static defaultPricingSettings: PricingSettingsResponse = {
+    baseConsultationFee: 15000,
+    platformTakeRate: 0.2,
+    currency: 'ARS',
+    updatedAt: new Date().toISOString(),
+    updatedBy: null,
+  };
+
+  private static currentPricingSettings: PricingSettingsResponse = {
+    baseConsultationFee: 15000,
+    platformTakeRate: 0.2,
+    currency: 'ARS',
+    updatedAt: new Date().toISOString(),
+    updatedBy: null,
+  };
+
+  public getPricingSettings(): PricingSettingsResponse {
+    return { ...AdminService.currentPricingSettings };
+  }
+
+  public resetPricingForTests(): void {
+    AdminService.currentPricingSettings = {
+      ...AdminService.defaultPricingSettings,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  public async updatePricingSettings(
+    adminId: string,
+    dto: UpdatePricingSettingsDTO
+  ): Promise<PricingSettingsResponse> {
+    const updated: PricingSettingsResponse = {
+      baseConsultationFee: dto.baseConsultationFee,
+      platformTakeRate: dto.platformTakeRate,
+      currency: dto.currency ?? 'ARS',
+      updatedAt: new Date().toISOString(),
+      updatedBy: adminId,
+    };
+
+    AdminService.currentPricingSettings = updated;
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId,
+          action: 'PRICING_SETTINGS_UPDATED',
+          targetId: 'PRICING',
+          details: {
+            baseConsultationFee: dto.baseConsultationFee,
+            platformTakeRate: dto.platformTakeRate,
+            currency: dto.currency ?? 'ARS',
+            reason: dto.reason || null,
+          },
+        },
+      });
+    } catch {
+      // Non-blocking persistence
+    }
+
+    return updated;
+  }
+
+  public async getExecutiveMetrics(
+    unitPrice?: number,
+    commissionRate?: number
+  ): Promise<ExecutiveMetricsResponse> {
+    const activeUnitPrice = unitPrice !== undefined ? unitPrice : AdminService.currentPricingSettings.baseConsultationFee;
+    const activeCommissionRate = commissionRate !== undefined ? commissionRate : AdminService.currentPricingSettings.platformTakeRate;
+
+    const consultations = await prisma.consultation.findMany({
+      where: { deletedAt: null },
+    });
+
+    let completed = 0;
+    let cancelledOrNoShow = 0;
+    let waitingOrActive = 0;
+    let gmvTotal = 0;
+    let noShowLostRevenue = 0;
+
+    for (const c of consultations) {
+      const price =
+        typeof (c as any).price === 'number' && (c as any).price > 0
+          ? (c as any).price
+          : activeUnitPrice;
+
+      if (c.status === 'COMPLETED') {
+        completed++;
+        gmvTotal += price;
+      } else if (c.status === 'CANCELLED') {
+        cancelledOrNoShow++;
+        noShowLostRevenue += price;
+      } else if (c.status === 'WAITING' || c.status === 'ACTIVE') {
+        waitingOrActive++;
+      }
+    }
+
+    const totalConsultations = consultations.length;
+    const netCommission = Math.round(gmvTotal * activeCommissionRate * 100) / 100;
+    const triageToPaidConversionRate =
+      totalConsultations > 0
+        ? Math.round((completed / totalConsultations) * 10000) / 100
+        : 0;
+
+    return {
+      gmvTotal,
+      netCommission,
+      noShowLostRevenue,
+      triageToPaidConversionRate,
+      counts: {
+        totalConsultations,
+        completed,
+        cancelledOrNoShow,
+        waitingOrActive,
+      },
+      pricing: this.getPricingSettings(),
+    };
+  }
+}
+
+export interface PricingSettingsResponse {
+  baseConsultationFee: number;
+  platformTakeRate: number;
+  currency: SupportedCurrency;
+  updatedAt: string;
+  updatedBy?: string | null;
+}
+
+export interface ExecutiveMetricsResponse {
+  gmvTotal: number;
+  netCommission: number;
+  noShowLostRevenue: number;
+  triageToPaidConversionRate: number;
+  counts: {
+    totalConsultations: number;
+    completed: number;
+    cancelledOrNoShow: number;
+    waitingOrActive: number;
+  };
+  pricing?: PricingSettingsResponse;
 }
