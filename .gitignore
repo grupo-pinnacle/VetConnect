@@ -73,3 +73,16 @@ repomix-output.*
 
 # Harness
 gentle-ai-harness/
+
+# Video production, captures & media
+videos/
+video-*/
+video/
+mi-video/
+test-capture/
+spikes/hyperframes-*/
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv
