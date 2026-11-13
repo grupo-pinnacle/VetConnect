@@ -68,7 +68,7 @@ app.use(cookieParser());
 // Rate limiters for sensitive auth endpoints
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
+  max: 200,
   message: {
     success: false,
     error: {
@@ -77,12 +77,12 @@ const loginLimiter = rateLimit({
       timestamp: new Date().toISOString(),
     },
   },
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: () => process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development',
 });
 
 const registerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
+  max: 100,
   message: {
     success: false,
     error: {
@@ -91,7 +91,7 @@ const registerLimiter = rateLimit({
       timestamp: new Date().toISOString(),
     },
   },
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: () => process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development',
 });
 
 app.use('/api/auth/login', loginLimiter);

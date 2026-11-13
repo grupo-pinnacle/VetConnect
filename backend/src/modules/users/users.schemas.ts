@@ -44,3 +44,16 @@ export const updateProfileSchema = z.object({
 });
 
 export type UpdateProfileDTO = z.infer<typeof updateProfileSchema>;
+
+export const changePasswordSchema = z.object({
+  currentPassword: z
+    .string()
+    .min(1, 'Ingresá tu contraseña actual')
+    .max(128, 'La contraseña actual es demasiado larga'),
+  newPassword: z
+    .string()
+    .min(8, 'La nueva contraseña debe tener al menos 8 caracteres')
+    .max(128, 'La nueva contraseña no puede superar 128 caracteres'),
+});
+
+export type ChangePasswordDTO = z.infer<typeof changePasswordSchema>;

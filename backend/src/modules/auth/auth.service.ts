@@ -43,7 +43,7 @@ export class AuthService {
   }
 
   public async register(dto: RegisterDTO) {
-    const emailStr = String(dto.email).toLowerCase();
+    const emailStr = String(dto.email).trim().toLowerCase();
 
     const existing = await prisma.user.findUnique({
       where: { email: emailStr },
@@ -82,7 +82,7 @@ export class AuthService {
   }
 
   public async login(dto: LoginDTO) {
-    const emailStr = String(dto.email).toLowerCase();
+    const emailStr = String(dto.email).trim().toLowerCase();
 
     const user = await prisma.user.findUnique({
       where: { email: emailStr },

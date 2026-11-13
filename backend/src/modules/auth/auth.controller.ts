@@ -22,7 +22,7 @@ const cookieSameSite = (process.env.COOKIE_SAME_SITE as 'none' | 'lax' | 'strict
   (isProduction ? 'none' : 'lax');
 const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 
-const setRefreshCookie = (res: Response, refreshToken: string) => {
+export const setRefreshCookie = (res: Response, refreshToken: string) => {
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: cookieSecure,

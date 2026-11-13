@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 
+const trimmedEmail = z.string().trim().email('Email invalido');
+const trimmedResetEmail = z.string().trim().email('Email inválido');
+
 export const registerSchema = z.object({
-  email: z.string().email('Email invalido'),
+  email: trimmedEmail,
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
@@ -13,7 +16,7 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email('Email invalido'),
+  email: trimmedEmail,
   password: z.string().min(1, 'La contraseña es requerida'),
 });
 
@@ -22,17 +25,17 @@ export const refreshSchema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('Email inválido'),
+  email: trimmedResetEmail,
 });
 
 export const verifyResetCodeSchema = z.object({
-  email: z.string().email('Email inválido'),
-  code: z.string().min(6, 'El código debe tener 6 dígitos').max(6, 'El código debe tener 6 dígitos'),
+  email: trimmedResetEmail,
+  code: z.string().trim().min(6, 'El código debe tener 6 dígitos').max(6, 'El código debe tener 6 dígitos'),
 });
 
 export const resetPasswordSchema = z.object({
-  email: z.string().email('Email inválido'),
-  code: z.string().min(6, 'El código debe tener 6 dígitos').max(6, 'El código debe tener 6 dígitos'),
+  email: trimmedResetEmail,
+  code: z.string().trim().min(6, 'El código debe tener 6 dígitos').max(6, 'El código debe tener 6 dígitos'),
   newPassword: z.string().min(8, 'La nueva contraseña debe tener al menos 8 caracteres'),
 });
 

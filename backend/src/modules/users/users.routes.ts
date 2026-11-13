@@ -8,5 +8,6 @@ const controller = new UsersController();
 router.use(authenticate);
 
 router.patch('/profile', controller.updateProfile);
+router.patch('/password', controller.changePassword);
 
 export default router;

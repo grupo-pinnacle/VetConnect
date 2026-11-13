@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../app';
 import prisma from '../lib/prisma';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { adminCreatePetSchema, adminUpdatePetSchema } from '../modules/admin/admin.schemas';
 
 jest.mock('../lib/prisma', () => ({
@@ -177,6 +178,68 @@ describe('Users & Vet Directory Module', () => {
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('UNAUTHORIZED');
+    });
+  });
+
+  describe('PATCH /api/users/password', () => {
+    it('should reject unauthenticated requests with 401', async () => {
+      const res = await request(app)
+        .patch('/api/users/password')
+        .send({ currentPassword: 'OldPassword1!', newPassword: 'NewPassword2!' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject incorrect currentPassword with 400 INVALID_CURRENT_PASSWORD', async () => {
+      const actualHash = await bcrypt.hash('CorrectOld1!', 4);
+      mockPrismaUser.findUnique.mockResolvedValue({ ...mockApprovedVet, password: actualHash } as any);
+
+      const res = await request(app)
+        .patch('/api/users/password')
+        .set('Authorization', `Bearer ${vetToken}`)
+        .send({ currentPassword: 'WrongOldPassword!', newPassword: 'NewPassword2!' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('INVALID_CURRENT_PASSWORD');
+    });
+
+    it('should reject short newPassword with 400 VALIDATION_ERROR', async () => {
+      mockPrismaUser.findUnique.mockResolvedValue(mockApprovedVet as any);
+
+      const res = await request(app)
+        .patch('/api/users/password')
+        .set('Authorization', `Bearer ${vetToken}`)
+        .send({ currentPassword: 'CorrectOld1!', newPassword: '123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('should update hashed password, rotate tokenVersion, and return fresh accessToken', async () => {
+      const actualHash = await bcrypt.hash('CorrectOld1!', 4);
+      const userWithHash = { ...mockApprovedVet, password: actualHash };
+      mockPrismaUser.findUnique.mockResolvedValue(userWithHash as any);
+      mockPrismaUser.update.mockResolvedValue({ ...userWithHash, tokenVersion: 2 } as any);
+
+      const res = await request(app)
+        .patch('/api/users/password')
+        .set('Authorization', `Bearer ${vetToken}`)
+        .send({ currentPassword: 'CorrectOld1!', newPassword: 'BrandNewPassword9!' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(typeof res.body.data.accessToken).toBe('string');
+      expect(mockPrismaUser.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: mockApprovedVet.id },
+          data: expect.objectContaining({
+            tokenVersion: { increment: 1 },
+          }),
+        })
+      );
+      const updateCall = mockPrismaUser.update.mock.calls[0][0] as { data: { password: string } };
+      expect(await bcrypt.compare('BrandNewPassword9!', updateCall.data.password)).toBe(true);
     });
   });
 
