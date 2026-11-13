@@ -49,8 +49,8 @@ export function clearRegisterDraft(): void {
   } catch {}
 }
 
-const authPhoto =
-  "https://images.unsplash.com/photo-1774218318818-c201207699d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGF0JTIwaG9tZSUyMHdpdGglMjBwZXQlMjByYWJiaXQlMjB3YXJtJTIwbmF0dXJhbCUyMGxpZ2h0fGVufDF8fHx8MTc5MTIyODc4Mnww&ixlib=rb-4.1.0&q=85&w=1400";
+const tutorIllustration = "/assets/6f3a5.png";
+const vetIllustration = "/assets/f4604.png";
 
 function Icon({ name }: { name: string }) {
   if (name === "arrow") {
@@ -94,10 +94,10 @@ function Icon({ name }: { name: string }) {
 function Logo() {
   return (
     <Link className="logo" to="/" aria-label="Huellicam, inicio" data-testid="brand-logo">
-      <span className="logo__mark">
-        <img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+      <span className="brand-mark brand-mark--sm" aria-hidden="true" />
+      <span className="brand-name brand-name--sm">
+        Huelli<span>Cam</span>
       </span>
-      <span>Huellicam</span>
     </Link>
   );
 }
@@ -246,11 +246,11 @@ export function Register() {
       <section className="auth-visual" aria-label="Huellicam, registro oficial">
         <Link className="auth-visual__back" to="/">
           <Icon name="arrow" />
-          Volver al sitio
+          Volver al inicio
         </Link>
         <div className="auth-visual__copy">
           <p className="eyebrow eyebrow--light">
-            {isVet ? "Un espacio para profesionales" : "Conexión + cuidado + cercanía"}
+            {isVet ? "Un espacio para profesionales" : "Conexión · Cuidado · Cercanía"}
           </p>
           <h1>
             {isVet ? (
@@ -274,24 +274,27 @@ export function Register() {
           </p>
         </div>
         <div className="auth-visual__photo">
-          <img src={authPhoto} alt="Tutora y mascota" />
+          <img src={isVet ? vetIllustration : tutorIllustration} alt="Tutora y mascota" />
         </div>
         <div className="auth-visual__connection">
           <span><Icon name={isVet ? "shield" : "heart"} /></span>
           <div>
-            <strong>{isVet ? "Atención profesional homologada" : "Cuidado que se siente cerca"}</strong>
-            <small>{isVet ? "SENASA Res. 1442/2021" : "Profesionales matriculados para cada especie"}</small>
+            <strong>{isVet ? "Atención profesional homologada." : "Cuidado que se siente cerca."}</strong>
           </div>
         </div>
-        <span className="auth-visual__orb auth-visual__orb--one" />
-        <span className="auth-visual__orb auth-visual__orb--two" />
       </section>
 
       <section className="auth-panel">
-        <div className="auth-panel__mobile-brand"><Logo /></div>
+        <div className="auth-panel__mobile-brand">
+          <Logo />
+          <span className="auth-brand-tagline">Videoconsultas veterinarias</span>
+        </div>
         <div className="auth-panel__content">
           <header className="auth-header">
-            <Logo />
+            <div className="auth-header__brand">
+              <Logo />
+              <span className="auth-brand-tagline">Videoconsultas veterinarias</span>
+            </div>
             <h2>Registro en Huellicam</h2>
             <p>Completá tus datos para crear tu cuenta oficial.</p>
           </header>
@@ -305,10 +308,12 @@ export function Register() {
               aria-checked={role === "CLIENT"}
               onClick={() => setRole("CLIENT")}
             >
-              <span className="role-card__icon"><Icon name="heart" /></span>
-              {role === "CLIENT" && <span className="role-card__check"><Icon name="check" /></span>}
+              <span className="role-card__art">
+                <img src={tutorIllustration} alt="" aria-hidden="true" />
+              </span>
+              <span className="role-card__check"><Icon name="check" /></span>
               <strong>Soy tutor</strong>
-              <small>Quiero cuidar y gestionar la atención de mi mascota.</small>
+              <small>Quiero cuidar a mi mascota.</small>
             </button>
             <button
               className={`role-card role-card--professional ${role === "VET" ? "role-card--selected" : ""}`}
@@ -317,10 +322,12 @@ export function Register() {
               aria-checked={role === "VET"}
               onClick={() => setRole("VET")}
             >
-              <span className="role-card__icon"><Icon name="shield" /></span>
-              {role === "VET" && <span className="role-card__check"><Icon name="check" /></span>}
+              <span className="role-card__art">
+                <img src={vetIllustration} alt="" aria-hidden="true" />
+              </span>
+              <span className="role-card__check"><Icon name="check" /></span>
               <strong>Soy veterinario</strong>
-              <small>Quiero ofrecer atención médica y gestionar consultas.</small>
+              <small>Brindar y gestionar consultas.</small>
             </button>
           </div>
 

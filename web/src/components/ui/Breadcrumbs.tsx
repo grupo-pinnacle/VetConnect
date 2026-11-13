@@ -31,7 +31,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
         className
       )}
     >
-      <ol className="flex items-center space-x-1.5 sm:space-x-2 text-slate-500 flex-nowrap min-w-0">
+      <ol className="flex items-center space-x-1.5 sm:space-x-2 text-[#607674] flex-nowrap min-w-0">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
 
@@ -42,7 +42,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
             >
               {index > 0 && (
                 <ChevronRight
-                  className="w-4 h-4 text-slate-400 mx-1 flex-shrink-0"
+                  className="w-4 h-4 text-[#607674]/70 mx-1 flex-shrink-0"
                   aria-hidden="true"
                 />
               )}
@@ -50,7 +50,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
                 <span
                   aria-current="page"
                   data-testid="breadcrumb-current"
-                  className="text-slate-900 font-semibold truncate max-w-xs sm:max-w-sm"
+                  className="text-[#183c3a] font-semibold truncate max-w-xs sm:max-w-sm"
                 >
                   {item.label}
                 </span>
@@ -64,12 +64,12 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
                       navigate(item.path);
                     }
                   }}
-                  className="text-slate-600 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 rounded px-1 py-0.5 transition-colors"
+                  className="text-[#454e4e] hover:text-[#315f5d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] focus-visible:ring-offset-2 rounded-full px-1.5 py-0.5 transition-colors"
                 >
                   {item.label}
                 </a>
               ) : (
-                <span className="text-slate-600 hover:text-slate-900 transition-colors px-1 py-0.5">
+                <span className="text-[#454e4e] hover:text-[#183c3a] transition-colors px-1.5 py-0.5">
                   {item.label}
                 </span>
               )}

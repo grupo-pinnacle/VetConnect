@@ -2,8 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand: #609f9c;
+  --brand-dark: #315f5d;
+  --brand-deep: #183c3a;
+  --brand-soft: #d9e8e4;
+  --cream: #fffbef;
+  --sand: #f2eddd;
+  --coral: #e98b70;
+  --coral-soft: #f6d6ca;
+  --lilac: #c9c1df;
+  --ink: #183c3a;
+  --muted: #607674;
+  --white: #ffffff;
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+html,
+body {
+  overscroll-behavior-y: contain;
+}
+
+picture {
+  display: contents;
+}
+
+body {
+  margin: 0;
+  background-color: #fffbef;
+  color: #183c3a;
+  font-family: "Manrope", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 @keyframes fadeIn {
@@ -18,11 +50,41 @@ html {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.route-loading {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #fffbef;
+  color: #183c3a;
+  font-family: "Manrope", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 /* Modern Web Guidance: Defer rendering of off-screen content to accelerate LCP */
 .section-deferred {
   content-visibility: auto;
   contain-intrinsic-size: 1px 600px;
+}
+
+@media (pointer: coarse), (max-width: 820px) {
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-fadeIn,
+  [class*="animate-pulse"] {
+    animation: none !important;
+  }
 }

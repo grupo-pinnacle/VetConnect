@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 840" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="faq-dots-grid" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(26)">
+      <circle cx="3.2" cy="3.2" r="1.5" fill="#4f918c" fill-opacity="0.26"/>
+      <circle cx="9.6" cy="9.6" r="1.15" fill="#4f918c" fill-opacity="0.16"/>
+    </pattern>
+    <pattern id="faq-dots-light" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
+      <circle cx="4" cy="4" r="1.4" fill="#5e9f9a" fill-opacity="0.2"/>
+    </pattern>
+  </defs>
+
+  <!-- Upper-left delicate halftone wedge -->
+  <path d="M-20 -20 L216 -20 C176 74, 96 154, -20 218 Z" fill="url(#faq-dots-grid)"/>
+
+  <!-- Upper-right fine editorial hatch lines + soft cluster -->
+  <path d="M1110 -15 C1155 56, 1245 104, 1340 94 C1390 88, 1445 64, 1460 40 L1460 -15 Z" fill="url(#faq-dots-light)"/>
+  <g stroke="#5b9b96" stroke-width="2" stroke-linecap="round" stroke-dasharray="18 7 10 6" opacity="0.46">
+    <line x1="1088" y1="118" x2="1146" y2="60"/>
+    <line x1="1114" y1="122" x2="1176" y2="60"/>
+    <line x1="1144" y1="120" x2="1202" y2="62"/>
+    <line x1="1332" y1="92" x2="1410" y2="14"/>
+    <line x1="1364" y1="94" x2="1442" y2="16"/>
+    <line x1="1398" y1="96" x2="1456" y2="38"/>
+  </g>
+
+  <!-- Soft organic cloud silhouette bottom-right -->
+  <g fill="url(#faq-dots-grid)">
+    <circle cx="1312" cy="346" r="56"/>
+    <ellipse cx="1096" cy="602" rx="188" ry="164"/>
+    <ellipse cx="1296" cy="616" rx="116" ry="96"/>
+    <circle cx="916" cy="618" r="68"/>
+  </g>
+
+  <!-- Scattered soft dot halos bottom-left & bottom-right corners -->
+  <path d="M-10 628 C58 644, 134 692, 188 762 L92 840 L-10 840 Z" fill="url(#faq-dots-light)"/>
+  <g stroke="#5b9b96" stroke-width="2" stroke-linecap="round" stroke-dasharray="22 8 12 7" opacity="0.48">
+    <line x1="20" y1="734" x2="104" y2="650"/>
+    <line x1="42" y1="744" x2="132" y2="654"/>
+    <line x1="68" y1="752" x2="150" y2="670"/>
+    <line x1="1312" y1="818" x2="1396" y2="734"/>
+    <line x1="1346" y1="818" x2="1430" y2="734"/>
+  </g>
+</svg>

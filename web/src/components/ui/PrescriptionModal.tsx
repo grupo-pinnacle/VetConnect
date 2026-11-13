@@ -110,7 +110,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
   return (
     <div
       data-testid={testId}
-      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      className="fixed inset-0 bg-[#183c3a]/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="prescription-modal-title"
@@ -120,7 +120,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
     >
       <div
         className={cn(
-          'bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 p-6 relative my-8 font-sans',
+          'bg-[#fffbef] rounded-3xl max-w-lg w-full shadow-2xl border border-[#e4dfd2] p-6 relative my-8 font-sans text-[#183c3a]',
           className
         )}
       >
@@ -129,25 +129,25 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
           type="button"
           onClick={onClose}
           aria-label="Cerrar modal"
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 transition-colors"
+          className="absolute top-4 right-4 text-[#607674] hover:text-[#183c3a] p-1.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] transition-colors"
         >
           <X className="w-5 h-5" aria-hidden="true" />
         </button>
 
         <h2
           id="prescription-modal-title"
-          className="text-lg font-bold font-display text-slate-800 mb-1"
+          className="text-xl font-bold font-display text-[#183c3a] mb-1 pr-6"
         >
           Emitir Receta Médica Digital Oficial SENASA
         </h2>
-        <p className="text-xs text-slate-500 mb-4">
+        <p className="text-xs text-[#454e4e] mb-4">
           Firma electrónica con validez farmacéutica legal (Ley 25.506).
         </p>
 
         {issuedPrescription ? (
           <div className="text-center space-y-4 pt-2" data-testid="prescription-success-container">
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-semibold flex items-center justify-center gap-2">
-              <Check className="w-5 h-5 text-emerald-600" />
+            <div className="p-4 bg-[#edf6f4] border border-[#609f9c]/40 rounded-2xl text-[#183c3a] text-sm font-semibold flex items-center justify-center gap-2">
+              <Check className="w-5 h-5 text-[#315f5d]" />
               <span>¡Receta Digital Emitida Exitosamente!</span>
             </div>
 
@@ -156,10 +156,10 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                 <img
                   src={issuedPrescription.qrCodeDataUrl}
                   alt="Código QR de Receta"
-                  className="w-36 h-36 border border-slate-200 rounded-xl p-2 bg-white shadow-sm"
+                  className="w-36 h-36 border border-[#e4dfd2] rounded-2xl p-2 bg-white shadow-sm"
                   data-testid="prescription-qr-image"
                 />
-                <p className="text-xs text-slate-500 mt-2 font-medium">
+                <p className="text-xs text-[#454e4e] mt-2 font-medium">
                   Escanear para validar en farmacias autorizadas
                 </p>
               </div>
@@ -167,12 +167,12 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
               <div className="flex flex-col items-center">
                 <div
                   data-testid="prescription-qr-image"
-                  className="w-36 h-36 border border-slate-200 rounded-xl p-2 bg-slate-50 flex flex-col items-center justify-center text-slate-400 shadow-inner"
+                  className="w-36 h-36 border border-[#e4dfd2] rounded-2xl p-2 bg-[#f2eddd]/50 flex flex-col items-center justify-center text-[#607674] shadow-inner"
                 >
-                  <QrCode className="w-12 h-12 text-slate-400 mb-1" />
-                  <span className="text-[10px] font-mono font-bold text-slate-500">QR SENASA</span>
+                  <QrCode className="w-12 h-12 text-[#607674] mb-1" />
+                  <span className="text-[10px] font-mono font-bold text-[#454e4e]">QR SENASA</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-2 font-medium">
+                <p className="text-xs text-[#454e4e] mt-2 font-medium">
                   Escanear para validar en farmacias autorizadas
                 </p>
               </div>
@@ -182,7 +182,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
               type="button"
               data-testid="close-prescription-success-button"
               onClick={onClose}
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700"
+              className="w-full py-2.5 bg-[#183c3a] hover:bg-[#315f5d] text-[#fffbef] rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c]"
             >
               Cerrar
             </button>
@@ -190,7 +190,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4" data-testid="prescription-form">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-medium">
+              <div className="p-3 bg-[#fbeee9] border border-[#e98b70]/50 rounded-2xl text-[#ae4d45] text-xs font-medium">
                 {error}
               </div>
             )}
@@ -198,7 +198,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
             <div>
               <label
                 htmlFor="prescription-medication"
-                className="block text-xs font-semibold text-slate-700 mb-1"
+                className="block text-xs font-semibold text-[#183c3a] mb-1"
               >
                 Medicamento / Principio Activo *
               </label>
@@ -211,7 +211,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                 onChange={(e) => setMedication(e.target.value)}
                 disabled={isSubmitting}
                 required
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
+                className="w-full px-3.5 py-2.5 border border-[#e4dfd2] rounded-xl text-sm bg-white text-[#183c3a] focus:outline-none focus:ring-2 focus:ring-[#609f9c] focus:border-[#609f9c] disabled:bg-[#f2eddd]/60 disabled:text-[#607674]"
               />
             </div>
 
@@ -219,7 +219,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
               <div>
                 <label
                   htmlFor="prescription-dosage"
-                  className="block text-xs font-semibold text-slate-700 mb-1"
+                  className="block text-xs font-semibold text-[#183c3a] mb-1"
                 >
                   Dosis *
                 </label>
@@ -232,14 +232,14 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                   onChange={(e) => setDosage(e.target.value)}
                   disabled={isSubmitting}
                   required
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
+                  className="w-full px-3.5 py-2.5 border border-[#e4dfd2] rounded-xl text-sm bg-white text-[#183c3a] focus:outline-none focus:ring-2 focus:ring-[#609f9c] focus:border-[#609f9c] disabled:bg-[#f2eddd]/60 disabled:text-[#607674]"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="prescription-frequency"
-                  className="block text-xs font-semibold text-slate-700 mb-1"
+                  className="block text-xs font-semibold text-[#183c3a] mb-1"
                 >
                   Frecuencia *
                 </label>
@@ -252,7 +252,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                   onChange={(e) => setFrequency(e.target.value)}
                   disabled={isSubmitting}
                   required
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
+                  className="w-full px-3.5 py-2.5 border border-[#e4dfd2] rounded-xl text-sm bg-white text-[#183c3a] focus:outline-none focus:ring-2 focus:ring-[#609f9c] focus:border-[#609f9c] disabled:bg-[#f2eddd]/60 disabled:text-[#607674]"
                 />
               </div>
             </div>
@@ -260,7 +260,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
             <div>
               <label
                 htmlFor="prescription-duration"
-                className="block text-xs font-semibold text-slate-700 mb-1"
+                className="block text-xs font-semibold text-[#183c3a] mb-1"
               >
                 Duración del Tratamiento *
               </label>
@@ -271,7 +271,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                 onChange={(e) => setDurationDays(e.target.value)}
                 disabled={isSubmitting}
                 required
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
+                className="w-full px-3.5 py-2.5 border border-[#e4dfd2] rounded-xl text-sm bg-white text-[#183c3a] focus:outline-none focus:ring-2 focus:ring-[#609f9c] focus:border-[#609f9c] disabled:bg-[#f2eddd]/60 disabled:text-[#607674]"
               >
                 {durationOptions.map((days) => (
                   <option key={days} value={days}>
@@ -288,14 +288,14 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
               <div className="flex justify-between items-center mb-1">
                 <label
                   htmlFor="prescription-indications"
-                  className="block text-xs font-semibold text-slate-700"
+                  className="block text-xs font-semibold text-[#183c3a]"
                 >
                   Indicaciones Clínicas *
                 </label>
                 <span
                   className={cn(
                     'text-[10px] font-medium',
-                    indications.length >= 5 ? 'text-slate-400' : 'text-amber-600 font-semibold'
+                    indications.length >= 5 ? 'text-[#607674]' : 'text-[#7a5813] font-semibold'
                   )}
                 >
                   {indications.length}/5 mín.
@@ -312,21 +312,21 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                 required
                 minLength={5}
                 className={cn(
-                  'w-full px-3 py-2 border rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400',
+                  'w-full px-3.5 py-2.5 border rounded-xl text-sm bg-white text-[#183c3a] focus:outline-none focus:ring-2 focus:ring-[#609f9c] focus:border-[#609f9c] disabled:bg-[#f2eddd]/60 disabled:text-[#607674]',
                   indications.length > 0 && indications.length < 5
-                    ? 'border-amber-400 focus:ring-amber-500'
-                    : 'border-slate-300'
+                    ? 'border-[#d6b66f] focus:ring-[#c19e45]'
+                    : 'border-[#e4dfd2]'
                 )}
               />
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2.5 pt-2">
               <button
                 type="button"
                 data-testid="cancel-prescription-button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 border border-[#e4dfd2] rounded-full text-sm font-bold text-[#183c3a] hover:bg-[#f2eddd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -334,7 +334,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                 type="submit"
                 data-testid="save-prescription-button"
                 disabled={isSubmitting || !isIndicationsValid}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 bg-[#609f9c] hover:bg-[#315f5d] text-white rounded-full text-sm font-bold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] focus-visible:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>

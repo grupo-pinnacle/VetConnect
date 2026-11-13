@@ -21,17 +21,17 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       } ${className}`}
     >
       <div className="flex items-center gap-2 mb-1 px-1">
-        <span className="text-xs font-medium text-slate-400">
+        <span className="text-xs font-medium text-[#454e4e]">
           {isOwn ? 'Tú' : message.sender?.firstName || 'Médico Veterinario'}
         </span>
-        <span className="text-[10px] text-slate-500">{formattedTime}</span>
+        <span className="text-[10px] text-[#607674]">{formattedTime}</span>
       </div>
 
       <div
         className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm break-words ${
           isOwn
-            ? 'bg-blue-600 text-white rounded-br-sm'
-            : 'bg-slate-800 text-slate-100 rounded-bl-sm border border-slate-700'
+            ? 'bg-[#609f9c] text-white rounded-br-sm'
+            : 'bg-[#183c3a] text-[#fffbef] rounded-bl-sm border border-[#315f5d]'
         }`}
       >
         <p className="whitespace-pre-wrap">{message.content}</p>

@@ -82,7 +82,8 @@ export function AdminFeatureFlagsModal({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(24, 60, 58, 0.54)',
+        backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -92,33 +93,34 @@ export function AdminFeatureFlagsModal({
     >
       <div
         style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
+          backgroundColor: '#fffbef',
+          border: '1px solid #e4dfd2',
+          borderRadius: '24px',
           width: '100%',
           maxWidth: '680px',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 24px 60px rgba(24, 60, 58, 0.24)',
         }}
       >
         {/* Header */}
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #e2e8f0',
+            borderBottom: '1px solid #e4dfd2',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ShieldAlert size={24} color="#dc2626" />
+            <ShieldAlert size={24} color="#ae4d45" />
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#183c3a' }}>
                 Kill Switches y Resiliencia en Producción
               </h3>
-              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#607674' }}>
                 Conmutación en caliente sin redeploy. Al desactivar un módulo, responderá HTTP 503.
               </p>
             </div>
@@ -127,9 +129,9 @@ export function AdminFeatureFlagsModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar modal"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+            style={{ background: '#f2eddd', border: 'none', borderRadius: '999px', cursor: 'pointer', padding: '6px' }}
           >
-            <X size={20} color="#64748b" />
+            <X size={18} color="#183c3a" />
           </button>
         </div>
 
@@ -138,7 +140,7 @@ export function AdminFeatureFlagsModal({
           <div style={{ marginBottom: '16px' }}>
             <label
               htmlFor="reason-input"
-              style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}
+              style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#183c3a', marginBottom: '6px' }}
             >
               Motivo de la acción (Audit Log obligatorio en producción):
             </label>
@@ -150,16 +152,18 @@ export function AdminFeatureFlagsModal({
               placeholder="Ej: Mantenimiento preventivo pasarela de pagos"
               style={{
                 width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
+                padding: '10px 14px',
+                borderRadius: '14px',
+                border: '1px solid #e4dfd2',
+                backgroundColor: '#ffffff',
+                color: '#183c3a',
                 fontSize: '0.875rem',
               }}
             />
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>Cargando banderas operativas...</div>
+            <div style={{ textAlign: 'center', padding: '24px', color: '#607674' }}>Cargando banderas operativas...</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {currentFlags.map((flag) => {
@@ -168,30 +172,32 @@ export function AdminFeatureFlagsModal({
                   <div
                     key={flag.key}
                     style={{
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
+                      border: flag.enabled ? '1px solid #e4dfd2' : '1px solid #f3c8be',
+                      borderRadius: '18px',
                       padding: '14px 16px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      backgroundColor: flag.enabled ? '#fff' : '#fef2f2',
+                      gap: '12px',
+                      backgroundColor: flag.enabled ? '#ffffff' : '#fcece9',
                     }}
                   >
                     <div style={{ maxWidth: '70%' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a' }}>{flag.key}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#183c3a' }}>{flag.key}</span>
                         {flag.enabled ? (
                           <span
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              backgroundColor: '#ecfdf5',
-                              color: '#059669',
+                              backgroundColor: '#edf6f4',
+                              color: '#315f5d',
+                              border: '1px solid #d9e8e4',
                               fontSize: '0.75rem',
-                              fontWeight: 600,
-                              padding: '2px 8px',
-                              borderRadius: '9999px',
+                              fontWeight: 700,
+                              padding: '2px 10px',
+                              borderRadius: '999px',
                             }}
                           >
                             <CheckCircle size={12} /> ACTIVO
@@ -202,19 +208,20 @@ export function AdminFeatureFlagsModal({
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              backgroundColor: '#fee2e2',
-                              color: '#b91c1c',
+                              backgroundColor: '#fcece9',
+                              color: '#ae4d45',
+                              border: '1px solid #f3c8be',
                               fontSize: '0.75rem',
-                              fontWeight: 600,
-                              padding: '2px 8px',
-                              borderRadius: '9999px',
+                              fontWeight: 700,
+                              padding: '2px 10px',
+                              borderRadius: '999px',
                             }}
                           >
                             <AlertTriangle size={12} /> INACTIVO (503)
                           </span>
                         )}
                       </div>
-                      <p style={{ margin: 0, fontSize: '0.825rem', color: '#475569' }}>{flag.description}</p>
+                      <p style={{ margin: 0, fontSize: '0.825rem', color: '#454e4e' }}>{flag.description}</p>
                     </div>
 
                     <button
@@ -223,16 +230,17 @@ export function AdminFeatureFlagsModal({
                       onClick={() => handleToggle(flag)}
                       aria-label={`Conmutar estado de ${flag.key}`}
                       style={{
-                        padding: '8px 16px',
-                        borderRadius: '6px',
+                        padding: '9px 18px',
+                        borderRadius: '999px',
                         fontSize: '0.85rem',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         cursor: isBusy ? 'not-allowed' : 'pointer',
                         border: 'none',
-                        color: '#fff',
-                        backgroundColor: flag.enabled ? '#dc2626' : '#059669',
-                        transition: 'opacity 0.2s',
+                        color: '#ffffff',
+                        backgroundColor: flag.enabled ? '#ae4d45' : '#609f9c',
+                        transition: 'opacity 0.2s, background-color 0.2s',
                         opacity: isBusy ? 0.7 : 1,
+                        flexShrink: 0,
                       }}
                     >
                       {flag.enabled ? 'Desactivar' : 'Activar'}
@@ -248,7 +256,7 @@ export function AdminFeatureFlagsModal({
         <div
           style={{
             padding: '16px 24px',
-            borderTop: '1px solid #e2e8f0',
+            borderTop: '1px solid #e4dfd2',
             display: 'flex',
             justifyContent: 'flex-end',
           }}
@@ -257,12 +265,13 @@ export function AdminFeatureFlagsModal({
             type="button"
             onClick={onClose}
             style={{
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              backgroundColor: '#fff',
+              padding: '9px 20px',
+              borderRadius: '999px',
+              border: '1px solid #d5cec0',
+              backgroundColor: '#f2eddd',
+              color: '#183c3a',
               fontSize: '0.875rem',
-              fontWeight: 500,
+              fontWeight: 700,
               cursor: 'pointer',
             }}
           >

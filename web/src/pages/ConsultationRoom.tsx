@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import api, { getAccessToken } from '../services/api';
-import { getWsUrl } from '../vet/CallRoom';
+import { getWsUrl } from '../lib/ws';
 import { useAuth } from '../context/AuthContext';
 import CallRoom from '../components/call/CallRoom';
 import { ReviewModal } from '../components/ui/ReviewModal';

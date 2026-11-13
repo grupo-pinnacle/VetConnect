@@ -110,7 +110,26 @@ export function Status({ children, tone = "teal" }: { children: ReactNode; tone?
 }
 
 export function Logo({ to = "/client/dashboard" }: { to?: string }) {
-  return <button className="logo" onClick={() => go(to)} aria-label="Ir al inicio"><span className="logo__mark"><Icon name="heart" size={20}/></span><span>VetConnect</span></button>;
+  return (
+    <button className="logo" onClick={() => go(to)} aria-label="Ir al inicio">
+      <span
+        className="logo__mark logo__mark--brand"
+        style={{
+          background: "transparent",
+          borderRadius: 0,
+        }}
+      >
+        <img
+          src="/assets/huellicam-mark-light.png"
+          alt="HuelliCam"
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+        />
+      </span>
+      <span>
+        Huelli<span style={{ color: "var(--teal, #609f9c)" }}>Cam</span>
+      </span>
+    </button>
+  );
 }
 
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {

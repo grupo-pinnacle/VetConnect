@@ -6,7 +6,7 @@ import { startRingtone, stopRingtone } from '../../lib/ringtone';
 import { Video, PhoneCall, PhoneOff, Stethoscope, ShieldCheck } from 'lucide-react';
 
 import api, { getAccessToken, getDeviceId } from '../../services/api';
-import { getWsUrl } from '../../vet/CallRoom';
+import { getWsUrl } from '../../lib/ws';
 
 interface IncomingCallData {
   consultationId: string;
@@ -77,12 +77,24 @@ export const GlobalCallListener: React.FC = () => {
       }
     });
 
+    const handleDismissCall = (payload?: { consultationId?: string }) => {
+      stopRingtone();
+      setIncomingCall((prev) =>
+        !prev || !payload?.consultationId || payload.consultationId === prev.consultationId ? null : prev
+      );
+    };
+
+    socket.on('call:ended', handleDismissCall);
+    socket.on('call:cancelled', handleDismissCall);
+
     return () => {
       stopRingtone();
       socket.off('call:incoming');
       socket.off('auth:session_terminated');
       socket.off('session:invalidated');
       socket.off('consultation:critical_resume');
+      socket.off('call:ended', handleDismissCall);
+      socket.off('call:cancelled', handleDismissCall);
       socket.disconnect();
       socketRef.current = null;
     };
@@ -119,34 +131,34 @@ export const GlobalCallListener: React.FC = () => {
       aria-modal="true"
       aria-labelledby="incoming-call-title"
       data-testid="global-incoming-call-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#06241D]/60 backdrop-blur-md animate-in fade-in duration-300"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#183c3a]/55 backdrop-blur-md animate-in fade-in duration-300"
     >
-      <div className="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-[0_25px_60px_-15px_rgba(6,36,29,0.3)] border border-[#E8E2D5] text-center space-y-5 animate-in zoom-in-95 duration-200">
+      <div className="bg-[#fffbef] rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-[0_25px_60px_-15px_rgba(24,60,58,0.28)] border border-[#e4dfd2] text-center space-y-5 animate-in zoom-in-95 duration-200">
         {/* Pulsing Clinical Video Call Avatar */}
         <div className="relative mx-auto w-20 h-20">
-          <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
-          <div className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-[#06241D] to-emerald-700 text-white flex items-center justify-center shadow-lg border-2 border-emerald-400">
-            <Video className="w-9 h-9 text-emerald-300 animate-pulse" aria-hidden="true" />
+          <div className="absolute inset-0 rounded-full bg-[#609f9c]/25 animate-ping" />
+          <div className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-[#183c3a] to-[#315f5d] text-white flex items-center justify-center shadow-lg border-2 border-[#609f9c]">
+            <Video className="w-9 h-9 text-[#d9e8e4] animate-pulse" aria-hidden="true" />
           </div>
         </div>
 
         {/* Call Info */}
         <div className="space-y-1.5">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#edf6f4] text-[#315f5d] border border-[#609f9c]/40">
+            <span className="w-2 h-2 rounded-full bg-[#609f9c] animate-ping" />
             Llamada Clínica Entrante
           </span>
-          <h2 id="incoming-call-title" className="text-xl font-extrabold text-[#06241D] tracking-tight">
+          <h2 id="incoming-call-title" className="text-xl font-extrabold text-[#183c3a] tracking-tight">
             {incomingCall.callerName || 'Consulta Médica'}
           </h2>
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="text-xs text-[#454e4e] font-medium">
             Videoconsulta veterinaria oficial en tiempo real
           </p>
         </div>
 
         {/* Security badge */}
-        <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-[#FAF8F5] py-2 px-3 rounded-xl border border-[#E8E2D5]">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+        <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#454e4e] bg-[#f2eddd] py-2 px-3 rounded-xl border border-[#e4dfd2]">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#315f5d]" />
           <span>Canal Cifrado • SENASA Res. 1442/2021</span>
         </div>
 
@@ -156,7 +168,7 @@ export const GlobalCallListener: React.FC = () => {
             type="button"
             data-testid="reject-incoming-call-button"
             onClick={handleReject}
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-full text-xs font-bold text-[#ae4d45] bg-[#fcece9] hover:bg-[#f9ded8] active:bg-[#f6cfc7] border border-[#e98b70]/50 transition-all cursor-pointer"
           >
             <PhoneOff className="w-4 h-4" />
             <span>Rechazar</span>
@@ -166,7 +178,7 @@ export const GlobalCallListener: React.FC = () => {
             type="button"
             data-testid="accept-incoming-call-button"
             onClick={handleAccept}
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-extrabold text-white bg-[#00875A] hover:bg-emerald-700 active:bg-emerald-800 shadow-md shadow-emerald-700/25 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-full text-xs font-extrabold text-white bg-[#609f9c] hover:bg-[#4d8d89] active:bg-[#315f5d] shadow-md shadow-[#609f9c]/25 transition-all cursor-pointer"
           >
             <PhoneCall className="w-4 h-4 animate-bounce" />
             <span>Atender</span>

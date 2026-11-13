@@ -43,4 +43,28 @@ describe('Landing Page', () => {
     expect(screen.getAllByText(/Privacidad/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Preguntas frecuentes/i).length).toBeGreaterThan(0);
   });
+
+  it('should keep FAQ card visible (is-visible intact) and toggle answer when clicked', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <Landing />
+      </MemoryRouter>
+    );
+
+    const faqRevealSlots = container.querySelectorAll('.faq-item-slot, .faq-item');
+    faqRevealSlots.forEach((el) => el.classList.add('is-visible'));
+
+    const questionBtn = screen.getByRole('button', { name: /¿Cómo puedo realizar una consulta\?/i });
+    const outerSlot = questionBtn.closest('.faq-item-slot') ?? questionBtn.closest('.faq-item');
+    expect(outerSlot).not.toBeNull();
+    expect(outerSlot!.classList.contains('is-visible')).toBe(true);
+
+    fireEvent.click(questionBtn);
+
+    const outerSlotAfter = questionBtn.closest('[data-reveal]');
+    expect(outerSlotAfter).not.toBeNull();
+    expect(outerSlotAfter!.classList.contains('is-visible')).toBe(true);
+    expect(questionBtn.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText(/Comenzá desde el botón/i)).toBeDefined();
+  });
 });

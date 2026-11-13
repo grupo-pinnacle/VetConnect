@@ -48,7 +48,7 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
           type="button"
           data-testid="print-prescription-button"
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#609f9c] hover:bg-[#4d8d89] active:bg-[#315f5d] text-white rounded-full text-xs font-bold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] focus-visible:ring-offset-2 cursor-pointer"
         >
           <Printer className="w-4 h-4" aria-hidden="true" />
           <span>Imprimir / Guardar PDF</span>
@@ -59,36 +59,36 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
       <article
         data-testid={testId}
         className={cn(
-          'bg-white border border-slate-300 rounded-2xl p-6 sm:p-8 max-w-2xl w-full shadow-lg font-sans text-slate-800 print:shadow-none print:border-none print:p-0 print:max-w-none print:m-0',
+          "bg-white border border-[#e4dfd2] rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-sm font-['Manrope',sans-serif] text-[#183c3a] print:shadow-none print:border-none print:p-0 print:max-w-none print:m-0",
           className
         )}
       >
         {/* Header */}
-        <header className="border-b border-slate-200 pb-5 mb-6">
-          <div className="flex justify-between items-start gap-4">
+        <header className="border-b border-[#e4dfd2] pb-5 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm flex-shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-[#d9e8e4] border border-[#609f9c]/30 flex items-center justify-center text-[#315f5d] flex-shrink-0">
                 <Stethoscope className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
                 <h1
                   data-testid="prescription-header-title"
-                  className="text-lg sm:text-xl font-bold font-display text-slate-900 tracking-tight"
+                  className="text-lg sm:text-xl font-extrabold text-[#183c3a] tracking-tight"
                 >
                   RECETA MÉDICA VETERINARIA DIGITAL
                 </h1>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Normativa Oficial SENASA Ley 25.326 — VetConnect
+                <p className="text-xs text-[#607674] font-semibold mt-0.5">
+                  Normativa Oficial SENASA Ley 25.326 — HuelliCam
                 </p>
               </div>
             </div>
 
-            <div className="text-right flex-shrink-0">
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-extrabold px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" aria-hidden="true" />
+            <div className="sm:text-right flex-shrink-0">
+              <span className="inline-flex items-center gap-1.5 text-[11px] uppercase font-extrabold px-3 py-1 bg-[#d9e8e4]/70 text-[#183c3a] border border-[#609f9c]/35 rounded-full">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#315f5d]" aria-hidden="true" />
                 <span>Documento Oficial Firmado</span>
               </span>
-              <p className="text-[10px] text-slate-400 mt-1">
+              <p className="text-[11px] text-[#607674] mt-1.5">
                 {formattedDate}
               </p>
             </div>
@@ -98,28 +98,28 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
         {/* Vet & Prescription Identification Grid */}
         <section
           data-testid="prescription-info-grid"
-          className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 border border-slate-100 p-4 rounded-xl mb-5 text-xs"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#fffbef] border border-[#e4dfd2] p-4 rounded-2xl mb-5 text-xs"
         >
           <div>
-            <span className="text-slate-400 uppercase font-bold text-[10px] block tracking-wider">
+            <span className="text-[#607674] uppercase font-bold text-[10px] block tracking-wider">
               Médico Veterinario Prescriptor
             </span>
-            <p data-testid="prescription-vet-name" className="font-bold text-slate-800 mt-0.5">
+            <p data-testid="prescription-vet-name" className="font-bold text-[#183c3a] mt-0.5">
               {vetName}
             </p>
-            <p className="text-slate-600 font-medium">
-              Matrícula Oficial: <span className="font-semibold text-slate-700">{licenseNumber}</span>
+            <p className="text-[#454e4e] font-medium">
+              Matrícula Oficial: <span className="font-bold text-[#183c3a]">{licenseNumber}</span>
             </p>
           </div>
 
           <div>
-            <span className="text-slate-400 uppercase font-bold text-[10px] block tracking-wider">
+            <span className="text-[#607674] uppercase font-bold text-[10px] block tracking-wider">
               Identificación de Receta
             </span>
-            <p data-testid="prescription-id" className="font-mono text-slate-800 font-bold mt-0.5">
+            <p data-testid="prescription-id" className="font-mono text-[#183c3a] font-bold mt-0.5">
               ID: {prescription.id}
             </p>
-            <p className="text-slate-500 text-[11px]">
+            <p className="text-[#607674] text-[11px]">
               Consulta: {prescription.consultationId || 'Cons-Directa'}
             </p>
           </div>
@@ -129,33 +129,33 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
         {pet && (
           <section
             data-testid="prescription-patient-info"
-            className="border border-slate-200 rounded-xl p-4 mb-5 bg-white shadow-sm"
+            className="border border-[#e4dfd2] rounded-2xl p-4 mb-5 bg-white"
           >
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#607674] mb-2">
               Datos Clínicos del Paciente
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Mascota</span>
-                <span data-testid="prescription-pet-name" className="font-bold text-slate-900 text-sm">
+                <span className="text-[#607674] block text-[10px] uppercase font-semibold">Mascota</span>
+                <span data-testid="prescription-pet-name" className="font-bold text-[#183c3a] text-sm">
                   {pet.name}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Especie / Raza</span>
-                <span className="text-slate-700 font-medium">
+                <span className="text-[#607674] block text-[10px] uppercase font-semibold">Especie / Raza</span>
+                <span className="text-[#183c3a] font-medium">
                   {pet.species} • {pet.breed}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Peso Registrado</span>
-                <span className="text-slate-700 font-medium">
+                <span className="text-[#607674] block text-[10px] uppercase font-semibold">Peso Registrado</span>
+                <span className="text-[#183c3a] font-medium">
                   {pet.weightKg !== undefined && pet.weightKg !== null ? `${pet.weightKg} kg` : 'N/R'}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Microchip ISO</span>
-                <span className="font-mono text-[11px] text-slate-700 font-medium">
+                <span className="text-[#607674] block text-[10px] uppercase font-semibold">Microchip ISO</span>
+                <span className="font-mono text-[11px] text-[#183c3a] font-medium">
                   {pet.microchip || 'No informado'}
                 </span>
               </div>
@@ -165,45 +165,45 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
 
         {/* Rp/ Pharmacological Details */}
         <section data-testid="prescription-details" className="mb-6 space-y-4">
-          <div className="border border-slate-200 rounded-xl p-4 sm:p-5 relative bg-white">
+          <div className="border border-[#e4dfd2] rounded-2xl p-4 sm:p-5 relative bg-white">
             <div className="flex items-center gap-2 mb-3">
               <span
                 aria-hidden="true"
-                className="font-display font-black text-2xl text-blue-600 leading-none select-none"
+                className="font-black text-2xl text-[#609f9c] leading-none select-none"
               >
                 Rp/
               </span>
-              <h2 className="font-bold text-slate-800 text-sm">
+              <h2 className="font-bold text-[#183c3a] text-sm">
                 Prescripción de Medicamento
               </h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="sm:col-span-1">
-                <span className="text-slate-500 block text-[11px]">Medicamento / Principio Activo:</span>
+                <span className="text-[#607674] block text-[11px]">Medicamento / Principio Activo:</span>
                 <span
                   data-testid="rx-medication"
-                  className="font-bold text-slate-900 text-sm block mt-0.5"
+                  className="font-bold text-[#183c3a] text-sm block mt-0.5"
                 >
                   {prescription.medication}
                 </span>
               </div>
 
               <div>
-                <span className="text-slate-500 block text-[11px]">Dosis & Frecuencia:</span>
+                <span className="text-[#607674] block text-[11px]">Dosis & Frecuencia:</span>
                 <span
                   data-testid="rx-dosage-frequency"
-                  className="font-bold text-slate-900 block mt-0.5"
+                  className="font-bold text-[#183c3a] block mt-0.5"
                 >
                   {prescription.dosage} ({prescription.frequency})
                 </span>
               </div>
 
               <div>
-                <span className="text-slate-500 block text-[11px]">Duración del Tratamiento:</span>
+                <span className="text-[#607674] block text-[11px]">Duración del Tratamiento:</span>
                 <span
                   data-testid="rx-duration"
-                  className="font-bold text-slate-900 block mt-0.5"
+                  className="font-bold text-[#183c3a] block mt-0.5"
                 >
                   {prescription.durationDays} días
                 </span>
@@ -211,13 +211,13 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
             </div>
           </div>
 
-          <div className="border border-amber-200/80 rounded-xl p-4 bg-amber-50/40">
-            <h3 className="font-bold text-amber-900 text-xs mb-1.5 flex items-center gap-1.5">
+          <div className="border border-[#e98b70]/40 rounded-2xl p-4 bg-[#f2eddd]/60">
+            <h3 className="font-bold text-[#183c3a] text-xs mb-1.5 flex items-center gap-1.5">
               <span>Indicaciones Médicas Veterinarias</span>
             </h3>
             <p
               data-testid="rx-indications"
-              className="text-xs text-slate-700 leading-relaxed font-normal whitespace-pre-line"
+              className="text-xs text-[#454e4e] leading-relaxed font-normal whitespace-pre-line"
             >
               {prescription.indications}
             </p>
@@ -225,13 +225,13 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
         </section>
 
         {/* QR Code Verification Section */}
-        <footer className="border-t border-slate-200 pt-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <footer className="border-t border-[#e4dfd2] pt-5 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-center sm:text-left">
-            <h4 className="text-xs font-bold text-slate-800">
+            <h4 className="text-xs font-bold text-[#183c3a]">
               Validación Digital Farmacéutica
             </h4>
-            <p className="text-[11px] text-slate-500 max-w-sm mt-0.5 leading-relaxed">
-              Documento oficial con validez nacional según Ley 25.506 y normativa SENASA. Escanee el código QR para validar la firma digital y matrícula profesional.
+            <p className="text-[11px] text-[#607674] max-w-sm mt-0.5 leading-relaxed">
+              Documento oficial con validez nacional según Ley 25.506 y normativa SENASA. Escaneá el código QR para validar la firma digital y matrícula profesional.
             </p>
           </div>
 
@@ -241,20 +241,20 @@ export const PrescriptionDoc: React.FC<PrescriptionDocProps> = ({
                 src={qrSource}
                 alt="QR Receta Oficial SENASA"
                 data-testid="prescription-qr-code"
-                className="w-24 h-24 sm:w-28 sm:h-28 border border-slate-200 p-1.5 rounded-lg bg-white shadow-sm object-contain"
+                className="w-24 h-24 sm:w-28 sm:h-28 border border-[#e4dfd2] p-1.5 rounded-2xl bg-white shadow-sm object-contain"
               />
             ) : (
               <div
                 data-testid="prescription-qr-code"
-                className="w-24 h-24 sm:w-28 sm:h-28 border border-slate-300 p-2 rounded-lg bg-slate-50 flex flex-col items-center justify-center text-center shadow-inner"
+                className="w-24 h-24 sm:w-28 sm:h-28 border border-[#e4dfd2] p-2 rounded-2xl bg-[#fffbef] flex flex-col items-center justify-center text-center"
               >
-                <div className="w-10 h-10 border-2 border-slate-400 border-dashed rounded flex items-center justify-center mb-1">
-                  <span className="text-[10px] font-mono font-bold text-slate-600">QR</span>
+                <div className="w-10 h-10 border-2 border-[#609f9c] border-dashed rounded-lg flex items-center justify-center mb-1">
+                  <span className="text-[10px] font-mono font-bold text-[#315f5d]">QR</span>
                 </div>
-                <span className="text-[8px] font-mono text-slate-400 leading-tight">SENASA VAL</span>
+                <span className="text-[8px] font-mono text-[#607674] leading-tight">SENASA VAL</span>
               </div>
             )}
-            <span className="text-[9px] font-mono text-slate-400 font-semibold mt-1 tracking-wider uppercase">
+            <span className="text-[9px] font-mono text-[#607674] font-semibold mt-1 tracking-wider uppercase">
               VERIFICABLE SENASA
             </span>
           </div>

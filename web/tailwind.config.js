@@ -5,21 +5,23 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          800: '#1e40af',
-          900: '#1e3a8a', // Brand Primary
+          50: '#f3faf8',
+          100: '#d9e8e4',
+          500: '#609f9c',
+          600: '#4d8d89',
+          800: '#315f5d',
+          900: '#183c3a', // HuelliCam Brand Ink
         },
         secondary: {
-          500: '#14b8a6',
-          600: '#0d9488', // Brand Secondary
+          50: '#fffbef',
+          100: '#f2eddd',
+          500: '#609f9c',
+          600: '#315f5d',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['"Manrope"', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Manrope"', 'system-ui', '-apple-system', 'sans-serif'],
       },
     },
   },

@@ -13,7 +13,7 @@ export const HangUpButton: React.FC<HangUpButtonProps> = ({
       data-testid={testId || 'hang-up-btn'}
       disabled={isLoading}
       onClick={onHangUp}
-      className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-sm font-semibold rounded-xl shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#ae4d45] hover:bg-[#8e3b34] active:bg-[#76302a] text-white text-sm font-bold rounded-full shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-[#e98b70] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       <svg
         className="w-4 h-4 shrink-0"

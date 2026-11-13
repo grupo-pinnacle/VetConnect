@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 825" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Crisp diagonal dot halftone matching original hero illustration -->
+    <pattern id="hero-halftone" width="10.5" height="10.5" patternUnits="userSpaceOnUse" patternTransform="rotate(26)">
+      <circle cx="3" cy="3" r="1.55" fill="#4f9b96" fill-opacity="0.46"/>
+      <circle cx="8" cy="8" r="1.35" fill="#4f9b96" fill-opacity="0.3"/>
+    </pattern>
+    <pattern id="hero-halftone-soft" width="11.5" height="11.5" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)">
+      <circle cx="3.2" cy="3.2" r="1.45" fill="#5da6a1" fill-opacity="0.4"/>
+      <circle cx="8.8" cy="8.8" r="1.2" fill="#5da6a1" fill-opacity="0.24"/>
+    </pattern>
+    <!-- Organic rounded-rhomboid / near-circular dots matching original hero illustration -->
+    <path id="hero-dot-a" d="M0 -3.5 C1.9 -3.3 3.4 -1.6 3.4 0.1 C3.4 1.9 1.8 3.5 -0.1 3.6 C-2.0 3.5 -3.5 1.9 -3.4 -0.1 C-3.3 -1.9 -1.8 -3.5 0 -3.5 Z"/>
+    <path id="hero-dot-b" d="M0.2 -3.3 C2.1 -3.0 3.4 -1.3 3.2 0.5 C3.0 2.3 1.4 3.5 -0.3 3.4 C-2.1 3.3 -3.3 1.7 -3.2 -0.3 C-3.1 -2.1 -1.5 -3.5 0.2 -3.3 Z"/>
+  </defs>
+
+  <!-- 1. Top-left halftone blob (soft mint tint + crisp dots) + organic rounded-rhomboid dots -->
+  <path d="M-24 20 C78 14, 178 36, 198 128 C218 220, 146 314, 34 352 C-6 366, -24 360, -24 360 Z" fill="#d9efe9" fill-opacity="0.42"/>
+  <path d="M-24 20 C78 14, 178 36, 198 128 C218 220, 146 314, 34 352 C-6 366, -24 360, -24 360 Z" fill="url(#hero-halftone)"/>
+  <g fill="#21726d" fill-opacity="0.92">
+    <use href="#hero-dot-a" transform="translate(188, 22) rotate(18) scale(0.95)"/>
+    <use href="#hero-dot-b" transform="translate(154, 46) rotate(-22) scale(0.82)"/>
+    <use href="#hero-dot-a" transform="translate(216, 48) rotate(32) scale(0.92)"/>
+    <use href="#hero-dot-b" transform="translate(268, 56) rotate(12) scale(0.86)"/>
+    <use href="#hero-dot-b" transform="translate(114, 70) rotate(-15) scale(1.06)"/>
+    <use href="#hero-dot-a" transform="translate(174, 88) rotate(24) scale(1.12)"/>
+    <use href="#hero-dot-b" transform="translate(238, 92) rotate(42) scale(0.92)"/>
+    <use href="#hero-dot-a" transform="translate(86, 110) rotate(-18) scale(1.14)"/>
+    <use href="#hero-dot-b" transform="translate(142, 126) rotate(14) scale(1.16)"/>
+    <use href="#hero-dot-a" transform="translate(206, 136) rotate(36) scale(1.05)"/>
+    <use href="#hero-dot-b" transform="translate(264, 136) rotate(-28) scale(0.88)"/>
+    <use href="#hero-dot-b" transform="translate(64, 166) rotate(-10) scale(1.05)"/>
+    <use href="#hero-dot-a" transform="translate(110, 180) rotate(22) scale(1.14)"/>
+    <use href="#hero-dot-b" transform="translate(172, 186) rotate(-14) scale(1.18)"/>
+    <use href="#hero-dot-a" transform="translate(228, 190) rotate(28) scale(0.98)"/>
+    <use href="#hero-dot-b" transform="translate(280, 198) rotate(40) scale(0.82)"/>
+    <use href="#hero-dot-a" transform="translate(46, 224) rotate(-24) scale(0.94)"/>
+    <use href="#hero-dot-b" transform="translate(86, 232) rotate(16) scale(1.02)"/>
+    <use href="#hero-dot-a" transform="translate(136, 240) rotate(30) scale(1.08)"/>
+    <use href="#hero-dot-b" transform="translate(64, 282) rotate(8) scale(0.96)"/>
+    <use href="#hero-dot-a" transform="translate(112, 294) rotate(-20) scale(1.06)"/>
+    <use href="#hero-dot-b" transform="translate(144, 326) rotate(26) scale(0.92)"/>
+    <use href="#hero-dot-a" transform="translate(82, 342) rotate(-12) scale(0.9)"/>
+    <use href="#hero-dot-b" transform="translate(118, 360) rotate(20) scale(0.86)"/>
+  </g>
+
+  <!-- 2. Top-right soft halftone accent + organic rounded-rhomboid dots -->
+  <path d="M1284 -12 C1274 58, 1322 118, 1404 126 C1434 129, 1458 124, 1458 124 L1458 -12 Z" fill="#d9efe9" fill-opacity="0.34"/>
+  <path d="M1284 -12 C1274 58, 1322 118, 1404 126 C1434 129, 1458 124, 1458 124 L1458 -12 Z" fill="url(#hero-halftone-soft)"/>
+  <g fill="#21726d" fill-opacity="0.9">
+    <use href="#hero-dot-a" transform="translate(1206, 22) rotate(22) scale(0.84)"/>
+    <use href="#hero-dot-b" transform="translate(1254, 24) rotate(-18) scale(0.9)"/>
+    <use href="#hero-dot-a" transform="translate(1308, 18) rotate(34) scale(0.98)"/>
+    <use href="#hero-dot-b" transform="translate(1364, 30) rotate(12) scale(1.04)"/>
+    <use href="#hero-dot-a" transform="translate(1414, 24) rotate(-24) scale(0.92)"/>
+    <use href="#hero-dot-b" transform="translate(1268, 60) rotate(28) scale(1.02)"/>
+    <use href="#hero-dot-a" transform="translate(1324, 66) rotate(-14) scale(1.12)"/>
+    <use href="#hero-dot-b" transform="translate(1388, 72) rotate(20) scale(1.1)"/>
+    <use href="#hero-dot-a" transform="translate(1296, 104) rotate(38) scale(1.12)"/>
+    <use href="#hero-dot-b" transform="translate(1350, 116) rotate(-20) scale(1.06)"/>
+    <use href="#hero-dot-a" transform="translate(1410, 114) rotate(16) scale(1.02)"/>
+    <use href="#hero-dot-b" transform="translate(1328, 154) rotate(26) scale(1.05)"/>
+    <use href="#hero-dot-a" transform="translate(1386, 160) rotate(-12) scale(1.08)"/>
+    <use href="#hero-dot-b" transform="translate(1368, 198) rotate(30) scale(0.96)"/>
+    <use href="#hero-dot-a" transform="translate(1420, 202) rotate(14) scale(0.92)"/>
+    <use href="#hero-dot-b" transform="translate(1402, 236) rotate(-22) scale(0.86)"/>
+  </g>
+
+  <!-- 3. Mid-left rays + 4-point star in open margin above card 1 -->
+  <g stroke="#246e6a" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <line x1="60" y1="416" x2="92" y2="436" stroke-width="2.8"/>
+    <line x1="48" y1="452" x2="86" y2="452" stroke-width="2.8"/>
+    <line x1="64" y1="488" x2="96" y2="472" stroke-width="2.8"/>
+    <path d="M122 504 Q126 521 142 525 Q126 529 122 546 Q118 529 102 525 Q118 521 122 504 Z" stroke-width="2.4" fill="#edf7f5" fill-opacity="0.78"/>
+  </g>
+
+  <!-- 4. Mid-right 4-point star + 3 rays in open margin -->
+  <g stroke="#246e6a" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M1374 304 Q1379 324 1398 329 Q1379 334 1374 354 Q1369 334 1350 329 Q1369 324 1374 304 Z" stroke-width="2.4" fill="#edf7f5" fill-opacity="0.78"/>
+    <line x1="1320" y1="380" x2="1286" y2="364" stroke-width="2.7"/>
+    <line x1="1316" y1="412" x2="1274" y2="412" stroke-width="2.7"/>
+    <line x1="1322" y1="444" x2="1288" y2="458" stroke-width="2.7"/>
+  </g>
+
+  <!-- 5. Bottom-left organic halftone hill + dashed curve + accent dots -->
+  <path d="M-20 650 C96 614, 174 700, 288 738 C368 764, 444 786, 504 832 L-20 832 Z" fill="#d9efe9" fill-opacity="0.38"/>
+  <path d="M-20 650 C96 614, 174 700, 288 738 C368 764, 444 786, 504 832 L-20 832 Z" fill="url(#hero-halftone-soft)"/>
+  <path d="M-12 674 C86 632, 166 756, 260 764 C354 772, 418 724, 488 808" fill="none" stroke="#2c7571" stroke-width="2.4" stroke-dasharray="8 7" stroke-linecap="round" opacity="0.8"/>
+  <g fill="#2e7a76" fill-opacity="0.78">
+    <circle cx="48" cy="616" r="2.2"/><circle cx="104" cy="620" r="2.4"/><circle cx="166" cy="642" r="2.2"/>
+    <circle cx="226" cy="676" r="2.3"/><circle cx="298" cy="696" r="2.1"/><circle cx="374" cy="712" r="2.2"/>
+  </g>
+
+  <!-- 6. Bottom-right sweeping halftone wave + outer scatter dots + organic rounded-rhomboid dots -->
+  <path d="M1458 394 C1370 436, 1344 544, 1226 604 C1126 654, 1036 672, 996 742 C982 768, 1020 794, 1138 800 L1458 800 Z" fill="#d9efe9" fill-opacity="0.42"/>
+  <path d="M1458 394 C1370 436, 1344 544, 1226 604 C1126 654, 1036 672, 996 742 C982 768, 1020 794, 1138 800 L1458 800 Z" fill="url(#hero-halftone)"/>
+  <!-- Scatter dots right outside wave edge matching reference illustration -->
+  <g fill="#26736f" fill-opacity="0.82">
+    <circle cx="1296" cy="482" r="2.2"/><circle cx="1264" cy="496" r="2.4"/><circle cx="1234" cy="518" r="2.3"/>
+    <circle cx="1272" cy="528" r="2.0"/><circle cx="1196" cy="542" r="2.3"/><circle cx="1230" cy="558" r="2.5"/>
+    <circle cx="1164" cy="576" r="2.2"/><circle cx="1202" cy="586" r="2.4"/><circle cx="1142" cy="606" r="2.2"/>
+    <circle cx="1178" cy="614" r="2.0"/><circle cx="1116" cy="628" r="2.1"/><circle cx="1078" cy="658" r="2.2"/>
+  </g>
+  <!-- Bold rounded-rhomboid dots over right wave -->
+  <g fill="#21726d" fill-opacity="0.92">
+    <use href="#hero-dot-a" transform="translate(1342, 492) rotate(18) scale(1.02)"/>
+    <use href="#hero-dot-b" transform="translate(1386, 510) rotate(-20) scale(0.96)"/>
+    <use href="#hero-dot-a" transform="translate(1298, 534) rotate(32) scale(1.06)"/>
+    <use href="#hero-dot-b" transform="translate(1358, 546) rotate(12) scale(1.12)"/>
+    <use href="#hero-dot-a" transform="translate(1414, 558) rotate(-26) scale(1.0)"/>
+    <use href="#hero-dot-b" transform="translate(1264, 578) rotate(24) scale(1.04)"/>
+    <use href="#hero-dot-a" transform="translate(1324, 592) rotate(-14) scale(1.16)"/>
+    <use href="#hero-dot-b" transform="translate(1388, 604) rotate(36) scale(1.1)"/>
+    <use href="#hero-dot-a" transform="translate(1230, 622) rotate(-22) scale(1.02)"/>
+    <use href="#hero-dot-b" transform="translate(1290, 636) rotate(18) scale(1.12)"/>
+    <use href="#hero-dot-a" transform="translate(1356, 650) rotate(28) scale(1.1)"/>
+    <use href="#hero-dot-b" transform="translate(1416, 662) rotate(-16) scale(0.96)"/>
+    <use href="#hero-dot-a" transform="translate(1254, 678) rotate(14) scale(1.06)"/>
+    <use href="#hero-dot-b" transform="translate(1320, 692) rotate(-24) scale(1.08)"/>
+    <use href="#hero-dot-a" transform="translate(1382, 704) rotate(22) scale(1.04)"/>
+    <use href="#hero-dot-b" transform="translate(1296, 738) rotate(34) scale(0.95)"/>
+    <use href="#hero-dot-a" transform="translate(1364, 746) rotate(-10) scale(0.98)"/>
+  </g>
+</svg>

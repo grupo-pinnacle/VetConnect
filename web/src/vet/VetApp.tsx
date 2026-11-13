@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "../context/AuthContext";
+import ClientScopedStyle from "../styles/ClientScopedStyle";
 import "./vet.css";
 import { Button, EmptyState, Icon, Logo, PageHeader, go, type IconName } from "../shared";
 import { getPatient, triageMeta, type QueueItem, type Triage } from "./data";
@@ -119,11 +120,11 @@ function VetShell({ path, children }: { path: string; children: ReactNode }) {
         {admin.map(item)}
       </nav>
       {user ? (
-        <button className="nav-item" style={{ marginTop: 8, color: "var(--red, #ef4444)" }} onClick={() => logout().then(() => { window.location.href = "/login"; })}>
+        <button className="nav-item" style={{ marginTop: 8, color: "#f5a399" }} onClick={() => { setMenu(false); logout().then(() => { window.location.href = "/login"; }); }}>
           <Icon name="close"/><span>Cerrar sesión</span>
         </button>
       ) : (
-        <button className="nav-item" style={{ marginTop: 8, color: "var(--teal, #0d9488)" }} onClick={() => { window.location.href = "/login"; }}>
+        <button className="nav-item" style={{ marginTop: 8, color: "#a8d5d3" }} onClick={() => { setMenu(false); window.location.href = "/login"; }}>
           <Icon name="user"/><span>Iniciar sesión</span>
         </button>
       )}
@@ -361,6 +362,7 @@ export default function VetApp({ path }: { path: string }) {
   }, [user]);
   const state = new URLSearchParams(window.location.search).get("state");
   return <VetProvider forceEmpty={state === "empty"} key={state ?? "ok"}>
+    <ClientScopedStyle />
     <VetShell path={path}>
       {state === "loading" ? <Loading/> : state === "error" ? <div className="panel"><EmptyState icon="alert" title="No pudimos cargar esta información" text="Revisá tu conexión e intentá nuevamente."/><div className="v-retry"><Button variant="secondary" onClick={() => go(path)}>Reintentar</Button></div></div> : <Router path={path}/>}
     </VetShell>

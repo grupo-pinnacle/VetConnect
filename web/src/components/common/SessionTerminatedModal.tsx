@@ -26,47 +26,47 @@ export const SessionTerminatedModal: React.FC = () => {
       aria-modal="true"
       aria-labelledby="session-terminated-title"
       data-testid="session-terminated-modal"
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-      style={{ backgroundColor: '#0e2625' }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 font-['Manrope',sans-serif]"
+      style={{ backgroundColor: 'rgba(24, 60, 58, 0.72)', backdropFilter: 'blur(6px)' }}
     >
       <div
-        className="rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-200"
+        className="rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl text-center space-y-5 animate-fadeIn"
         style={{
           backgroundColor: '#fffbef',
-          border: isBanned ? '2px solid #e98b70' : '2px solid #183c3a',
+          border: isBanned ? '1.5px solid #e98b70' : '1.5px solid #e4dfd2',
           color: '#183c3a',
         }}
       >
         <div
-          className="mx-auto w-16 h-16 rounded-full flex items-center justify-center animate-bounce"
+          className="mx-auto w-16 h-16 rounded-full flex items-center justify-center"
           style={{
-            backgroundColor: isBanned ? '#fbeee9' : '#faebe7',
-            border: isBanned ? '2px solid #c96b52' : '2px solid #e98b70',
-            color: isBanned ? '#c96b52' : '#e98b70',
+            backgroundColor: isBanned ? '#fbeee9' : '#d9e8e4',
+            border: isBanned ? '1.5px solid #e98b70' : '1.5px solid #609f9c',
+            color: isBanned ? '#ae4d45' : '#315f5d',
           }}
         >
-          <ShieldAlert className="w-8 h-8" />
+          <ShieldAlert className="w-7 h-7" aria-hidden="true" />
         </div>
 
         <div className="space-y-2">
           {isBanned && (
             <span
               className="inline-block text-xs uppercase tracking-wider font-extrabold px-3 py-1 rounded-full mb-1"
-              style={{ backgroundColor: '#fbeee9', color: '#c96b52', border: '1px solid #f3c2b5' }}
+              style={{ backgroundColor: '#fbeee9', color: '#ae4d45', border: '1px solid #f3c2b5' }}
             >
               Baneo Permanente
             </span>
           )}
           <h2
             id="session-terminated-title"
-            className="text-xl sm:text-2xl font-black tracking-tight"
+            className="text-xl sm:text-2xl font-extrabold tracking-tight"
             style={{ color: isBanned ? '#8b2615' : '#183c3a' }}
           >
             {isBanned ? 'Cuenta Suspendida Definitivamente' : 'Sesión cerrada en este dispositivo'}
           </h2>
           <p
             className="text-sm font-medium leading-relaxed"
-            style={{ color: '#315f5d' }}
+            style={{ color: '#607674' }}
           >
             {sessionTerminated.message ||
               (isBanned
@@ -79,19 +79,11 @@ export const SessionTerminatedModal: React.FC = () => {
           <button
             type="button"
             onClick={handleAction}
-            className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-bold text-white transition-colors shadow-md cursor-pointer"
-            style={{
-              backgroundColor: isBanned ? '#8b2615' : '#183c3a',
-              border: isBanned ? '1px solid #701c0e' : '1px solid #315f5d',
-            }}
-            onMouseOver={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = isBanned ? '#701c0e' : '#254d4a';
-            }}
-            onMouseOut={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = isBanned ? '#8b2615' : '#183c3a';
-            }}
+            className={`w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-full font-bold text-sm text-white transition-colors shadow-sm cursor-pointer ${
+              isBanned ? 'bg-[#ae4d45] hover:bg-[#8d3d36]' : 'bg-[#609f9c] hover:bg-[#4d8d89]'
+            }`}
           >
-            <LogIn className="w-4 h-4" />
+            <LogIn className="w-4 h-4" aria-hidden="true" />
             <span>{isBanned ? 'Entendido / Ir al inicio' : 'Volver a iniciar sesión'}</span>
           </button>
         </div>

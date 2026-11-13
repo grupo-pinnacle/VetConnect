@@ -17,7 +17,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   return (
     <div
       data-testid={testId}
-      className={cn('animate-pulse bg-slate-200/80 rounded-lg', className)}
+      className={cn('animate-pulse bg-[#e4dfd2]/70 rounded-xl', className)}
       aria-hidden="true"
       {...props}
     />
@@ -35,7 +35,7 @@ export const PetCardSkeleton: React.FC<{ className?: string; 'data-testid'?: str
     <div
       data-testid={testId}
       className={cn(
-        'bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between',
+        'bg-white rounded-3xl border border-[#e4dfd2] p-4 shadow-sm flex flex-col justify-between',
         className
       )}
       aria-hidden="true"
@@ -86,7 +86,7 @@ export const ConsultationQueueSkeleton: React.FC<{
       {Array.from({ length: rows }).map((_, idx) => (
         <div
           key={idx}
-          className="p-4 border border-slate-200 rounded-xl bg-white shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+          className="p-4 border border-[#e4dfd2] rounded-2xl bg-white shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         >
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
@@ -98,8 +98,8 @@ export const ConsultationQueueSkeleton: React.FC<{
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Skeleton className="h-8 w-24 rounded-lg" />
-            <Skeleton className="h-8 w-24 rounded-lg" />
+            <Skeleton className="h-8 w-24 rounded-full" />
+            <Skeleton className="h-8 w-24 rounded-full" />
           </div>
         </div>
       ))}
@@ -118,13 +118,13 @@ export const PrescriptionDocSkeleton: React.FC<{
     <div
       data-testid={testId}
       className={cn(
-        'bg-white border border-slate-300 rounded-2xl p-6 sm:p-8 max-w-2xl w-full shadow-lg space-y-6',
+        'bg-white border border-[#e4dfd2] rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-lg space-y-6',
         className
       )}
       aria-hidden="true"
     >
       {/* Header skeleton */}
-      <div className="border-b border-slate-200 pb-5 flex justify-between items-start gap-4">
+      <div className="border-b border-[#e4dfd2] pb-5 flex justify-between items-start gap-4">
         <div className="flex items-center gap-3">
           <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
           <div className="space-y-1.5">
@@ -139,7 +139,7 @@ export const PrescriptionDocSkeleton: React.FC<{
       </div>
 
       {/* Info grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 border border-slate-100 p-4 rounded-xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#fffbef] border border-[#e4dfd2] p-4 rounded-2xl">
         <div className="space-y-1.5">
           <Skeleton className="h-3 w-28 rounded" />
           <Skeleton className="h-4 w-36 rounded" />
@@ -153,7 +153,7 @@ export const PrescriptionDocSkeleton: React.FC<{
       </div>
 
       {/* Patient info box */}
-      <div className="border border-slate-200 rounded-xl p-4 space-y-3">
+      <div className="border border-[#e4dfd2] rounded-2xl p-4 space-y-3">
         <Skeleton className="h-3.5 w-32 rounded" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Skeleton className="h-8 rounded" />
@@ -165,7 +165,7 @@ export const PrescriptionDocSkeleton: React.FC<{
 
       {/* Rp/ pharmacological block */}
       <div className="space-y-4">
-        <div className="border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3">
+        <div className="border border-[#e4dfd2] rounded-2xl p-4 sm:p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Skeleton className="h-6 w-8 rounded" />
             <Skeleton className="h-4 w-36 rounded" />
@@ -177,7 +177,7 @@ export const PrescriptionDocSkeleton: React.FC<{
           </div>
         </div>
 
-        <div className="border border-amber-200/60 rounded-xl p-4 bg-amber-50/20 space-y-2">
+        <div className="border border-[#e4dfd2] rounded-2xl p-4 bg-[#f2eddd]/40 space-y-2">
           <Skeleton className="h-3.5 w-40 rounded" />
           <Skeleton className="h-3 w-full rounded" />
           <Skeleton className="h-3 w-4/5 rounded" />
@@ -185,12 +185,12 @@ export const PrescriptionDocSkeleton: React.FC<{
       </div>
 
       {/* Footer & QR code */}
-      <div className="border-t border-slate-200 pt-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="border-t border-[#e4dfd2] pt-5 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="space-y-2 w-full sm:w-auto">
           <Skeleton className="h-3.5 w-36 rounded" />
           <Skeleton className="h-3 w-64 rounded" />
         </div>
-        <Skeleton className="w-24 h-24 rounded-lg flex-shrink-0" />
+        <Skeleton className="w-24 h-24 rounded-xl flex-shrink-0" />
       </div>
     </div>
   );

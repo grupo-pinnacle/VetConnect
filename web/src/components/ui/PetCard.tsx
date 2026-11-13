@@ -15,8 +15,8 @@ export const PetCard: React.FC<PetCardProps> = ({
     <div
       data-testid={testId || `pet-card-${pet.id}`}
       onClick={() => onSelect && onSelect(pet)}
-      className={`bg-white rounded-xl border p-4 transition-all shadow-sm hover:shadow-md flex flex-col justify-between cursor-pointer ${
-        selected ? 'ring-2 ring-blue-600 border-blue-600' : 'border-slate-200'
+      className={`bg-white rounded-3xl border p-4 transition-all shadow-sm hover:shadow-md flex flex-col justify-between cursor-pointer ${
+        selected ? 'ring-2 ring-[#609f9c] border-[#609f9c]' : 'border-[#183c3a]/15'
       } ${className}`}
     >
       <div className="flex items-start gap-3">
@@ -27,28 +27,28 @@ export const PetCard: React.FC<PetCardProps> = ({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-base truncate">{pet.name}</h3>
+            <h3 className="font-bold text-[#183c3a] text-base truncate">{pet.name}</h3>
             <Badge variant="neutral" size="sm">
               {pet.species}
             </Badge>
           </div>
           {pet.breed && (
-            <p className="text-xs text-slate-500 truncate mt-0.5">{pet.breed}</p>
+            <p className="text-xs text-[#607674] truncate mt-0.5">{pet.breed}</p>
           )}
-          <div className="flex items-center gap-3 mt-2 text-xs text-slate-600">
+          <div className="flex items-center gap-3 mt-2 text-xs text-[#454e4e]">
             {pet.weightKg && (
               <span>
-                <strong className="text-slate-800">{pet.weightKg}</strong> kg
+                <strong className="text-[#183c3a]">{pet.weightKg}</strong> kg
               </span>
             )}
             {pet.sex && (
               <span>
-                Sexo: <strong className="text-slate-800">{pet.sex}</strong>
+                Sexo: <strong className="text-[#183c3a]">{pet.sex}</strong>
               </span>
             )}
           </div>
           {pet.microchip && (
-            <div className="mt-2 text-xs font-mono text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 inline-block">
+            <div className="mt-2 text-xs font-mono text-[#454e4e] bg-[#f2eddd]/60 px-2.5 py-0.5 rounded-full border border-[#e4dfd2] inline-block">
               CHIP: {pet.microchip}
             </div>
           )}
@@ -56,7 +56,7 @@ export const PetCard: React.FC<PetCardProps> = ({
       </div>
 
       {onRequestConsultation && (
-        <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+        <div className="mt-4 pt-3 border-t border-[#e4dfd2]/70 flex justify-end">
           <button
             type="button"
             data-testid={`request-consultation-${pet.id}`}
@@ -64,7 +64,7 @@ export const PetCard: React.FC<PetCardProps> = ({
               e.stopPropagation();
               onRequestConsultation(pet);
             }}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+            className="px-4 py-1.5 bg-[#609f9c] hover:bg-[#315f5d] text-white rounded-full text-xs font-bold shadow-sm transition-colors"
           >
             Iniciar Consulta
           </button>

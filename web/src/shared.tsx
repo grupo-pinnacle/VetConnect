@@ -121,7 +121,14 @@ export function Logo({ to }: { to?: string }) {
     }
   } catch {}
   const target = to || defaultTo;
-  return <button className="logo" onClick={() => go(target)} aria-label="Ir al inicio"><span className="logo__mark"><img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} /></span><span>Huellicam</span></button>;
+  return (
+    <button className="logo" onClick={() => go(target)} aria-label="Ir al inicio">
+      <span className="logo__mark logo__mark--brand" aria-hidden="true" />
+      <span>
+        Huelli<span style={{ color: "var(--teal, #609f9c)" }}>Cam</span>
+      </span>
+    </button>
+  );
 }
 
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
@@ -162,11 +169,13 @@ export function EmptyState({ icon, title, text, action, onAction }: { icon: Icon
   const handleClick = () => {
     if (onAction) {
       onAction();
+    } else if (action === "Reintentar") {
+      window.location.reload();
     } else if (action === "Volver al inicio") {
       go("/client/dashboard");
     }
   };
-  return <div className="empty-state"><span><Icon name={icon} size={27}/></span><h2>{title}</h2><p>{text}</p>{action && <Button icon="plus" onClick={handleClick}>{action}</Button>}</div>;
+  return <div className="empty-state"><span><Icon name={icon} size={27}/></span><h2>{title}</h2><p>{text}</p>{action && <Button icon={action === "Reintentar" ? "repeat" : action === "Volver al inicio" ? "arrow" : "plus"} onClick={handleClick}>{action}</Button>}</div>;
 }
 
 export function Modal({ title, text, cancel, confirm, destructive, onClose, onConfirm, children }: { title: string; text: string; cancel: string; confirm: string; destructive?: boolean; onClose: () => void; onConfirm?: () => void; children?: ReactNode }) {

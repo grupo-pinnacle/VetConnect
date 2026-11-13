@@ -7,11 +7,14 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { Icon, Logo } from "./Landing";
+import { Link, useNavigate } from "react-router-dom";
+import { Icon, Logo } from "../components/common/Brand";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { getRegisterDraft, saveRegisterDraft, clearRegisterDraft } from "./Register";
-import "../styles/auth.css";
+import ScopedStyle from "../components/common/ScopedStyle";
+import LandingScopedStyle from "../styles/LandingScopedStyle";
+import authCss from "../styles/auth.css?inline";
 
 type AuthRoute =
   | "/login"
@@ -22,8 +25,10 @@ type AuthRoute =
 
 type FieldErrors = Record<string, string>;
 
-const authPhoto =
-  "https://images.unsplash.com/photo-1774218318818-c201207699d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGF0JTIwaG9tZSUyMHdpdGglMjBwZXQlMjByYWJiaXQlMjB3YXJtJTIwbmF0dXJhbCUyMGxpZ2h0fGVufDF8fHx8MTc5MTIyODc4Mnww&ixlib=rb-4.1.0&q=85&w=1400";
+const tutorIllustration = "/assets/6f3a5.png";
+const vetIllustration = "/assets/f4604.png";
+const tutorCardThumb = "/assets/role-tutor-thumb.png";
+const vetCardThumb = "/assets/role-vet-thumb.png";
 
 function normalizeRoute(pathname: string): AuthRoute {
   if (pathname === "/register/tutor") return "/register/tutor";
@@ -34,7 +39,7 @@ function normalizeRoute(pathname: string): AuthRoute {
 }
 
 function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
 function passwordScore(password: string) {
@@ -82,13 +87,13 @@ function AuthShell({
   return (
     <main className={`auth-shell ${professional ? "auth-shell--professional" : ""}`}>
       <section className="auth-visual" aria-label="Huellicam, conexión y cuidado veterinario">
-        <a className="auth-visual__back" href="/">
+        <Link className="auth-visual__back" to="/">
           <Icon name="arrow" />
-          Volver al sitio
-        </a>
+          Volver al inicio
+        </Link>
         <div className="auth-visual__copy">
           <p className="eyebrow eyebrow--light">
-            {professional ? "Un espacio para profesionales" : "Conexión + cuidado + cercanía"}
+            {professional ? "Un espacio para profesionales" : "Conexión · Cuidado · Cercanía"}
           </p>
           <h1>
             {professional ? (
@@ -116,22 +121,43 @@ function AuthShell({
           </p>
         </div>
         <div className="auth-visual__photo">
-          <img src={authPhoto} alt="Tutora sosteniendo con cuidado a su conejo" />
+          <picture>
+            <source
+              media="(max-width: 560px)"
+              type="image/webp"
+              srcSet={professional ? "/assets/f4604-480.webp" : "/assets/6f3a5-480.webp"}
+            />
+            <img
+              src={professional ? vetIllustration : tutorIllustration}
+              alt={professional ? "Veterinaria realizando una videoconsulta" : "Tutora junto a su mascota en videoconsulta"}
+              width={960}
+              height={540}
+              decoding="async"
+              fetchpriority="high"
+            />
+          </picture>
         </div>
         <div className="auth-visual__connection">
           <span><Icon name={professional ? "calendar" : "heart"} /></span>
           <div>
-            <strong>{professional ? "Agenda conectada" : "Cuidado que se siente cerca"}</strong>
-            <small>{professional ? "Pacientes, consultas y seguimiento" : "Profesionales para cada especie"}</small>
+            <strong>{professional ? "Agenda conectada." : "Cuidado que se siente cerca."}</strong>
           </div>
         </div>
-        <span className="auth-visual__orb auth-visual__orb--one" />
-        <span className="auth-visual__orb auth-visual__orb--two" />
       </section>
       <section className="auth-panel">
-        <div className="auth-panel__mobile-brand"><Logo /></div>
+        <div className="auth-panel__mobile-brand">
+          <Link className="auth-mobile-back" to="/">
+            <Icon name="arrow" />
+            Volver al inicio
+          </Link>
+          <Logo />
+          <span className="auth-brand-tagline">Videoconsultas veterinarias</span>
+        </div>
         <div className="auth-panel__content">{children}</div>
-        <p className="auth-panel__legal">© 2025 Huellicam · Privacidad · Términos</p>
+        <p className="auth-panel__legal">
+          © {new Date().getFullYear()} HuelliCam · <Link to="/privacy">Privacidad</Link> ·{" "}
+          <Link to="/terms">Términos</Link>
+        </p>
       </section>
     </main>
   );
@@ -146,7 +172,10 @@ function AuthHeader({
 }) {
   return (
     <header className="auth-header">
-      <Logo />
+      <div className="auth-header__brand">
+        <Logo />
+        <span className="auth-brand-tagline">Videoconsultas veterinarias</span>
+      </div>
       <h2>{title}</h2>
       <p>{copy}</p>
     </header>
@@ -311,14 +340,13 @@ function SuccessState({
 
 function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
   const { login } = useAuth();
+  const routerNavigate = useNavigate();
   const [data, setData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [destination, setDestination] = useState("/client/dashboard");
   const [serverError, setServerError] = useState("");
-  const destination = data.email.toLowerCase().startsWith("vet")
-    ? "/vet/dashboard"
-    : "/client/dashboard";
 
   const update = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setData((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -328,8 +356,9 @@ function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    const trimmedEmail = data.email.trim();
     const next: FieldErrors = {};
-    if (!isValidEmail(data.email)) next.email = "El email ingresado no es válido.";
+    if (!isValidEmail(trimmedEmail)) next.email = "El email ingresado no es válido.";
     if (!data.password) next.password = "Ingresá tu contraseña.";
     if (Object.keys(next).length) {
       setErrors(next);
@@ -338,12 +367,30 @@ function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
     setLoading(true);
     setServerError("");
     try {
-      await login({ email: data.email, password: data.password });
+      const loggedUser = await login({ email: trimmedEmail, password: data.password });
+      const target =
+        loggedUser.role === "VET"
+          ? "/vet/dashboard"
+          : loggedUser.role === "ADMIN"
+          ? "/admin/dashboard"
+          : "/client/dashboard";
+      setDestination(target);
       setSuccess(true);
-    } catch (err: any) {
-      const msg = err.response?.data?.error?.message || err.message || "El email o la contraseña no coinciden. Revisá los datos e intentá nuevamente.";
+    } catch (err: unknown) {
+      const errObj = err as {
+        response?: { status?: number; data?: { error?: { code?: string; message?: string } } };
+        message?: string;
+      };
+      const status = errObj.response?.status;
+      const code = errObj.response?.data?.error?.code;
+      const msg =
+        errObj.response?.data?.error?.message ||
+        errObj.message ||
+        "El email o la contraseña no coinciden. Revisá los datos e intentá nuevamente.";
       setServerError(msg);
-      setErrors({ password: "Credenciales inválidas." });
+      if (status === 401 || code === "INVALID_CREDENTIALS") {
+        setErrors({ password: "Credenciales inválidas." });
+      }
     } finally {
       setLoading(false);
     }
@@ -353,10 +400,10 @@ function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
     return (
       <SuccessState
         title="Inicio de sesión correcto"
-        copy="Ya estás dentro de Huellicam. Estamos preparando tu espacio personal."
+        copy="Ya estás dentro de HuelliCam. Estamos preparando tu espacio personal."
         action="Continuar"
         onContinue={() => {
-          window.location.href = destination;
+          routerNavigate(destination, { replace: true });
         }}
       />
     );
@@ -364,7 +411,7 @@ function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
 
   return (
     <>
-      <AuthHeader title="Bienvenido de nuevo" copy="Accedé a tu cuenta para continuar con Huellicam." />
+      <AuthHeader title="Bienvenido de nuevo" copy="Accedé a tu cuenta para continuar con HuelliCam." />
       {serverError && <Alert variant="error" title="No pudimos iniciar sesión">{serverError}</Alert>}
       <form className="auth-form" onSubmit={submit} noValidate>
         <Field
@@ -392,7 +439,6 @@ function Login({ navigate }: { navigate: (route: AuthRoute) => void }) {
       </form>
       <div className="auth-separator"><span>o</span></div>
       <p className="auth-switch">¿Todavía no tenés una cuenta? <AuthLink to="/register" navigate={navigate}>Crear una cuenta</AuthLink></p>
-      <p className="auth-demo-note">Usá un email que comience con <strong>vet</strong> para ingresar al portal profesional, o <strong>error@huellicam.com</strong> para visualizar un error.</p>
     </>
   );
 }
@@ -401,7 +447,10 @@ function RoleSelection({ navigate }: { navigate: (route: AuthRoute) => void }) {
   const [selected, setSelected] = useState<"tutor" | "veterinarian" | null>(null);
   return (
     <>
-      <AuthHeader title="¿Cómo querés usar Huellicam?" copy="Elegí el espacio que mejor representa lo que necesitás hoy." />
+      <AuthHeader
+        title="¿Cómo querés usar HuelliCam?"
+        copy="Elegí el espacio que mejor representa lo que necesitás hoy."
+      />
       <div className="role-options" role="radiogroup" aria-label="Tipo de cuenta">
         <button
           className={`role-card ${selected === "tutor" ? "role-card--selected" : ""}`}
@@ -410,10 +459,12 @@ function RoleSelection({ navigate }: { navigate: (route: AuthRoute) => void }) {
           aria-checked={selected === "tutor"}
           onClick={() => setSelected("tutor")}
         >
-          <span className="role-card__icon"><Icon name="heart" /></span>
+          <span className="role-card__art">
+            <img src={tutorCardThumb} alt="" aria-hidden="true" width={288} height={184} decoding="async" />
+          </span>
           <span className="role-card__check"><Icon name="check" /></span>
           <strong>Soy tutor</strong>
-          <small>Quiero cuidar y gestionar la atención de mi mascota.</small>
+          <small>Quiero cuidar a mi mascota.</small>
         </button>
         <button
           className={`role-card role-card--professional ${selected === "veterinarian" ? "role-card--selected" : ""}`}
@@ -422,10 +473,12 @@ function RoleSelection({ navigate }: { navigate: (route: AuthRoute) => void }) {
           aria-checked={selected === "veterinarian"}
           onClick={() => setSelected("veterinarian")}
         >
-          <span className="role-card__icon"><Icon name="shield" /></span>
+          <span className="role-card__art">
+            <img src={vetCardThumb} alt="" aria-hidden="true" width={288} height={184} decoding="async" />
+          </span>
           <span className="role-card__check"><Icon name="check" /></span>
           <strong>Soy veterinario</strong>
-          <small>Quiero ofrecer atención y gestionar mis consultas.</small>
+          <small>Brindar y gestionar consultas.</small>
         </button>
       </div>
       <button
@@ -506,7 +559,7 @@ function validatePersonal(data: PersonalData) {
     next.lastName = "El apellido debe tener al menos 2 caracteres.";
   }
   if (!isValidEmail(data.email)) next.email = "Ingresá un email válido.";
-  if (data.email.toLowerCase() === "hola@huellicam.com") next.email = "Ya existe una cuenta asociada a este email.";
+  if (data.email.trim().toLowerCase() === "hola@huellicam.com") next.email = "Ya existe una cuenta asociada a este email.";
   if (data.password.length < 8 || passwordScore(data.password) < 2) {
     next.password = "Usá al menos 8 caracteres, mayúsculas y números.";
   }
@@ -528,7 +581,12 @@ function Terms({
       <label className={`auth-checkbox ${error ? "auth-checkbox--error" : ""}`}>
         <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
         <span><Icon name="check" /></span>
-        <small>Acepto los <a href="#">términos y condiciones</a> y la <a href="#">política de privacidad</a>.</small>
+        <small>
+          Acepto los{" "}
+          <a href="/terms" target="_blank" rel="noopener noreferrer">términos y condiciones</a>{" "}
+          y la{" "}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer">política de privacidad</a>.
+        </small>
       </label>
       {error && <span className="auth-field__message"><Icon name="close" />{error}</span>}
     </div>
@@ -537,6 +595,7 @@ function Terms({
 
 function TutorRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
   const { register } = useAuth();
+  const routerNavigate = useNavigate();
   const initialDraft = getRegisterDraft();
 
   const [data, setData] = useState<PersonalData>(() => ({
@@ -599,10 +658,10 @@ function TutorRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
     setServerError("");
     try {
       await register({
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
         role: "CLIENT",
       });
       clearRegisterDraft();
@@ -622,7 +681,7 @@ function TutorRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
         copy="Ahora podés organizar la información de tu mascota y conectar con profesionales veterinarios."
         action="Continuar a mi cuenta"
         onContinue={() => {
-          window.location.href = "/client/dashboard";
+          routerNavigate("/client/dashboard", { replace: true });
         }}
       />
     );
@@ -661,6 +720,7 @@ function Stepper({ step }: { step: number }) {
 
 function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
   const { register } = useAuth();
+  const routerNavigate = useNavigate();
   const initialDraft = getRegisterDraft();
 
   const [step, setStep] = useState<number>(() => {
@@ -757,17 +817,25 @@ function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
       setErrors({ terms: "Debés aceptar los términos para continuar." });
       return;
     }
+    const personalCheck = validatePersonal(data);
+    if (Object.keys(personalCheck).length) {
+      setStep(1);
+      setErrors(personalCheck);
+      setServerError("Por seguridad, completá tu contraseña antes de finalizar el registro.");
+      return;
+    }
     setLoading(true);
     setServerError("");
     try {
       await register({
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
         role: "VET",
-        licenseNumber: data.licenseNumber,
+        licenseNumber: data.licenseNumber.trim(),
         specialty: data.specialty,
+        bio: `${data.specialty} · ${data.province} (${data.experienceYears} años exp.)`,
       });
       clearRegisterDraft();
       setSuccess(true);
@@ -783,10 +851,10 @@ function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
     return (
       <SuccessState
         title="Tu perfil fue creado."
-        copy="Completá tu información profesional para comenzar a formar parte de Huellicam."
+        copy="Completá tu información profesional para comenzar a formar parte de HuelliCam."
         action="Continuar con mi perfil"
         onContinue={() => {
-          window.location.href = "/vet/dashboard";
+          routerNavigate("/vet/dashboard", { replace: true });
         }}
       />
     );
@@ -840,9 +908,17 @@ function VetRegister({ navigate }: { navigate: (route: AuthRoute) => void }) {
   );
 }
 
-function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) {
+function ForgotPassword({
+  navigate,
+  defaultEmail,
+  onBackToPanel,
+}: {
+  navigate: (route: AuthRoute) => void;
+  defaultEmail?: string;
+  onBackToPanel?: () => void;
+}) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(defaultEmail ?? "");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -850,20 +926,28 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    if (defaultEmail) {
+      setEmail((prev) => prev || defaultEmail);
+    }
+  }, [defaultEmail]);
+
   // Paso 1: Enviar correo con el código de 6 dígitos
   const handleRequestCode = async (event: FormEvent) => {
     event.preventDefault();
-    if (!isValidEmail(email)) {
+    const cleanEmail = email.trim();
+    if (!isValidEmail(cleanEmail)) {
       setError("Ingresá un email válido.");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      await api.post("/api/auth/forgot-password", { email });
+      await api.post("/api/auth/forgot-password", { email: cleanEmail });
       setStep(2);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || "Error al solicitar el código.");
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(errObj.response?.data?.error?.message || "Error al solicitar el código.");
     } finally {
       setLoading(false);
     }
@@ -879,10 +963,11 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
     setLoading(true);
     setError("");
     try {
-      await api.post("/api/auth/verify-reset-code", { email, code: code.trim() });
+      await api.post("/api/auth/verify-reset-code", { email: email.trim(), code: code.trim() });
       setStep(3);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || "El código ingresado es incorrecto o ha expirado.");
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(errObj.response?.data?.error?.message || "El código ingresado es incorrecto o ha expirado.");
     } finally {
       setLoading(false);
     }
@@ -903,13 +988,14 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
     setError("");
     try {
       await api.post("/api/auth/reset-password", {
-        email,
+        email: email.trim(),
         code: code.trim(),
         newPassword,
       });
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || "Error al restablecer la contraseña.");
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(errObj.response?.data?.error?.message || "Error al restablecer la contraseña.");
     } finally {
       setLoading(false);
     }
@@ -920,8 +1006,8 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
       <SuccessState
         title="Contraseña actualizada"
         copy="Tu clave de acceso ha sido restablecida correctamente. Ya podés ingresar con tu nueva contraseña."
-        action="Iniciar sesión"
-        onContinue={() => navigate("/login")}
+        action={onBackToPanel ? "Volver a mi panel" : "Iniciar sesión"}
+        onContinue={() => (onBackToPanel ? onBackToPanel() : navigate("/login"))}
       />
     );
   }
@@ -938,7 +1024,7 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
         }
         copy={
           step === 1
-            ? "Ingresá tu Gmail y te enviaremos un código de seguridad para restablecer tu contraseña."
+            ? "Ingresá tu email y te enviaremos un código de seguridad para restablecer tu contraseña."
             : step === 2
             ? `Enviamos un código de 6 dígitos a ${email}. Revisá tu bandeja de entrada o spam.`
             : "Definí una contraseña segura de al menos 8 caracteres."
@@ -953,16 +1039,15 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
             label="Email"
             name="email"
             type="email"
-            placeholder="tu@gmail.com"
+            placeholder="tu@email.com"
             value={email}
-            error={error ? " " : undefined}
             autoComplete="email"
             onChange={(event) => {
               setEmail(event.target.value);
               setError("");
             }}
           />
-          <SubmitButton loading={loading}>Enviar al mail</SubmitButton>
+          <SubmitButton loading={loading}>Enviar código</SubmitButton>
         </form>
       )}
 
@@ -974,7 +1059,6 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
             type="text"
             placeholder="123456"
             value={code}
-            error={error ? " " : undefined}
             autoComplete="one-time-code"
             onChange={(event) => {
               const val = event.target.value.replace(/\D/g, "").slice(0, 6);
@@ -985,8 +1069,7 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
           <SubmitButton loading={loading}>Verificar código</SubmitButton>
           <button
             type="button"
-            className="back-link"
-            style={{ margin: "12px auto 0", display: "inline-block", background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}
+            className="auth-inline-link"
             onClick={() => {
               setStep(1);
               setError("");
@@ -1008,6 +1091,7 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
               setError("");
             }}
           />
+          {newPassword && <PasswordStrength password={newPassword} />}
           <PasswordField
             label="Confirmar nueva contraseña"
             name="confirmPassword"
@@ -1022,7 +1106,13 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
       )}
 
       <p className="auth-switch">
-        <AuthLink to="/login" navigate={navigate}>← Volver a ingresar</AuthLink>
+        {onBackToPanel ? (
+          <button type="button" className="auth-inline-link" onClick={onBackToPanel}>
+            ← Volver a mi panel
+          </button>
+        ) : (
+          <AuthLink to="/login" navigate={navigate}>← Volver a ingresar</AuthLink>
+        )}
       </p>
     </>
   );
@@ -1030,19 +1120,22 @@ function ForgotPassword({ navigate }: { navigate: (route: AuthRoute) => void }) 
 
 export default function AuthExperience() {
   const { user, loading } = useAuth();
+  const routerNavigate = useNavigate();
   const [route, setRoute] = useState<AuthRoute>(() => normalizeRoute(window.location.pathname));
 
+  const dashboardTarget = user
+    ? user.role === "VET"
+      ? "/vet/dashboard"
+      : user.role === "ADMIN"
+      ? "/admin/dashboard"
+      : "/client/dashboard"
+    : null;
+
   useEffect(() => {
-    if (!loading && user && (route === "/login" || route === "/register")) {
-      const target =
-        user.role === "VET"
-          ? "/vet/dashboard"
-          : user.role === "ADMIN"
-          ? "/admin/dashboard"
-          : "/client/dashboard";
-      window.location.replace(target);
+    if (!loading && user && route !== "/forgot-password" && dashboardTarget) {
+      routerNavigate(dashboardTarget, { replace: true });
     }
-  }, [user, loading, route]);
+  }, [user, loading, route, dashboardTarget, routerNavigate]);
 
   useEffect(() => {
     const handlePopState = () => setRoute(normalizeRoute(window.location.pathname));
@@ -1060,9 +1153,23 @@ export default function AuthExperience() {
     if (route === "/register") return <RoleSelection navigate={navigate} />;
     if (route === "/register/tutor") return <TutorRegister navigate={navigate} />;
     if (route === "/register/veterinarian") return <VetRegister navigate={navigate} />;
-    if (route === "/forgot-password") return <ForgotPassword navigate={navigate} />;
+    if (route === "/forgot-password") {
+      return (
+        <ForgotPassword
+          navigate={navigate}
+          defaultEmail={user?.email}
+          onBackToPanel={dashboardTarget ? () => routerNavigate(dashboardTarget) : undefined}
+        />
+      );
+    }
     return <Login navigate={navigate} />;
-  }, [route]);
+  }, [route, user?.email, dashboardTarget, routerNavigate]);
 
-  return <AuthShell professional={route === "/register/veterinarian"}>{content}</AuthShell>;
+  return (
+    <>
+      <LandingScopedStyle />
+      <ScopedStyle id="auth-style" css={authCss} />
+      <AuthShell professional={route === "/register/veterinarian"}>{content}</AuthShell>
+    </>
+  );
 }

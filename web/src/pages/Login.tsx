@@ -3,8 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/auth.css";
 
-const authPhoto =
-  "https://images.unsplash.com/photo-1774218318818-c201207699d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGF0JTIwaG9tZSUyMHdpdGglMjBwZXQlMjByYWJiaXQlMjB3YXJtJTIwbmF0dXJhbCUyMGxpZ2h0fGVufDF8fHx8MTc5MTIyODc4Mnww&ixlib=rb-4.1.0&q=85&w=1400";
+const tutorIllustration = "/assets/6f3a5.png";
 
 function Icon({ name }: { name: string }) {
   if (name === "arrow") {
@@ -41,10 +40,10 @@ function Icon({ name }: { name: string }) {
 function Logo() {
   return (
     <Link className="logo" to="/" aria-label="Huellicam, inicio" data-testid="brand-logo">
-      <span className="logo__mark">
-        <img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+      <span className="brand-mark brand-mark--sm" aria-hidden="true" />
+      <span className="brand-name brand-name--sm">
+        Huelli<span>Cam</span>
       </span>
-      <span>Huellicam</span>
     </Link>
   );
 }
@@ -117,10 +116,10 @@ export function Login() {
       <section className="auth-visual" aria-label="Huellicam, conexión y cuidado veterinario">
         <Link className="auth-visual__back" to="/">
           <Icon name="arrow" />
-          Volver al sitio
+          Volver al inicio
         </Link>
         <div className="auth-visual__copy">
-          <p className="eyebrow eyebrow--light">Conexión + cuidado + cercanía</p>
+          <p className="eyebrow eyebrow--light">Conexión · Cuidado · Cercanía</p>
           <h1>
             Tu mascota.<br />
             Tu veterinario.<br />
@@ -129,24 +128,27 @@ export function Login() {
           <p>Una nueva forma de acceder al cuidado veterinario con profesionales matriculados, estés donde estés.</p>
         </div>
         <div className="auth-visual__photo">
-          <img src={authPhoto} alt="Tutora sosteniendo con cuidado a su mascota" />
+          <img src={tutorIllustration} alt="Tutora sosteniendo con cuidado a su mascota" />
         </div>
         <div className="auth-visual__connection">
           <span><Icon name="heart" /></span>
           <div>
-            <strong>Cuidado que se siente cerca</strong>
-            <small>Profesionales verificados para cada especie</small>
+            <strong>Cuidado que se siente cerca.</strong>
           </div>
         </div>
-        <span className="auth-visual__orb auth-visual__orb--one" />
-        <span className="auth-visual__orb auth-visual__orb--two" />
       </section>
 
       <section className="auth-panel">
-        <div className="auth-panel__mobile-brand"><Logo /></div>
+        <div className="auth-panel__mobile-brand">
+          <Logo />
+          <span className="auth-brand-tagline">Videoconsultas veterinarias</span>
+        </div>
         <div className="auth-panel__content">
           <header className="auth-header">
-            <Logo />
+            <div className="auth-header__brand">
+              <Logo />
+              <span className="auth-brand-tagline">Videoconsultas veterinarias</span>
+            </div>
             <h2>Bienvenido de nuevo</h2>
             <p>Accedé a tu cuenta para continuar con Huellicam.</p>
           </header>

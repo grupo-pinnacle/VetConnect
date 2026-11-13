@@ -127,7 +127,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   return (
     <div
       data-testid={testId}
-      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      className="fixed inset-0 bg-[#183c3a]/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="review-modal-title"
@@ -137,7 +137,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     >
       <div
         className={cn(
-          'bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 p-6 relative font-sans text-slate-800 my-8',
+          'bg-[#fffbef] rounded-3xl max-w-md w-full shadow-2xl border border-[#e4dfd2] p-6 relative font-sans text-[#183c3a] my-8',
           className
         )}
       >
@@ -146,29 +146,29 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           type="button"
           onClick={onClose}
           aria-label="Cerrar modal"
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 transition-colors"
+          className="absolute top-4 right-4 text-[#607674] hover:text-[#183c3a] p-1.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] transition-colors"
         >
           <X className="w-5 h-5" aria-hidden="true" />
         </button>
 
         {/* Modal Header */}
         <div className="text-center mb-5">
-          <div className="w-12 h-12 bg-amber-50 border border-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3 text-amber-500 shadow-sm">
+          <div className="w-12 h-12 bg-[#f8f0dc] border border-[#e4dfd2] rounded-2xl flex items-center justify-center mx-auto mb-3 text-[#c19e45] shadow-sm">
             <Sparkles className="w-6 h-6" aria-hidden="true" />
           </div>
           <h2
             id="review-modal-title"
-            className="text-lg font-bold font-display text-slate-900 tracking-tight"
+            className="text-xl font-bold font-display text-[#183c3a] tracking-tight"
           >
             ¿Cómo fue tu experiencia clínica?
           </h2>
-          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-            Tu valoración médica nos ayuda a fiscalizar la calidad profesional de VetConnect (ADR-023).
+          <p className="text-xs text-[#454e4e] mt-1 max-w-xs mx-auto">
+            Tu valoración médica nos ayuda a cuidar la calidad de atención en HuelliCam.
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium text-center">
+          <div className="mb-4 p-3 bg-[#fbeee9] border border-[#e98b70]/50 rounded-2xl text-[#ae4d45] text-xs font-medium text-center">
             {error}
           </div>
         )}
@@ -180,7 +180,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               role="radiogroup"
               aria-label="Calificación médica de 1 a 5 estrellas"
               onKeyDown={handleKeyDownRadiogroup}
-              className="flex items-center gap-2 p-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="flex items-center gap-2 p-2 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c]"
             >
               {[1, 2, 3, 4, 5].map((star, idx) => {
                 const isLit = star <= activeRating;
@@ -202,14 +202,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                     onMouseLeave={() => setHoverRating(0)}
                     onClick={() => setRating(star)}
                     disabled={isSubmitting}
-                    className="p-1 rounded-lg text-slate-300 hover:scale-110 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                    className="p-1 rounded-xl text-[#d4cfc2] hover:scale-110 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] focus-visible:ring-offset-2"
                   >
                     <Star
                       className={cn(
                         'w-8 h-8 transition-colors',
                         isLit
                           ? 'fill-amber-400 text-amber-400 drop-shadow-sm'
-                          : 'text-slate-300 stroke-[1.5]'
+                          : 'text-[#d4cfc2] stroke-[1.5]'
                       )}
                       aria-hidden="true"
                     />
@@ -219,7 +219,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             </div>
 
             {/* Dynamic Label */}
-            <p className="text-xs font-semibold h-4 text-center mt-1 text-slate-700">
+            <p className="text-xs font-semibold h-4 text-center mt-1 text-[#183c3a]">
               {activeRating > 0 ? RATING_LABELS[activeRating] : 'Tocá las estrellas para calificar'}
             </p>
           </div>
@@ -228,7 +228,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           <div>
             <label
               htmlFor="review-comment"
-              className="block text-xs font-semibold text-slate-700 mb-1"
+              className="block text-xs font-semibold text-[#183c3a] mb-1"
             >
               Comentario sobre la consulta (opcional)
             </label>
@@ -240,7 +240,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               disabled={isSubmitting}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors disabled:bg-slate-50 disabled:text-slate-400"
+              className="w-full px-3.5 py-2.5 border border-[#e4dfd2] rounded-2xl text-sm bg-white text-[#183c3a] placeholder:text-[#607674]/70 focus:outline-none focus:ring-2 focus:ring-[#609f9c] focus:border-[#609f9c] transition-colors disabled:bg-[#f2eddd]/60 disabled:text-[#607674]"
             />
           </div>
 
@@ -251,7 +251,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               data-testid="skip-review-button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="order-2 sm:order-1 flex-1 px-4 py-2.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:opacity-50 text-center"
+              className="order-2 sm:order-1 flex-1 px-4 py-2.5 text-[#454e4e] hover:text-[#183c3a] hover:bg-[#f2eddd] rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] disabled:opacity-50 text-center"
             >
               Omitir por ahora
             </button>
@@ -260,7 +260,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               type="submit"
               data-testid="submit-review-button"
               disabled={isSubmitting || rating === 0}
-              className="order-1 sm:order-2 flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+              className="order-1 sm:order-2 flex-1 px-4 py-2.5 bg-[#609f9c] hover:bg-[#315f5d] text-white rounded-full text-sm font-bold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#609f9c] focus-visible:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>

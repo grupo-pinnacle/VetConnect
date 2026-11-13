@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert, Button, EmptyState, Field, Icon, PageHeader, Status, go } from "../shared";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { ChangePasswordModal } from "../components/common/ChangePasswordModal";
 import { availability, getPatient, type FollowUp } from "./data";
 import { ConsultStatus, PetPhoto, Sheet, useVet } from "./vetkit";
 
@@ -27,7 +28,7 @@ export function FollowUpsPage() {
       <Button variant="secondary" icon="message" onClick={() => go("/vet/messages")}>Enviar mensaje</Button>
       <Button disabled={open.status === "Realizado"} icon="check" onClick={() => { setFollowUps((l) => l.map((x) => x.id === open.id ? { ...x, status: "Realizado" } : x)); notify(`Seguimiento de ${p.name} marcado como realizado en esta vista.`); setOpen(null); }}>Marcar como realizado</Button></>}>
       <div className="v-sheet__who"><PetPhoto pet={p} size={56}/><div><b>{p.name}</b><span>{p.kind} · {p.breed}</span><small>Tutor: {p.tutor} · {p.tutorPhone}</small></div></div>
-      <dl className="v-kv v-kv--stack"><div><dt>Próximo seguimiento</dt><dd>{open.when}</dd></div><div><dt>Estado</dt><dd><ConsultStatus status={open.status}/></dd></div><div><dt>Qué revisar</dt><dd>{open.note}</dd></div><div><dt>Última evolución</dt><dd>{p.evolution[0].date} · {p.evolution[0].text}</dd></div></dl>
+      <dl className="v-kv v-kv--stack"><div><dt>Próximo seguimiento</dt><dd>{open.when}</dd></div><div><dt>Estado</dt><dd><ConsultStatus status={open.status}/></dd></div><div><dt>Qué revisar</dt><dd>{open.note}</dd></div><div><dt>Última evolución</dt><dd>{p.evolution[0] ? `${p.evolution[0].date} · ${p.evolution[0].text}` : "Sin evoluciones previas"}</dd></div></dl>
       <Button variant="soft" icon="file" onClick={() => go(`/vet/patients/${p.id}`)}>Abrir ficha clínica</Button>
     </Sheet>; })()}
   </>;
@@ -156,6 +157,7 @@ export function ProfilePage() {
 export function SettingsPage() {
   const { notify } = useVet();
   const [t, setT] = useState([true, true, true, false]);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const items = [["Nuevos pacientes en espera", "Aviso cuando un tutor solicite atención."], ["Casos críticos", "Aviso destacado ante casos de nivel crítico."], ["Mensajes de tutores", "Cuando recibas un mensaje nuevo."], ["Recordatorios de agenda", "Aviso antes de cada consulta programada."]];
   return <>
     <PageHeader eyebrow="Administración" title="Configuración" description="Preferencias de cuenta y notificaciones profesionales."/>
@@ -165,7 +167,13 @@ export function SettingsPage() {
       <section className="panel"><div className="panel__heading"><div><span className="eyebrow">Cuenta</span><h2>Perfil y disponibilidad</h2></div></div>
         <div className="setting-row"><div><strong>Zona horaria</strong><p>Argentina (GMT-3)</p></div></div>
         <button className="settings-link" onClick={() => go("/vet/profile")}><span><Icon name="user"/><span><strong>Perfil profesional</strong><small>Revisá tus datos y contacto profesional.</small></span></span><Icon name="chevron"/></button>
-        <button className="settings-link" onClick={() => go("/vet/availability")}><span><Icon name="clock"/><span><strong>Disponibilidad</strong><small>Configurá días y horarios de atención.</small></span></span><Icon name="chevron"/></button></section>
+        <button className="settings-link" onClick={() => go("/vet/availability")}><span><Icon name="clock"/><span><strong>Disponibilidad</strong><small>Configurá días y horarios de atención.</small></span></span><Icon name="chevron"/></button>
+        <button className="settings-link" type="button" onClick={() => setPasswordModalOpen(true)}><span><Icon name="shield"/><span><strong>Cambiar contraseña</strong><small>Actualizá tu clave de acceso.</small></span></span><Icon name="chevron"/></button></section>
     </div>
+    <ChangePasswordModal
+      open={passwordModalOpen}
+      onClose={() => setPasswordModalOpen(false)}
+      onSuccess={(msg) => notify(msg)}
+    />
   </>;
 }

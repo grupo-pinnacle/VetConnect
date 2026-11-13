@@ -4,11 +4,13 @@ import { Button, EmptyState, Field, Icon, Logo, MessageBubble, Modal, PageHeader
 import { useAuth } from "../context/AuthContext";
 import api, { getAccessToken } from "../services/api";
 import { io } from "socket.io-client";
-import { getWsUrl } from "../vet/CallRoom";
+import { getWsUrl } from "../lib/ws";
+import ClientScopedStyle from "../styles/ClientScopedStyle";
 import type { ApiResponse, Pet as BackendPet, Consultation as BackendConsultation, Prescription as BackendPrescription } from "../types";
 import { parseConsultationNotes, formatConsultationNotes } from "../lib/consultationNotes";
 import { SPECIES_LIST, getBreedsForSpecies, getWeightAssessment, compressImageFile } from "../data/petBreeds";
 import { HamsterMascot } from "../components/ui/HamsterMascot";
+import { ChangePasswordModal } from "../components/common/ChangePasswordModal";
 
 const VetApp = lazy(() => import("../vet/VetApp"));
 const CallRoom = lazy(() => import("../vet/CallRoom"));
@@ -69,6 +71,7 @@ export interface ClientViewConsultation {
   status: string;
   mode: string;
   rawStatus?: string;
+  rawDate?: string;
 }
 
 function mapBackendPet(p: BackendPet): ClientViewPet {
@@ -118,6 +121,7 @@ function mapBackendConsultation(c: BackendConsultation): ClientViewConsultation 
     status: displayStatus,
     mode: "Videoconsulta",
     rawStatus: c.status,
+    rawDate: c.startedAt || c.createdAt || undefined,
   };
 }
 
@@ -204,14 +208,14 @@ export function AppShell({ children, path }: { children: ReactNode; path: string
           );
         })}
       </nav>
-      <div className="sidebar__support"><span className="eyebrow">¿Necesitás ayuda?</span><strong>Estamos para acompañarte.</strong><button onClick={() => go("/client/triage")}>Necesito atención <Icon name="arrow" size={16}/></button></div>
-      <button className={`nav-item ${path === "/client/settings" ? "is-active" : ""}`} onClick={() => go("/client/settings")}><Icon name="settings"/><span>Configuración</span></button>
+      <div className="sidebar__support"><span className="eyebrow">¿Necesitás ayuda?</span><strong>Estamos para acompañarte.</strong><button onClick={() => { setMenu(false); go("/client/triage"); }}>Necesito atención <Icon name="arrow" size={16}/></button></div>
+      <button className={`nav-item ${path === "/client/settings" ? "is-active" : ""}`} onClick={() => { setMenu(false); go("/client/settings"); }}><Icon name="settings"/><span>Configuración</span></button>
       {user ? (
-        <button className="nav-item" style={{ marginTop: 8, color: "var(--red, #ef4444)" }} onClick={() => logout().then(() => { window.location.href = "/login"; })}>
+        <button className="nav-item" style={{ marginTop: 8, color: "#f5a399" }} onClick={() => { setMenu(false); logout().then(() => { window.location.href = "/login"; }); }}>
           <Icon name="close"/><span>Cerrar sesión</span>
         </button>
       ) : (
-        <button className="nav-item" style={{ marginTop: 8, color: "var(--teal, #0d9488)" }} onClick={() => { window.location.href = "/login"; }}>
+        <button className="nav-item" style={{ marginTop: 8, color: "#a8d5d3" }} onClick={() => { setMenu(false); window.location.href = "/login"; }}>
           <Icon name="user"/><span>Iniciar sesión</span>
         </button>
       )}
@@ -225,6 +229,12 @@ export function AppShell({ children, path }: { children: ReactNode; path: string
           height: 100vh !important;
           max-height: 100vh !important;
           overflow: hidden !important;
+        }
+        @media (max-width: 820px) {
+          .app-main--messages {
+            height: calc(100dvh - 68px) !important;
+            max-height: calc(100dvh - 68px) !important;
+          }
         }
         .app-main--messages .wa-chat-container {
           flex: 1 1 0% !important;
@@ -617,13 +627,13 @@ export function NewPetModal({
         <p style={{ textAlign: "center", marginBottom: 20 }}>Ingresá los datos clínicos para abrir su expediente en VetConnect.</p>
         
         {errorMsg && (
-          <div style={{ background: "#fee2e2", border: "1px solid #f87171", color: "#991b1b", padding: "10px 14px", borderRadius: 8, fontSize: 13, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ background: "#fcece9", border: "1px solid #e98b70", color: "#ae4d45", padding: "10px 14px", borderRadius: 12, fontSize: 13, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>{errorMsg}</span>
             {errorMsg.includes("sesión") && (
               <button
                 type="button"
                 onClick={() => go("/login")}
-                style={{ background: "#991b1b", color: "#fff", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 12, cursor: "pointer", marginLeft: 8, whiteSpace: "nowrap" }}
+                style={{ background: "#ae4d45", color: "#fff", border: "none", borderRadius: 999, padding: "6px 12px", fontSize: 12, cursor: "pointer", marginLeft: 8, whiteSpace: "nowrap" }}
               >
                 Iniciar sesión
               </button>
@@ -634,8 +644,8 @@ export function NewPetModal({
         <form onSubmit={handleSavePet}>
           <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
             {/* Foto de la mascota */}
-            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", background: "var(--surface-sunken, #f8fafc)", borderRadius: 10, border: "1px dashed var(--line, #cbd5e1)" }}>
-              <div style={{ width: 50, height: 50, borderRadius: 10, overflow: "hidden", background: "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", background: "var(--cream, #fffbef)", borderRadius: 12, border: "1px dashed var(--line, #e4dfd2)" }}>
+              <div style={{ width: 50, height: 50, borderRadius: 10, overflow: "hidden", background: "#f2eddd", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {photoPreview ? (
                   <img src={photoPreview} alt="Foto mascota" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
@@ -643,7 +653,7 @@ export function NewPetModal({
                 )}
               </div>
               <div style={{ flex: 1 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, display: "block", color: "var(--ink, #1e293b)", marginBottom: 2 }}>Foto de la mascota (opcional)</span>
+                <span style={{ fontSize: 13, fontWeight: 600, display: "block", color: "var(--ink, #183c3a)", marginBottom: 2 }}>Foto de la mascota (opcional)</span>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -656,7 +666,7 @@ export function NewPetModal({
                     border: "none",
                     padding: 0,
                     fontSize: 12,
-                    color: "var(--teal, #0d9488)",
+                    color: "var(--teal, #609f9c)",
                     cursor: "pointer",
                     textDecoration: "underline",
                     display: "inline-block",
@@ -718,10 +728,10 @@ export function NewPetModal({
                     onChange={(e) => setWeightKg(e.target.value)}
                     disabled={unknownWeight}
                     placeholder={unknownWeight ? "Sin especificar" : "Ej: 14.5"}
-                    style={unknownWeight ? { background: "#f1f5f9", cursor: "not-allowed", color: "#94a3b8" } : undefined}
+                    style={unknownWeight ? { background: "#f2eddd", cursor: "not-allowed", color: "#607674" } : undefined}
                   />
                 </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--ink-soft, #64748b)", cursor: "pointer", marginTop: 4 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--ink-soft, #607674)", cursor: "pointer", marginTop: 4 }}>
                   <input
                     type="checkbox"
                     data-testid="checkbox-unknown-weight"
@@ -734,7 +744,7 @@ export function NewPetModal({
                         setErrorMsg(null);
                       }
                     }}
-                    style={{ accentColor: "var(--teal, #0d9488)", cursor: "pointer", width: 14, height: 14 }}
+                    style={{ accentColor: "var(--teal, #609f9c)", cursor: "pointer", width: 14, height: 14 }}
                   />
                   <span>No sé el peso exacto</span>
                 </label>
@@ -1176,7 +1186,7 @@ function PetDetail({ id }: { id: string }) {
     <section className="pet-hero">
       <div style={{ position: "relative", width: 96, height: 96, flexShrink: 0 }}>
         <img src={heroPhoto} alt={pet.name} style={{ width: 96, height: 96, borderRadius: 16, objectFit: "cover" }}/>
-        <label title="Cambiar foto de la mascota" style={{ position: "absolute", bottom: -4, right: -4, background: "#fff", border: "1px solid var(--line, #cbd5e1)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,0.15)" }}>
+        <label title="Cambiar foto de la mascota" style={{ position: "absolute", bottom: -4, right: -4, background: "#fff", border: "1px solid var(--line, #e4dfd2)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,0.15)" }}>
           <Icon name="edit" size={14}/>
           <input type="file" accept="image/*" onChange={handleHeroPhotoChange} style={{ display: "none" }}/>
         </label>
@@ -1194,11 +1204,6 @@ function PetDetail({ id }: { id: string }) {
         <span><small>Microchip</small><strong>{pet.microchip || "No informado"}</strong></span>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <label className="button button--secondary" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, margin: 0 }}>
-          <Icon name="edit" size={16}/>
-          <span>Editar foto</span>
-          <input type="file" accept="image/*" onChange={handleHeroPhotoChange} style={{ display: "none" }}/>
-        </label>
         <Button variant="secondary" icon="edit" onClick={() => setEditModal(true)}>Editar ficha</Button>
       </div>
     </section>
@@ -1323,11 +1328,11 @@ function PetDetail({ id }: { id: string }) {
           <form onSubmit={handleSaveEdit}>
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
               {/* Cambiar foto en el modal */}
-              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", background: "var(--surface-sunken, #f8fafc)", borderRadius: 10, border: "1px dashed var(--line, #cbd5e1)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", background: "var(--cream, #fffbef)", borderRadius: 10, border: "1px dashed var(--line, #e4dfd2)" }}>
                 <img src={heroPhoto} alt={pet.name} style={{ width: 48, height: 48, borderRadius: 10, objectFit: "cover" }} />
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, display: "block", color: "var(--ink, #1e293b)", marginBottom: 2 }}>Foto de la mascota</span>
-                  <label style={{ fontSize: 12, color: "var(--teal, #0d9488)", cursor: "pointer", textDecoration: "underline", display: "inline-block" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, display: "block", color: "var(--ink, #183c3a)", marginBottom: 2 }}>Foto de la mascota</span>
+                  <label style={{ fontSize: 12, color: "var(--teal, #609f9c)", cursor: "pointer", textDecoration: "underline", display: "inline-block" }}>
                     <span>Cambiar por una foto real</span>
                     <input type="file" accept="image/*" onChange={handleHeroPhotoChange} style={{ display: "none" }} />
                   </label>
@@ -1369,10 +1374,10 @@ function PetDetail({ id }: { id: string }) {
                       onChange={(e) => setEditWeight(e.target.value)}
                       disabled={editUnknownWeight}
                       placeholder={editUnknownWeight ? "Sin especificar" : "Ej: 14.5"}
-                      style={editUnknownWeight ? { background: "#f1f5f9", cursor: "not-allowed", color: "#94a3b8" } : undefined}
+                      style={editUnknownWeight ? { background: "#f2eddd", cursor: "not-allowed", color: "#607674" } : undefined}
                     />
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--ink-soft, #64748b)", cursor: "pointer", marginTop: 4 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--ink-soft, #607674)", cursor: "pointer", marginTop: 4 }}>
                     <input
                       type="checkbox"
                       data-testid="checkbox-edit-unknown-weight"
@@ -1382,7 +1387,7 @@ function PetDetail({ id }: { id: string }) {
                         setEditUnknownWeight(checked);
                         if (checked) setEditWeight("");
                       }}
-                      style={{ accentColor: "var(--teal, #0d9488)", cursor: "pointer", width: 14, height: 14 }}
+                      style={{ accentColor: "var(--teal, #609f9c)", cursor: "pointer", width: 14, height: 14 }}
                     />
                     <span>No sé el peso exacto</span>
                   </label>
@@ -1606,27 +1611,35 @@ function AppointmentsCalendar({ consultations }: { consultations: ClientViewCons
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
   const todayDateNumber = today.getDate();
 
-  // Map dates with consultations
+  // Map dates with consultations matching visible month/year (fallback to day number if rawDate is absent)
+  const matchesVisibleMonth = (c: ClientViewConsultation) => {
+    if (!c.rawDate) return true;
+    const parsedDate = new Date(c.rawDate);
+    if (Number.isNaN(parsedDate.getTime())) return true;
+    return parsedDate.getFullYear() === year && parsedDate.getMonth() === month;
+  };
+
   const eventDays = useMemo(() => {
     const map = new Map<number, "confirmada" | "pendiente">();
     consultations.forEach(c => {
-      // If consultation has date matching current month/year
-      const dayNum = parseInt(c.date, 10);
+      if (!matchesVisibleMonth(c)) return;
+      const dayNum = c.rawDate ? new Date(c.rawDate).getDate() : parseInt(c.date, 10);
       if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= 31) {
         map.set(dayNum, c.status === "Confirmada" ? "confirmada" : "pendiente");
       }
     });
     return map;
-  }, [consultations]);
+  }, [consultations, year, month]);
 
   // Filter consultations
   const filteredConsultations = useMemo(() => {
     if (!selectedDateStr) return consultations;
     return consultations.filter(c => {
-      const dayNum = parseInt(c.date, 10);
+      if (!matchesVisibleMonth(c)) return false;
+      const dayNum = c.rawDate ? new Date(c.rawDate).getDate() : parseInt(c.date, 10);
       return String(dayNum) === selectedDateStr;
     });
-  }, [consultations, selectedDateStr]);
+  }, [consultations, selectedDateStr, year, month]);
 
   const cancelMutation = useMutation({
     mutationFn: async (consId: string) => {
@@ -1752,11 +1765,11 @@ function WhatsAppCheck({ state }: { state: "sending" | "sent" | "delivered" | "r
   if (state === "sending" || state === "sent") {
     return (
       <svg width="15" height="11" viewBox="0 0 16 11" fill="none" aria-label="Enviado">
-        <path d="M1.5 6L5.5 10L14.5 1" stroke="#8696a0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M1.5 6L5.5 10L14.5 1" stroke="#607674" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     );
   }
-  const color = state === "read" ? "#53bdeb" : "#8696a0";
+  const color = state === "read" ? "#609f9c" : "#607674";
   return (
     <svg width="16" height="11" viewBox="0 0 18 11" fill="none" aria-label={state === "read" ? "Leído" : "Entregado"}>
       <path d="M1 6L5 10L14 1" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -2214,6 +2227,10 @@ export function MessagesPage() {
               <img
                 src="/assets/messages-hero-illustration.png"
                 alt="Veterinaria y dálmata"
+                width={245}
+                height={180}
+                loading="lazy"
+                decoding="async"
                 className="hc-chat-hero__img"
               />
             </div>
@@ -2272,6 +2289,10 @@ export function MessagesPage() {
                 <img
                   src="/assets/messages-cat-notification.png"
                   alt="Gatito Huellicam"
+                  width={95}
+                  height={77}
+                  loading="lazy"
+                  decoding="async"
                   className="hc-notification-card__cat-img"
                 />
                 <button
@@ -2314,11 +2335,11 @@ export function MessagesPage() {
                 const isSelected = activeChat ? chat.id === activeChat.id : false;
                 const hasUnread = !!chat.unreadCount && chat.unreadCount > 0;
                 const avatarColors = [
-                  { bg: "#e6f2ee", color: "#1f534e" },
-                  { bg: "#fef3c7", color: "#b45309" },
-                  { bg: "#ede9fe", color: "#6d28d9" },
-                  { bg: "#e0f2fe", color: "#0369a1" },
-                  { bg: "#fce7f3", color: "#be185d" },
+                  { bg: "#edf6f4", color: "#183c3a" },
+                  { bg: "#fdf3d7", color: "#9a621c" },
+                  { bg: "#f2eddd", color: "#315f5d" },
+                  { bg: "#d9e8e4", color: "#183c3a" },
+                  { bg: "#fcece9", color: "#ae4d45" },
                 ];
                 const themeColor = avatarColors[idx % avatarColors.length];
 
@@ -2345,7 +2366,7 @@ export function MessagesPage() {
                       <div className="doctor-chat-card__footer">
                         <span className="doctor-chat-card__preview">
                           {chat.messages[chat.messages.length - 1]?.sender === "me" && (
-                            <span style={{ color: "var(--teal, #2d736a)", fontWeight: 700, marginRight: 3 }}>✓✓</span>
+                            <span style={{ color: "var(--teal-dark, #315f5d)", fontWeight: 700, marginRight: 3 }}>✓✓</span>
                           )}
                           {chat.preview}
                         </span>
@@ -2368,19 +2389,19 @@ export function MessagesPage() {
         {/* RIGHT COLUMN: ACTIVE CONVERSATION THREAD */}
         <section className={`hc-chat-thread-column ${!mobileThreadOpen ? "is-hidden-mobile" : ""}`}>
           {!activeChat ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 32, textAlign: "center", color: "var(--ink-soft, #4a635f)", background: "var(--cream, #fbf8f1)" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 32, textAlign: "center", color: "var(--ink-soft, #454e4e)", background: "var(--cream, #fffbef)" }}>
               <div style={{ fontSize: 44, marginBottom: 16 }}>🩺</div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--ink, #132a27)", marginBottom: 8 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--ink, #183c3a)", marginBottom: 8 }}>
                 Mensajería Clínica Huellicam
               </h2>
-              <p style={{ maxWidth: 420, fontSize: 14, lineHeight: 1.5, color: "var(--ink-soft, #4a635f)" }}>
+              <p style={{ maxWidth: 420, fontSize: 14, lineHeight: 1.5, color: "var(--ink-soft, #454e4e)" }}>
                 Seleccioná una conversación de la lista para ver el historial clínico y comunicarte en tiempo real.
               </p>
             </div>
           ) : (
             <>
               {/* THREAD TOPBAR */}
-              <div className="wa-chat-pane__header" style={{ background: "var(--cream, #fbf8f1)", borderBottom: "1px solid var(--line, #e8e4da)", height: 64 }}>
+              <div className="wa-chat-pane__header" style={{ background: "var(--cream, #fffbef)", borderBottom: "1px solid var(--line, #e4dfd2)", height: 64 }}>
                 <div className="wa-chat-pane__header-contact">
                   <button
                     type="button"
@@ -2391,11 +2412,11 @@ export function MessagesPage() {
                   >
                     <Icon name="arrow" size={18} />
                   </button>
-                  <div className="wa-chat-pane__header-avatar" style={{ background: "var(--teal-pale, #e6f2ee)", color: "var(--teal-deep, #1f534e)" }}>
+                  <div className="wa-chat-pane__header-avatar" style={{ background: "var(--teal-pale, #edf6f4)", color: "var(--teal-deep, #183c3a)" }}>
                     {activeChat.avatarText}
                   </div>
                   <div className="wa-chat-pane__header-info">
-                    <h2 style={{ color: "var(--ink, #132a27)", fontWeight: 700 }}>{activeChat.name}</h2>
+                    <h2 style={{ color: "var(--ink, #183c3a)", fontWeight: 700 }}>{activeChat.name}</h2>
                     <span className={activeChat.isOnline ? "is-online" : ""}>
                       {activeChat.statusText}
                     </span>
@@ -2408,7 +2429,7 @@ export function MessagesPage() {
                     title="Videoconsulta en vivo"
                     onClick={() => go(`/client/consultations/${activeChat.id}`)}
                     aria-label="Iniciar videollamada"
-                    style={{ color: "var(--teal-deep, #1f534e)", background: "var(--teal-pale, #e6f2ee)" }}
+                    style={{ color: "var(--teal-deep, #183c3a)", background: "var(--teal-pale, #edf6f4)" }}
                   >
                     <Icon name="video" size={18} />
                   </button>
@@ -2459,7 +2480,7 @@ export function MessagesPage() {
                             </div>
 
                             <div className="wa-doc-card__body">
-                              <div className="wa-pdf-badge" style={{ background: msg.doc.isImage ? "#0ea5e9" : "#ef4444" }}>
+                              <div className="wa-pdf-badge" style={{ background: msg.doc.isImage ? "var(--teal, #609f9c)" : "var(--danger, #ae4d45)" }}>
                                 {msg.doc.isImage ? "IMG" : "PDF"}
                               </div>
                               <div className="wa-doc-card__info">
@@ -2481,7 +2502,7 @@ export function MessagesPage() {
 
                           <div className="wa-bubble__meta">
                             <span>{msg.time}</span>
-                            {isSent && <span style={{ color: "var(--teal, #2d736a)", marginLeft: 4, fontWeight: 700 }}>✓✓</span>}
+                            {isSent && <span style={{ color: "var(--teal-dark, #315f5d)", marginLeft: 4, fontWeight: 700 }}>✓✓</span>}
                           </div>
                         </div>
                       );
@@ -2499,7 +2520,7 @@ export function MessagesPage() {
                         <p className="wa-bubble__text">{msg.text}</p>
                         <div className="wa-bubble__meta">
                           <span>{msg.time}</span>
-                          {isSent && <span style={{ color: "var(--teal, #2d736a)", marginLeft: 4, fontWeight: 700 }}>✓✓</span>}
+                          {isSent && <span style={{ color: "var(--teal-dark, #315f5d)", marginLeft: 4, fontWeight: 700 }}>✓✓</span>}
                         </div>
                       </div>
                     );
@@ -2544,7 +2565,7 @@ export function MessagesPage() {
                     onClick={() => pdfInputRef.current?.click()}
                     data-testid="attach-pdf-btn"
                   >
-                    <i style={{ background: "#ea4335" }}>
+                    <i style={{ background: "var(--danger, #ae4d45)" }}>
                       <Icon name="file" size={17} />
                     </i>
                     <span>Documento PDF</span>
@@ -2555,7 +2576,7 @@ export function MessagesPage() {
                     onClick={() => imgInputRef.current?.click()}
                     data-testid="attach-img-btn"
                   >
-                    <i style={{ background: "#007bfc" }}>
+                    <i style={{ background: "var(--teal, #609f9c)" }}>
                       <Icon name="image" size={17} />
                     </i>
                     <span>Fotos y videos</span>
@@ -2566,7 +2587,7 @@ export function MessagesPage() {
                     onClick={() => pdfInputRef.current?.click()}
                     data-testid="attach-prescription-btn"
                   >
-                    <i style={{ background: "var(--teal, #2d736a)" }}>
+                    <i style={{ background: "var(--teal-dark, #315f5d)" }}>
                       <Icon name="pill" size={17} />
                     </i>
                     <span>Receta médica</span>
@@ -2575,7 +2596,7 @@ export function MessagesPage() {
               )}
 
               {/* FOOTER INPUT BAR */}
-              <footer className="wa-chat-footer" style={{ background: "var(--cream, #fbf8f1)", borderTop: "1px solid var(--line, #e8e4da)", padding: "10px 18px" }}>
+              <footer className="wa-chat-footer" style={{ background: "var(--cream, #fffbef)", borderTop: "1px solid var(--line, #e4dfd2)", padding: "10px 18px" }}>
                 <div className="wa-chat-footer__actions">
                   <button
                     className="wa-icon-btn"
@@ -2587,7 +2608,7 @@ export function MessagesPage() {
                   </button>
                 </div>
 
-                <div className="wa-input-pill" style={{ background: "#ffffff", border: "1px solid var(--line, #e8e4da)", borderRadius: 24, padding: "8px 16px" }}>
+                <div className="wa-input-pill" style={{ background: "#ffffff", border: "1px solid var(--line, #e4dfd2)", borderRadius: 999, padding: "8px 16px" }}>
                   <input
                     type="text"
                     placeholder="Escribí un mensaje clínico para el veterinario..."
@@ -2611,7 +2632,7 @@ export function MessagesPage() {
                   title="Enviar mensaje"
                   aria-label="Enviar"
                   data-testid="chat-send-btn"
-                  style={{ background: "var(--teal-deep, #1f534e)", color: "#ffffff", borderRadius: "50%", width: 42, height: 42, display: "grid", placeItems: "center", border: "none", cursor: inputText.trim() ? "pointer" : "default", opacity: inputText.trim() ? 1 : 0.6 }}
+                  style={{ background: "var(--teal-dark, #315f5d)", color: "#ffffff", borderRadius: "50%", width: 42, height: 42, display: "grid", placeItems: "center", border: "none", cursor: inputText.trim() ? "pointer" : "default", opacity: inputText.trim() ? 1 : 0.6 }}
                 >
                   <Icon name="send" size={17} />
                 </button>
@@ -2679,8 +2700,8 @@ function NotificationsPage() {
                   gap: 14,
                   padding: "16px 20px",
                   borderRadius: 12,
-                  background: notif.isRead || notif.read ? "var(--bg-card, #f8fafc)" : "var(--teal-subtle, #f0fdfa)",
-                  border: `1px solid ${notif.isRead || notif.read ? "var(--border, #e2e8f0)" : "var(--teal, #0d9488)"}`,
+                  background: notif.isRead || notif.read ? "var(--paper, #fffbef)" : "var(--teal-pale, #edf6f4)",
+                  border: `1px solid ${notif.isRead || notif.read ? "var(--line, #e4dfd2)" : "var(--teal, #609f9c)"}`,
                 }}
               >
                 <div
@@ -2688,11 +2709,11 @@ function NotificationsPage() {
                     width: 36,
                     height: 36,
                     borderRadius: "50%",
-                    background: notif.isRead || notif.read ? "#e2e8f0" : "#ccfbf1",
+                    background: notif.isRead || notif.read ? "#f2eddd" : "#d9e8e4",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: notif.isRead || notif.read ? "#64748b" : "#0f766e",
+                    color: notif.isRead || notif.read ? "#607674" : "#315f5d",
                     flexShrink: 0,
                   }}
                 >
@@ -2726,6 +2747,15 @@ function NotificationsPage() {
 function PrescriptionsPage() {
   const [active, setActive] = useState("Activas");
   const { prescriptions = [], prescriptionsLoading: loading } = useClientData();
+  const visiblePrescriptions = useMemo(() => {
+    const now = Date.now();
+    return prescriptions.filter((rx) => {
+      const issued = new Date(rx.createdAt).getTime();
+      const days = Number(rx.durationDays) || 7;
+      const isExpired = !Number.isNaN(issued) && issued + days * 86_400_000 < now;
+      return active === "Anteriores" ? isExpired : !isExpired;
+    });
+  }, [prescriptions, active]);
 
   return (
     <>
@@ -2750,7 +2780,16 @@ function PrescriptionsPage() {
         </div>
       ) : (
         <div style={{ display: "grid", gap: "16px", marginTop: "16px" }}>
-          {prescriptions.map((rx) => {
+          {visiblePrescriptions.length === 0 && (
+            <div className="panel">
+              <EmptyState
+                icon="file"
+                title={active === "Anteriores" ? "No tenés recetas anteriores" : "No tenés recetas activas"}
+                text="Las indicaciones médicas emitidas aparecerán organizadas acá según su vigencia."
+              />
+            </div>
+          )}
+          {visiblePrescriptions.map((rx) => {
             const petName = rx.consultation?.pet?.name || "Mascota";
             const vetName = rx.consultation?.vet
               ? `Dr. ${rx.consultation.vet.firstName} ${rx.consultation.vet.lastName || ""}`
@@ -2806,11 +2845,11 @@ function PrescriptionsPage() {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "6px",
-                      padding: "8px 16px",
-                      borderRadius: "10px",
+                      padding: "9px 18px",
+                      borderRadius: "999px",
                       fontWeight: 700,
                       textDecoration: "none",
-                      backgroundColor: "#183c3a",
+                      backgroundColor: "#315f5d",
                       color: "#ffffff",
                     }}
                   >
@@ -3069,7 +3108,7 @@ export function TriagePage() {
                 display: "block",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "var(--ink, #1e293b)",
+                color: "var(--ink, #183c3a)",
                 marginBottom: 6,
               }}
             >
@@ -3086,7 +3125,7 @@ export function TriagePage() {
                 width: "100%",
                 padding: "10px 12px",
                 borderRadius: 12,
-                border: "1px solid var(--line, #cbd5e1)",
+                border: "1px solid var(--line, #e4dfd2)",
                 fontSize: 14,
                 fontFamily: "inherit",
                 resize: "none",
@@ -3151,8 +3190,6 @@ export function TriageResult({
   onRestart: () => void;
   onBack?: () => void;
 }) {
-  const [matched, setMatched] = useState(false);
-  const [createdConsId, setCreatedConsId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -3197,31 +3234,6 @@ export function TriageResult({
     }
   };
 
-  if (matched && createdConsId) {
-    return (
-      <div className="triage-page">
-        <div className="triage-top"><Logo/></div>
-        <main className="matching-card">
-          <div className="matching-visual"><span/><span/><span/><Icon name="search" size={30}/></div>
-          <span className="eyebrow">{evaluation.tier === "ROJO" ? "Prioridad alta" : evaluation.tier === "AMARILLO" ? "Prioridad moderada" : "Consulta de guardia"}</span>
-          <h1>En sala de espera</h1>
-          <p>Tu solicitud para {selectedPet?.name || "tu mascota"} fue enviada al equipo de guardia.</p>
-          <div className="matched-vet">
-            <div className="vet-avatar vet-avatar--large">VC</div>
-            <div>
-              <strong>Guardia Veterinaria Huellicam</strong>
-              <span>Clínica general y triage de urgencias</span>
-              <small>Aguardando aceptación médica</small>
-            </div>
-          </div>
-          <Button onClick={() => go(`/call/${createdConsId}?from=client`)}>
-            Ingresar a la sala de espera <Icon name="arrow" size={17}/>
-          </Button>
-        </main>
-      </div>
-    );
-  }
-
   const isCritical = evaluation.tier === "ROJO";
 
   return (
@@ -3234,10 +3246,10 @@ export function TriageResult({
         <p>{evaluation.description}</p>
         
         {evaluation.advice && (
-          <div className={isCritical ? "critical-guidance" : "critical-guidance"} style={!isCritical ? { background: "var(--surface-sunken, #f8fafc)", border: "1px solid var(--line, #cbd5e1)" } : undefined}>
-            <strong style={!isCritical ? { color: "var(--ink, #1e293b)" } : undefined}>Recomendaciones clave mientras te conectás:</strong>
+          <div className="critical-guidance" style={!isCritical ? { background: "var(--cream, #fffbef)", border: "1px solid var(--line, #e4dfd2)" } : undefined}>
+            <strong style={!isCritical ? { color: "var(--ink, #183c3a)" } : undefined}>Recomendaciones clave mientras te conectás:</strong>
             {evaluation.advice.map((adv, idx) => (
-              <p key={idx} style={!isCritical ? { color: "var(--ink-soft, #64748b)" } : undefined}>• {adv}</p>
+              <p key={idx} style={!isCritical ? { color: "var(--ink-soft, #454e4e)" } : undefined}>• {adv}</p>
             ))}
           </div>
         )}
@@ -3248,7 +3260,7 @@ export function TriageResult({
         </div>
 
         {errorMessage && (
-          <div style={{ color: "#d93025", fontSize: 13, background: "#fce8e6", padding: "10px 14px", borderRadius: 8, margin: "12px 0", textAlign: "center" }}>
+          <div style={{ color: "#ae4d45", fontSize: 13, background: "#fcece9", border: "1px solid rgba(174,77,69,.28)", padding: "10px 14px", borderRadius: 12, margin: "12px 0", textAlign: "center" }}>
             {errorMessage}
           </div>
         )}
@@ -3407,7 +3419,15 @@ function SettingsPage() {
     return [true, true, false, true];
   });
   const [loggingOut, setLoggingOut] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordToast, setPasswordToast] = useState<string | null>(null);
   const { logout } = useAuth();
+
+  useEffect(() => {
+    if (!passwordToast) return;
+    const timer = window.setTimeout(() => setPasswordToast(null), 3200);
+    return () => window.clearTimeout(timer);
+  }, [passwordToast]);
 
   const handleToggle = (index: number) => {
     setToggles((prev) => {
@@ -3475,9 +3495,7 @@ function SettingsPage() {
           <button
             className="settings-link"
             type="button"
-            onClick={() => {
-              window.location.href = "/forgot-password";
-            }}
+            onClick={() => setPasswordModalOpen(true)}
           >
             <span>
               <Icon name="shield"/>
@@ -3524,6 +3542,12 @@ function SettingsPage() {
           </button>
         </section>
       </div>
+      <ChangePasswordModal
+        open={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+        onSuccess={(msg) => setPasswordToast(msg)}
+      />
+      {passwordToast && <Toast message={passwordToast} />}
     </>
   );
 }
@@ -3544,7 +3568,7 @@ function SkeletonPage({ type }: { type: "dashboard" | "list" | "messages" }) {
 }
 
 function ErrorState() {
-  return <div className="panel"><EmptyState icon="heart" title="No pudimos cargar esta información" text="Intentá nuevamente en unos segundos." action="Reintentar"/></div>;
+  return <div className="panel"><EmptyState icon="heart" title="No pudimos cargar esta información" text="Intentá nuevamente en unos segundos." action="Reintentar" onAction={() => window.location.reload()}/></div>;
 }
 
 
@@ -3577,11 +3601,11 @@ export default function ClientApp() {
     if (path === "/client/settings") return <SettingsPage/>;
     return <NotFound/>;
   }, [path]);
-  if (path === "/vet" || path.startsWith("/vet/")) return <Suspense fallback={<div className="route-loading" role="status">Cargando consola profesional…</div>}><VetApp path={path}/></Suspense>;
-  if (path.startsWith("/call/")) return <Suspense fallback={<div className="route-loading route-loading--dark" role="status">Preparando videoconsulta…</div>}><CallRoom id={path.split("/")[2] || "milo"}/></Suspense>;
-  if (path === "/client/triage") return <TriagePage/>;
+  if (path === "/vet" || path.startsWith("/vet/")) return <><ClientScopedStyle /><Suspense fallback={<div className="route-loading" role="status">Cargando consola profesional…</div>}><VetApp path={path}/></Suspense></>;
+  if (path.startsWith("/call/")) return <><ClientScopedStyle /><Suspense fallback={<div className="route-loading route-loading--dark" role="status">Preparando videoconsulta…</div>}><CallRoom id={path.split("/")[2] || "milo"}/></Suspense></>;
+  if (path === "/client/triage") return <><ClientScopedStyle /><TriagePage/></>;
   const state = new URLSearchParams(window.location.search).get("state");
-  if (state === "loading") return <AppShell path={path}><SkeletonPage type={path === "/client/messages" ? "messages" : path === "/client/dashboard" ? "dashboard" : "list"}/></AppShell>;
-  if (state === "error") return <AppShell path={path}><ErrorState/></AppShell>;
-  return <AppShell path={path}>{page}</AppShell>;
+  if (state === "loading") return <><ClientScopedStyle /><AppShell path={path}><SkeletonPage type={path === "/client/messages" ? "messages" : path === "/client/dashboard" ? "dashboard" : "list"}/></AppShell></>;
+  if (state === "error") return <><ClientScopedStyle /><AppShell path={path}><ErrorState/></AppShell></>;
+  return <><ClientScopedStyle /><AppShell path={path}>{page}</AppShell></>;
 }

@@ -10,19 +10,19 @@ export const Badge: React.FC<BadgeProps> = ({
   'data-testid': testId,
 }) => {
   const variantStyles: Record<BadgeProps['variant'], string> = {
-    success: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-    green: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-    verde: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-    warning: 'bg-amber-100 text-amber-800 border border-amber-200',
-    yellow: 'bg-amber-100 text-amber-800 border border-amber-200',
-    amarillo: 'bg-amber-100 text-amber-800 border border-amber-200',
-    danger: 'bg-red-100 text-red-800 border border-red-200 animate-pulse',
-    red: 'bg-red-100 text-red-800 border border-red-200 animate-pulse',
-    rojo: 'bg-red-100 text-red-800 border border-red-200 animate-pulse',
-    online: 'bg-teal-100 text-teal-800 border border-teal-200',
-    offline: 'bg-slate-100 text-slate-700 border border-slate-200',
-    neutral: 'bg-slate-100 text-slate-700 border border-slate-200',
-    info: 'bg-sky-100 text-sky-800 border border-sky-200',
+    success: 'bg-[#edf6f4] text-[#183c3a] border border-[#609f9c]/35',
+    green: 'bg-[#edf6f4] text-[#183c3a] border border-[#609f9c]/35',
+    verde: 'bg-[#edf6f4] text-[#183c3a] border border-[#609f9c]/35',
+    warning: 'bg-[#f8f0dc] text-[#7a5813] border border-[#d6b66f]/60',
+    yellow: 'bg-[#f8f0dc] text-[#7a5813] border border-[#d6b66f]/60',
+    amarillo: 'bg-[#f8f0dc] text-[#7a5813] border border-[#d6b66f]/60',
+    danger: 'bg-[#fbeee9] text-[#ae4d45] border border-[#e98b70]/60',
+    red: 'bg-[#fbeee9] text-[#ae4d45] border border-[#e98b70]/60',
+    rojo: 'bg-[#fbeee9] text-[#ae4d45] border border-[#e98b70]/60',
+    online: 'bg-[#d9e8e4] text-[#183c3a] border border-[#609f9c]/45',
+    offline: 'bg-[#f2eddd] text-[#454e4e] border border-[#e4dfd2]',
+    neutral: 'bg-[#f2eddd] text-[#454e4e] border border-[#e4dfd2]',
+    info: 'bg-[#d9e8e4]/70 text-[#315f5d] border border-[#609f9c]/30',
   };
 
   const sizeStyles = {

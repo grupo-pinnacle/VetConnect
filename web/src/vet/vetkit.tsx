@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { io, Socket } from "socket.io-client";
 import { Button, Icon, MessageBubble, Modal, Status, Toast, go } from "../shared";
 import api, { getAccessToken } from "../services/api";
-import { getWsUrl, WhatsAppCheck } from "./CallRoom";
+import { getWsUrl } from "../lib/ws";
+import { WhatsAppCheck } from "../components/call/WhatsAppCheck";
 import { useAuth } from "../context/AuthContext";
 import type { ApiResponse, Consultation as BackendConsultation, User } from "../types";
 import { parseConsultationNotes } from "../lib/consultationNotes";
@@ -476,7 +477,7 @@ export function ChatPanel({
   const images = (thread?.msgs ?? []).filter((m) => m.kind === "image");
 
   return (
-    <section className="wa-chat-pane v-chat" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#efeae2" }} aria-label={`Conversación con ${pet.tutor}`}>
+    <section className="wa-chat-pane v-chat" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#fffbef" }} aria-label={`Conversación con ${pet.tutor}`}>
       {header && (
         <header className="wa-chat-pane__header">
           <div className="wa-chat-pane__header-contact">
@@ -527,7 +528,7 @@ export function ChatPanel({
                   <button onClick={() => setBox(idx)} style={{ border: 0, padding: 0, background: "none", borderRadius: 8, overflow: "hidden", display: "block", cursor: "pointer" }} aria-label={`Ampliar fotografía: ${m.name}`}>
                     <img src={m.src} alt={m.name} style={{ width: "100%", height: 160, objectFit: "cover", objectPosition: m.pos, display: "block" }} loading="lazy" />
                   </button>
-                  <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 4, fontSize: 10, color: "#667781" }}>
+                  <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 4, fontSize: 10, color: "#607674" }}>
                     <span>{m.name} · {time}</span>
                     {mine && <WhatsAppCheck state="read" />}
                   </div>
@@ -541,14 +542,14 @@ export function ChatPanel({
                 className={`wa-bubble ${mine ? "wa-bubble--sent" : "wa-bubble--received"}`}
               >
                 {!mine && (
-                  <div className="wa-bubble__sender" style={{ fontSize: 11.5, fontWeight: 700, color: "#008069", marginBottom: 2 }}>
+                  <div className="wa-bubble__sender" style={{ fontSize: 11.5, fontWeight: 700, color: "#315f5d", marginBottom: 2 }}>
                     {m.sender?.firstName || pet.tutor}
                   </div>
                 )}
-                <p className="wa-bubble__text" style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: "#111b21" }}>
+                <p className="wa-bubble__text" style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: "#183c3a" }}>
                   {m.content}
                 </p>
-                <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 3, fontSize: 10, color: "#667781" }}>
+                <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 3, fontSize: 10, color: "#607674" }}>
                   <span>{time}</span>
                   {mine && <WhatsAppCheck state="read" />}
                 </div>
@@ -570,7 +571,7 @@ export function ChatPanel({
         </div>
       )}
 
-      <footer className="wa-chat-footer" style={{ padding: "8px 14px", background: "#f0f2f5", display: "flex", alignItems: "center", gap: 8, borderTop: "1px solid #e9edef" }}>
+      <footer className="wa-chat-footer" style={{ padding: "8px 14px", background: "#f2eddd", display: "flex", alignItems: "center", gap: 8, borderTop: "1px solid #e4dfd2" }}>
         <button
           className={`button button--icon v-quick-toggle ${quick ? "is-open" : ""}`}
           onClick={() => setQuick(!quick)}
@@ -581,14 +582,14 @@ export function ChatPanel({
         >
           <Icon name="zap" size={17} />
         </button>
-        <div className="wa-input-pill" style={{ flex: 1, background: "#ffffff", borderRadius: 8, height: 40, display: "flex", alignItems: "center", padding: "0 14px" }}>
+        <div className="wa-input-pill" style={{ flex: 1, background: "#ffffff", borderRadius: 999, border: "1px solid #e4dfd2", height: 40, display: "flex", alignItems: "center", padding: "0 14px" }}>
           <input
             aria-label="Escribir mensaje"
             placeholder={`Escribir a ${pet.tutor}…`}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            style={{ width: "100%", border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#111b21" }}
+            style={{ width: "100%", border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#183c3a" }}
           />
         </div>
         <button
@@ -596,7 +597,7 @@ export function ChatPanel({
           disabled={!text.trim()}
           onClick={submit}
           aria-label="Enviar mensaje"
-          style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: text.trim() ? "#00a884" : "#8696a0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: text.trim() ? "pointer" : "default" }}
+          style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: text.trim() ? "#315f5d" : "#a8b5b2", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: text.trim() ? "pointer" : "default" }}
         >
           <Icon name="send" size={17} />
         </button>

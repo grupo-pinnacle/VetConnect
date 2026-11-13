@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import "./vet.css";
+import ClientScopedStyle from "../styles/ClientScopedStyle";
+import { getWsUrl } from "../lib/ws";
+import { WhatsAppCheck } from "../components/call/WhatsAppCheck";
 import { Button, Icon, Modal, go } from "../shared";
 import { getPatient, initialConsults, initialQueue, registerPatient, type Consult, type QueueItem, type Triage } from "./data";
 import { TriageBadge, VetProvider, useVet } from "./vetkit";
@@ -569,52 +572,7 @@ export function LiveKitTrackSynchronizer({ mic, cam }: { mic: boolean; cam: bool
   return null;
 }
 
-export const getWsUrl = () => {
-  if (typeof window !== "undefined") {
-    const envWs = import.meta.env.VITE_WS_URL;
-    if (envWs && !envWs.includes("localhost") && !envWs.includes("127.0.0.1")) {
-      return envWs;
-    }
-    // If running via Dev Tunnels or external domain, connect to current origin so Vite proxy forwards /socket.io
-    if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-      return window.location.origin;
-    }
-  }
-  return import.meta.env.VITE_WS_URL || "http://localhost:3001";
-};
-
-export function WhatsAppCheck({ state = "read" }: { state?: "sending" | "sent" | "delivered" | "read" | "failed" }) {
-  if (state === "sending") {
-    return (
-      <svg
-        width="13"
-        height="13"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-label="Enviando…"
-        className="wa-sending-spin"
-        style={{ animation: "waSpin 0.9s linear infinite", display: "inline-block", verticalAlign: "middle" }}
-      >
-        <circle cx="8" cy="8" r="6" stroke="#8696a0" strokeWidth="1.6" strokeDasharray="26" strokeDashoffset="8" />
-        <polyline points="8 4.5 8 8 10.5 8" stroke="#8696a0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (state === "sent") {
-    return (
-      <svg width="15" height="11" viewBox="0 0 16 11" fill="none" aria-label="Enviado">
-        <path d="M1.5 6L5.5 10L14.5 1" stroke="#8696a0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    );
-  }
-  const color = state === "read" ? "#53bdeb" : "#8696a0";
-  return (
-    <svg width="16" height="11" viewBox="0 0 18 11" fill="none" aria-label={state === "read" ? "Leído" : "Entregado"}>
-      <path d="M1 6L5 10L14 1" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M5 6L9 10L18 1" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
+export { getWsUrl, WhatsAppCheck };
 
 function CallChatPanel({
   consultationId,
@@ -679,6 +637,10 @@ function CallChatPanel({
       .catch(() => {});
 
     return () => {
+      s.off("connect");
+      s.off("connect_error");
+      s.off("disconnect");
+      s.off("message:new");
       s.disconnect();
     };
   }, [consultationId]);
@@ -757,7 +719,7 @@ function CallChatPanel({
   };
 
   return (
-    <div className="wa-chat-pane" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#efeae2" }}>
+    <div className="wa-chat-pane" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#fffbef" }}>
       <style>{`
         @keyframes waSpin {
           from { transform: rotate(0deg); }
@@ -792,14 +754,14 @@ function CallChatPanel({
                 }}
               >
                 {!mine && (
-                  <div className="wa-bubble__sender" style={{ fontSize: 11.5, fontWeight: 700, color: "#008069", marginBottom: 2 }}>
+                  <div className="wa-bubble__sender" style={{ fontSize: 11.5, fontWeight: 700, color: "#315f5d", marginBottom: 2 }}>
                     {m.sender?.firstName || otherName}
                   </div>
                 )}
-                <p className="wa-bubble__text" style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: "#111b21" }}>
+                <p className="wa-bubble__text" style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: "#183c3a" }}>
                   {m.content}
                 </p>
-                <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 3, fontSize: 10, color: "#667781" }}>
+                <div className="wa-bubble__meta" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 3, fontSize: 10, color: "#607674" }}>
                   <span>{time}</span>
                   {mine && <WhatsAppCheck state={m.status || "read"} />}
                 </div>
@@ -807,22 +769,22 @@ function CallChatPanel({
             );
           })
         )}
-        <div style={{ fontSize: 11, padding: "4px 8px", color: connected ? "#008069" : "#64748b", display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginTop: "auto" }}>
+        <div style={{ fontSize: 11, padding: "4px 8px", color: connected ? "#315f5d" : "#607674", display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginTop: "auto" }}>
           <i className={connected ? "is-online" : "is-offline"} style={{ width: 7, height: 7, borderRadius: "50%" }} />
           {connected ? "Canal telemático seguro conectado" : "Conectando al servidor…"}
         </div>
         <div ref={endRef} />
       </div>
 
-      <footer className="wa-chat-footer" style={{ padding: "8px 12px", background: "#f0f2f5", display: "flex", alignItems: "center", gap: 8, borderTop: "1px solid #e9edef" }}>
-        <div className="wa-input-pill" style={{ flex: 1, background: "#ffffff", borderRadius: 8, height: 40, display: "flex", alignItems: "center", padding: "0 12px" }}>
+      <footer className="wa-chat-footer" style={{ padding: "8px 12px", background: "#f2eddd", display: "flex", alignItems: "center", gap: 8, borderTop: "1px solid #e4dfd2" }}>
+        <div className="wa-input-pill" style={{ flex: 1, background: "#ffffff", borderRadius: 999, border: "1px solid #e4dfd2", height: 40, display: "flex", alignItems: "center", padding: "0 14px" }}>
           <input
             aria-label="Escribir mensaje"
             placeholder={`Escribir a ${otherName}…`}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            style={{ width: "100%", border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#111b21" }}
+            style={{ width: "100%", border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#183c3a" }}
           />
         </div>
         <button
@@ -830,7 +792,7 @@ function CallChatPanel({
           disabled={!text.trim()}
           onClick={handleSend}
           aria-label="Enviar mensaje"
-          style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: text.trim() ? "#00a884" : "#8696a0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: text.trim() ? "pointer" : "default" }}
+          style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: text.trim() ? "#315f5d" : "#a8b5b2", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: text.trim() ? "pointer" : "default" }}
         >
           <Icon name="send" size={17} />
         </button>
@@ -1356,12 +1318,12 @@ function Room({ id }: { id: string }) {
                   handleFinalize();
                   return;
                 }
-                console.warn("LiveKit transient disconnect notice, waiting 5s for reconnect...", reason);
+                console.warn("LiveKit transient disconnect notice, waiting 15s for reconnect...", reason);
                 setCallState("reconnecting");
                 if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
                 disconnectTimerRef.current = setTimeout(() => {
                   handleFinalize();
-                }, 5000);
+                }, 15000);
               }}
             >
               <LiveKitTrackSynchronizer mic={mic} cam={cam} />
@@ -1403,14 +1365,21 @@ function Room({ id }: { id: string }) {
               <span className="avatar">{remoteInitials}</span>
               <small>{remoteName}</small>
               <span style={{ fontSize: 12, color: "#d9e8e4", marginTop: 4 }}>
-                Canal telemático HD activo
+                {livekitFailed
+                  ? "No pudimos conectar el video en vivo. Podés usar el chat o reintentar."
+                  : "Canal telemático HD activo"}
               </span>
+              {livekitFailed && (
+                <Button variant="secondary" icon="repeat" onClick={() => setLivekitFailed(false)}>
+                  Reintentar video
+                </Button>
+              )}
             </div>
           )}
 
           {/* Clinical identification tag */}
           <span className="v-call__tag">
-            {callState === "waiting" ? "Sala de espera · Guardia VetConnect" : remoteName}
+            {callState === "waiting" ? "Sala de espera · Guardia HuelliCam" : remoteName}
           </span>
 
           {/* Legal compliance badge */}
@@ -1536,7 +1505,9 @@ function Room({ id }: { id: string }) {
             <CallChatPanel consultationId={id} otherName={chatOtherName} user={user} />
           </div>
           {panel === "Ficha" && <FichaClinica p={p} />}
-          {panel === "Evolución" && <EvolutionEditor p={p} />}
+          <div style={{ display: panel === "Evolución" ? "block" : "none" }}>
+            <EvolutionEditor p={p} />
+          </div>
         </div>
       </aside>
 
@@ -1558,6 +1529,7 @@ function Room({ id }: { id: string }) {
 export default function CallRoom({ id }: { id: string }) {
   return (
     <VetProvider forceEmpty={false}>
+      <ClientScopedStyle />
       <Room id={id} />
     </VetProvider>
   );

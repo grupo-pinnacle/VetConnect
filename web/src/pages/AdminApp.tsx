@@ -1,5 +1,8 @@
 import { AdminExecutiveMetrics, UpdatePricingPayload } from '../components/admin/AdminExecutiveMetrics';
 import { AdminFeatureFlagsModal } from '../components/admin/AdminFeatureFlagsModal';
+import ClientScopedStyle from '../styles/ClientScopedStyle';
+import ScopedStyle from '../components/common/ScopedStyle';
+import adminCss from '../styles/admin.css?inline';
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -154,9 +157,10 @@ export function AdminApp() {
   const [tab, setTab] = useState<'dashboard' | 'users' | 'pets' | 'consultations' | 'vets' | 'audit'>(getInitialTab);
   const [featureFlagsModalOpen, setFeatureFlagsModalOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; id: number } | null>(null);
+  const [toast, setToast] = useState<{ msg: string; kind: 'success' | 'error'; id: number } | null>(null);
 
-  const notify = (msg: string) => setToast({ msg, id: Date.now() });
+  const notify = (msg: string, kind: 'success' | 'error' = 'success') =>
+    setToast({ msg, kind, id: Date.now() });
 
   useEffect(() => {
     if (!toast) return;
@@ -186,6 +190,7 @@ export function AdminApp() {
   const [petSearch, setPetSearch] = useState('');
   const [petFilter, setPetFilter] = useState<'ALL' | 'ACTIVE' | 'HIDDEN'>('ALL');
 
+  const [consultSearch, setConsultSearch] = useState('');
   const [consStatusFilter, setConsStatusFilter] = useState<string>('ALL');
 
   // Modals state: Users & Pets CRUD
@@ -194,6 +199,13 @@ export function AdminApp() {
 
   const [petModalOpen, setPetModalOpen] = useState(false);
   const [editingPet, setEditingPet] = useState<AdminPet | null>(null);
+  const [confirmHidePet, setConfirmHidePet] = useState<AdminPet | null>(null);
+  const [isHidingPet, setIsHidingPet] = useState(false);
+
+  // Vet rejection modal state
+  const [rejectingVetId, setRejectingVetId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isRejectingVet, setIsRejectingVet] = useState(false);
 
   // Ban Modal state
   const [banModalOpen, setBanModalOpen] = useState(false);
@@ -297,9 +309,22 @@ export function AdminApp() {
   const filteredConsultations = useMemo(() => {
     return consultations.filter((c) => {
       if (consStatusFilter !== 'ALL' && c.status !== consStatusFilter) return false;
-      return true;
+      if (!consultSearch) return true;
+      const s = consultSearch.toLowerCase();
+      return (
+        c.id?.toLowerCase().includes(s) ||
+        c.pet?.name?.toLowerCase().includes(s) ||
+        c.pet?.species?.toLowerCase().includes(s) ||
+        c.pet?.breed?.toLowerCase().includes(s) ||
+        c.client?.firstName?.toLowerCase().includes(s) ||
+        c.client?.lastName?.toLowerCase().includes(s) ||
+        c.client?.email?.toLowerCase().includes(s) ||
+        c.vet?.firstName?.toLowerCase().includes(s) ||
+        c.vet?.lastName?.toLowerCase().includes(s) ||
+        c.vet?.email?.toLowerCase().includes(s)
+      );
     });
-  }, [consultations, consStatusFilter]);
+  }, [consultations, consStatusFilter, consultSearch]);
 
   // Handlers for User CRUD
   const handleUpdatePricing = async (payload: UpdatePricingPayload) => {
@@ -309,7 +334,8 @@ export function AdminApp() {
       fetchAllData();
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al actualizar las tarifas');
+      notify(errorMsg || 'Error al actualizar las tarifas', 'error');
+      throw err;
     }
   };
 
@@ -383,7 +409,7 @@ export function AdminApp() {
       }
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al guardar usuario.');
+      notify(errorMsg || 'Error al guardar usuario.', 'error');
     }
   };
 
@@ -413,7 +439,7 @@ export function AdminApp() {
       }
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al procesar el baneo de cuenta.');
+      notify(errorMsg || 'Error al procesar el baneo de cuenta.', 'error');
     } finally {
       setIsBanning(false);
     }
@@ -426,7 +452,7 @@ export function AdminApp() {
       fetchAllData();
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al restaurar usuario.');
+      notify(errorMsg || 'Error al restaurar usuario.', 'error');
     }
   };
 
@@ -470,7 +496,7 @@ export function AdminApp() {
   const handleSavePet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (adminPetWeightAssessment && adminPetWeightAssessment.isBlocking) {
-      alert(adminPetWeightAssessment.message);
+      notify(adminPetWeightAssessment.message, 'error');
       return;
     }
     try {
@@ -503,19 +529,27 @@ export function AdminApp() {
       }
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al guardar la mascota.');
+      notify(errorMsg || 'Error al guardar la mascota.', 'error');
     }
   };
 
-  const handleDeletePet = async (p: AdminPet) => {
-    if (!window.confirm(`¿Seguro que deseás ocultar a la mascota ${p.name}?`)) return;
+  const handleDeletePet = (p: AdminPet) => {
+    setConfirmHidePet(p);
+  };
+
+  const handleConfirmDeletePet = async () => {
+    if (!confirmHidePet) return;
+    setIsHidingPet(true);
     try {
-      await api.delete(`/api/admin/pets/${p.id}`);
-      notify(`Mascota ${p.name} ocultada.`);
+      await api.delete(`/api/admin/pets/${confirmHidePet.id}`);
+      notify(`Mascota ${confirmHidePet.name} ocultada.`);
+      setConfirmHidePet(null);
       fetchAllData();
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al ocultar mascota.');
+      notify(errorMsg || 'Error al ocultar mascota.', 'error');
+    } finally {
+      setIsHidingPet(false);
     }
   };
 
@@ -526,7 +560,7 @@ export function AdminApp() {
       fetchAllData();
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al restaurar mascota.');
+      notify(errorMsg || 'Error al restaurar mascota.', 'error');
     }
   };
 
@@ -538,20 +572,35 @@ export function AdminApp() {
       fetchAllData();
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al aprobar matrícula.');
+      notify(errorMsg || 'Error al aprobar matrícula.', 'error');
     }
   };
 
-  const handleRejectVet = async (vetId: string) => {
-    const reason = prompt('Motivo de rechazo de la matrícula profesional:');
-    if (!reason) return;
+  const handleRejectVet = (vetId: string) => {
+    setRejectingVetId(vetId);
+    setRejectReason('');
+  };
+
+  const handleConfirmRejectVet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectingVetId) return;
+    const reason = rejectReason.trim();
+    if (!reason) {
+      notify('Ingresá un motivo para rechazar la matrícula.', 'error');
+      return;
+    }
+    setIsRejectingVet(true);
     try {
-      await api.patch(`/api/admin/vets/${vetId}/reject`, { reason });
+      await api.patch(`/api/admin/vets/${rejectingVetId}/reject`, { reason });
       notify('Matrícula rechazada.');
+      setRejectingVetId(null);
+      setRejectReason('');
       fetchAllData();
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      alert(errorMsg || 'Error al rechazar matrícula.');
+      notify(errorMsg || 'Error al rechazar matrícula.', 'error');
+    } finally {
+      setIsRejectingVet(false);
     }
   };
 
@@ -576,15 +625,25 @@ export function AdminApp() {
 
   return (
     <div className="adm-shell">
+      <ClientScopedStyle />
+      <ScopedStyle id="admin-style" css={adminCss} />
       {/* Toast Notification */}
       {toast && (
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-6 right-6 z-[9999] flex items-center gap-3 py-3 px-5 rounded-xl shadow-2xl text-white font-bold text-sm animate-in slide-in-from-top-4 duration-200"
-          style={{ backgroundColor: '#183c3a', border: '1px solid #315f5d' }}
+          className="fixed top-6 right-6 z-[9999] flex items-center gap-3 py-3 px-5 rounded-full shadow-2xl font-bold text-sm animate-in slide-in-from-top-4 duration-200"
+          style={{
+            backgroundColor: toast.kind === 'error' ? '#fcece9' : '#183c3a',
+            color: toast.kind === 'error' ? '#ae4d45' : '#fffbef',
+            border: toast.kind === 'error' ? '1px solid #f3c8be' : '1px solid #315f5d',
+          }}
         >
-          <Check className="w-5 h-5 text-[#609f9c]" />
+          {toast.kind === 'error' ? (
+            <AlertTriangle className="w-5 h-5 text-[#ae4d45]" />
+          ) : (
+            <Check className="w-5 h-5 text-[#609f9c]" />
+          )}
           <span>{toast.msg}</span>
         </div>
       )}
@@ -603,9 +662,15 @@ export function AdminApp() {
         <div className="adm-sidebar__head">
           <div className="flex items-center gap-2.5">
             <div className="adm-sidebar__logo-mark">
-              <img src="/assets/huellicam-logo.jpeg" alt="Huellicam" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+              <img
+                src="/assets/huellicam-mark-light.png"
+                alt="HuelliCam"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
-            <span className="font-extrabold text-lg tracking-tight text-white">Huellicam</span>
+            <span className="font-extrabold text-lg tracking-tight text-white">
+              Huelli<span style={{ color: "#609f9c" }}>Cam</span>
+            </span>
           </div>
           <button
             className="adm-sidebar__close"
@@ -618,7 +683,7 @@ export function AdminApp() {
 
         <div className="adm-sidebar__profile">
           <div className="adm-sidebar__avatar">
-            SA
+            {`${user?.firstName?.[0] || 'S'}${user?.lastName?.[0] || 'A'}`.toUpperCase()}
           </div>
           <div className="adm-sidebar__profile-info">
             <span className="adm-sidebar__profile-name">
@@ -688,8 +753,9 @@ export function AdminApp() {
 
         <div className="adm-sidebar__foot">
           <button
-            className="adm-nav-item text-[#e98b70] hover:text-[#ffffff] hover:bg-[#c96b52]"
+            className="adm-nav-item text-[#f5a399] hover:text-[#ffffff] hover:bg-[#ae4d45]"
             onClick={() => {
+              setMobileMenu(false);
               logout().then(() => {
                 window.location.href = '/login';
               });
@@ -722,13 +788,13 @@ export function AdminApp() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-[#536b69]">
+            <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-[#607674]">
               <Clock className="w-3.5 h-3.5" />
               <span>Actualizado en vivo</span>
             </div>
             <button
               onClick={fetchAllData}
-              className="p-2 rounded-lg bg-[#f1eee4] text-[#183c3a] hover:bg-[#e2ded4] transition-colors"
+              className="p-2 rounded-full bg-[#f2eddd] text-[#183c3a] hover:bg-[#e4dfd2] transition-colors"
               title="Recargar datos"
             >
               <RotateCcw className="w-4 h-4" />
@@ -751,21 +817,21 @@ export function AdminApp() {
                   <button
                     type="button"
                     onClick={() => setFeatureFlagsModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#dc2626] text-white hover:bg-[#b91c1c] transition-all shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-xs bg-[#ae4d45] text-[#ffffff] hover:bg-[#933d36] transition-all shadow-sm"
                   >
                     <ShieldAlert className="w-4 h-4" />
                     <span>Kill Switches / Resiliencia</span>
                   </button>
                   <button
                     onClick={handleOpenCreateUser}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-xs bg-[#609f9c] text-[#ffffff] hover:bg-[#4d8d89] transition-all shadow-sm"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Nuevo Usuario</span>
                   </button>
                   <button
                     onClick={handleOpenCreatePet}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#ffffff] text-[#183c3a] border border-[#315f5d] hover:bg-[#f8f6f0] transition-all shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-xs bg-[#fffbef] text-[#183c3a] border border-[#315f5d] hover:bg-[#f2eddd] transition-all shadow-sm"
                   >
                     <PawPrint className="w-4 h-4" />
                     <span>Nueva Mascota</span>
@@ -774,14 +840,19 @@ export function AdminApp() {
               </div>
 
               {/* Executive Metrics (CEO) */}
-              <AdminExecutiveMetrics onUpdatePricing={handleUpdatePricing} />
+              <AdminExecutiveMetrics
+                onUpdatePricing={handleUpdatePricing}
+                onRefresh={() => {
+                  void fetchAllData();
+                }}
+              />
 
               {/* KPI Cards Grid */}
               <div className="adm-kpi-grid">
                 <div className="adm-kpi-card">
                   <div className="adm-kpi-card__top">
                     <span className="adm-kpi-card__label">Veterinarios Online</span>
-                    <div className="adm-kpi-card__icon bg-[#e7f2f0] text-[#183c3a]">
+                    <div className="adm-kpi-card__icon bg-[#edf6f4] text-[#183c3a]">
                       <Stethoscope className="w-4 h-4" />
                     </div>
                   </div>
@@ -789,7 +860,7 @@ export function AdminApp() {
                     {stats?.onlineVets ?? 0}
                   </div>
                   <div className="adm-kpi-card__sub">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-[#609f9c] animate-pulse" />
                     <span>En guardia inmediata</span>
                   </div>
                 </div>
@@ -797,11 +868,11 @@ export function AdminApp() {
                 <div className="adm-kpi-card">
                   <div className="adm-kpi-card__top">
                     <span className="adm-kpi-card__label">SENASA Pendientes</span>
-                    <div className="adm-kpi-card__icon bg-[#fbeee9] text-[#c96b52]">
+                    <div className="adm-kpi-card__icon bg-[#fcece9] text-[#ae4d45]">
                       <ShieldAlert className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="adm-kpi-card__value text-[#c96b52]">
+                  <div className="adm-kpi-card__value text-[#ae4d45]">
                     {stats?.pendingVets ?? 0}
                   </div>
                   <div className="adm-kpi-card__sub">
@@ -812,7 +883,7 @@ export function AdminApp() {
                 <div className="adm-kpi-card">
                   <div className="adm-kpi-card__top">
                     <span className="adm-kpi-card__label">Consultas Totales</span>
-                    <div className="adm-kpi-card__icon bg-[#f3efe6] text-[#183c3a]">
+                    <div className="adm-kpi-card__icon bg-[#f2eddd] text-[#183c3a]">
                       <Video className="w-4 h-4" />
                     </div>
                   </div>
@@ -827,11 +898,11 @@ export function AdminApp() {
                 <div className="adm-kpi-card">
                   <div className="adm-kpi-card__top">
                     <span className="adm-kpi-card__label">Pacientes Activos</span>
-                    <div className="adm-kpi-card__icon bg-[#e7f2f0] text-[#245e5b]">
+                    <div className="adm-kpi-card__icon bg-[#edf6f4] text-[#315f5d]">
                       <PawPrint className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="adm-kpi-card__value text-[#245e5b]">
+                  <div className="adm-kpi-card__value text-[#315f5d]">
                     {stats?.activePetsCount ?? pets.filter((p) => !p.deletedAt).length}
                   </div>
                   <div className="adm-kpi-card__sub">
@@ -869,26 +940,26 @@ export function AdminApp() {
                         .map((v) => (
                           <div
                             key={v.id}
-                            className="flex items-center justify-between p-3.5 rounded-xl bg-[#f8f6f0] border border-[#e2ded4]"
+                            className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f2eddd] border border-[#e4dfd2]"
                           >
                             <div>
                               <div className="font-extrabold text-sm text-[#183c3a]">
                                 Dr. {v.firstName} {v.lastName}
                               </div>
-                              <div className="text-xs text-[#536b69]">
+                              <div className="text-xs text-[#607674]">
                                 Matrícula: <strong className="text-[#183c3a]">{v.licenseNumber || 'S/N'}</strong> • {v.email}
                               </div>
                             </div>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleApproveVet(v.id)}
-                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#183c3a] text-white hover:bg-[#254d4a]"
+                                className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#609f9c] text-white hover:bg-[#4d8d89]"
                               >
                                 Aprobar
                               </button>
                               <button
                                 onClick={() => handleRejectVet(v.id)}
-                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#fbeee9] text-[#c96b52] hover:bg-[#f3c2b5]"
+                                className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#fcece9] text-[#ae4d45] hover:bg-[#f6d5ce]"
                               >
                                 Rechazar
                               </button>
@@ -915,7 +986,7 @@ export function AdminApp() {
                     </button>
                   </div>
                   {consultations.length === 0 ? (
-                    <div className="py-10 text-center text-sm font-medium text-[#536b69]">
+                    <div className="py-10 text-center text-sm font-medium text-[#607674]">
                       Aún no hay consultas registradas en la base de datos.
                     </div>
                   ) : (
@@ -923,13 +994,13 @@ export function AdminApp() {
                       {consultations.slice(0, 4).map((c) => (
                         <div
                           key={c.id}
-                          className="flex items-center justify-between p-3.5 rounded-xl bg-[#f8f6f0] border border-[#e2ded4]"
+                          className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f2eddd] border border-[#e4dfd2]"
                         >
                           <div>
                             <div className="font-extrabold text-sm text-[#183c3a]">
                               {c.pet.name} ({c.pet.species})
                             </div>
-                            <div className="text-xs text-[#536b69]">
+                            <div className="text-xs text-[#607674]">
                               Tutor: {c.client.firstName} {c.client.lastName} • Vet: {c.vet ? `Dr. ${c.vet.firstName}` : 'En espera'}
                             </div>
                           </div>
@@ -947,7 +1018,7 @@ export function AdminApp() {
                             </span>
                             <button
                               onClick={() => handleOpenChatInspector(c)}
-                              className="p-1.5 rounded-lg bg-[#ffffff] border border-[#315f5d] text-[#183c3a] hover:bg-[#e7f2f0]"
+                              className="p-2 rounded-full bg-[#fffbef] border border-[#315f5d] text-[#183c3a] hover:bg-[#edf6f4]"
                               title="Ver Chat"
                             >
                               <MessageSquare className="w-3.5 h-3.5" />
@@ -974,7 +1045,7 @@ export function AdminApp() {
                 <div className="adm-header__actions">
                   <button
                     onClick={handleOpenCreateUser}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm cursor-pointer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-xs bg-[#609f9c] text-[#ffffff] hover:bg-[#4d8d89] transition-all shadow-sm cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Crear Usuario</span>
@@ -1104,7 +1175,7 @@ export function AdminApp() {
                                 <div className="flex items-center justify-end gap-1.5">
                                   <button
                                     onClick={() => handleOpenEditUser(u)}
-                                    className="p-2 rounded-lg bg-[#f8f6f0] border border-[#e2ded4] text-[#183c3a] hover:bg-[#e7f2f0] transition-colors"
+                                    className="p-2 rounded-full bg-[#f2eddd] border border-[#e4dfd2] text-[#183c3a] hover:bg-[#edf6f4] transition-colors"
                                     title="Editar Usuario"
                                   >
                                     <Edit2 className="w-3.5 h-3.5" />
@@ -1113,7 +1184,7 @@ export function AdminApp() {
                                   {isBanned ? (
                                     <button
                                       onClick={() => handleRestoreUser(u)}
-                                      className="p-2 rounded-lg bg-[#eaf6ea] border border-[#c2e2c2] text-[#206120] hover:bg-[#d5ebd5] transition-colors"
+                                      className="p-2 rounded-full bg-[#edf6f4] border border-[#cde2df] text-[#315f5d] hover:bg-[#d9e8e4] transition-colors"
                                       title="Restaurar Cuenta"
                                     >
                                       <RotateCcw className="w-3.5 h-3.5" />
@@ -1121,7 +1192,7 @@ export function AdminApp() {
                                   ) : (
                                     <button
                                       onClick={() => handleOpenBanModal(u)}
-                                      className="p-2 rounded-lg bg-[#fbeee9] border border-[#f3c2b5] text-[#c96b52] hover:bg-[#e98b70] hover:text-white transition-colors"
+                                      className="p-2 rounded-full bg-[#fcece9] border border-[#f3c8be] text-[#ae4d45] hover:bg-[#ae4d45] hover:text-white transition-colors"
                                       title="Banear / Suspender Permanentemente"
                                     >
                                       <Ban className="w-3.5 h-3.5" />
@@ -1152,7 +1223,7 @@ export function AdminApp() {
                 <div className="adm-header__actions">
                   <button
                     onClick={handleOpenCreatePet}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm cursor-pointer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-xs bg-[#609f9c] text-[#ffffff] hover:bg-[#4d8d89] transition-all shadow-sm cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Nueva Mascota</span>
@@ -1254,7 +1325,7 @@ export function AdminApp() {
                                 <div className="flex items-center justify-end gap-1.5">
                                   <button
                                     onClick={() => handleOpenEditPet(p)}
-                                    className="p-2 rounded-lg bg-[#f8f6f0] border border-[#e2ded4] text-[#183c3a] hover:bg-[#e7f2f0] transition-colors"
+                                    className="p-2 rounded-full bg-[#f2eddd] border border-[#e4dfd2] text-[#183c3a] hover:bg-[#edf6f4] transition-colors"
                                     title="Editar Mascota"
                                   >
                                     <Edit2 className="w-3.5 h-3.5" />
@@ -1262,7 +1333,7 @@ export function AdminApp() {
                                   {isDeleted ? (
                                     <button
                                       onClick={() => handleRestorePet(p)}
-                                      className="p-2 rounded-lg bg-[#eaf6ea] border border-[#c2e2c2] text-[#206120] hover:bg-[#d5ebd5] transition-colors"
+                                      className="p-2 rounded-full bg-[#edf6f4] border border-[#cde2df] text-[#315f5d] hover:bg-[#d9e8e4] transition-colors"
                                       title="Restaurar Mascota"
                                     >
                                       <RotateCcw className="w-3.5 h-3.5" />
@@ -1270,7 +1341,7 @@ export function AdminApp() {
                                   ) : (
                                     <button
                                       onClick={() => handleDeletePet(p)}
-                                      className="p-2 rounded-lg bg-[#fbeee9] border border-[#f3c2b5] text-[#c96b52] hover:bg-[#f3c2b5] transition-colors"
+                                      className="p-2 rounded-full bg-[#fcece9] border border-[#f3c8be] text-[#ae4d45] hover:bg-[#f6d5ce] transition-colors"
                                       title="Ocultar Mascota"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -1303,13 +1374,18 @@ export function AdminApp() {
               {/* Filter Bar */}
               <div className="adm-filter-bar">
                 <div className="adm-filter-bar__search">
-                  <Search className="w-4 h-4 text-[#536b69]" />
+                  <Search className="w-4 h-4 text-[#607674]" />
                   <input
                     type="text"
-                    placeholder="Filtrar por paciente o profesional..."
-                    value={petSearch}
-                    onChange={(e) => setPetSearch(e.target.value)}
+                    placeholder="Filtrar por paciente, tutor o profesional..."
+                    value={consultSearch}
+                    onChange={(e) => setConsultSearch(e.target.value)}
                   />
+                  {consultSearch && (
+                    <button onClick={() => setConsultSearch('')} className="text-[#607674] hover:text-[#183c3a]">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="adm-filter-bar__actions">
@@ -1421,12 +1497,12 @@ export function AdminApp() {
                                 <div className="flex items-center justify-end">
                                   <button
                                     onClick={() => handleOpenChatInspector(c)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#183c3a] text-[#fffbef] hover:bg-[#254d4a] transition-all shadow-sm cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#609f9c] text-[#ffffff] hover:bg-[#4d8d89] transition-all shadow-sm cursor-pointer"
                                   >
-                                    <MessageSquare className="w-3.5 h-3.5 text-[#609f9c]" />
+                                    <MessageSquare className="w-3.5 h-3.5 text-[#fffbef]" />
                                     <span>Ver Chat</span>
                                     {msgCount > 0 && (
-                                      <span className="bg-[#609f9c] text-[#183c3a] px-1.5 py-0.2 rounded-full text-[10px] font-black">
+                                      <span className="bg-[#183c3a] text-[#fffbef] px-1.5 py-0.2 rounded-full text-[10px] font-black">
                                         {msgCount}
                                       </span>
                                     )}
@@ -1515,7 +1591,7 @@ export function AdminApp() {
                                   {v.vetStatus !== 'APPROVED' && (
                                     <button
                                       onClick={() => handleApproveVet(v.id)}
-                                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#183c3a] text-white hover:bg-[#254d4a] transition-all"
+                                      className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#609f9c] text-white hover:bg-[#4d8d89] transition-all"
                                     >
                                       Aprobar
                                     </button>
@@ -1523,7 +1599,7 @@ export function AdminApp() {
                                   {v.vetStatus !== 'REJECTED' && (
                                     <button
                                       onClick={() => handleRejectVet(v.id)}
-                                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#fbeee9] text-[#c96b52] hover:bg-[#f3c2b5] transition-all"
+                                      className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#fcece9] text-[#ae4d45] hover:bg-[#f6d5ce] transition-all"
                                     >
                                       Rechazar
                                     </button>
@@ -1615,18 +1691,18 @@ export function AdminApp() {
           className="adm-modal-overlay"
         >
           <div className="adm-modal-card text-center space-y-5 animate-in zoom-in-95 duration-200">
-            <div className="mx-auto w-16 h-16 rounded-full bg-[#fbeee9] border-2 border-[#c96b52] flex items-center justify-center text-[#c96b52] animate-bounce">
+            <div className="mx-auto w-16 h-16 rounded-full bg-[#fcece9] border-2 border-[#ae4d45] flex items-center justify-center text-[#ae4d45]">
               <Ban className="w-8 h-8" />
             </div>
 
             <div className="space-y-2">
-              <span className="inline-block text-xs uppercase tracking-wider font-extrabold px-3 py-1 rounded-full bg-[#fbeee9] text-[#c96b52] border border-[#f3c2b5]">
+              <span className="inline-block text-xs uppercase tracking-wider font-extrabold px-3 py-1 rounded-full bg-[#fcece9] text-[#ae4d45] border border-[#f3c8be]">
                 Acción Irreversible
               </span>
               <h2 className="text-2xl font-black text-[#183c3a] tracking-tight">
                 Banear Cuenta Permanentemente
               </h2>
-              <p className="text-sm text-[#536b69] font-medium leading-relaxed">
+              <p className="text-sm text-[#607674] font-medium leading-relaxed">
                 ¿Estás seguro de que deseás suspender y banear de forma permanente a{' '}
                 <strong className="text-[#183c3a]">
                   {targetBanUser.firstName} {targetBanUser.lastName} ({targetBanUser.email})
@@ -1635,8 +1711,8 @@ export function AdminApp() {
               </p>
             </div>
 
-            <div className="bg-[#f8f6f0] p-4 rounded-xl border border-[#e2ded4] text-left space-y-3">
-              <div className="flex items-start gap-2 text-xs text-[#c96b52] font-bold">
+            <div className="bg-[#f2eddd] p-4 rounded-2xl border border-[#e4dfd2] text-left space-y-3">
+              <div className="flex items-start gap-2 text-xs text-[#ae4d45] font-bold">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
                   Al confirmar, sus tokens de sesión se invalidarán al instante y recibirá una notificación en pantalla expulsándolo del sistema.
@@ -1648,7 +1724,7 @@ export function AdminApp() {
                   Motivo del Baneo (visible para el usuario):
                 </label>
                 <textarea
-                  className="w-full text-xs p-2.5 rounded-lg border border-[#e2ded4] bg-white text-[#183c3a] focus:outline-none focus:border-[#315f5d]"
+                  className="w-full text-xs p-2.5 rounded-xl border border-[#e4dfd2] bg-white text-[#183c3a] focus:outline-none focus:border-[#315f5d]"
                   rows={2}
                   placeholder="Ej: Infracción reiterada de normas comunitarias / Suplantación de identidad profesional."
                   value={banReason}
@@ -1665,7 +1741,7 @@ export function AdminApp() {
                   setBanModalOpen(false);
                   setTargetBanUser(null);
                 }}
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-xs bg-white text-[#183c3a] border border-[#315f5d] hover:bg-[#f8f6f0] transition-colors cursor-pointer"
+                className="flex-1 py-3 px-4 rounded-full font-bold text-xs bg-[#fffbef] text-[#183c3a] border border-[#d5cec0] hover:bg-[#f2eddd] transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1673,7 +1749,7 @@ export function AdminApp() {
                 type="button"
                 disabled={isBanning}
                 onClick={handleConfirmBan}
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-xs bg-[#c96b52] text-white hover:bg-[#b0533b] transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 py-3 px-4 rounded-full font-bold text-xs bg-[#ae4d45] text-white hover:bg-[#933d36] transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
               >
                 {isBanning ? (
                   <span>Procesando...</span>
@@ -1732,7 +1808,7 @@ export function AdminApp() {
               </div>
               <button
                 onClick={() => setChatModalOpen(false)}
-                className="p-1.5 rounded-lg text-[#536b69] hover:text-[#183c3a] hover:bg-[#e2ded4]"
+                className="p-2 rounded-full text-[#607674] hover:text-[#183c3a] hover:bg-[#f2eddd]"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1792,7 +1868,7 @@ export function AdminApp() {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setChatModalOpen(false)}
-                className="py-2.5 px-6 rounded-xl font-bold text-xs bg-[#183c3a] text-white hover:bg-[#254d4a] transition-colors cursor-pointer"
+                className="py-2.5 px-6 rounded-full font-bold text-xs bg-[#609f9c] text-white hover:bg-[#4d8d89] transition-colors cursor-pointer"
               >
                 Cerrar Visor de Conversación
               </button>
@@ -1906,13 +1982,13 @@ export function AdminApp() {
                 <button
                   type="button"
                   onClick={() => setUserModalOpen(false)}
-                  className="py-2.5 px-4 rounded-xl text-xs font-bold bg-white text-[#183c3a] border border-[#315f5d]"
+                  className="py-2.5 px-5 rounded-full text-xs font-bold bg-[#fffbef] text-[#183c3a] border border-[#d5cec0] hover:bg-[#f2eddd]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="py-2.5 px-5 rounded-xl text-xs font-bold bg-[#183c3a] text-white hover:bg-[#254d4a]"
+                  className="py-2.5 px-5 rounded-full text-xs font-bold bg-[#609f9c] text-white hover:bg-[#4d8d89]"
                 >
                   Guardar Usuario
                 </button>
@@ -2044,15 +2120,112 @@ export function AdminApp() {
                 <button
                   type="button"
                   onClick={() => setPetModalOpen(false)}
-                  className="py-2.5 px-4 rounded-xl text-xs font-bold bg-white text-[#183c3a] border border-[#315f5d]"
+                  className="py-2.5 px-5 rounded-full text-xs font-bold bg-[#fffbef] text-[#183c3a] border border-[#d5cec0] hover:bg-[#f2eddd]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="py-2.5 px-5 rounded-xl text-xs font-bold bg-[#183c3a] text-white hover:bg-[#254d4a]"
+                  className="py-2.5 px-5 rounded-full text-xs font-bold bg-[#609f9c] text-white hover:bg-[#4d8d89]"
                 >
                   Guardar Mascota
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 5: CONFIRM HIDE PET                            */}
+      {/* ==================================================== */}
+      {confirmHidePet && (
+        <div role="dialog" aria-modal="true" className="adm-modal-overlay">
+          <div className="adm-modal-card space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 rounded-full bg-[#fcece9] border border-[#f3c8be] text-[#ae4d45] flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-[#183c3a]">Ocultar paciente</h2>
+                <p className="text-sm text-[#607674] mt-1">
+                  ¿Seguro que deseás ocultar a <strong className="text-[#183c3a]">{confirmHidePet.name}</strong>? Podrás restaurarla más adelante desde esta vista.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isHidingPet}
+                onClick={() => setConfirmHidePet(null)}
+                className="py-2.5 px-5 rounded-full text-xs font-bold bg-[#fffbef] text-[#183c3a] border border-[#d5cec0] hover:bg-[#f2eddd]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isHidingPet}
+                onClick={handleConfirmDeletePet}
+                className="py-2.5 px-5 rounded-full text-xs font-bold bg-[#ae4d45] text-white hover:bg-[#933d36] disabled:opacity-60"
+              >
+                {isHidingPet ? 'Ocultando...' : 'Ocultar Mascota'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MODAL 6: REJECT SENASA VET REASON                    */}
+      {/* ==================================================== */}
+      {rejectingVetId && (
+        <div role="dialog" aria-modal="true" className="adm-modal-overlay">
+          <div className="adm-modal-card space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e4dfd2]">
+              <h2 className="text-lg font-black text-[#183c3a]">Rechazar matrícula profesional</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setRejectingVetId(null);
+                  setRejectReason('');
+                }}
+                className="p-2 rounded-full text-[#607674] hover:text-[#183c3a] hover:bg-[#f2eddd]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleConfirmRejectVet} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#183c3a] mb-1">
+                  Motivo de rechazo de la matrícula profesional
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  className="w-full text-xs p-3 rounded-xl border border-[#e4dfd2] bg-white text-[#183c3a] focus:outline-none focus:border-[#315f5d]"
+                  placeholder="Ej: Matrícula ilegible o vencida ante SENASA."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isRejectingVet}
+                  onClick={() => {
+                    setRejectingVetId(null);
+                    setRejectReason('');
+                  }}
+                  className="py-2.5 px-5 rounded-full text-xs font-bold bg-[#fffbef] text-[#183c3a] border border-[#d5cec0] hover:bg-[#f2eddd]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRejectingVet}
+                  className="py-2.5 px-5 rounded-full text-xs font-bold bg-[#ae4d45] text-white hover:bg-[#933d36] disabled:opacity-60"
+                >
+                  {isRejectingVet ? 'Rechazando...' : 'Confirmar Rechazo'}
                 </button>
               </div>
             </form>

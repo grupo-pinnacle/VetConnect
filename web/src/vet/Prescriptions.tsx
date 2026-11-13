@@ -40,10 +40,9 @@ export function NewPrescription() {
   const availablePatients = patientsList;
   const set = (k: keyof Form, v: string) => { setF({ ...f, [k]: v }); if (errors[k]) setErrors({ ...errors, [k]: undefined }); };
   const validate = (keys: (keyof Form)[]) => { const e: typeof errors = {}; keys.forEach((k) => { if (!f[k].trim()) e[k] = `Completá ${labels[k].toLowerCase()}.`; }); setErrors(e); return Object.keys(e).length === 0; };
-  const save = async (status: Rx["status"]) => {
-    const id = draft?.id ?? `RX-2025-${String(430 + rx.length).padStart(4, "0")}`;
+  const save = async (status: Rx["status"]): Promise<string | null> => {
+    const id = draft?.id ?? `RX-${new Date().getFullYear()}-${String(430 + rx.length).padStart(4, "0")}`;
     const entry: Rx = { id, petId: f.pet, med: f.med, dose: f.dose, freq: f.freq, duration: f.duration, notes: f.notes, status, date: "Hoy" };
-    setRx((l) => draft ? l.map((r) => r.id === id ? entry : r) : [entry, ...l]);
     if (status === "Emitida") {
       const consultationId = params.get("consultationId") ?? consults.find((c) => c.petId === f.pet)?.id;
       if (consultationId) {
@@ -59,9 +58,12 @@ export function NewPrescription() {
           });
         } catch (err) {
           console.warn("Backend prescription save warning:", err);
+          notify("No pudimos emitir la receta en el servidor. Verificá tu conexión.");
+          return null;
         }
       }
     }
+    setRx((l) => draft ? l.map((r) => r.id === id ? entry : r) : [entry, ...l]);
     return id;
   };
   const p = f.pet ? getPatient(f.pet) : null;
@@ -82,7 +84,7 @@ export function NewPrescription() {
         <Button type="submit" icon="check">Emitir receta</Button>
       </div>
     </form>
-    {confirm && p && <Modal title="Confirmar receta" text={`Revisá los datos antes de emitir la receta de ${f.med} para ${p.name}.`} cancel="Volver a editar" confirm="Confirmar emisión" onClose={() => setConfirm(false)} onConfirm={async () => { const id = await save("Emitida"); notify("Receta emitida correctamente."); go(`/vet/prescriptions/${id}`); }}/>}
+    {confirm && p && <Modal title="Confirmar receta" text={`Revisá los datos antes de emitir la receta de ${f.med} para ${p.name}.`} cancel="Volver a editar" confirm="Confirmar emisión" onClose={() => setConfirm(false)} onConfirm={async () => { const id = await save("Emitida"); setConfirm(false); if (!id) return; notify("Receta emitida correctamente."); go(`/vet/prescriptions/${id}`); }}/>}
   </>;
 }
 
@@ -124,7 +126,7 @@ export function PrescriptionDetail({ id }: { id: string }) {
       </div>
       <div className="v-rx__med"><Icon name="pill" size={22}/><div><span className="v-label">Medicamento</span><h3>{r.med}</h3><p>{r.dose} · {r.freq} · durante {r.duration}</p></div></div>
       <div className="v-rx__notes"><span className="v-label">Indicaciones</span><p>{r.notes || "Sin indicaciones adicionales."}</p></div>
-      <footer><ReferenceCode id={r.id}/><p><b>Identificador {r.id}</b><br/>Código de referencia interno de VetConnect, a modo ilustrativo. No constituye una validación externa.</p></footer>
+      <footer><ReferenceCode id={r.id}/><p><b>Identificador {r.id}</b><br/>Código de referencia interno de HuelliCam, a modo ilustrativo. No constituye una validación externa.</p></footer>
     </article>
     <div className="v-inline-actions v-inline-actions--left">
       <Button variant="secondary" onClick={() => go("/vet/prescriptions")}>Volver a recetas</Button>

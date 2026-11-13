@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DollarSign, TrendingUp, AlertOctagon, Percent, RefreshCw, Settings2, Check, X } from 'lucide-react';
 import api from '../../services/api';
 
@@ -50,6 +50,8 @@ export function AdminExecutiveMetrics({
   const [internalLoading, setInternalLoading] = useState(false);
   const [isEditingPricing, setIsEditingPricing] = useState(false);
   const [isSavingPricing, setIsSavingPricing] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
 
   // Form local state
   const [feeInput, setFeeInput] = useState<string>('15000');
@@ -57,13 +59,12 @@ export function AdminExecutiveMetrics({
   const [currencyInput, setCurrencyInput] = useState<SupportedCurrency>('ARS');
   const [reasonInput, setReasonInput] = useState<string>('Ajuste de arancel ejecutivo desde panel admin');
 
-  const fetchMetrics = () => {
-    let isMounted = true;
+  const fetchMetrics = useCallback(() => {
     setInternalLoading(true);
     api
       .get<{ success: boolean; data: ExecutiveMetricsData }>('/api/admin/executive-metrics')
       .then((res) => {
-        if (isMounted && res.data?.data) {
+        if (isMountedRef.current && res.data?.data) {
           setInternalMetrics(res.data.data);
         }
       })
@@ -71,17 +72,19 @@ export function AdminExecutiveMetrics({
         console.error('Error fetching executive metrics:', err);
       })
       .finally(() => {
-        if (isMounted) setInternalLoading(false);
+        if (isMountedRef.current) setInternalLoading(false);
       });
-    return () => {
-      isMounted = false;
-    };
-  };
+  }, []);
 
   useEffect(() => {
-    if (externalMetrics !== undefined) return;
-    return fetchMetrics();
-  }, [externalMetrics]);
+    isMountedRef.current = true;
+    if (externalMetrics === undefined) {
+      fetchMetrics();
+    }
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [externalMetrics, fetchMetrics]);
 
   const metrics = externalMetrics !== undefined ? externalMetrics : internalMetrics;
   const isLoading = externalLoading !== undefined ? externalLoading : internalLoading;
@@ -106,15 +109,16 @@ export function AdminExecutiveMetrics({
 
   const handleSavePricing = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPricingError(null);
     const fee = Number(feeInput);
     const ratePercent = Number(takeRateInput);
 
     if (isNaN(fee) || fee <= 0) {
-      alert('El arancel base debe ser un número positivo.');
+      setPricingError('El arancel base debe ser un número positivo.');
       return;
     }
     if (isNaN(ratePercent) || ratePercent < 0 || ratePercent > 100) {
-      alert('La comisión debe ser un porcentaje entre 0 y 100.');
+      setPricingError('La comisión debe ser un porcentaje entre 0 y 100.');
       return;
     }
 
@@ -129,6 +133,9 @@ export function AdminExecutiveMetrics({
     try {
       if (onUpdatePricing) {
         await onUpdatePricing(payload);
+        if (externalMetrics === undefined) {
+          fetchMetrics();
+        }
       } else {
         await api.patch('/api/admin/pricing-settings', payload);
         fetchMetrics();
@@ -136,10 +143,17 @@ export function AdminExecutiveMetrics({
       setIsEditingPricing(false);
     } catch (err) {
       console.error('Error updating pricing settings:', err);
-      alert('Error al actualizar las tarifas');
+      setPricingError('Error al actualizar las tarifas. Verificá los valores e intentá nuevamente.');
     } finally {
       setIsSavingPricing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    if (externalMetrics === undefined) {
+      fetchMetrics();
+    }
+    onRefresh?.();
   };
 
   return (
@@ -148,7 +162,7 @@ export function AdminExecutiveMetrics({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-primary, #1e293b)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#183c3a' }}>
               Métricas Ejecutivas y Unit Economics (CEO)
             </h2>
             {/* White-label tariff active badge */}
@@ -158,20 +172,20 @@ export function AdminExecutiveMetrics({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '3px 10px',
-                  borderRadius: '9999px',
+                  padding: '4px 12px',
+                  borderRadius: '999px',
                   fontSize: '0.75rem',
-                  fontWeight: 600,
-                  backgroundColor: '#f1f5f9',
-                  color: '#334155',
-                  border: '1px solid #cbd5e1',
+                  fontWeight: 700,
+                  backgroundColor: '#edf6f4',
+                  color: '#315f5d',
+                  border: '1px solid #d9e8e4',
                 }}
               >
                 Tarifa Activa: {formatCurrency(activeFee)} {activeCurrency} | Take-Rate: {activeRate}%
               </span>
             )}
           </div>
-          <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-secondary, #64748b)' }}>
+          <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#607674' }}>
             Visión económica, margen neto de plataforma y fuga por cancelaciones.
           </p>
         </div>
@@ -179,19 +193,22 @@ export function AdminExecutiveMetrics({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
-            onClick={() => setIsEditingPricing((prev) => !prev)}
+            onClick={() => {
+              setPricingError(null);
+              setIsEditingPricing((prev) => !prev);
+            }}
             aria-label="Configurar tarifa"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              backgroundColor: isEditingPricing ? '#f8fafc' : '#fff',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: '#1e293b',
+              padding: '8px 16px',
+              borderRadius: '999px',
+              border: '1px solid #d5cec0',
+              backgroundColor: isEditingPricing ? '#f2eddd' : '#fffbef',
+              fontSize: '0.825rem',
+              fontWeight: 700,
+              color: '#183c3a',
               cursor: 'pointer',
             }}
           >
@@ -202,17 +219,19 @@ export function AdminExecutiveMetrics({
           {onRefresh && (
             <button
               type="button"
-              onClick={onRefresh}
+              onClick={handleRefresh}
               disabled={isLoading}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#fff',
-                fontSize: '0.875rem',
+                padding: '8px 16px',
+                borderRadius: '999px',
+                border: '1px solid #d5cec0',
+                backgroundColor: '#fffbef',
+                color: '#183c3a',
+                fontSize: '0.825rem',
+                fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
@@ -228,39 +247,60 @@ export function AdminExecutiveMetrics({
         <form
           onSubmit={handleSavePricing}
           style={{
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '10px',
-            padding: '16px',
+            backgroundColor: '#f2eddd',
+            border: '1px solid #e4dfd2',
+            borderRadius: '20px',
+            padding: '18px',
             marginBottom: '20px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            boxShadow: '0 8px 20px rgba(24, 60, 58, 0.04)',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
+            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#183c3a' }}>
               Parametrización de Tarifas Marca Blanca (Unit Economics del Tenant)
             </span>
             <button
               type="button"
-              onClick={() => setIsEditingPricing(false)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              onClick={() => {
+                setPricingError(null);
+                setIsEditingPricing(false);
+              }}
+              style={{ background: '#fffbef', border: '1px solid #e4dfd2', borderRadius: '999px', padding: '4px', cursor: 'pointer', color: '#183c3a' }}
             >
               <X size={16} />
             </button>
           </div>
+
+          {pricingError && (
+            <div
+              role="alert"
+              style={{
+                marginBottom: '12px',
+                padding: '10px 14px',
+                borderRadius: '14px',
+                backgroundColor: '#fcece9',
+                border: '1px solid #f3c8be',
+                color: '#ae4d45',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+              }}
+            >
+              {pricingError}
+            </div>
+          )}
 
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
               gap: '12px',
-              marginBottom: '12px',
+              marginBottom: '14px',
             }}
           >
             <div>
               <label
                 htmlFor="baseConsultationFee"
-                style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}
+                style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#183c3a', marginBottom: '4px' }}
               >
                 Arancel Base
               </label>
@@ -272,9 +312,11 @@ export function AdminExecutiveMetrics({
                 onChange={(e) => setFeeInput(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid #e4dfd2',
+                  backgroundColor: '#ffffff',
+                  color: '#183c3a',
                   fontSize: '0.875rem',
                 }}
               />
@@ -283,7 +325,7 @@ export function AdminExecutiveMetrics({
             <div>
               <label
                 htmlFor="platformTakeRate"
-                style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}
+                style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#183c3a', marginBottom: '4px' }}
               >
                 Comisión Take-Rate (%)
               </label>
@@ -298,9 +340,11 @@ export function AdminExecutiveMetrics({
                 onChange={(e) => setTakeRateInput(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid #e4dfd2',
+                  backgroundColor: '#ffffff',
+                  color: '#183c3a',
                   fontSize: '0.875rem',
                 }}
               />
@@ -309,7 +353,7 @@ export function AdminExecutiveMetrics({
             <div>
               <label
                 htmlFor="currency"
-                style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}
+                style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#183c3a', marginBottom: '4px' }}
               >
                 Moneda
               </label>
@@ -320,11 +364,12 @@ export function AdminExecutiveMetrics({
                 onChange={(e) => setCurrencyInput(e.target.value as SupportedCurrency)}
                 style={{
                   width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid #e4dfd2',
+                  backgroundColor: '#ffffff',
+                  color: '#183c3a',
                   fontSize: '0.875rem',
-                  backgroundColor: '#fff',
                 }}
               >
                 <option value="ARS">ARS ($)</option>
@@ -338,7 +383,7 @@ export function AdminExecutiveMetrics({
             <div>
               <label
                 htmlFor="pricingReason"
-                style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}
+                style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#183c3a', marginBottom: '4px' }}
               >
                 Motivo del ajuste
               </label>
@@ -351,9 +396,11 @@ export function AdminExecutiveMetrics({
                 placeholder="Ej: Actualización arancel colegio profesional"
                 style={{
                   width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid #e4dfd2',
+                  backgroundColor: '#ffffff',
+                  color: '#183c3a',
                   fontSize: '0.875rem',
                 }}
               />
@@ -363,13 +410,18 @@ export function AdminExecutiveMetrics({
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
             <button
               type="button"
-              onClick={() => setIsEditingPricing(false)}
+              onClick={() => {
+                setPricingError(null);
+                setIsEditingPricing(false);
+              }}
               style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#fff',
+                padding: '8px 16px',
+                borderRadius: '999px',
+                border: '1px solid #d5cec0',
+                backgroundColor: '#fffbef',
+                color: '#183c3a',
                 fontSize: '0.825rem',
+                fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
@@ -383,12 +435,12 @@ export function AdminExecutiveMetrics({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '6px',
-                backgroundColor: '#183c3a',
-                color: '#fff',
+                padding: '8px 18px',
+                borderRadius: '999px',
+                backgroundColor: '#609f9c',
+                color: '#ffffff',
                 fontSize: '0.825rem',
-                fontWeight: 600,
+                fontWeight: 700,
                 border: 'none',
                 cursor: isSavingPricing ? 'not-allowed' : 'pointer',
                 opacity: isSavingPricing ? 0.7 : 1,
@@ -412,23 +464,23 @@ export function AdminExecutiveMetrics({
         {/* GMV Total */}
         <div
           style={{
-            backgroundColor: '#fff',
-            padding: '16px',
-            borderRadius: '10px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            backgroundColor: '#ffffff',
+            padding: '18px',
+            borderRadius: '22px',
+            border: '1px solid #e4dfd2',
+            boxShadow: '0 8px 24px rgba(24, 60, 58, 0.05)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b' }}>GMV Total</span>
-            <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '4px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#607674' }}>GMV Total</span>
+            <span style={{ backgroundColor: '#edf6f4', color: '#315f5d', padding: '6px', borderRadius: '10px' }}>
               <DollarSign size={18} />
             </span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#183c3a' }}>
             {formatCurrency(metrics?.gmvTotal)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+          <div style={{ fontSize: '0.75rem', color: '#607674', marginTop: '4px' }}>
             Consultas completadas ({metrics?.counts?.completed ?? 0})
           </div>
         </div>
@@ -436,25 +488,25 @@ export function AdminExecutiveMetrics({
         {/* Comisión Neta */}
         <div
           style={{
-            backgroundColor: '#fff',
-            padding: '16px',
-            borderRadius: '10px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            backgroundColor: '#ffffff',
+            padding: '18px',
+            borderRadius: '22px',
+            border: '1px solid #e4dfd2',
+            boxShadow: '0 8px 24px rgba(24, 60, 58, 0.05)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#607674' }}>
               Comisión Neta ({metrics?.pricing ? Math.round(metrics.pricing.platformTakeRate * 100) : 20}%)
             </span>
-            <span style={{ backgroundColor: '#eff6ff', color: '#2563eb', padding: '4px', borderRadius: '6px' }}>
+            <span style={{ backgroundColor: '#edf6f4', color: '#609f9c', padding: '6px', borderRadius: '10px' }}>
               <TrendingUp size={18} />
             </span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#2563eb' }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#315f5d' }}>
             {formatCurrency(metrics?.netCommission)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+          <div style={{ fontSize: '0.75rem', color: '#607674', marginTop: '4px' }}>
             Margen retenido plataforma
           </div>
         </div>
@@ -462,23 +514,23 @@ export function AdminExecutiveMetrics({
         {/* Fuga de Ingresos No-Shows */}
         <div
           style={{
-            backgroundColor: '#fff',
-            padding: '16px',
-            borderRadius: '10px',
-            border: '1px solid #fee2e2',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            backgroundColor: '#ffffff',
+            padding: '18px',
+            borderRadius: '22px',
+            border: '1px solid #f3c8be',
+            boxShadow: '0 8px 24px rgba(24, 60, 58, 0.05)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#b91c1c' }}>Fuga por No-Shows</span>
-            <span style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '4px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#ae4d45' }}>Fuga por No-Shows</span>
+            <span style={{ backgroundColor: '#fcece9', color: '#ae4d45', padding: '6px', borderRadius: '10px' }}>
               <AlertOctagon size={18} />
             </span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#dc2626' }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ae4d45' }}>
             {formatCurrency(metrics?.noShowLostRevenue)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '4px' }}>
+          <div style={{ fontSize: '0.75rem', color: '#8f3f38', marginTop: '4px' }}>
             {metrics?.counts?.cancelledOrNoShow ?? 0} turnos cancelados
           </div>
         </div>
@@ -486,25 +538,25 @@ export function AdminExecutiveMetrics({
         {/* Conversión Triage a Pago */}
         <div
           style={{
-            backgroundColor: '#fff',
-            padding: '16px',
-            borderRadius: '10px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            backgroundColor: '#ffffff',
+            padding: '18px',
+            borderRadius: '22px',
+            border: '1px solid #e4dfd2',
+            boxShadow: '0 8px 24px rgba(24, 60, 58, 0.05)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b' }}>Conversión Triage a Pago</span>
-            <span style={{ backgroundColor: '#f3e8ff', color: '#7c3aed', padding: '4px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#607674' }}>Conversión Triage a Pago</span>
+            <span style={{ backgroundColor: '#f2eddd', color: '#183c3a', padding: '6px', borderRadius: '10px' }}>
               <Percent size={18} />
             </span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#7c3aed' }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#183c3a' }}>
             {typeof metrics?.triageToPaidConversionRate === 'number'
               ? `${metrics.triageToPaidConversionRate}%`
               : '0%'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+          <div style={{ fontSize: '0.75rem', color: '#607674', marginTop: '4px' }}>
             De {metrics?.counts?.totalConsultations ?? 0} consultas iniciadas
           </div>
         </div>

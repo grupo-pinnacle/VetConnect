@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 570" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="dl-dots-light" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(24)">
+      <circle cx="4" cy="4" r="1.8" fill="#7dd0c6" fill-opacity="0.28"/>
+    </pattern>
+    <pattern id="dl-dots-dark" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(18)">
+      <circle cx="4" cy="4" r="1.9" fill="#0b4f47" fill-opacity="0.34"/>
+    </pattern>
+  </defs>
+
+  <!-- Layered sweeping waves behind phone mockup -->
+  <path d="M525 570 C622 482, 790 486, 868 386 C930 306, 898 186, 1020 112 C1106 60, 1188 46, 1245 0 L1440 0 L1440 570 Z" fill="#1d8579"/>
+  <path d="M962 570 C1028 452, 1120 374, 1248 398 C1344 416, 1396 446, 1440 426 L1440 570 Z" fill="#6dc1b6"/>
+
+  <!-- Clean geometric dot accents -->
+  <path d="M0 0 L214 0 C176 92, 92 164, 0 212 Z" fill="url(#dl-dots-light)"/>
+  <path d="M0 328 C82 372, 168 456, 224 570 L0 570 Z" fill="url(#dl-dots-light)"/>
+  <ellipse cx="1364" cy="240" rx="136" ry="120" fill="url(#dl-dots-dark)"/>
+  <ellipse cx="868" cy="524" rx="126" ry="96" fill="url(#dl-dots-dark)"/>
+</svg>
