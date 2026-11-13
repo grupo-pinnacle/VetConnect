@@ -75,6 +75,7 @@ repomix-output.*
 gentle-ai-harness/
 
 # Video production, captures & media
+/opencode/
 videos/
 video-*/
 video/
@@ -86,3 +87,39 @@ spikes/hyperframes-*/
 *.webm
 *.avi
 *.mkv
+
+# Unreferenced legacy/local web assets (replaced by vector SVGs / -480.webp)
+/web/public/assets/0ecff.svg
+/web/public/assets/25486.svg
+/web/public/assets/3c9f8.webp
+/web/public/assets/6248c.svg
+/web/public/assets/65fc5.svg
+/web/public/assets/67c6e-480.webp
+/web/public/assets/67c6e.png
+/web/public/assets/67c6e.webp
+/web/public/assets/6aa55.webp
+/web/public/assets/6f3a5.webp
+/web/public/assets/8e0f7.webp
+/web/public/assets/9be21-480.webp
+/web/public/assets/9be21.png
+/web/public/assets/9be21.webp
+/web/public/assets/9d2f4.png
+/web/public/assets/a2d6a.svg
+/web/public/assets/ac1dd.svg
+/web/public/assets/acd45.svg
+/web/public/assets/af28e.svg
+/web/public/assets/c2864-480.webp
+/web/public/assets/c2864.png
+/web/public/assets/c2864.webp
+/web/public/assets/c8118.png
+/web/public/assets/cb9ba.svg
+/web/public/assets/d8e86.svg
+/web/public/assets/efa47-480.webp
+/web/public/assets/efa47.png
+/web/public/assets/efa47.webp
+/web/public/assets/f4604.webp
+/web/public/assets/huellicam-mark-light.webp
+/web/public/assets/huellicam-mark.webp
+/web/public/assets/messages-hero-illustration.webp
+/web/public/assets/role-tutor-thumb.webp
+/web/public/assets/role-vet-thumb.webp
